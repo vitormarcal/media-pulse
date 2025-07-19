@@ -1,0 +1,12 @@
+###
+POST http://localhost:8080/webhook/provider_name
+Content-Type: application/json
+
+{
+  "event": "NewEvent",
+  "data": {
+    "id": "123",
+    "name": "Sample Event",
+    "timestamp": "2023-10-01T12:00:00Z"
+  }
+}
