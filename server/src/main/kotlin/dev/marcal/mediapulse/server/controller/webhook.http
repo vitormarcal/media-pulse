@@ -1,6 +1,8 @@
-###
 POST http://localhost:8080/webhook/plex
-Content-Type: application/json
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="payload"; "
 
 {
   "event": "media.play",
@@ -48,3 +50,6 @@ Content-Type: application/json
     "updatedAt": 1432897518
   }
 }
+--WebAppBoundary--
+
+###
