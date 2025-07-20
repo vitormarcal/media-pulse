@@ -32,7 +32,7 @@ dependencies {
 
     implementation("org.xerial:sqlite-jdbc:3.50.2.0")
 
-    runtimeOnly("com.h2database:h2")
+    implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")

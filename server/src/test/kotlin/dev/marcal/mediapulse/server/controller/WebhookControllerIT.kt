@@ -1,7 +1,7 @@
 package dev.marcal.mediapulse.server.controller
 
 import dev.marcal.mediapulse.server.MediapulseServerApplicationTests
-import dev.marcal.mediapulse.server.repository.WebhookPayloadRepository
+import dev.marcal.mediapulse.server.repository.WebhookEventRepository
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,7 +15,7 @@ class WebhookControllerIT : MediapulseServerApplicationTests() {
     private lateinit var mockMvc: MockMvc
 
     @Autowired
-    private lateinit var webhookPayloadRepository: WebhookPayloadRepository
+    private lateinit var webhookEventRepository: WebhookEventRepository
 
     @Nested
     inner class WebhookControllerTests {
@@ -31,7 +31,7 @@ class WebhookControllerIT : MediapulseServerApplicationTests() {
                         .content(payload),
                 ).andExpect(status().isOk)
 
-            val list = webhookPayloadRepository.findAll()
+            val list = webhookEventRepository.findAll()
             assert(list.isNotEmpty()) { "Webhook payload should be saved in the repository" }
             assert(list.size == 1) { "Only one payload should be saved" }
         }
