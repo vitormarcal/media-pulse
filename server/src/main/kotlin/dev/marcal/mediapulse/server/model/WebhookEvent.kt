@@ -12,22 +12,16 @@ import java.time.OffsetDateTime
 @Entity
 @Table(name = "webhook_events")
 data class WebhookEvent(
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-
     val provider: String,
-
     @Column(name = "event_timestamp")
     val eventTimestamp: OffsetDateTime = OffsetDateTime.now(),
-
     @Lob
     @Column(nullable = false)
     val payload: String,
-
     @Column(name = "received_at")
     val receivedAt: OffsetDateTime = OffsetDateTime.now(),
-
-    val processed: Boolean = false
+    val processed: Boolean = false,
 )
