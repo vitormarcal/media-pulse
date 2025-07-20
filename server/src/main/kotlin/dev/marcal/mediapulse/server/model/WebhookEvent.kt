@@ -5,7 +5,6 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
-import jakarta.persistence.Lob
 import jakarta.persistence.Table
 import java.time.OffsetDateTime
 
@@ -18,8 +17,7 @@ data class WebhookEvent(
     val provider: String,
     @Column(name = "event_timestamp")
     val eventTimestamp: OffsetDateTime = OffsetDateTime.now(),
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     val payload: String,
     @Column(name = "received_at")
     val receivedAt: OffsetDateTime = OffsetDateTime.now(),
