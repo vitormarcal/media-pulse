@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   api:
     build:
@@ -8,12 +9,25 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mediapulse
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - db
 
-#  site:
-#    build:
-#      context: ../
-#      dockerfile: ../web/Dockerfile
-#    ports:
-#      - "3000:3000"
-#    depends_on:
-#      - api
+  db:
+    image: postgres:15
+    container_name: postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mediapulse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

@@ -1,11 +1,11 @@
 spring:
-  application:
-    name: mediapulse-server
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:5432/mediapulse
-    username: ${DB_USER:mediapulse}
-    password: ${DB_PASS:secret}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: false
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
