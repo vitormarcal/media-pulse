@@ -21,12 +21,11 @@ class WebhookControllerIT : MediapulseServerApplicationTests() {
     inner class WebhookControllerTests {
         @Test
         fun `should return OK when webhook is received`() {
-            val provider = "plex"
             val payload = """{"key":"value"}"""
 
             mockMvc
                 .perform(
-                    post("/webhook/$provider")
+                    post("/webhook/plex")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload),
                 ).andExpect(status().isOk)

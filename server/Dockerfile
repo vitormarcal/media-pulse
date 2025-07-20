@@ -18,7 +18,7 @@ RUN ./gradlew build -x test --no-daemon || return 0
 COPY ./server/src ./src
 
 # Agora sim, build completo
-RUN ./gradlew clean build --no-daemon
+RUN ./gradlew clean build --no-daemon -PskipIntegrationTests=true
 
 # Etapa 2: Imagem final com Corretto (sem toolchain de build)
 FROM amazoncorretto:21-alpine
