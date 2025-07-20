@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.service
 
+import dev.marcal.mediapulse.server.controller.dto.WebhookDTO
 import dev.marcal.mediapulse.server.model.WebhookPayload
 import dev.marcal.mediapulse.server.repository.WebhookPayloadRepository
 import org.springframework.stereotype.Service
@@ -8,11 +9,8 @@ import org.springframework.stereotype.Service
 class WebhookPayloadService(
     private val repository: WebhookPayloadRepository,
 ) {
-    fun save(
-        provider: String,
-        payload: String,
-    ) {
-        val entity = WebhookPayload(provider = provider, payload = payload)
+    fun save(webhookDTO: WebhookDTO) {
+        val entity = WebhookPayload(provider = webhookDTO.provider, payload = webhookDTO.payload)
         repository.save(entity)
     }
 }

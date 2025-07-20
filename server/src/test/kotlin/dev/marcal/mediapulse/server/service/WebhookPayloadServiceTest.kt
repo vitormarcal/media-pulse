@@ -1,3 +1,4 @@
+import dev.marcal.mediapulse.server.controller.dto.WebhookDTO
 import dev.marcal.mediapulse.server.repository.WebhookPayloadRepository
 import dev.marcal.mediapulse.server.service.WebhookPayloadService
 import org.junit.jupiter.api.Test
@@ -14,7 +15,7 @@ class WebhookPayloadServiceTest {
         val provider = "ifood"
         val payload = """{"key":"value"}"""
 
-        service.save(provider, payload)
+        service.save(WebhookDTO(provider = provider, payload = payload))
 
         verify(repository).save(any())
     }
