@@ -371,5 +371,74 @@
         }
       ]
     }
+  },
+  {
+    "event": "media.play",
+    "user": true,
+    "owner": true,
+    "Account": {
+      "id": 149312811,
+      "thumb": "https://plex.tv/users/d1eb2928e193b628/avatar?c=1753547644",
+      "title": "theoldtremere"
+    },
+    "Server": {
+      "title": "mordor",
+      "uuid": "fceb6c187cd661fe06e10c593147735ea7504cf1"
+    },
+    "Player": {
+      "local": false,
+      "publicAddress": "192.168.1.41",
+      "title": "Firefox",
+      "uuid": "wg1jemh6wenck6p8hwkobl9g"
+    },
+    "Metadata": {
+      "librarySectionType": "artist",
+      "ratingKey": "16121",
+      "key": "/library/metadata/16121",
+      "parentRatingKey": "16120",
+      "grandparentRatingKey": "16094",
+      "guid": "plex://track/5d07d7c0403c640290b57241",
+      "parentGuid": "plex://album/5d07c3b6403c64029099437f",
+      "grandparentGuid": "plex://artist/5d07bca6403c640290531fc1",
+      "parentStudio": "[no label]",
+      "type": "track",
+      "title": "Porcelain Judas",
+      "grandparentKey": "/library/metadata/16094",
+      "parentKey": "/library/metadata/16120",
+      "librarySectionTitle": "Musics",
+      "librarySectionID": 4,
+      "librarySectionKey": "/library/sections/4",
+      "grandparentTitle": "Diablo Swing Orchestra",
+      "parentTitle": "Borderline Hymns",
+      "summary": "",
+      "index": 1,
+      "parentIndex": 1,
+      "ratingCount": 47281,
+      "parentYear": 2003,
+      "thumb": "/library/metadata/16120/thumb/1753423483",
+      "art": "/library/metadata/16094/art/1752182850",
+      "parentThumb": "/library/metadata/16120/thumb/1753423483",
+      "grandparentThumb": "/library/metadata/16094/thumb/1752182850",
+      "grandparentArt": "/library/metadata/16094/art/1752182850",
+      "addedAt": 1752182848,
+      "updatedAt": 1753423483,
+      "Image": [
+        {
+          "alt": "Porcelain Judas",
+          "type": "coverPoster",
+          "url": "/library/metadata/16094/thumb/1752182850"
+        },
+        {
+          "alt": "Porcelain Judas",
+          "type": "background",
+          "url": "/library/metadata/16094/art/1752182850"
+        }
+      ],
+      "Guid": [
+        {
+          "id": "mbid://245a4b06-e489-307a-9f79-937d7ec26e00"
+        }
+      ]
+    }
   }
 ]
