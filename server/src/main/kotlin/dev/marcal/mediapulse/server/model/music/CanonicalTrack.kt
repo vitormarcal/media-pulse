@@ -22,4 +22,5 @@ data class CanonicalTrack(
     val title: String,
     val album: String,
     val artist: String,
+    val year: Int,
 )
