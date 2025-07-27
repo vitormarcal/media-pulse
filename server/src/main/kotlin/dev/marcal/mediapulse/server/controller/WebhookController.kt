@@ -1,7 +1,7 @@
 package dev.marcal.mediapulse.server.controller
 
-import dev.marcal.mediapulse.server.controller.dto.WebhookDTO
-import dev.marcal.mediapulse.server.service.WebhookEventService
+import dev.marcal.mediapulse.server.service.eventsource.EventSourceService
+import dev.marcal.mediapulse.server.service.eventsource.ProcessEventSourceService
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PostMapping
@@ -13,7 +13,8 @@ import org.springframework.web.multipart.MultipartFile
 @RequestMapping("/webhook")
 @RestController
 class WebhookController(
-    private val webhookEventService: WebhookEventService,
+    private val eventSourceService: EventSourceService,
+    private val processEventSourceService: ProcessEventSourceService,
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
@@ -25,12 +26,13 @@ class WebhookController(
         @RequestPart("thumb", required = false) thumb: MultipartFile?,
     ) {
         logger.info("Webhook received for provider: plex. Thumb present: ${thumb != null}. Payload: $payload")
-        webhookEventService.save(
-            WebhookDTO(
-                provider = "plex",
-                payload = payload,
-                file = thumb,
-            ),
-        )
+        val eventId =
+            eventSourceService
+                .save(
+                    provider = "plex",
+                    payload = payload,
+                ).id
+
+        processEventSourceService.executeAsync(eventId)
     }
 }
