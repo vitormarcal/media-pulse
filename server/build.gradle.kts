@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.marcal.mediapulse.server"
-version = "0.0.1-SNAPSHOT"
+version = "0.0.2-SNAPSHOT"
 
 java {
     toolchain {
@@ -30,6 +30,8 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
+    implementation("commons-codec:commons-codec:1.19.0")
+
     implementation("org.xerial:sqlite-jdbc:3.50.2.0")
 
     implementation("org.flywaydb:flyway-database-postgresql")
@@ -41,6 +43,7 @@ dependencies {
 
     testImplementation("org.testcontainers:postgresql:1.21.3")
     testImplementation("org.testcontainers:junit-jupiter:1.21.3")
+    testImplementation("io.mockk:mockk:1.14.5")
 }
 
 tasks.test {
