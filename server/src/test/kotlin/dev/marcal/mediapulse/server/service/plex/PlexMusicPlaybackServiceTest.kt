@@ -157,6 +157,7 @@ class PlexMusicPlaybackServiceTest {
                 title = payload.metadata.title,
                 album = payload.metadata.parentTitle,
                 artist = payload.metadata.grandparentTitle,
+                year = payload.metadata.parentYear,
             )
 
         every { canonicalTrackRepository.findByCanonicalIdAndCanonicalType(any(), any()) } returns existingTrack
