@@ -14,6 +14,7 @@ data class PlexWebhookPayload(
         val title: String,
         val grandparentTitle: String,
         val parentTitle: String,
+        val parentYear: Int,
         val summary: String,
         val viewCount: Int = 0,
         val lastViewedAt: Instant = Instant.now(),

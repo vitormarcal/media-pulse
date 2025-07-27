@@ -61,6 +61,7 @@ class PlexMusicPlaybackService(
                         title = meta.title,
                         album = meta.parentTitle,
                         artist = meta.grandparentTitle,
+                        year = meta.parentYear,
                     ),
                 )
 

@@ -18,6 +18,7 @@ CREATE TABLE canonical_tracks
     title          VARCHAR(255),
     album          VARCHAR(255),
     artist         VARCHAR(255),
+    year           INTEGER,
     CONSTRAINT uq_canonical_tracks_canonical_id_type UNIQUE (canonical_id, canonical_type)
 );
 
