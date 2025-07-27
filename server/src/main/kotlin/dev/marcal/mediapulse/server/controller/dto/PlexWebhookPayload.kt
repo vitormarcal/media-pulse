@@ -16,7 +16,7 @@ data class PlexWebhookPayload(
         val parentTitle: String,
         val summary: String,
         val viewCount: Int = 0,
-        val lastViewedAt: Instant,
+        val lastViewedAt: Instant = Instant.now(),
         @JsonProperty("Image") val image: List<PlexImageMetadata> = emptyList(),
         @JsonProperty("Guid") val guid: List<PlexGuidMetadata> = emptyList(),
     ) {
