@@ -1,8 +1,13 @@
 package dev.marcal.mediapulse.server
 
+import dev.marcal.mediapulse.server.repository.CanonicalTrackRepository
+import dev.marcal.mediapulse.server.repository.EventSourceRepository
+import dev.marcal.mediapulse.server.repository.TrackPlaybackRepository
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
@@ -18,6 +23,22 @@ import org.testcontainers.containers.PostgreSQLContainer
 abstract class MediapulseServerApplicationTests {
     @Test
     fun contextLoads() {
+    }
+
+    @Autowired
+    lateinit var eventSourceRepository: EventSourceRepository
+
+    @Autowired
+    lateinit var trackPlaybackRepository: TrackPlaybackRepository
+
+    @Autowired
+    lateinit var canonicalTrackRepository: CanonicalTrackRepository
+
+    @BeforeEach
+    fun cleanUp() {
+        eventSourceRepository.deleteAll()
+        trackPlaybackRepository.deleteAll()
+        canonicalTrackRepository.deleteAll()
     }
 
     companion object {

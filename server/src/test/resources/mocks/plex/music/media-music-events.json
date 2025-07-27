@@ -1,0 +1,375 @@
+[
+  {
+    "event": "media.play",
+    "user": true,
+    "owner": true,
+    "Account": {
+      "id": 149312811,
+      "thumb": "https://plex.tv/users/d1eb2928e193b628/avatar?c=1753450612",
+      "title": "theoldtremere"
+    },
+    "Server": {
+      "title": "mordor",
+      "uuid": "fceb6c187cd661fe06e10c593147735ea7504cf1"
+    },
+    "Player": {
+      "local": false,
+      "publicAddress": "192.168.1.41",
+      "title": "Firefox",
+      "uuid": "wg1jemh6wenck6p8hwkobl9g"
+    },
+    "Metadata": {
+      "librarySectionType": "artist",
+      "ratingKey": "10212",
+      "key": "/library/metadata/10212",
+      "parentRatingKey": "10210",
+      "grandparentRatingKey": "1463",
+      "guid": "plex://track/5d0803bf403c64029005e114",
+      "parentGuid": "plex://album/5ef603bd9c3f7625ddf6921e",
+      "grandparentGuid": "plex://artist/5d07bbfe403c6402904a6fcb",
+      "parentStudio": "Adulruna",
+      "type": "track",
+      "title": "Summernight City (2001)",
+      "grandparentKey": "/library/metadata/1463",
+      "parentKey": "/library/metadata/10210",
+      "librarySectionTitle": "Musics",
+      "librarySectionID": 4,
+      "librarySectionKey": "/library/sections/4",
+      "grandparentTitle": "Therion",
+      "parentTitle": "Cover Songs 1993–2007",
+      "summary": "",
+      "index": 2,
+      "parentIndex": 1,
+      "ratingCount": 702,
+      "viewCount": 3,
+      "lastViewedAt": 1753130772,
+      "parentYear": 2020,
+      "thumb": "/library/metadata/10210/thumb/1751786095",
+      "art": "/library/metadata/1463/art/1752392069",
+      "parentThumb": "/library/metadata/10210/thumb/1751786095",
+      "grandparentThumb": "/library/metadata/1463/thumb/1752392069",
+      "grandparentArt": "/library/metadata/1463/art/1752392069",
+      "addedAt": 1715818854,
+      "updatedAt": 1752392082,
+      "Image": [
+        {
+          "alt": "Summernight City (2001)",
+          "type": "coverPoster",
+          "url": "/library/metadata/1463/thumb/1752392069"
+        },
+        {
+          "alt": "Summernight City (2001)",
+          "type": "background",
+          "url": "/library/metadata/1463/art/1752392069"
+        }
+      ],
+      "Guid": [
+        {
+          "id": "mbid://2ccf8d0b-8724-456d-b8b4-7820c87974c2"
+        }
+      ]
+    }
+  },
+  {
+    "event": "media.scrobble",
+    "user": true,
+    "owner": true,
+    "Account": {
+      "id": 149312811,
+      "thumb": "https://plex.tv/users/d1eb2928e193b628/avatar?c=1753450612",
+      "title": "theoldtremere"
+    },
+    "Server": {
+      "title": "mordor",
+      "uuid": "fceb6c187cd661fe06e10c593147735ea7504cf1"
+    },
+    "Player": {
+      "local": false,
+      "publicAddress": "192.168.1.41",
+      "title": "Firefox",
+      "uuid": "wg1jemh6wenck6p8hwkobl9g"
+    },
+    "Metadata": {
+      "librarySectionType": "artist",
+      "ratingKey": "10212",
+      "key": "/library/metadata/10212",
+      "parentRatingKey": "10210",
+      "grandparentRatingKey": "1463",
+      "guid": "plex://track/5d0803bf403c64029005e114",
+      "parentGuid": "plex://album/5ef603bd9c3f7625ddf6921e",
+      "grandparentGuid": "plex://artist/5d07bbfe403c6402904a6fcb",
+      "parentStudio": "Adulruna",
+      "type": "track",
+      "title": "Summernight City (2001)",
+      "grandparentKey": "/library/metadata/1463",
+      "parentKey": "/library/metadata/10210",
+      "librarySectionTitle": "Musics",
+      "librarySectionID": 4,
+      "librarySectionKey": "/library/sections/4",
+      "grandparentTitle": "Therion",
+      "parentTitle": "Cover Songs 1993–2007",
+      "summary": "",
+      "index": 2,
+      "parentIndex": 1,
+      "ratingCount": 702,
+      "viewCount": 4,
+      "lastViewedAt": 1753547806,
+      "parentYear": 2020,
+      "thumb": "/library/metadata/10210/thumb/1751786095",
+      "art": "/library/metadata/1463/art/1752392069",
+      "parentThumb": "/library/metadata/10210/thumb/1751786095",
+      "grandparentThumb": "/library/metadata/1463/thumb/1752392069",
+      "grandparentArt": "/library/metadata/1463/art/1752392069",
+      "addedAt": 1715818854,
+      "updatedAt": 1752392082,
+      "Image": [
+        {
+          "alt": "Summernight City (2001)",
+          "type": "coverPoster",
+          "url": "/library/metadata/1463/thumb/1752392069"
+        },
+        {
+          "alt": "Summernight City (2001)",
+          "type": "background",
+          "url": "/library/metadata/1463/art/1752392069"
+        }
+      ],
+      "Guid": [
+        {
+          "id": "mbid://2ccf8d0b-8724-456d-b8b4-7820c87974c2"
+        }
+      ]
+    }
+  },
+  {
+    "event": "media.stop",
+    "user": true,
+    "owner": true,
+    "Account": {
+      "id": 149312811,
+      "thumb": "https://plex.tv/users/d1eb2928e193b628/avatar?c=1753450612",
+      "title": "theoldtremere"
+    },
+    "Server": {
+      "title": "mordor",
+      "uuid": "fceb6c187cd661fe06e10c593147735ea7504cf1"
+    },
+    "Player": {
+      "local": false,
+      "publicAddress": "192.168.1.41",
+      "title": "Firefox",
+      "uuid": "wg1jemh6wenck6p8hwkobl9g"
+    },
+    "Metadata": {
+      "librarySectionType": "artist",
+      "ratingKey": "10212",
+      "key": "/library/metadata/10212",
+      "parentRatingKey": "10210",
+      "grandparentRatingKey": "1463",
+      "guid": "plex://track/5d0803bf403c64029005e114",
+      "parentGuid": "plex://album/5ef603bd9c3f7625ddf6921e",
+      "grandparentGuid": "plex://artist/5d07bbfe403c6402904a6fcb",
+      "parentStudio": "Adulruna",
+      "type": "track",
+      "title": "Summernight City (2001)",
+      "grandparentKey": "/library/metadata/1463",
+      "parentKey": "/library/metadata/10210",
+      "librarySectionTitle": "Musics",
+      "librarySectionID": 4,
+      "librarySectionKey": "/library/sections/4",
+      "grandparentTitle": "Therion",
+      "parentTitle": "Cover Songs 1993–2007",
+      "summary": "",
+      "index": 2,
+      "parentIndex": 1,
+      "ratingCount": 702,
+      "viewCount": 4,
+      "lastViewedAt": 1753547806,
+      "parentYear": 2020,
+      "thumb": "/library/metadata/10210/thumb/1751786095",
+      "art": "/library/metadata/1463/art/1752392069",
+      "parentThumb": "/library/metadata/10210/thumb/1751786095",
+      "grandparentThumb": "/library/metadata/1463/thumb/1752392069",
+      "grandparentArt": "/library/metadata/1463/art/1752392069",
+      "addedAt": 1715818854,
+      "updatedAt": 1752392082,
+      "Image": [
+        {
+          "alt": "Summernight City (2001)",
+          "type": "coverPoster",
+          "url": "/library/metadata/1463/thumb/1752392069"
+        },
+        {
+          "alt": "Summernight City (2001)",
+          "type": "background",
+          "url": "/library/metadata/1463/art/1752392069"
+        }
+      ],
+      "Guid": [
+        {
+          "id": "mbid://2ccf8d0b-8724-456d-b8b4-7820c87974c2"
+        }
+      ]
+    }
+  },
+  {
+    "event": "media.play",
+    "user": true,
+    "owner": true,
+    "Account": {
+      "id": 149312811,
+      "thumb": "https://plex.tv/users/d1eb2928e193b628/avatar?c=1753450612",
+      "title": "theoldtremere"
+    },
+    "Server": {
+      "title": "mordor",
+      "uuid": "fceb6c187cd661fe06e10c593147735ea7504cf1"
+    },
+    "Player": {
+      "local": false,
+      "publicAddress": "192.168.1.41",
+      "title": "Firefox",
+      "uuid": "wg1jemh6wenck6p8hwkobl9g"
+    },
+    "Metadata": {
+      "librarySectionType": "artist",
+      "ratingKey": "1490",
+      "key": "/library/metadata/1490",
+      "parentRatingKey": "1489",
+      "grandparentRatingKey": "1463",
+      "guid": "plex://track/5d07cdc3403c640290f63a88",
+      "parentGuid": "plex://album/5d07c180403c64029084ced0",
+      "grandparentGuid": "plex://artist/5d07bbfe403c6402904a6fcb",
+      "parentStudio": "Irond",
+      "type": "track",
+      "title": "The Rise of Sodom and Gomorrah",
+      "titleSort": "Rise of Sodom and Gomorrah",
+      "grandparentKey": "/library/metadata/1463",
+      "parentKey": "/library/metadata/1489",
+      "librarySectionTitle": "Musics",
+      "librarySectionID": 4,
+      "librarySectionKey": "/library/sections/4",
+      "grandparentTitle": "Therion",
+      "parentTitle": "Vovin",
+      "summary": "",
+      "index": 1,
+      "parentIndex": 1,
+      "ratingCount": 76602,
+      "viewCount": 1,
+      "skipCount": 1,
+      "lastViewedAt": 1753131823,
+      "parentYear": 1998,
+      "thumb": "/library/metadata/1489/thumb/1715927358",
+      "art": "/library/metadata/1463/art/1752392069",
+      "parentThumb": "/library/metadata/1489/thumb/1715927358",
+      "grandparentThumb": "/library/metadata/1463/thumb/1752392069",
+      "grandparentArt": "/library/metadata/1463/art/1752392069",
+      "addedAt": 1692532285,
+      "updatedAt": 1751786131,
+      "Image": [
+        {
+          "alt": "The Rise of Sodom and Gomorrah",
+          "type": "coverPoster",
+          "url": "/library/metadata/1463/thumb/1752392069"
+        },
+        {
+          "alt": "The Rise of Sodom and Gomorrah",
+          "type": "background",
+          "url": "/library/metadata/1463/art/1752392069"
+        }
+      ],
+      "Genre": [
+        {
+          "id": 5165,
+          "filter": "genre=5165",
+          "tag": "Pop/Rock"
+        }
+      ],
+      "Guid": [
+        {
+          "id": "mbid://98dcdfe5-08bb-3acf-91c0-25d7d08bdfd2"
+        }
+      ]
+    }
+  },
+  {
+    "event": "media.stop",
+    "user": true,
+    "owner": true,
+    "Account": {
+      "id": 149312811,
+      "thumb": "https://plex.tv/users/d1eb2928e193b628/avatar?c=1753450612",
+      "title": "theoldtremere"
+    },
+    "Server": {
+      "title": "mordor",
+      "uuid": "fceb6c187cd661fe06e10c593147735ea7504cf1"
+    },
+    "Player": {
+      "local": false,
+      "publicAddress": "192.168.1.41",
+      "title": "Firefox",
+      "uuid": "wg1jemh6wenck6p8hwkobl9g"
+    },
+    "Metadata": {
+      "librarySectionType": "artist",
+      "ratingKey": "1490",
+      "key": "/library/metadata/1490",
+      "parentRatingKey": "1489",
+      "grandparentRatingKey": "1463",
+      "guid": "plex://track/5d07cdc3403c640290f63a88",
+      "parentGuid": "plex://album/5d07c180403c64029084ced0",
+      "grandparentGuid": "plex://artist/5d07bbfe403c6402904a6fcb",
+      "parentStudio": "Irond",
+      "type": "track",
+      "title": "The Rise of Sodom and Gomorrah",
+      "titleSort": "Rise of Sodom and Gomorrah",
+      "grandparentKey": "/library/metadata/1463",
+      "parentKey": "/library/metadata/1489",
+      "librarySectionTitle": "Musics",
+      "librarySectionID": 4,
+      "librarySectionKey": "/library/sections/4",
+      "grandparentTitle": "Therion",
+      "parentTitle": "Vovin",
+      "summary": "",
+      "index": 1,
+      "parentIndex": 1,
+      "ratingCount": 76602,
+      "viewCount": 1,
+      "skipCount": 1,
+      "lastViewedAt": 1753548100,
+      "parentYear": 1998,
+      "thumb": "/library/metadata/1489/thumb/1715927358",
+      "art": "/library/metadata/1463/art/1752392069",
+      "parentThumb": "/library/metadata/1489/thumb/1715927358",
+      "grandparentThumb": "/library/metadata/1463/thumb/1752392069",
+      "grandparentArt": "/library/metadata/1463/art/1752392069",
+      "addedAt": 1692532285,
+      "updatedAt": 1751786131,
+      "Image": [
+        {
+          "alt": "The Rise of Sodom and Gomorrah",
+          "type": "coverPoster",
+          "url": "/library/metadata/1463/thumb/1752392069"
+        },
+        {
+          "alt": "The Rise of Sodom and Gomorrah",
+          "type": "background",
+          "url": "/library/metadata/1463/art/1752392069"
+        }
+      ],
+      "Genre": [
+        {
+          "id": 5165,
+          "filter": "genre=5165",
+          "tag": "Pop/Rock"
+        }
+      ],
+      "Guid": [
+        {
+          "id": "mbid://98dcdfe5-08bb-3acf-91c0-25d7d08bdfd2"
+        }
+      ]
+    }
+  }
+]
