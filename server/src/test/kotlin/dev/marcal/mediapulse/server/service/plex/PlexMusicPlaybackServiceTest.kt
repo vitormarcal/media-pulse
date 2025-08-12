@@ -4,6 +4,8 @@ import dev.marcal.mediapulse.server.fixture.PlexEventsFixture
 import dev.marcal.mediapulse.server.model.music.CanonicalTrack
 import dev.marcal.mediapulse.server.repository.CanonicalTrackRepository
 import dev.marcal.mediapulse.server.repository.TrackPlaybackRepository
+import dev.marcal.mediapulse.server.repository.crud.CanonicalTrackCrudRepository
+import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -17,21 +19,21 @@ import org.junit.jupiter.api.assertThrows
 import kotlin.test.Test
 
 class PlexMusicPlaybackServiceTest {
-    val canonicalTrackRepository: CanonicalTrackRepository = mockk()
-    val trackPlaybackRepository: TrackPlaybackRepository = mockk()
+    val canonicalTrackCrudRepository: CanonicalTrackCrudRepository = mockk()
+    val trackPlaybackCrudRepository: TrackPlaybackCrudRepository = mockk()
     val service: PlexMusicPlaybackService =
         PlexMusicPlaybackService(
-            canonicalTrackRepository = canonicalTrackRepository,
-            trackPlaybackRepository = trackPlaybackRepository,
+            canonicalTrackRepository = CanonicalTrackRepository(canonicalTrackCrudRepository),
+            trackPlaybackRepository = TrackPlaybackRepository(trackPlaybackCrudRepository),
         )
 
     val eventId = 123L
 
     @BeforeEach
     fun setUp() {
-        every { canonicalTrackRepository.findByCanonicalIdAndCanonicalType(any(), any()) } returns null
-        every { canonicalTrackRepository.save(any()) } returnsArgument 0
-        every { trackPlaybackRepository.save(any()) } returnsArgument 0
+        every { canonicalTrackCrudRepository.findByCanonicalIdAndCanonicalType(any(), any()) } returns null
+        every { canonicalTrackCrudRepository.save(any()) } returnsArgument 0
+        every { trackPlaybackCrudRepository.save(any()) } returnsArgument 0
     }
 
     @AfterEach
@@ -160,7 +162,7 @@ class PlexMusicPlaybackServiceTest {
                 year = payload.metadata.parentYear,
             )
 
-        every { canonicalTrackRepository.findByCanonicalIdAndCanonicalType(any(), any()) } returns existingTrack
+        every { canonicalTrackCrudRepository.findByCanonicalIdAndCanonicalType(any(), any()) } returns existingTrack
 
         val result = service.processScrobble(payload, eventId)
 
@@ -168,6 +170,6 @@ class PlexMusicPlaybackServiceTest {
 
         Assertions.assertTrue(result.canonicalTrackId == existingTrack.id)
 
-        verify(exactly = 0) { canonicalTrackRepository.save(any()) }
+        verify(exactly = 0) { canonicalTrackCrudRepository.save(any()) }
     }
 }

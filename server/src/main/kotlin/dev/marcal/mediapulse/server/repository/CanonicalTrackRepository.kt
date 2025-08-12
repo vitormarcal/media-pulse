@@ -1,11 +1,14 @@
 package dev.marcal.mediapulse.server.repository
 
 import dev.marcal.mediapulse.server.model.music.CanonicalTrack
-import org.springframework.data.jpa.repository.JpaRepository
+import dev.marcal.mediapulse.server.repository.crud.CanonicalTrackCrudRepository
+import org.springframework.stereotype.Repository
 
-interface CanonicalTrackRepository : JpaRepository<CanonicalTrack, Long> {
-    fun findByCanonicalIdAndCanonicalType(
-        canonicalId: String,
-        canonicalType: String,
-    ): CanonicalTrack?
+@Repository
+class CanonicalTrackRepository(
+    private val canonicalTrackCrudRepository: CanonicalTrackCrudRepository,
+) {
+    fun findOrCreate(track: CanonicalTrack): CanonicalTrack =
+        canonicalTrackCrudRepository.findByCanonicalIdAndCanonicalType(track.canonicalId, track.canonicalType)
+            ?: canonicalTrackCrudRepository.save(track)
 }

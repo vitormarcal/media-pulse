@@ -1,6 +1,12 @@
 package dev.marcal.mediapulse.server.repository
 
-import dev.marcal.mediapulse.server.model.music.TrackPlayback
-import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.stereotype.Repository
 
-interface TrackPlaybackRepository : JpaRepository<TrackPlayback, Long>
+@Repository
+class TrackPlaybackRepository(
+    private val trackPlaybackCrudRepository: dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository,
+) {
+    fun save(
+        trackPlayback: dev.marcal.mediapulse.server.model.music.TrackPlayback,
+    ): dev.marcal.mediapulse.server.model.music.TrackPlayback = trackPlaybackCrudRepository.save(trackPlayback)
+}
