@@ -36,7 +36,7 @@ class WebhookControllerIT : MediapulseServerApplicationTests() {
                         .contentType(MediaType.MULTIPART_FORM_DATA),
                 ).andExpect(status().isOk)
 
-            val list = eventSourceRepository.findAll()
+            val list = eventSourceCrudRepository.findAll()
             assert(list.isNotEmpty()) { "Webhook payload should be saved in the repository" }
             assert(list.size == 1) { "Only one payload should be saved" }
         }

@@ -3,7 +3,7 @@ package dev.marcal.mediapulse.server.service.eventsource
 import dev.marcal.mediapulse.server.dispatcher.PlexWebhookDispatcher
 import dev.marcal.mediapulse.server.fixture.EventSourceFixture
 import dev.marcal.mediapulse.server.model.EventSource
-import dev.marcal.mediapulse.server.repository.EventSourceRepository
+import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -13,7 +13,7 @@ import org.springframework.data.repository.findByIdOrNull
 import kotlin.test.Test
 
 class ProcessEventSourceServiceTest {
-    private val repository = mockk<EventSourceRepository>()
+    private val repository = mockk<EventSourceCrudRepository>()
     private val plexWebhookDispatcher = mockk<PlexWebhookDispatcher>()
     private val service =
         ProcessEventSourceService(

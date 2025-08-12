@@ -14,22 +14,22 @@ class ProcessEventSourceServiceIT : MediapulseServerApplicationTests() {
 
     @Test
     fun `should process event source successfully`() {
-        val saved = eventSourceRepository.save(EventSourceFixture.example())
+        val saved = eventSourceCrudRepository.save(EventSourceFixture.example())
         service.execute(saved.id)
 
-        val updated = assertDoesNotThrow { eventSourceRepository.findById(saved.id).orElseThrow() }
+        val updated = assertDoesNotThrow { eventSourceCrudRepository.findById(saved.id).orElseThrow() }
 
         assertEquals(EventSource.Status.SUCCESS, updated.status)
-        assertEquals(1, trackPlaybackRepository.count())
-        assertEquals(1, canonicalTrackRepository.count())
+        assertEquals(1, trackPlaybackCrudRepository.count())
+        assertEquals(1, canonicalTrackCrudRepository.count())
     }
 
     @Test
     fun `should handle unsupported provider gracefully`() {
-        val saved = eventSourceRepository.save(EventSourceFixture.example().copy(provider = "unsupported"))
+        val saved = eventSourceCrudRepository.save(EventSourceFixture.example().copy(provider = "unsupported"))
         service.execute(saved.id)
 
-        val updated = assertDoesNotThrow { eventSourceRepository.findById(saved.id).orElseThrow() }
+        val updated = assertDoesNotThrow { eventSourceCrudRepository.findById(saved.id).orElseThrow() }
 
         assertEquals(EventSource.Status.FAILED, updated.status)
         assertEquals("Unsupported provider: unsupported", updated.errorMessage)

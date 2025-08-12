@@ -1,8 +1,8 @@
 package dev.marcal.mediapulse.server
 
-import dev.marcal.mediapulse.server.repository.CanonicalTrackRepository
-import dev.marcal.mediapulse.server.repository.EventSourceRepository
-import dev.marcal.mediapulse.server.repository.TrackPlaybackRepository
+import dev.marcal.mediapulse.server.repository.crud.CanonicalTrackCrudRepository
+import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
+import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -26,19 +26,19 @@ abstract class MediapulseServerApplicationTests {
     }
 
     @Autowired
-    lateinit var eventSourceRepository: EventSourceRepository
+    lateinit var eventSourceCrudRepository: EventSourceCrudRepository
 
     @Autowired
-    lateinit var trackPlaybackRepository: TrackPlaybackRepository
+    lateinit var trackPlaybackCrudRepository: TrackPlaybackCrudRepository
 
     @Autowired
-    lateinit var canonicalTrackRepository: CanonicalTrackRepository
+    lateinit var canonicalTrackCrudRepository: CanonicalTrackCrudRepository
 
     @BeforeEach
     fun cleanUp() {
-        eventSourceRepository.deleteAll()
-        trackPlaybackRepository.deleteAll()
-        canonicalTrackRepository.deleteAll()
+        eventSourceCrudRepository.deleteAll()
+        trackPlaybackCrudRepository.deleteAll()
+        canonicalTrackCrudRepository.deleteAll()
     }
 
     companion object {

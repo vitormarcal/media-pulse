@@ -1,13 +1,13 @@
 package dev.marcal.mediapulse.server.service.eventsource
 
 import dev.marcal.mediapulse.server.model.EventSource
-import dev.marcal.mediapulse.server.repository.EventSourceRepository
+import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.stereotype.Service
 
 @Service
 class EventSourceService(
-    private val repository: EventSourceRepository,
+    private val repository: EventSourceCrudRepository,
 ) {
     /**
      * Saves a webhook event payload with a unique fingerprint.

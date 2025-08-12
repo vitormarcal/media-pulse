@@ -19,55 +19,43 @@ class PlexMusicPlaybackService(
         private const val MBID_PREFIX = "mbid://"
     }
 
-    /**
-     * Processes a scrobble event from Plex.
-     *
-     * @param payload The payload containing the scrobble event data.
-     * @param eventId Optional event ID for tracking purposes.
-     * @return The saved TrackPlayback entity, or null if the event type is not SCROBBLE or metadata type is not "track".
-     */
     fun processScrobble(
         payload: PlexWebhookPayload,
         eventId: Long? = null,
     ): TrackPlayback? {
         val meta = payload.metadata
 
-        if (meta.type != "track") {
-            return null
-        }
+        if (meta.type != "track") return null
 
         val eventType = requireNotNull(PlexEventType.Companion.fromType(payload.event)) { "event type is not supported: ${payload.event}" }
 
-        if (eventType != PlexEventType.SCROBBLE) {
-            return null
-        }
+        if (eventType != PlexEventType.SCROBBLE) return null
 
         val mbidRaw =
             meta.guid
                 .map { it.id }
                 .firstOrNull { it.startsWith(MBID_PREFIX) }
-                ?: throw IllegalArgumentException("MBID missing in  payload")
+                ?: throw IllegalArgumentException("MBID missing in payload")
 
         val mbid =
             mbidRaw.removePrefix(MBID_PREFIX).takeIf { it.isNotBlank() }
                 ?: throw IllegalArgumentException("MBID is empty or malformed: $mbidRaw")
 
-        val canonicalTrack =
-            canonicalTrackRepository.findByCanonicalIdAndCanonicalType(mbid, MBID_TYPE)
-                ?: canonicalTrackRepository.save(
-                    CanonicalTrack(
-                        canonicalId = mbid,
-                        canonicalType = MBID_TYPE,
-                        title = meta.title,
-                        album = meta.parentTitle,
-                        artist = meta.grandparentTitle,
-                        year = meta.parentYear,
-                    ),
-                )
+        val persistedTrack =
+            canonicalTrackRepository.findOrCreate(
+                CanonicalTrack(
+                    canonicalId = mbid,
+                    canonicalType = MBID_TYPE,
+                    title = meta.title,
+                    album = meta.parentTitle,
+                    artist = meta.grandparentTitle,
+                    year = meta.parentYear,
+                ),
+            )
 
         val playback =
             TrackPlayback(
-                canonicalTrackId = canonicalTrack.id,
+                canonicalTrackId = persistedTrack.id,
                 source = PlaybackSource.PLEX,
                 playedAt = meta.lastViewedAt,
                 sourceEventId = eventId,

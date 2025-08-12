@@ -1,5 +1,5 @@
 import dev.marcal.mediapulse.server.fixture.PlexEventsFixture
-import dev.marcal.mediapulse.server.repository.EventSourceRepository
+import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
 import dev.marcal.mediapulse.server.service.eventsource.EventSourceService
 import io.mockk.every
 import io.mockk.mockk
@@ -7,7 +7,7 @@ import io.mockk.verify
 import org.junit.jupiter.api.Test
 
 class EventSourceServiceTest {
-    private val repository: EventSourceRepository = mockk()
+    private val repository: EventSourceCrudRepository = mockk()
     private val service = EventSourceService(repository)
 
     @Test

@@ -1,8 +1,8 @@
-package dev.marcal.mediapulse.server.repository
+package dev.marcal.mediapulse.server.repository.crud
 
 import dev.marcal.mediapulse.server.model.EventSource
 import org.springframework.data.jpa.repository.JpaRepository
 
-interface EventSourceRepository : JpaRepository<EventSource, Long> {
+interface EventSourceCrudRepository : JpaRepository<EventSource, Long> {
     fun findByFingerprint(fingerprint: String): EventSource?
 }
