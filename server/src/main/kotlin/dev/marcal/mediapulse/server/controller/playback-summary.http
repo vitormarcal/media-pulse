@@ -1,0 +1,2 @@
+GET http://localhost:8080/playbacks/summary
+Content-Type: application/json

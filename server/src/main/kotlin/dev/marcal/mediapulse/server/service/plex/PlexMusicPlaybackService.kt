@@ -5,14 +5,12 @@ import dev.marcal.mediapulse.server.model.music.CanonicalTrack
 import dev.marcal.mediapulse.server.model.music.PlaybackSource
 import dev.marcal.mediapulse.server.model.music.TrackPlayback
 import dev.marcal.mediapulse.server.model.plex.PlexEventType
-import dev.marcal.mediapulse.server.repository.CanonicalTrackRepository
-import dev.marcal.mediapulse.server.repository.TrackPlaybackRepository
+import dev.marcal.mediapulse.server.repository.PlaybackAggregationRepository
 import org.springframework.stereotype.Service
 
 @Service
 class PlexMusicPlaybackService(
-    private val canonicalTrackRepository: CanonicalTrackRepository,
-    private val trackPlaybackRepository: TrackPlaybackRepository,
+    private val playbackAggregationRepository: PlaybackAggregationRepository,
 ) {
     companion object {
         private const val MBID_TYPE = "MBID"
@@ -42,7 +40,7 @@ class PlexMusicPlaybackService(
                 ?: throw IllegalArgumentException("MBID is empty or malformed: $mbidRaw")
 
         val persistedTrack =
-            canonicalTrackRepository.findOrCreate(
+            playbackAggregationRepository.findOrCreate(
                 CanonicalTrack(
                     canonicalId = mbid,
                     canonicalType = MBID_TYPE,
@@ -61,6 +59,6 @@ class PlexMusicPlaybackService(
                 sourceEventId = eventId,
             )
 
-        return trackPlaybackRepository.save(playback)
+        return playbackAggregationRepository.registerPlayback(playback)
     }
 }
