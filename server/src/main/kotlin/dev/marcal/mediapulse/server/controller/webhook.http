@@ -5,51 +5,76 @@ Content-Type: multipart/form-data; boundary=WebAppBoundary
 Content-Disposition: form-data; name="payload"; "
 
 {
-  "event": "media.play",
-  "user": true,
-  "owner": true,
-  "Account": {
-    "id": 1,
-    "thumb": "https://plex.tv/users/1022b120ffbaa/avatar?c=1465525047",
-    "title": "elan"
-  },
-  "Server": {
-    "title": "Office",
-    "uuid": "54664a3d8acc39983675640ec9ce00b70af9cc36"
-  },
-  "Player": {
-    "local": true,
-    "publicAddress": "200.200.200.200",
-    "title": "Plex Web (Safari)",
-    "uuid": "r6yfkdnfggbh2bdnvkffwbms"
-  },
-  "Metadata": {
-    "librarySectionType": "artist",
-    "ratingKey": "1936545",
-    "key": "/library/metadata/1936545",
-    "parentRatingKey": "1936544",
-    "grandparentRatingKey": "1936543",
-    "guid": "com.plexapp.agents.plexmusic://gracenote/track/7572499-91016293BE6BF7F1AB2F848F736E74E5/7572500-3CBAE310D4F3E66C285E104A1458B272?lang=en",
-    "librarySectionID": 1224,
-    "type": "track",
-    "title": "Love The One You're With",
-    "grandparentKey": "/library/metadata/1936543",
-    "parentKey": "/library/metadata/1936544",
-    "grandparentTitle": "Stephen Stills",
-    "parentTitle": "Stephen Stills",
-    "summary": "",
-    "index": 1,
-    "parentIndex": 1,
-    "ratingCount": 6794,
-    "thumb": "/library/metadata/1936544/thumb/1432897518",
-    "art": "/library/metadata/1936543/art/1485951497",
-    "parentThumb": "/library/metadata/1936544/thumb/1432897518",
-    "grandparentThumb": "/library/metadata/1936543/thumb/1485951497",
-    "grandparentArt": "/library/metadata/1936543/art/1485951497",
-    "addedAt": 1000396126,
-    "updatedAt": 1432897518
+    "event": "media.scrobble",
+    "user": true,
+    "owner": true,
+    "Account": {
+      "id": 149312811,
+      "thumb": "https://plex.tv/users/d1eb2928e193b628/avatar?c=1753450612",
+      "title": "theoldtremere"
+    },
+    "Server": {
+      "title": "mordor",
+      "uuid": "fceb6c187cd661fe06e10c593147735ea7504cf1"
+    },
+    "Player": {
+      "local": false,
+      "publicAddress": "192.168.1.41",
+      "title": "Firefox",
+      "uuid": "wg1jemh6wenck6p8hwkobl9g"
+    },
+    "Metadata": {
+      "librarySectionType": "artist",
+      "ratingKey": "10212",
+      "key": "/library/metadata/10212",
+      "parentRatingKey": "10210",
+      "grandparentRatingKey": "1463",
+      "guid": "plex://track/5d0803bf403c64029005e114",
+      "parentGuid": "plex://album/5ef603bd9c3f7625ddf6921e",
+      "grandparentGuid": "plex://artist/5d07bbfe403c6402904a6fcb",
+      "parentStudio": "Adulruna",
+      "type": "track",
+      "title": "Summernight City (2001)",
+      "grandparentKey": "/library/metadata/1463",
+      "parentKey": "/library/metadata/10210",
+      "librarySectionTitle": "Musics",
+      "librarySectionID": 4,
+      "librarySectionKey": "/library/sections/4",
+      "grandparentTitle": "Therion",
+      "parentTitle": "Cover Songs 1993–2007",
+      "summary": "",
+      "index": 2,
+      "parentIndex": 1,
+      "ratingCount": 702,
+      "viewCount": 4,
+      "lastViewedAt": 1753547806,
+      "parentYear": 2020,
+      "thumb": "/library/metadata/10210/thumb/1751786095",
+      "art": "/library/metadata/1463/art/1752392069",
+      "parentThumb": "/library/metadata/10210/thumb/1751786095",
+      "grandparentThumb": "/library/metadata/1463/thumb/1752392069",
+      "grandparentArt": "/library/metadata/1463/art/1752392069",
+      "addedAt": 1715818854,
+      "updatedAt": 1752392082,
+      "Image": [
+        {
+          "alt": "Summernight City (2001)",
+          "type": "coverPoster",
+          "url": "/library/metadata/1463/thumb/1752392069"
+        },
+        {
+          "alt": "Summernight City (2001)",
+          "type": "background",
+          "url": "/library/metadata/1463/art/1752392069"
+        }
+      ],
+      "Guid": [
+        {
+          "id": "mbid://2ccf8d0b-8724-456d-b8b4-7820c87974c2"
+        }
+      ]
+    }
   }
-}
 --WebAppBoundary--
 
 ###
