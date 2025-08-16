@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.controller
 import com.fasterxml.jackson.core.type.TypeReference
 import dev.marcal.mediapulse.server.MediapulseServerApplicationTests
 import dev.marcal.mediapulse.server.config.JacksonConfig
+import dev.marcal.mediapulse.server.controller.dto.ApiResult
 import dev.marcal.mediapulse.server.controller.dto.TrackPlaybackSummary
 import dev.marcal.mediapulse.server.model.music.CanonicalTrack
 import dev.marcal.mediapulse.server.model.music.PlaybackSource
@@ -47,18 +48,18 @@ class PlaybackSummaryControllerIT : MediapulseServerApplicationTests() {
                     .andReturn()
                     .response
                     .contentAsString
-            val typed: List<TrackPlaybackSummary> =
+            val apiResult: ApiResult<List<TrackPlaybackSummary>> =
                 objectMapper.readValue(
                     response,
-                    object : TypeReference<List<TrackPlaybackSummary>>() {},
+                    object : TypeReference<ApiResult<List<TrackPlaybackSummary>>>() {},
                 )
 
-            Assertions.assertTrue(typed.isNotEmpty()) { "Response should not be empty" }
-            Assertions.assertTrue(typed.size == 3) { "Response should contain 3 unique tracks" }
+            Assertions.assertTrue(apiResult.data.isNotEmpty()) { "Response should not be empty" }
+            Assertions.assertTrue(apiResult.data.size == 3) { "Response should contain 3 unique tracks" }
 
-            Assertions.assertTrue(typed.any { it.playbackCount.toInt() == 1 }) { "Track 1 should have 1 play" }
-            Assertions.assertTrue(typed.any { it.playbackCount.toInt() == 2 }) { "Track 2 should have 2 play" }
-            Assertions.assertTrue(typed.any { it.playbackCount.toInt() == 3 }) { "Track 3 should have 3 play" }
+            Assertions.assertTrue(apiResult.data.any { it.playbackCount.toInt() == 1 }) { "Track 1 should have 1 play" }
+            Assertions.assertTrue(apiResult.data.any { it.playbackCount.toInt() == 2 }) { "Track 2 should have 2 play" }
+            Assertions.assertTrue(apiResult.data.any { it.playbackCount.toInt() == 3 }) { "Track 3 should have 3 play" }
         }
 
         @Test
@@ -80,15 +81,15 @@ class PlaybackSummaryControllerIT : MediapulseServerApplicationTests() {
                     .response
                     .contentAsString
 
-            val typed: List<TrackPlaybackSummary> =
+            val apiResult: ApiResult<List<TrackPlaybackSummary>> =
                 objectMapper.readValue(
                     response,
-                    object : TypeReference<List<TrackPlaybackSummary>>() {},
+                    object : TypeReference<ApiResult<List<TrackPlaybackSummary>>>() {},
                 )
 
-            Assertions.assertTrue(typed.isNotEmpty()) { "Response should not be empty" }
-            Assertions.assertTrue(typed.size == 2) { "Response should contain 2 unique tracks" }
-            Assertions.assertTrue(typed.all { it.playbackCount.toInt() == 1 }) { "Track 2 and 3 should have 1 play" }
+            Assertions.assertTrue(apiResult.data.isNotEmpty()) { "Response should not be empty" }
+            Assertions.assertTrue(apiResult.data.size == 2) { "Response should contain 2 unique tracks" }
+            Assertions.assertTrue(apiResult.data.all { it.playbackCount.toInt() == 1 }) { "Track 2 and 3 should have 1 play" }
         }
 
         @Test
@@ -110,13 +111,13 @@ class PlaybackSummaryControllerIT : MediapulseServerApplicationTests() {
                     .response
                     .contentAsString
 
-            val typed: List<TrackPlaybackSummary> =
+            val apiResult: ApiResult<List<TrackPlaybackSummary>> =
                 objectMapper.readValue(
                     response,
-                    object : TypeReference<List<TrackPlaybackSummary>>() {},
+                    object : TypeReference<ApiResult<List<TrackPlaybackSummary>>>() {},
                 )
 
-            Assertions.assertTrue(typed.isEmpty()) { "Response should be empty" }
+            Assertions.assertTrue(apiResult.data.isEmpty()) { "Response should be empty" }
         }
 
         fun createPlaybackAt(
