@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.controller
 
+import dev.marcal.mediapulse.server.controller.dto.ApiResult
 import dev.marcal.mediapulse.server.controller.dto.TrackPlaybackSummary
 import dev.marcal.mediapulse.server.repository.PlaybackAggregationRepository
 import org.springframework.format.annotation.DateTimeFormat
@@ -22,10 +23,11 @@ class PlaybackSummaryController(
         @RequestParam("end_date", required = false)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
         endDate: Instant?,
-    ): List<TrackPlaybackSummary> {
+    ): ApiResult<List<TrackPlaybackSummary>> {
         val now = Instant.now()
         val start = startDate ?: now.minusSeconds(60 * 60 * 24 * 30)
         val end = endDate ?: now
-        return playbackAggregationRepository.getPlaybackSummaryByPeriod(start, end)
+        val data = playbackAggregationRepository.getPlaybackSummaryByPeriod(start, end)
+        return ApiResult(data = data)
     }
 }
