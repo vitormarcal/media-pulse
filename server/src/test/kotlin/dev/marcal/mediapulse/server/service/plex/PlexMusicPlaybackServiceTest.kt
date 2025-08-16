@@ -2,14 +2,14 @@ package dev.marcal.mediapulse.server.service.plex
 
 import dev.marcal.mediapulse.server.fixture.PlexEventsFixture
 import dev.marcal.mediapulse.server.model.music.CanonicalTrack
-import dev.marcal.mediapulse.server.repository.CanonicalTrackRepository
-import dev.marcal.mediapulse.server.repository.TrackPlaybackRepository
+import dev.marcal.mediapulse.server.repository.PlaybackAggregationRepository
 import dev.marcal.mediapulse.server.repository.crud.CanonicalTrackCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import jakarta.persistence.EntityManager
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -21,10 +21,15 @@ import kotlin.test.Test
 class PlexMusicPlaybackServiceTest {
     val canonicalTrackCrudRepository: CanonicalTrackCrudRepository = mockk()
     val trackPlaybackCrudRepository: TrackPlaybackCrudRepository = mockk()
+    val entityManager: EntityManager = mockk()
     val service: PlexMusicPlaybackService =
         PlexMusicPlaybackService(
-            canonicalTrackRepository = CanonicalTrackRepository(canonicalTrackCrudRepository),
-            trackPlaybackRepository = TrackPlaybackRepository(trackPlaybackCrudRepository),
+            playbackAggregationRepository =
+                PlaybackAggregationRepository(
+                    trackPlaybackCrudRepository = trackPlaybackCrudRepository,
+                    canonicalTrackCrudRepository = canonicalTrackCrudRepository,
+                    entityManager = entityManager,
+                ),
         )
 
     val eventId = 123L
