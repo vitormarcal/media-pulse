@@ -1,4 +1,4 @@
-POST http://localhost:8080/webhook/plex
+POST {{host}}/webhook/plex
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
 --WebAppBoundary
