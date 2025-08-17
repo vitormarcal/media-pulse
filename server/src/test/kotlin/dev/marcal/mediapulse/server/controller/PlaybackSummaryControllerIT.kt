@@ -69,7 +69,7 @@ class PlaybackSummaryControllerIT : MediapulseServerApplicationTests() {
 
             val response =
                 mockMvc
-                    .get("/playbacks/summary")
+                    .get("/playbacks/top")
                     .andExpect { status { isOk() } }
                     .andReturn()
                     .response
@@ -98,21 +98,20 @@ class PlaybackSummaryControllerIT : MediapulseServerApplicationTests() {
             createPlaybackAt(
                 externalId = "test-track-id-2",
                 year = 2024,
-                instant = LocalDateTime.now().minusDays(2).toInstant(java.time.ZoneOffset.UTC),
+                instant = LocalDateTime.now().minusDays(6).toInstant(java.time.ZoneOffset.UTC),
             )
             createPlaybackAt(
                 externalId = "test-track-id-3",
                 year = 2023,
-                instant = LocalDateTime.now().minusDays(3).toInstant(java.time.ZoneOffset.UTC),
+                instant = LocalDateTime.now().minusDays(8).toInstant(java.time.ZoneOffset.UTC),
             )
 
             val response =
                 mockMvc
                     .perform(
                         MockMvcRequestBuilders
-                            .get("/playbacks/summary")
-                            .param("start_date", LocalDateTime.now().minusDays(4).toString() + "Z")
-                            .param("end_date", LocalDateTime.now().minusDays(2).toString() + "Z")
+                            .get("/playbacks/top")
+                            .param("period", "week")
                             .contentType(MediaType.APPLICATION_JSON),
                     ).andExpect(status().isOk)
                     .andReturn()
@@ -149,9 +148,8 @@ class PlaybackSummaryControllerIT : MediapulseServerApplicationTests() {
                 mockMvc
                     .perform(
                         MockMvcRequestBuilders
-                            .get("/playbacks/summary")
-                            .param("start_date", LocalDateTime.now().minusDays(4).toString() + "Z")
-                            .param("end_date", LocalDateTime.now().minusDays(2).toString() + "Z")
+                            .get("/playbacks/top")
+                            .param("period", "week")
                             .contentType(MediaType.APPLICATION_JSON),
                     ).andExpect(status().isOk)
                     .andReturn()
