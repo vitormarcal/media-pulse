@@ -35,7 +35,7 @@ data class EventSource(
         SUCCESS,
     }
 
-    fun markAsSuccess(): EventSource = this.copy(status = Status.SUCCESS, updatedAt = Instant.now())
+    fun markAsSuccess(): EventSource = this.copy(status = Status.SUCCESS, updatedAt = Instant.now(), errorMessage = null)
 
     fun markAsFailed(error: String): EventSource = this.copy(status = Status.FAILED, errorMessage = error, updatedAt = Instant.now())
 }
