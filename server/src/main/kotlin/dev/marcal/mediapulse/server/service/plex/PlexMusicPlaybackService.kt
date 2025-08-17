@@ -1,22 +1,19 @@
 package dev.marcal.mediapulse.server.service.plex
 
 import dev.marcal.mediapulse.server.controller.dto.PlexWebhookPayload
-import dev.marcal.mediapulse.server.model.music.CanonicalTrack
+import dev.marcal.mediapulse.server.model.SourceIdentifier
+import dev.marcal.mediapulse.server.model.music.MusicSource
+import dev.marcal.mediapulse.server.model.music.MusicSourceIdentifier
 import dev.marcal.mediapulse.server.model.music.PlaybackSource
 import dev.marcal.mediapulse.server.model.music.TrackPlayback
 import dev.marcal.mediapulse.server.model.plex.PlexEventType
-import dev.marcal.mediapulse.server.repository.PlaybackAggregationRepository
+import dev.marcal.mediapulse.server.repository.MusicAggregationRepository
 import org.springframework.stereotype.Service
 
 @Service
 class PlexMusicPlaybackService(
-    private val playbackAggregationRepository: PlaybackAggregationRepository,
+    private val musicAggregationRepository: MusicAggregationRepository,
 ) {
-    companion object {
-        private const val MBID_TYPE = "MBID"
-        private const val MBID_PREFIX = "mbid://"
-    }
-
     fun processScrobble(
         payload: PlexWebhookPayload,
         eventId: Long? = null,
@@ -29,36 +26,40 @@ class PlexMusicPlaybackService(
 
         if (eventType != PlexEventType.SCROBBLE) return null
 
-        val mbidRaw =
-            meta.guid
-                .map { it.id }
-                .firstOrNull { it.startsWith(MBID_PREFIX) }
-                ?: throw IllegalArgumentException("MBID missing in payload")
+        val musicSourceIdentifiers = toIdentifiers(meta)
 
-        val mbid =
-            mbidRaw.removePrefix(MBID_PREFIX).takeIf { it.isNotBlank() }
-                ?: throw IllegalArgumentException("MBID is empty or malformed: $mbidRaw")
-
-        val persistedTrack =
-            playbackAggregationRepository.findOrCreate(
-                CanonicalTrack(
-                    canonicalId = mbid,
-                    canonicalType = MBID_TYPE,
-                    title = meta.title,
-                    album = meta.parentTitle,
-                    artist = meta.grandparentTitle,
-                    year = meta.parentYear,
-                ),
+        val persistedMusic =
+            musicAggregationRepository.findOrCreate(
+                music =
+                    MusicSource(
+                        title = meta.title,
+                        album = meta.parentTitle,
+                        artist = meta.grandparentTitle,
+                        year = meta.parentYear,
+                    ),
+                identifier = musicSourceIdentifiers,
             )
 
         val playback =
             TrackPlayback(
-                canonicalTrackId = persistedTrack.id,
+                musicSourceId = persistedMusic.id,
                 source = PlaybackSource.PLEX,
                 playedAt = meta.lastViewedAt,
                 sourceEventId = eventId,
             )
 
-        return playbackAggregationRepository.registerPlayback(playback)
+        return musicAggregationRepository.registerPlayback(playback)
     }
+
+    private fun toIdentifiers(meta: PlexWebhookPayload.PlexMetadata): List<MusicSourceIdentifier> =
+        meta.guid.map { guid ->
+            val parts = guid.id.split("://")
+            require(parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) {
+                "Invalid GUID format: ${guid.id}"
+            }
+            val sourceIdentifier =
+                SourceIdentifier.fromTag(parts[0])
+                    ?: throw IllegalArgumentException("Unknown source identifier: ${parts[0]}")
+            MusicSourceIdentifier(externalType = sourceIdentifier, externalId = parts[1])
+        }
 }

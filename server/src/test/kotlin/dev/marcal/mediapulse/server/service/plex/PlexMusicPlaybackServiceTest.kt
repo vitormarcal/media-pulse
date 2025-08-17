@@ -1,9 +1,10 @@
 package dev.marcal.mediapulse.server.service.plex
 
 import dev.marcal.mediapulse.server.fixture.PlexEventsFixture
-import dev.marcal.mediapulse.server.model.music.CanonicalTrack
-import dev.marcal.mediapulse.server.repository.PlaybackAggregationRepository
-import dev.marcal.mediapulse.server.repository.crud.CanonicalTrackCrudRepository
+import dev.marcal.mediapulse.server.model.music.MusicSource
+import dev.marcal.mediapulse.server.repository.MusicAggregationRepository
+import dev.marcal.mediapulse.server.repository.crud.MusicSourceCrudRepository
+import dev.marcal.mediapulse.server.repository.crud.MusicSourceIdentifierCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import io.mockk.clearAllMocks
 import io.mockk.every
@@ -19,15 +20,17 @@ import org.junit.jupiter.api.assertThrows
 import kotlin.test.Test
 
 class PlexMusicPlaybackServiceTest {
-    val canonicalTrackCrudRepository: CanonicalTrackCrudRepository = mockk()
+    val musicSourceCrudRepository: MusicSourceCrudRepository = mockk()
     val trackPlaybackCrudRepository: TrackPlaybackCrudRepository = mockk()
+    val musicSourceIdentifierCrudRepository: MusicSourceIdentifierCrudRepository = mockk()
     val entityManager: EntityManager = mockk()
     val service: PlexMusicPlaybackService =
         PlexMusicPlaybackService(
-            playbackAggregationRepository =
-                PlaybackAggregationRepository(
+            musicAggregationRepository =
+                MusicAggregationRepository(
                     trackPlaybackCrudRepository = trackPlaybackCrudRepository,
-                    canonicalTrackCrudRepository = canonicalTrackCrudRepository,
+                    musicSourceCrudRepository = musicSourceCrudRepository,
+                    musicSourceIdentifierCrudRepository = musicSourceIdentifierCrudRepository,
                     entityManager = entityManager,
                 ),
         )
@@ -36,9 +39,11 @@ class PlexMusicPlaybackServiceTest {
 
     @BeforeEach
     fun setUp() {
-        every { canonicalTrackCrudRepository.findByCanonicalIdAndCanonicalType(any(), any()) } returns null
-        every { canonicalTrackCrudRepository.save(any()) } returnsArgument 0
+        every { musicSourceCrudRepository.findByFingerprint(any()) } returns null
+        every { musicSourceCrudRepository.save(any()) } returnsArgument 0
         every { trackPlaybackCrudRepository.save(any()) } returnsArgument 0
+        every { musicSourceIdentifierCrudRepository.save(any()) } returnsArgument 0
+        every { musicSourceIdentifierCrudRepository.findByMusicSourceId(any()) } returns emptyList()
     }
 
     @AfterEach
@@ -99,27 +104,6 @@ class PlexMusicPlaybackServiceTest {
     }
 
     @Test
-    fun `should throw exception when mbid is missing`() {
-        val payload =
-            PlexEventsFixture.musicEvents.first().let { original ->
-                val metadataWithoutMbid =
-                    original.metadata.copy(
-                        guid = original.metadata.guid.filterNot { it.id.startsWith("mbid://") },
-                    )
-                original.copy(
-                    event = "media.scrobble",
-                    metadata = metadataWithoutMbid,
-                )
-            }
-
-        val exception =
-            assertThrows<IllegalArgumentException> {
-                service.processScrobble(payload, eventId)
-            }
-        Assertions.assertTrue(exception.message!!.contains("MBID missing"))
-    }
-
-    @Test
     fun `should throw exception when mbid is present but malformed`() {
         val payload =
             PlexEventsFixture.musicEvents.first().let { original ->
@@ -140,11 +124,11 @@ class PlexMusicPlaybackServiceTest {
             assertThrows<IllegalArgumentException> {
                 service.processScrobble(payload, eventId)
             }
-        Assertions.assertTrue(exception.message!!.contains("MBID is empty or malformed"))
+        Assertions.assertTrue(exception.message!!.contains("Invalid GUID format: mbid://"))
     }
 
     @Test
-    fun `should not create canonicalTrack if it already exists`() {
+    fun `should not create music source if it already exists`() {
         val payload =
             PlexEventsFixture.musicEvents
                 .first()
@@ -157,24 +141,22 @@ class PlexMusicPlaybackServiceTest {
                             .copy(type = "track"),
                 )
         val existingTrack =
-            CanonicalTrack(
+            MusicSource(
                 id = 123L,
-                canonicalId = "some-mbid",
-                canonicalType = "MBID",
                 title = payload.metadata.title,
                 album = payload.metadata.parentTitle,
                 artist = payload.metadata.grandparentTitle,
                 year = payload.metadata.parentYear,
             )
 
-        every { canonicalTrackCrudRepository.findByCanonicalIdAndCanonicalType(any(), any()) } returns existingTrack
+        every { musicSourceCrudRepository.findByFingerprint(any()) } returns existingTrack
 
         val result = service.processScrobble(payload, eventId)
 
         assertNotNull(result)
 
-        Assertions.assertTrue(result.canonicalTrackId == existingTrack.id)
+        Assertions.assertTrue(result.musicSourceId == existingTrack.id)
 
-        verify(exactly = 0) { canonicalTrackCrudRepository.save(any()) }
+        verify(exactly = 0) { musicSourceCrudRepository.save(any()) }
     }
 }
