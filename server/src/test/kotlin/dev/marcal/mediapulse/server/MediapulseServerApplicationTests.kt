@@ -1,7 +1,7 @@
 package dev.marcal.mediapulse.server
 
-import dev.marcal.mediapulse.server.repository.crud.CanonicalTrackCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
+import dev.marcal.mediapulse.server.repository.crud.MusicSourceCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
@@ -32,13 +32,13 @@ abstract class MediapulseServerApplicationTests {
     lateinit var trackPlaybackCrudRepository: TrackPlaybackCrudRepository
 
     @Autowired
-    lateinit var canonicalTrackCrudRepository: CanonicalTrackCrudRepository
+    lateinit var musicSourceCrudRepository: MusicSourceCrudRepository
 
     @BeforeEach
     fun cleanUp() {
         eventSourceCrudRepository.deleteAll()
         trackPlaybackCrudRepository.deleteAll()
-        canonicalTrackCrudRepository.deleteAll()
+        musicSourceCrudRepository.deleteAll()
     }
 
     companion object {

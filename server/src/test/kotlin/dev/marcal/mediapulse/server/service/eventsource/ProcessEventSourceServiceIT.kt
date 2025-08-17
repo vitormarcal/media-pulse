@@ -21,7 +21,7 @@ class ProcessEventSourceServiceIT : MediapulseServerApplicationTests() {
 
         assertEquals(EventSource.Status.SUCCESS, updated.status)
         assertEquals(1, trackPlaybackCrudRepository.count())
-        assertEquals(1, canonicalTrackCrudRepository.count())
+        assertEquals(1, musicSourceCrudRepository.count())
     }
 
     @Test
