@@ -40,7 +40,6 @@ class MusicAggregationRepository(
     fun getPlaybackSummaryByPeriod(
         start: Instant,
         end: Instant,
-        limit: Int = 100,
     ): List<TrackPlaybackSummary> {
         val results =
             entityManager
@@ -53,13 +52,10 @@ class MusicAggregationRepository(
                     JOIN MusicSource ct ON tp.musicSourceId = ct.id
                     WHERE tp.playedAt BETWEEN :start AND :end
                     GROUP BY ct.id, ct.title, ct.album, ct.artist, ct.year
-                    ORDER BY COUNT(tp.id) DESC
-                    LIMIT :limit
                     """.trimIndent(),
                     TrackPlaybackSummary::class.java,
                 ).setParameter("start", start)
                 .setParameter("end", end)
-                .setParameter("limit", limit)
                 .resultList
 
         return results
