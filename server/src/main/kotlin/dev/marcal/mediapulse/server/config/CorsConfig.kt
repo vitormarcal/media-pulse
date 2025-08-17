@@ -9,18 +9,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @Configuration
 class CorsConfig(
-    @Value("\${media-pulse.allowed-origin}") private val allowedOrigin: List<String>
+    @Value("\${media-pulse.allowed-origin}") private val allowedOrigin: List<String>,
 ) {
-
     private val logger = LoggerFactory.getLogger(this.javaClass)
-
 
     @Bean
     fun corsConfigurer(): WebMvcConfigurer {
         logger.info("AllowedOrigins: $allowedOrigin")
         return object : WebMvcConfigurer {
             override fun addCorsMappings(registry: CorsRegistry) {
-                registry.addMapping("/**")
+                registry
+                    .addMapping("/**")
                     .allowedMethods("*")
                     .allowedOrigins(*allowedOrigin.toTypedArray())
             }
