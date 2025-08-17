@@ -1,4 +1,4 @@
-package dev.marcal.mediapulse.server.controller
+package dev.marcal.mediapulse.server.controller.webhook
 
 import dev.marcal.mediapulse.server.service.eventsource.EventSourceService
 import dev.marcal.mediapulse.server.service.eventsource.ProcessEventSourceService

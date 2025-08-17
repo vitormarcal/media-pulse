@@ -1,4 +1,4 @@
-package dev.marcal.mediapulse.server.controller.dto.eventsource
+package dev.marcal.mediapulse.server.controller.eventsource.dto
 
 import dev.marcal.mediapulse.server.model.EventSource
 

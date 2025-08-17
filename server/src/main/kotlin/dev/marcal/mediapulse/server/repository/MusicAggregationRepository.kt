@@ -1,6 +1,6 @@
 package dev.marcal.mediapulse.server.repository
 
-import dev.marcal.mediapulse.server.controller.dto.TrackPlaybackSummary
+import dev.marcal.mediapulse.server.controller.playbacksummary.dto.TrackPlaybackSummary
 import dev.marcal.mediapulse.server.model.music.MusicSource
 import dev.marcal.mediapulse.server.model.music.MusicSourceIdentifier
 import dev.marcal.mediapulse.server.model.music.TrackPlayback
@@ -45,7 +45,7 @@ class MusicAggregationRepository(
             entityManager
                 .createQuery(
                     """
-                    SELECT new dev.marcal.mediapulse.server.controller.dto.TrackPlaybackSummary(
+                    SELECT new dev.marcal.mediapulse.server.controller.playbacksummary.dto.TrackPlaybackSummary(
                         ct.id, ct.title, ct.album, ct.artist, ct.year, COUNT(tp.id)
                     )
                     FROM TrackPlayback tp

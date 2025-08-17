@@ -1,7 +1,7 @@
 package dev.marcal.mediapulse.server.service.eventsource
 
-import dev.marcal.mediapulse.server.controller.dto.eventsource.ReprocessCounter
-import dev.marcal.mediapulse.server.controller.dto.eventsource.ReprocessRequest
+import dev.marcal.mediapulse.server.controller.eventsource.dto.ReprocessCounter
+import dev.marcal.mediapulse.server.controller.eventsource.dto.ReprocessRequest
 import dev.marcal.mediapulse.server.model.EventSource
 import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
 import org.slf4j.LoggerFactory

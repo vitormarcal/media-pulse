@@ -1,0 +1,7 @@
+###
+GET http://localhost:8080/playbacks/summary
+Content-Type: application/json
+
+###
+POST https://media-pulse.marcal.dev/event-sources/reprocess
+Content-Type: application/json

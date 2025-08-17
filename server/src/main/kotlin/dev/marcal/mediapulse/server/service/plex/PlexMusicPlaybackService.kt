@@ -1,6 +1,6 @@
 package dev.marcal.mediapulse.server.service.plex
 
-import dev.marcal.mediapulse.server.controller.dto.PlexWebhookPayload
+import dev.marcal.mediapulse.server.controller.webhook.dto.PlexWebhookPayload
 import dev.marcal.mediapulse.server.model.SourceIdentifier
 import dev.marcal.mediapulse.server.model.music.MusicSource
 import dev.marcal.mediapulse.server.model.music.MusicSourceIdentifier

@@ -1,4 +1,4 @@
-package dev.marcal.mediapulse.server.controller.dto
+package dev.marcal.mediapulse.server.controller.webhook.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.Instant

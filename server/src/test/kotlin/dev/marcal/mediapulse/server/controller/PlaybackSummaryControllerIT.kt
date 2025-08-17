@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import dev.marcal.mediapulse.server.MediapulseServerApplicationTests
 import dev.marcal.mediapulse.server.config.JacksonConfig
 import dev.marcal.mediapulse.server.controller.dto.ApiResult
-import dev.marcal.mediapulse.server.controller.dto.TrackPlaybackSummary
+import dev.marcal.mediapulse.server.controller.playbacksummary.dto.TrackPlaybackSummary
 import dev.marcal.mediapulse.server.model.SourceIdentifier
 import dev.marcal.mediapulse.server.model.music.MusicSource
 import dev.marcal.mediapulse.server.model.music.MusicSourceIdentifier
