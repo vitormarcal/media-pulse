@@ -1,6 +1,11 @@
 .gradle
 **/build
 **/.env
+.env
+http-client-env
+*.env.json
 .idea
 compose*.yml
 .github
+docker
+Makefile
