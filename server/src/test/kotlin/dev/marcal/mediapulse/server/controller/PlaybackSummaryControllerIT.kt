@@ -5,10 +5,12 @@ import dev.marcal.mediapulse.server.MediapulseServerApplicationTests
 import dev.marcal.mediapulse.server.config.JacksonConfig
 import dev.marcal.mediapulse.server.controller.dto.ApiResult
 import dev.marcal.mediapulse.server.controller.dto.TrackPlaybackSummary
-import dev.marcal.mediapulse.server.model.music.CanonicalTrack
+import dev.marcal.mediapulse.server.model.SourceIdentifier
+import dev.marcal.mediapulse.server.model.music.MusicSource
+import dev.marcal.mediapulse.server.model.music.MusicSourceIdentifier
 import dev.marcal.mediapulse.server.model.music.PlaybackSource
 import dev.marcal.mediapulse.server.model.music.TrackPlayback
-import dev.marcal.mediapulse.server.repository.PlaybackAggregationRepository
+import dev.marcal.mediapulse.server.repository.MusicAggregationRepository
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -26,7 +28,7 @@ class PlaybackSummaryControllerIT : MediapulseServerApplicationTests() {
     private lateinit var mockMvc: MockMvc
 
     @Autowired
-    private lateinit var playbackAggregationRepository: PlaybackAggregationRepository
+    private lateinit var musicAggregationRepository: MusicAggregationRepository
 
     val objectMapper = JacksonConfig().objectMapper()
 
@@ -34,12 +36,36 @@ class PlaybackSummaryControllerIT : MediapulseServerApplicationTests() {
     inner class PlaybackSummaryControllerTests {
         @Test
         fun `should return playback summary for default period when no dates are provided`() {
-            createPlaybackAt(canonicalId = "test-track-id-1", LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC))
-            createPlaybackAt(canonicalId = "test-track-id-2", LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC))
-            createPlaybackAt(canonicalId = "test-track-id-2", LocalDateTime.now().minusDays(2).toInstant(java.time.ZoneOffset.UTC))
-            createPlaybackAt(canonicalId = "test-track-id-3", LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC))
-            createPlaybackAt(canonicalId = "test-track-id-3", LocalDateTime.now().minusDays(2).toInstant(java.time.ZoneOffset.UTC))
-            createPlaybackAt(canonicalId = "test-track-id-3", LocalDateTime.now().minusDays(3).toInstant(java.time.ZoneOffset.UTC))
+            createPlaybackAt(
+                externalId = "test-track-id-1",
+                title = "Test Track 1",
+                instant = LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC),
+            )
+            createPlaybackAt(
+                externalId = "test-track-id-2",
+                title = "Test Track 2",
+                instant = LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC),
+            )
+            createPlaybackAt(
+                externalId = "test-track-id-2",
+                title = "Test Track 2",
+                instant = LocalDateTime.now().minusDays(2).toInstant(java.time.ZoneOffset.UTC),
+            )
+            createPlaybackAt(
+                externalId = "test-track-id-3",
+                title = "Test Track 3",
+                instant = LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC),
+            )
+            createPlaybackAt(
+                externalId = "test-track-id-3",
+                title = "Test Track 3",
+                instant = LocalDateTime.now().minusDays(2).toInstant(java.time.ZoneOffset.UTC),
+            )
+            createPlaybackAt(
+                externalId = "test-track-id-3",
+                title = "Test Track 3",
+                instant = LocalDateTime.now().minusDays(3).toInstant(java.time.ZoneOffset.UTC),
+            )
 
             val response =
                 mockMvc
@@ -64,9 +90,21 @@ class PlaybackSummaryControllerIT : MediapulseServerApplicationTests() {
 
         @Test
         fun `should return playback summary for provided date range`() {
-            createPlaybackAt(canonicalId = "test-track-id-1", LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC))
-            createPlaybackAt(canonicalId = "test-track-id-2", LocalDateTime.now().minusDays(2).toInstant(java.time.ZoneOffset.UTC))
-            createPlaybackAt(canonicalId = "test-track-id-3", LocalDateTime.now().minusDays(3).toInstant(java.time.ZoneOffset.UTC))
+            createPlaybackAt(
+                externalId = "test-track-id-1",
+                year = 2025,
+                instant = LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC),
+            )
+            createPlaybackAt(
+                externalId = "test-track-id-2",
+                year = 2024,
+                instant = LocalDateTime.now().minusDays(2).toInstant(java.time.ZoneOffset.UTC),
+            )
+            createPlaybackAt(
+                externalId = "test-track-id-3",
+                year = 2023,
+                instant = LocalDateTime.now().minusDays(3).toInstant(java.time.ZoneOffset.UTC),
+            )
 
             val response =
                 mockMvc
@@ -94,9 +132,18 @@ class PlaybackSummaryControllerIT : MediapulseServerApplicationTests() {
 
         @Test
         fun `should return empty list when no playbacks in the provided date range`() {
-            createPlaybackAt(canonicalId = "test-track-id-1", LocalDateTime.now().minusDays(10).toInstant(java.time.ZoneOffset.UTC))
-            createPlaybackAt(canonicalId = "test-track-id-2", LocalDateTime.now().minusDays(11).toInstant(java.time.ZoneOffset.UTC))
-            createPlaybackAt(canonicalId = "test-track-id-3", LocalDateTime.now().minusDays(12).toInstant(java.time.ZoneOffset.UTC))
+            createPlaybackAt(
+                externalId = "test-track-id-1",
+                instant = LocalDateTime.now().minusDays(10).toInstant(java.time.ZoneOffset.UTC),
+            )
+            createPlaybackAt(
+                externalId = "test-track-id-2",
+                instant = LocalDateTime.now().minusDays(11).toInstant(java.time.ZoneOffset.UTC),
+            )
+            createPlaybackAt(
+                externalId = "test-track-id-3",
+                instant = LocalDateTime.now().minusDays(12).toInstant(java.time.ZoneOffset.UTC),
+            )
 
             val response =
                 mockMvc
@@ -121,27 +168,30 @@ class PlaybackSummaryControllerIT : MediapulseServerApplicationTests() {
         }
 
         fun createPlaybackAt(
-            canonicalId: String = "test-track-id",
+            externalId: String = "test-track-id",
+            title: String = "Test Track",
+            album: String = "Test Album",
+            artist: String = "Test Artist",
+            year: Int = 2023,
             instant: Instant,
         ): TrackPlayback {
-            val canonicalTrack =
-                playbackAggregationRepository.findOrCreate(
-                    CanonicalTrack(
-                        canonicalId = canonicalId,
-                        canonicalType = "MBID",
-                        title = "Test Track",
-                        album = "Test Album",
-                        artist = "Test Artist",
-                        year = 2023,
+            val musicSource =
+                musicAggregationRepository.findOrCreate(
+                    MusicSource(
+                        title = title,
+                        album = album,
+                        artist = artist,
+                        year = year,
                     ),
+                    listOf(MusicSourceIdentifier(externalType = SourceIdentifier.MUSICBRAINZ, externalId = externalId)),
                 )
             val trackPlayback =
                 TrackPlayback(
-                    canonicalTrackId = canonicalTrack.id,
+                    musicSourceId = musicSource.id,
                     source = PlaybackSource.PLEX,
                     playedAt = instant,
                 )
-            return playbackAggregationRepository.registerPlayback(trackPlayback)
+            return musicAggregationRepository.registerPlayback(trackPlayback)
         }
     }
 }

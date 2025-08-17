@@ -1,23 +1,39 @@
 package dev.marcal.mediapulse.server.repository
 
 import dev.marcal.mediapulse.server.controller.dto.TrackPlaybackSummary
-import dev.marcal.mediapulse.server.model.music.CanonicalTrack
+import dev.marcal.mediapulse.server.model.music.MusicSource
+import dev.marcal.mediapulse.server.model.music.MusicSourceIdentifier
 import dev.marcal.mediapulse.server.model.music.TrackPlayback
-import dev.marcal.mediapulse.server.repository.crud.CanonicalTrackCrudRepository
+import dev.marcal.mediapulse.server.repository.crud.MusicSourceCrudRepository
+import dev.marcal.mediapulse.server.repository.crud.MusicSourceIdentifierCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Repository
 import java.time.Instant
 
 @Repository
-class PlaybackAggregationRepository(
+class MusicAggregationRepository(
     private val trackPlaybackCrudRepository: TrackPlaybackCrudRepository,
-    private val canonicalTrackCrudRepository: CanonicalTrackCrudRepository,
+    private val musicSourceCrudRepository: MusicSourceCrudRepository,
+    private val musicSourceIdentifierCrudRepository: MusicSourceIdentifierCrudRepository,
     private val entityManager: EntityManager,
 ) {
-    fun findOrCreate(track: CanonicalTrack): CanonicalTrack =
-        canonicalTrackCrudRepository.findByCanonicalIdAndCanonicalType(track.canonicalId, track.canonicalType)
-            ?: canonicalTrackCrudRepository.save(track)
+    fun findOrCreate(
+        music: MusicSource,
+        identifier: List<MusicSourceIdentifier>,
+    ): MusicSource {
+        val existingMusic = musicSourceCrudRepository.findByFingerprint(music.fingerprint)
+        val musicSource = existingMusic ?: musicSourceCrudRepository.save(music)
+
+        val identifiersSaved = musicSourceIdentifierCrudRepository.findByMusicSourceId(musicSource.id)
+        val toSave =
+            identifier
+                .filter { id -> identifiersSaved.none { it.externalId == id.externalId } }
+                .map { it.copy(musicSourceId = musicSource.id) }
+                .forEach { musicSourceIdentifierCrudRepository.save(it) }
+
+        return musicSource
+    }
 
     fun registerPlayback(trackPlayback: TrackPlayback): TrackPlayback = trackPlaybackCrudRepository.save(trackPlayback)
 
@@ -33,7 +49,7 @@ class PlaybackAggregationRepository(
                         ct.id, ct.title, ct.album, ct.artist, ct.year, COUNT(tp.id)
                     )
                     FROM TrackPlayback tp
-                    JOIN CanonicalTrack ct ON tp.canonicalTrackId = ct.id
+                    JOIN MusicSource ct ON tp.musicSourceId = ct.id
                     WHERE tp.playedAt BETWEEN :start AND :end
                     GROUP BY ct.id, ct.title, ct.album, ct.artist, ct.year
                     """.trimIndent(),
