@@ -1,7 +1,7 @@
 package dev.marcal.mediapulse.server.dispatcher
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import dev.marcal.mediapulse.server.controller.dto.PlexWebhookPayload
+import dev.marcal.mediapulse.server.controller.webhook.dto.PlexWebhookPayload
 import dev.marcal.mediapulse.server.service.plex.PlexMusicPlaybackService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component

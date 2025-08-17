@@ -1,4 +1,4 @@
-package dev.marcal.mediapulse.server.controller.dto.eventsource
+package dev.marcal.mediapulse.server.controller.eventsource.dto
 
 data class ReprocessCounter(
     val total: Long,

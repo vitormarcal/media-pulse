@@ -1,4 +1,4 @@
-package dev.marcal.mediapulse.server.controller.dto
+package dev.marcal.mediapulse.server.controller.playbacksummary.dto
 
 data class TrackPlaybackSummary(
     val id: Long,

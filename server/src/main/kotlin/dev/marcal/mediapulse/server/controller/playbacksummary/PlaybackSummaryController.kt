@@ -1,7 +1,7 @@
-package dev.marcal.mediapulse.server.controller
+package dev.marcal.mediapulse.server.controller.playbacksummary
 
 import dev.marcal.mediapulse.server.controller.dto.ApiResult
-import dev.marcal.mediapulse.server.controller.dto.TrackPlaybackSummary
+import dev.marcal.mediapulse.server.controller.playbacksummary.dto.TrackPlaybackSummary
 import dev.marcal.mediapulse.server.repository.MusicAggregationRepository
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.web.bind.annotation.GetMapping

@@ -1,7 +1,7 @@
 package dev.marcal.mediapulse.server.service.eventsource
 
 import dev.marcal.mediapulse.server.MediapulseServerApplicationTests
-import dev.marcal.mediapulse.server.controller.dto.eventsource.ReprocessRequest
+import dev.marcal.mediapulse.server.controller.eventsource.dto.ReprocessRequest
 import dev.marcal.mediapulse.server.fixture.EventSourceFixture
 import dev.marcal.mediapulse.server.model.EventSource
 import org.junit.jupiter.api.Assertions
