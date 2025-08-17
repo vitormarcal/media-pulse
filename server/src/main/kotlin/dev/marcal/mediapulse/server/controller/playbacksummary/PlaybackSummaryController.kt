@@ -3,7 +3,6 @@ package dev.marcal.mediapulse.server.controller.playbacksummary
 import dev.marcal.mediapulse.server.controller.dto.ApiResult
 import dev.marcal.mediapulse.server.controller.playbacksummary.dto.TrackPlaybackSummary
 import dev.marcal.mediapulse.server.repository.MusicAggregationRepository
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -16,11 +15,10 @@ import java.time.Instant
 class PlaybackSummaryController(
     private val musicAggregationRepository: MusicAggregationRepository,
 ) {
-
     @GetMapping("/top")
     fun getTopTracks(
         @RequestParam("period", required = false, defaultValue = "month") period: String,
-        @RequestParam("limit", required = false, defaultValue = "10") limit: Int
+        @RequestParam("limit", required = false, defaultValue = "10") limit: Int,
     ): ApiResult<List<TrackPlaybackSummary>> {
         val (start, end) = getPeriodRange(period)
         val data = musicAggregationRepository.getPlaybackSummaryByPeriod(start, end, limit)
@@ -30,7 +28,7 @@ class PlaybackSummaryController(
     @GetMapping("/top/{year}")
     fun getTopTracksByYear(
         @PathVariable year: Int,
-        @RequestParam("limit", required = false, defaultValue = "10") limit: Int
+        @RequestParam("limit", required = false, defaultValue = "10") limit: Int,
     ): ApiResult<List<TrackPlaybackSummary>> {
         val start = Instant.parse("$year-01-01T00:00:00Z")
         val end = Instant.parse("${year + 1}-01-01T00:00:00Z")
@@ -41,7 +39,7 @@ class PlaybackSummaryController(
     @GetMapping("/recent")
     fun getRecentTracks(
         @RequestParam("period", required = false, defaultValue = "day") period: String,
-        @RequestParam("limit", required = false, defaultValue = "10") limit: Int
+        @RequestParam("limit", required = false, defaultValue = "10") limit: Int,
     ): ApiResult<List<TrackPlaybackSummary>> {
         val (start, end) = getPeriodRange(period)
         val data = musicAggregationRepository.getPlaybackSummaryByPeriod(start, end, limit)
