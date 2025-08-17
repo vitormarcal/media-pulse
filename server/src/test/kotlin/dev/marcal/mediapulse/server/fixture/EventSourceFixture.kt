@@ -4,12 +4,14 @@ import dev.marcal.mediapulse.server.model.EventSource
 import org.apache.commons.codec.digest.DigestUtils
 
 object EventSourceFixture {
-    fun example() =
-        EventSource(
-            id = 0L,
-            provider = "plex",
-            payload = PlexEventsFixture.musicEventsJson[1],
-            status = EventSource.Status.PENDING,
-            fingerprint = DigestUtils.sha256Hex(PlexEventsFixture.musicEventsJson[1]),
-        )
+    fun example(
+        example: Int = 1,
+        status: EventSource.Status = EventSource.Status.PENDING,
+    ) = EventSource(
+        id = 0L,
+        provider = "plex",
+        payload = PlexEventsFixture.musicEventsJson[example],
+        status = status,
+        fingerprint = DigestUtils.sha256Hex(PlexEventsFixture.musicEventsJson[example]),
+    )
 }
