@@ -1,3 +1,3 @@
 ###
-GET http://media-pulse.marcal.dev/playbacks/summary
+GET http://localhost:8080/playbacks/top/2025?limit=100
 Content-Type: application/json
