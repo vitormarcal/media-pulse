@@ -9,7 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @Configuration
 class CorsConfig(
-    @Value("\${media-pulse.allowed-origin}") private val allowedOrigin: List<String>,
+    @Value("\${media-pulse.allowed-origin:*}") private val allowedOrigin: List<String>,
 ) {
     private val logger = LoggerFactory.getLogger(this.javaClass)
 
