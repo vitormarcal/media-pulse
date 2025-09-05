@@ -5,6 +5,8 @@ enum class SourceIdentifier(
     val description: String,
 ) {
     MUSICBRAINZ(tag = "mbid", description = "MusicBrainz identifier"),
+    TMDB(tag = "tmdb", description = "The Movie Database identifier"),
+    TVDB(tag = "tvdb", description = "The TV Database identifier"),
     ;
 
     companion object {

@@ -26,11 +26,10 @@ class MusicAggregationRepository(
         val musicSource = existingMusic ?: musicSourceCrudRepository.save(music)
 
         val identifiersSaved = musicSourceIdentifierCrudRepository.findByMusicSourceId(musicSource.id)
-        val toSave =
-            identifier
-                .filter { id -> identifiersSaved.none { it.externalId == id.externalId } }
-                .map { it.copy(musicSourceId = musicSource.id) }
-                .forEach { musicSourceIdentifierCrudRepository.save(it) }
+        identifier
+            .filter { id -> identifiersSaved.none { it.externalId == id.externalId } }
+            .map { it.copy(musicSourceId = musicSource.id) }
+            .forEach { musicSourceIdentifierCrudRepository.save(it) }
 
         return musicSource
     }
