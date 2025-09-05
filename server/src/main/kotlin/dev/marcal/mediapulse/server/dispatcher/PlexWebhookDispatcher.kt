@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.dispatcher
 import com.fasterxml.jackson.databind.ObjectMapper
 import dev.marcal.mediapulse.server.controller.webhook.dto.PlexWebhookPayload
 import dev.marcal.mediapulse.server.service.plex.PlexMusicPlaybackService
+import dev.marcal.mediapulse.server.service.plex.PlexSeriesPlaybackService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component
 class PlexWebhookDispatcher(
     private val objectMapper: ObjectMapper,
     private val plexMusicPlaybackService: PlexMusicPlaybackService,
+    private val plexSeriesPlaybackService: PlexSeriesPlaybackService,
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
@@ -52,15 +54,15 @@ class PlexWebhookDispatcher(
         eventId: Long?,
     ) {
         when (webhookPayload.metadata.type) {
-            "track" -> {
-                plexMusicPlaybackService.processScrobble(webhookPayload, eventId) ?: run {
-                    logger.warn("Track playback not found for scrobble event: ${webhookPayload.metadata.title}")
-                    throw IllegalStateException("Track playback not found for scrobble event: ${webhookPayload.metadata.title}")
-                }
-            }
+            "track" ->
+                plexMusicPlaybackService.processScrobble(webhookPayload, eventId)
+                    ?: throw IllegalStateException("Track playback not found for: ${webhookPayload.metadata.title}")
+            "episode" ->
+                plexSeriesPlaybackService.processScrobble(webhookPayload, eventId)
+                    ?: throw IllegalStateException("Episode playback not found for: ${webhookPayload.metadata.title}")
             else -> {
                 logger.warn("Unsupported metadata type for scrobble: ${webhookPayload.metadata.type}")
-                throw IllegalStateException("Unsupported metadata type for scrobble: ${webhookPayload.metadata.type}")
+                throw IllegalStateException("Unsupported metadata type: ${webhookPayload.metadata.type}")
             }
         }
     }
