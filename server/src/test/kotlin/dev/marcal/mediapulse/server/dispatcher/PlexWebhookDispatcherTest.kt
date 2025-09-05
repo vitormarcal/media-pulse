@@ -63,7 +63,7 @@ class PlexWebhookDispatcherTest {
             }
 
         val exception = assertThrows<IllegalStateException> { dispatcher.dispatch(invalidScrobblePayload, null) }
-        assertTrue(exception.message!!.contains("Unsupported metadata type for scrobble: eventTypeXyz"))
+        assertTrue(exception.message!!.contains("Unsupported metadata type: eventTypeXyz"))
     }
 
     @Test
@@ -81,7 +81,7 @@ class PlexWebhookDispatcherTest {
 
         every { plexMusicPlaybackService.processScrobble(any(), any()) } returns null
         val exception = assertThrows<RuntimeException> { dispatcher.dispatch(validScrobblePayload, null) }
-        assertTrue(exception.message!!.contains("Track playback not found for scrobble event: "))
+        assertTrue(exception.message!!.contains("Track playback not found for: "))
     }
 
     @Test
