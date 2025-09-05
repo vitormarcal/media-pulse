@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import dev.marcal.mediapulse.server.config.JacksonConfig
 import dev.marcal.mediapulse.server.fixture.PlexEventsFixture
 import dev.marcal.mediapulse.server.service.plex.PlexMusicPlaybackService
+import dev.marcal.mediapulse.server.service.plex.PlexSeriesPlaybackService
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -16,10 +17,12 @@ import kotlin.test.Test
 class PlexWebhookDispatcherTest {
     private val objectMapper = JacksonConfig().objectMapper()
     private val plexMusicPlaybackService: PlexMusicPlaybackService = mockk()
+    private val plexSeriesPlaybackService: PlexSeriesPlaybackService = mockk()
     private val dispatcher: PlexWebhookDispatcher =
         PlexWebhookDispatcher(
             objectMapper = objectMapper,
             plexMusicPlaybackService = plexMusicPlaybackService,
+            plexSeriesPlaybackService = plexSeriesPlaybackService,
         )
 
     @BeforeEach
@@ -60,7 +63,7 @@ class PlexWebhookDispatcherTest {
             }
 
         val exception = assertThrows<IllegalStateException> { dispatcher.dispatch(invalidScrobblePayload, null) }
-        assertTrue(exception.message!!.contains("Unsupported metadata type for scrobble: eventTypeXyz"))
+        assertTrue(exception.message!!.contains("Unsupported metadata type: eventTypeXyz"))
     }
 
     @Test
@@ -78,7 +81,7 @@ class PlexWebhookDispatcherTest {
 
         every { plexMusicPlaybackService.processScrobble(any(), any()) } returns null
         val exception = assertThrows<RuntimeException> { dispatcher.dispatch(validScrobblePayload, null) }
-        assertTrue(exception.message!!.contains("Track playback not found for scrobble event: "))
+        assertTrue(exception.message!!.contains("Track playback not found for: "))
     }
 
     @Test
