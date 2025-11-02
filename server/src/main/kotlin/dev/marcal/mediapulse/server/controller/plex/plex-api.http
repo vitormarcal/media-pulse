@@ -1,0 +1,18 @@
+@baseUrl = {{host}}/api/plex
+
+### Importar tudo (descobre seções de música automaticamente)
+POST {{baseUrl}}/import
+Content-Type: application/json
+
+{
+  "pageSize": 200
+}
+
+### Importar apenas uma seção (ex: key=4)
+POST {{baseUrl}}/import
+Content-Type: application/json
+
+{
+  "sectionKey": "4",
+  "pageSize": 200
+}

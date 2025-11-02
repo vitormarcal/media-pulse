@@ -11,6 +11,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - PLEX_URL=http://plex:32400
+      - PLEX_TOKEN=your_plex__token
     depends_on:
       - db
 

@@ -10,13 +10,13 @@ spring:
 
 media-pulse:
   plex:
-    base-url: http://localhost:32400
-    token: "YOUR_DEV_TOKEN"
+    base-url: https://plex.marcal.dev
+    token: ofjEGkUBjbyLF9DWBgkS
     import:
       enabled: true
       page-size: 200
       schedule-cron: "0 0 * * * *"
-      run-on-startup: false
+      run-on-startup: true
   storage:
-    covers-path: "."
+    covers-path: "./covers"
 
