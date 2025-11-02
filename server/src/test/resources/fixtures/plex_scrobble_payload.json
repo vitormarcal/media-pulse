@@ -1,0 +1,52 @@
+{
+  "event": "media.scrobble",
+  "user": true,
+  "owner": true,
+  "Account": { "id": 149312811, "thumb": "", "title": "theoldtremere" },
+  "Server": { "title": "mordor", "uuid": "srv-uuid" },
+  "Player": {
+    "local": false,
+    "publicAddress": "192.168.1.41",
+    "title": "Firefox",
+    "uuid": "player-uuid"
+  },
+  "Metadata": {
+    "librarySectionType": "artist",
+    "ratingKey": "10212",
+    "key": "/library/metadata/10212",
+    "parentRatingKey": "10210",
+    "grandparentRatingKey": "1463",
+    "guid": "plex://track/TRK789",
+    "parentGuid": "plex://album/ALB456",
+    "grandparentGuid": "plex://artist/ART123",
+    "parentStudio": "Adulruna",
+    "type": "track",
+    "title": "Summernight City (2001)",
+    "grandparentKey": "/library/metadata/1463",
+    "parentKey": "/library/metadata/10210",
+    "librarySectionTitle": "Musics",
+    "librarySectionID": 4,
+    "librarySectionKey": "/library/sections/4",
+    "grandparentTitle": "Therion",
+    "parentTitle": "Cover Songs 1993–2007",
+    "summary": "",
+    "index": 2,
+    "parentIndex": 1,
+    "ratingCount": 702,
+    "viewCount": 4,
+    "lastViewedAt": "2024-08-01T12:34:56Z",
+    "parentYear": 2020,
+    "thumb": "/library/metadata/10210/thumb/1751786095",
+    "art": "/library/metadata/1463/art/1752392069",
+    "parentThumb": "/library/metadata/10210/thumb/1751786095",
+    "grandparentThumb": "/library/metadata/1463/thumb/1752392069",
+    "grandparentArt": "/library/metadata/1463/art/1752392069",
+    "addedAt": 1715818854,
+    "updatedAt": 1752392082,
+    "Image": [],
+    "Guid": [
+      { "id": "plex://track/TRK789" },
+      { "id": "mbid://2ccf8d0b-8724-456d-b8b4-7820c87974c2" }
+    ]
+  }
+}

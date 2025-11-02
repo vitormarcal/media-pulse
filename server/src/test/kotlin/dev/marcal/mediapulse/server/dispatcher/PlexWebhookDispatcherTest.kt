@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import dev.marcal.mediapulse.server.config.JacksonConfig
 import dev.marcal.mediapulse.server.fixture.PlexEventsFixture
 import dev.marcal.mediapulse.server.service.plex.PlexMusicPlaybackService
-import dev.marcal.mediapulse.server.service.plex.PlexSeriesPlaybackService
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -17,12 +16,10 @@ import kotlin.test.Test
 class PlexWebhookDispatcherTest {
     private val objectMapper = JacksonConfig().objectMapper()
     private val plexMusicPlaybackService: PlexMusicPlaybackService = mockk()
-    private val plexSeriesPlaybackService: PlexSeriesPlaybackService = mockk()
     private val dispatcher: PlexWebhookDispatcher =
         PlexWebhookDispatcher(
             objectMapper = objectMapper,
             plexMusicPlaybackService = plexMusicPlaybackService,
-            plexSeriesPlaybackService = plexSeriesPlaybackService,
         )
 
     @BeforeEach

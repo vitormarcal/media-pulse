@@ -1,6 +1,7 @@
+package dev.marcal.mediapulse.server.service.eventsource
+
 import dev.marcal.mediapulse.server.fixture.PlexEventsFixture
 import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
-import dev.marcal.mediapulse.server.service.eventsource.EventSourceService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
