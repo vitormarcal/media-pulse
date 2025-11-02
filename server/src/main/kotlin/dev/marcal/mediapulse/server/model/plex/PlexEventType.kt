@@ -1,18 +1,14 @@
 package dev.marcal.mediapulse.server.model.plex
 
-enum class PlexEventType {
-    PLAY,
-    STOP,
-    SCROBBLE,
+enum class PlexEventType(
+    val type: String,
+) {
+    PLAY("media.play"),
+    STOP("media.stop"),
+    SCROBBLE("media.scrobble"),
     ;
 
     companion object {
-        fun fromType(type: String): PlexEventType? =
-            when (type) {
-                "media.play" -> PLAY
-                "media.stop" -> STOP
-                "media.scrobble" -> SCROBBLE
-                else -> null
-            }
+        fun fromType(type: String): PlexEventType? = PlexEventType.entries.firstOrNull { it.type == type }
     }
 }
