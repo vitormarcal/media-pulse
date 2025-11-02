@@ -20,7 +20,7 @@ data class TrackPlayback(
     @Column(name = "source_event_id")
     val sourceEventId: Long? = null,
     @Enumerated(EnumType.STRING)
-    @Column(name = "playback_source", nullable = false)
+    @Column(name = "source", nullable = false) // DB é TEXT + CHECK
     val source: PlaybackSource,
     @Column(name = "played_at", nullable = false)
     val playedAt: Instant = Instant.now(),
