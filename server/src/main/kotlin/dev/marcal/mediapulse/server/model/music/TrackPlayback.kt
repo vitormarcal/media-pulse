@@ -13,11 +13,10 @@ import java.time.Instant
 @Entity
 @Table(name = "track_playbacks")
 data class TrackPlayback(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-    @Column(name = "music_source_id", nullable = false)
-    val musicSourceId: Long,
+    @Column(name = "track_id", nullable = false)
+    val trackId: Long,
     @Column(name = "source_event_id")
     val sourceEventId: Long? = null,
     @Enumerated(EnumType.STRING)
@@ -25,4 +24,6 @@ data class TrackPlayback(
     val source: PlaybackSource,
     @Column(name = "played_at", nullable = false)
     val playedAt: Instant = Instant.now(),
+    @Column(name = "created_at")
+    val createdAt: Instant = Instant.now(),
 )
