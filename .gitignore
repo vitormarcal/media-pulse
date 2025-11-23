@@ -39,3 +39,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### Dev Image covers dir
+/covers/
