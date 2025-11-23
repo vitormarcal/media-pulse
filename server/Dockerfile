@@ -30,7 +30,6 @@ COPY --from=builder /app/server/build/libs/*.jar server.jar
 
 # Configurações da aplicação
 VOLUME /config
-VOLUME /data/covers
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "server.jar", "--spring.config.additional-location=file:/config/", "--spring.web.resources.static-locations=file:/app/public"]
+ENTRYPOINT ["java", "-jar", "server.jar", "--spring.config.additional-location=file:/config/"]

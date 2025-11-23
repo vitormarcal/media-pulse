@@ -16,7 +16,12 @@ class ImageStorageService(
 ) {
     private val baseDir: Path = Path.of(coverPath)
 
+    companion object {
+        private val logger = org.slf4j.LoggerFactory.getLogger(ImageStorageService::class.java)
+    }
+
     init {
+        logger.info("Initializing ImageStorageService with baseDir={}", baseDir.toAbsolutePath())
         Files.createDirectories(baseDir)
     }
 
@@ -31,6 +36,8 @@ class ImageStorageService(
 
         val providerDir = baseDir.resolve(provider.lowercase())
         val artistDir = providerDir.resolve(artistId.toString())
+        logger.debug("Saving image. providerDir={}, artistDir={}", providerDir, artistDir)
+
         Files.createDirectories(artistDir)
 
         val safeHint =
@@ -58,7 +65,16 @@ class ImageStorageService(
                     StandardOpenOption.CREATE_NEW,
                 )
             } catch (_: FileAlreadyExistsException) {
+                logger.debug("File already exists, skipping write. target={}", target)
+            } catch (e: Exception) {
+                logger.error(
+                    "Failed to write image to disk. target=$target, baseDir=$baseDir, providerDir=$providerDir, artistDir=$artistDir",
+                    e,
+                )
+                throw e
             }
+        } else {
+            logger.debug("File already exists, nothing to do. target={}", target)
         }
 
         return "/covers/${provider.lowercase()}/$artistId/$fileName"

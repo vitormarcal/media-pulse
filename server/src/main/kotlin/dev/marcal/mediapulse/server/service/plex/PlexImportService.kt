@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
 import dev.marcal.mediapulse.server.service.image.ImageStorageService
 import dev.marcal.mediapulse.server.util.PlexGuidUtil
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
@@ -14,6 +15,10 @@ class PlexImportService(
     private val imageStorageService: ImageStorageService,
     private val canonical: CanonicalizationService,
 ) {
+    companion object {
+        private val logger = LoggerFactory.getLogger(this::class.java)
+    }
+
     data class ImportStats(
         var artistsSeen: Int = 0,
         var artistsUpserted: Int = 0,
@@ -26,6 +31,12 @@ class PlexImportService(
         pageSize: Int = 200,
     ): ImportStats {
         val stats = ImportStats()
+
+        logger.info(
+            "Starting Plex library import. sectionKey={}, pageSize={}",
+            sectionKey ?: "<all-sections>",
+            pageSize,
+        )
 
         val sections =
             if (sectionKey != null) {
@@ -61,6 +72,14 @@ class PlexImportService(
                 start += artists.size
             }
         }
+
+        logger.info(
+            "Finished Plex library import. artistsSeen={}, artistsUpserted={}, albumsSeen={}, albumsUpserted={}",
+            stats.artistsSeen,
+            stats.artistsUpserted,
+            stats.albumsSeen,
+            stats.albumsUpserted,
+        )
 
         return stats
     }
@@ -108,6 +127,11 @@ class PlexImportService(
                                 fileNameHint = "${artist.name}_${al.title}",
                             )
                         canonical.updateAlbumCoverIfEmpty(album.id, localPath)
+                    }.onFailure { ex ->
+                        logger.warn(
+                            "Failed to download or store cover image for artist='${artist.name}', album='${al.title}', thumbPath='${al.thumb}'.",
+                            ex,
+                        )
                     }
                 }
 
