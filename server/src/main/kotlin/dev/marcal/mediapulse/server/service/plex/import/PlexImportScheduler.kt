@@ -1,7 +1,7 @@
-package dev.marcal.mediapulse.server.scheduler
+package dev.marcal.mediapulse.server.service.plex.import
 
 import dev.marcal.mediapulse.server.config.PlexProperties
-import dev.marcal.mediapulse.server.service.plex.PlexImportService
+import dev.marcal.mediapulse.server.service.plex.import.PlexImportService
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.EnableScheduling

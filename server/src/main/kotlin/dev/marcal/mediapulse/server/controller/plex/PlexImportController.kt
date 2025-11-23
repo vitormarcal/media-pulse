@@ -1,6 +1,6 @@
 package dev.marcal.mediapulse.server.controller.plex
 
-import dev.marcal.mediapulse.server.service.plex.PlexImportService
+import dev.marcal.mediapulse.server.service.plex.import.PlexImportService
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping

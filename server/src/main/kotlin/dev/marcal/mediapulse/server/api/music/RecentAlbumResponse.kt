@@ -1,14 +1,14 @@
-package dev.marcal.mediapulse.server.api
+package dev.marcal.mediapulse.server.api.music
 
 import java.time.Instant
 
-data class AlbumHeaderRow(
+data class RecentAlbumResponse(
     val albumId: Long,
     val albumTitle: String,
     val artistId: Long,
     val artistName: String,
     val year: Int?,
     val coverUrl: String?,
-    val lastPlayed: Instant?,
-    val totalPlays: Long,
+    val lastPlayed: Instant,
+    val playCount: Long,
 )

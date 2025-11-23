@@ -1,9 +1,9 @@
 package dev.marcal.mediapulse.server.service.eventsource
 
-import dev.marcal.mediapulse.server.dispatcher.PlexWebhookDispatcher
 import dev.marcal.mediapulse.server.fixture.EventSourceFixture
 import dev.marcal.mediapulse.server.model.EventSource
 import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
+import dev.marcal.mediapulse.server.service.plex.PlexWebhookDispatcher
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk

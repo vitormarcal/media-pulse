@@ -6,7 +6,7 @@ import dev.marcal.mediapulse.server.model.music.TrackPlayback
 import dev.marcal.mediapulse.server.model.plex.PlexEventType
 import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
-import dev.marcal.mediapulse.server.util.PlexGuidExtractor
+import dev.marcal.mediapulse.server.service.plex.util.PlexGuidExtractor
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

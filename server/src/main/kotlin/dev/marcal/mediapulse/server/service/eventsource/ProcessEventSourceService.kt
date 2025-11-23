@@ -1,7 +1,7 @@
 package dev.marcal.mediapulse.server.service.eventsource
 
-import dev.marcal.mediapulse.server.dispatcher.PlexWebhookDispatcher
 import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
+import dev.marcal.mediapulse.server.service.plex.PlexWebhookDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.scheduling.annotation.Async

@@ -61,7 +61,7 @@ class ReprocessEventSource(
                     processEventSourceService.execute(eventSource.id)
                 }
                 page++
-                logger.info("Reprocessed page $page of $${counter.pages} with request: $reprocessRequest")
+                logger.info("Reprocessed page $page of ${counter.pages} with request: $reprocessRequest")
             }
         }
     }
