@@ -1,11 +1,11 @@
-package dev.marcal.mediapulse.server.service.plex
+package dev.marcal.mediapulse.server.service.plex.import
 
 import dev.marcal.mediapulse.server.integration.plex.PlexApiClient
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
 import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
 import dev.marcal.mediapulse.server.service.image.ImageStorageService
-import dev.marcal.mediapulse.server.util.PlexGuidUtil
+import dev.marcal.mediapulse.server.service.plex.util.PlexGuidUtil
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 

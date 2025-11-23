@@ -1,4 +1,4 @@
-package dev.marcal.mediapulse.server.util
+package dev.marcal.mediapulse.server.service.plex.util
 
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexGuid
 

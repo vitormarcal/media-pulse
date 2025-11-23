@@ -1,9 +1,9 @@
 package dev.marcal.mediapulse.server.controller.music
 
-import dev.marcal.mediapulse.server.api.AlbumPageResponse
-import dev.marcal.mediapulse.server.api.MusicSummaryResponse
-import dev.marcal.mediapulse.server.api.RecentAlbumResponse
-import dev.marcal.mediapulse.server.api.SearchResponse
+import dev.marcal.mediapulse.server.api.music.AlbumPageResponse
+import dev.marcal.mediapulse.server.api.music.MusicSummaryResponse
+import dev.marcal.mediapulse.server.api.music.RecentAlbumResponse
+import dev.marcal.mediapulse.server.api.music.SearchResponse
 import dev.marcal.mediapulse.server.repository.MusicQueryRepository
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

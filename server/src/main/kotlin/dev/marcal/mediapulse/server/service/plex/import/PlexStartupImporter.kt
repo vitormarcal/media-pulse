@@ -1,7 +1,6 @@
-package dev.marcal.mediapulse.server.bootstrap
+package dev.marcal.mediapulse.server.service.plex.import
 
 import dev.marcal.mediapulse.server.config.PlexProperties
-import dev.marcal.mediapulse.server.service.plex.PlexImportService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

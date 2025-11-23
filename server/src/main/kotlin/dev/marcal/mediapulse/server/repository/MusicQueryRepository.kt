@@ -1,18 +1,19 @@
 package dev.marcal.mediapulse.server.repository
 
-import dev.marcal.mediapulse.server.api.AlbumPageResponse
-import dev.marcal.mediapulse.server.api.AlbumTrackRow
-import dev.marcal.mediapulse.server.api.IdName
-import dev.marcal.mediapulse.server.api.MusicSummaryResponse
-import dev.marcal.mediapulse.server.api.PlaysByDayRow
-import dev.marcal.mediapulse.server.api.RangeDto
-import dev.marcal.mediapulse.server.api.RecentAlbumResponse
-import dev.marcal.mediapulse.server.api.SearchAlbumRow
-import dev.marcal.mediapulse.server.api.SearchResponse
-import dev.marcal.mediapulse.server.api.SearchTrackRow
-import dev.marcal.mediapulse.server.api.TopAlbumResponse
-import dev.marcal.mediapulse.server.api.TopArtistResponse
-import dev.marcal.mediapulse.server.api.TopTrackResponse
+import dev.marcal.mediapulse.server.api.music.AlbumHeaderRow
+import dev.marcal.mediapulse.server.api.music.AlbumPageResponse
+import dev.marcal.mediapulse.server.api.music.AlbumTrackRow
+import dev.marcal.mediapulse.server.api.music.IdName
+import dev.marcal.mediapulse.server.api.music.MusicSummaryResponse
+import dev.marcal.mediapulse.server.api.music.PlaysByDayRow
+import dev.marcal.mediapulse.server.api.music.RangeDto
+import dev.marcal.mediapulse.server.api.music.RecentAlbumResponse
+import dev.marcal.mediapulse.server.api.music.SearchAlbumRow
+import dev.marcal.mediapulse.server.api.music.SearchResponse
+import dev.marcal.mediapulse.server.api.music.SearchTrackRow
+import dev.marcal.mediapulse.server.api.music.TopAlbumResponse
+import dev.marcal.mediapulse.server.api.music.TopArtistResponse
+import dev.marcal.mediapulse.server.api.music.TopTrackResponse
 import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Repository
 import java.sql.Date
@@ -78,7 +79,7 @@ class MusicQueryRepository(
         entityManager
             .createQuery(
                 """
-            SELECT new dev.marcal.mediapulse.server.api.RecentAlbumResponse(
+            SELECT new dev.marcal.mediapulse.server.api.music.RecentAlbumResponse(
                 al.id, al.title, a.id, a.name, al.year, al.coverUrl, MAX(tp.playedAt), COUNT(tp.id)
             )
             FROM TrackPlayback tp
@@ -100,7 +101,7 @@ class MusicQueryRepository(
         entityManager
             .createQuery(
                 """
-            SELECT new dev.marcal.mediapulse.server.api.TopArtistResponse(
+            SELECT new dev.marcal.mediapulse.server.api.music.TopArtistResponse(
                 a.id, a.name, COUNT(tp.id)
             )
             FROM TrackPlayback tp
@@ -125,7 +126,7 @@ class MusicQueryRepository(
         entityManager
             .createQuery(
                 """
-            SELECT new dev.marcal.mediapulse.server.api.TopAlbumResponse(
+            SELECT new dev.marcal.mediapulse.server.api.music.TopAlbumResponse(
                 al.id, al.title, a.id, a.name, COUNT(tp.id)
             )
             FROM TrackPlayback tp
@@ -150,7 +151,7 @@ class MusicQueryRepository(
         entityManager
             .createQuery(
                 """
-            SELECT new dev.marcal.mediapulse.server.api.TopTrackResponse(
+            SELECT new dev.marcal.mediapulse.server.api.music.TopTrackResponse(
                 t.id, t.title, al.id, al.title, a.id, a.name, COUNT(tp.id)
             )
             FROM TrackPlayback tp
@@ -173,7 +174,7 @@ class MusicQueryRepository(
             entityManager
                 .createQuery(
                     """
-        SELECT new dev.marcal.mediapulse.server.api.AlbumHeaderRow(
+        SELECT new dev.marcal.mediapulse.server.api.music.AlbumHeaderRow(
             al.id,
             al.title,
             a.id,
@@ -190,7 +191,7 @@ class MusicQueryRepository(
         WHERE al.id = :albumId
         GROUP BY al.id, al.title, a.id, a.name, al.year, al.coverUrl
         """,
-                    dev.marcal.mediapulse.server.api.AlbumHeaderRow::class.java,
+                    AlbumHeaderRow::class.java,
                 ).setParameter("albumId", albumId)
                 .singleResult
 
@@ -238,7 +239,7 @@ class MusicQueryRepository(
                 .resultList
                 .map {
                     PlaysByDayRow(
-                        day = (it[0] as java.sql.Date).toLocalDate(), // Hibernate retorna java.sql.Date
+                        day = (it[0] as Date).toLocalDate(), // Hibernate retorna java.sql.Date
                         plays = (it[1] as Long),
                     )
                 }

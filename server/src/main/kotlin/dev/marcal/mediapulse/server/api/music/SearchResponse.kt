@@ -1,4 +1,4 @@
-package dev.marcal.mediapulse.server.api
+package dev.marcal.mediapulse.server.api.music
 
 data class SearchResponse(
     val artists: List<IdName>,

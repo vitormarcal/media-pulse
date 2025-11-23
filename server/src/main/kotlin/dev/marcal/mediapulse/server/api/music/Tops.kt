@@ -1,4 +1,4 @@
-package dev.marcal.mediapulse.server.api
+package dev.marcal.mediapulse.server.api.music
 
 // Tops
 data class TopArtistResponse(

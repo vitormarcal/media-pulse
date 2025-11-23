@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import dev.marcal.mediapulse.server.config.JacksonConfig
 import dev.marcal.mediapulse.server.fixture.PlexEventsFixture
 import dev.marcal.mediapulse.server.service.plex.PlexMusicPlaybackService
+import dev.marcal.mediapulse.server.service.plex.PlexWebhookDispatcher
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
