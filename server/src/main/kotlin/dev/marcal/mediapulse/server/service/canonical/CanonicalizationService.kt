@@ -13,6 +13,7 @@ import dev.marcal.mediapulse.server.repository.crud.TrackRepository
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 @Service
 class CanonicalizationService(
@@ -110,7 +111,7 @@ class CanonicalizationService(
     ): Album {
         val album = albumRepo.findById(albumId).orElseThrow()
         if (album.coverUrl == null) {
-            return albumRepo.save(album.copy(coverUrl = localCoverPath))
+            return albumRepo.save(album.copy(coverUrl = localCoverPath, updatedAt = Instant.now()))
         }
         return album
     }

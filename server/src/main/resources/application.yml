@@ -5,6 +5,8 @@ spring:
         - file:${media-pulse.storage.covers-path}
   mvc:
     static-path-pattern: /covers/**
+  codec:
+    max-in-memory-size: 2MB
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
@@ -24,7 +26,7 @@ media-pulse:
     import:
       enabled: ${PLEX_IMPORT_ENABLED:true}
       page-size: ${PLEX_IMPORT_PAGE_SIZE:200}
-      schedule-cron: ${PLEX_IMPORT_CRON:"0 0 4 * * *"}
+      schedule-cron: ${PLEX_IMPORT_CRON:0 0 4 * * *}
       run-on-startup: ${PLEX_IMPORT_RUN_ON_STARTUP:true}
   storage:
     covers-path: "/data/covers"
