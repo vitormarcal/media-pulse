@@ -1,4 +1,10 @@
 spring:
+  web:
+    resources:
+      static-locations:
+        - file:${media-pulse.storage.covers-path}
+  mvc:
+    static-path-pattern: /covers/**
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
@@ -12,6 +18,16 @@ spring:
     locations: classpath:db/migration
 
 media-pulse:
+  plex:
+    base-url: ${PLEX_URL:http://plex:32400}
+    token: ${PLEX_TOKEN}
+    import:
+      enabled: ${PLEX_IMPORT_ENABLED:true}
+      page-size: ${PLEX_IMPORT_PAGE_SIZE:200}
+      schedule-cron: ${PLEX_IMPORT_CRON:"0 0 4 * * *"}
+      run-on-startup: ${PLEX_IMPORT_RUN_ON_STARTUP:true}
+  storage:
+    covers-path: "/data/covers"
   allowed-origin:
     - http://localhost:8080
 

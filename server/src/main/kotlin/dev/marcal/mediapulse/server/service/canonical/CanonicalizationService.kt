@@ -104,6 +104,18 @@ class CanonicalizationService(
     }
 
     @Transactional
+    fun updateAlbumCoverIfEmpty(
+        albumId: Long,
+        localCoverPath: String,
+    ): Album {
+        val album = albumRepo.findById(albumId).orElseThrow()
+        if (album.coverUrl == null) {
+            return albumRepo.save(album.copy(coverUrl = localCoverPath))
+        }
+        return album
+    }
+
+    @Transactional
     fun ensureTrack(
         album: Album,
         title: String,
