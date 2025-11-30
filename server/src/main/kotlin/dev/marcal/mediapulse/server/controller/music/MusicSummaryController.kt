@@ -64,6 +64,16 @@ class MusicSummaryController(
         @RequestParam(defaultValue = "50") limit: Int,
     ) = repository.getNeverPlayedAlbums(limit)
 
+    @GetMapping("/coverage/artists")
+    fun artistCoverage(
+        @RequestParam(defaultValue = "50") limit: Int,
+    ) = repository.getArtistCoverage(limit)
+
+    @GetMapping("/coverage/albums")
+    fun albumCoverage(
+        @RequestParam(defaultValue = "50") limit: Int,
+    ) = repository.getAlbumCoverage(limit)
+
     @GetMapping("/search")
     fun search(
         @RequestParam q: String,

@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.service.plex.import
 
 import dev.marcal.mediapulse.server.integration.plex.PlexApiClient
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
+import dev.marcal.mediapulse.server.model.music.Album
 import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
 import dev.marcal.mediapulse.server.service.plex.PlexArtworkService
@@ -24,6 +25,8 @@ class PlexImportService(
         var artistsUpserted: Int = 0,
         var albumsSeen: Int = 0,
         var albumsUpserted: Int = 0,
+        var tracksSeen: Int = 0,
+        var tracksUpserted: Int = 0,
     )
 
     suspend fun importAllArtistsAndAlbums(
@@ -74,11 +77,13 @@ class PlexImportService(
         }
 
         logger.info(
-            "Finished Plex library import. artistsSeen={}, artistsUpserted={}, albumsSeen={}, albumsUpserted={}",
+            "Finished Plex library import. artistsSeen={}, artistsUpserted={}, albumsSeen={}, albumsUpserted={}, tracksSeen={}, tracksUpserted={}",
             stats.artistsSeen,
             stats.artistsUpserted,
             stats.albumsSeen,
             stats.albumsUpserted,
+            stats.tracksSeen,
+            stats.tracksUpserted,
         )
 
         return stats
@@ -121,10 +126,57 @@ class PlexImportService(
                     plexThumbPath = al.thumb,
                 )
 
+                importTracksForAlbum(
+                    sectionKey = sectionKey,
+                    albumRatingKey = al.ratingKey,
+                    album = album,
+                    stats = stats,
+                    pageSize = pageSize,
+                )
+
                 stats.albumsUpserted++
             }
 
             start += albums.size
+        }
+    }
+
+    private suspend fun importTracksForAlbum(
+        sectionKey: String,
+        albumRatingKey: String,
+        album: Album,
+        stats: ImportStats,
+        pageSize: Int,
+    ) {
+        var start = 0
+        var total = Int.MAX_VALUE
+
+        while (start < total) {
+            val (tracks, tot) = plexApi.listTracksByAlbumPaged(sectionKey, albumRatingKey, start, pageSize)
+            total = tot
+            if (tracks.isEmpty()) break
+
+            for (track in tracks) {
+                stats.tracksSeen++
+
+                val mbidTrack = PlexGuidUtil.firstValue(track.guids, "mbid")
+                val plexTrackGuid = PlexGuidUtil.firstValue(track.guids, "plex")?.let { "plex://$it" }
+
+                canonical.ensureTrack(
+                    album = album,
+                    title = track.title,
+                    trackNumber = track.index,
+                    discNumber = track.parentIndex,
+                    durationMs = track.duration?.toInt(),
+                    musicbrainzId = mbidTrack,
+                    plexGuid = plexTrackGuid,
+                    spotifyId = null,
+                )
+
+                stats.tracksUpserted++
+            }
+
+            start += tracks.size
         }
     }
 }
