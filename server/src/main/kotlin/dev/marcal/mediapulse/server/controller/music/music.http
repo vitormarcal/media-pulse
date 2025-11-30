@@ -82,4 +82,5 @@ Accept: application/json
 <> 2025-11-02T161931.200.json
 
 ### Busca álbuns nunca ouvidos, limit default=50
-GET /albums/never-played?limit=50
+GET {{baseUrl}}/albums/never-played?limit=50
+Accept: application/json
