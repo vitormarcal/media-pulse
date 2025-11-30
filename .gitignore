@@ -16,6 +16,7 @@ build/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
+*-local.yml
 
 ### IntelliJ IDEA ###
 http-client.private.env.json
