@@ -199,7 +199,7 @@ class MusicQueryRepository(
         entityManager
             .createQuery(
                 """
-            SELECT new dev.marcal.mediapulse.server.api.music.ArtistCoverageResponse(
+            SELECT 
                 a.id,
                 a.name,
                 COUNT(DISTINCT t.id) AS totalTracks,
@@ -208,7 +208,6 @@ class MusicQueryRepository(
                     WHEN COUNT(DISTINCT t.id) = 0 THEN 0.0
                     ELSE (COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN t.id END) * 100.0 / COUNT(DISTINCT t.id))
                 END AS coveragePercent
-            )
             FROM Artist a
             JOIN Album al ON al.artistId = a.id
             LEFT JOIN Track t ON t.albumId = al.id
@@ -216,15 +215,24 @@ class MusicQueryRepository(
             GROUP BY a.id, a.name
             ORDER BY coveragePercent ASC, totalTracks DESC
             """,
-                ArtistCoverageResponse::class.java,
+                Array<Any>::class.java,
             ).setMaxResults(limit)
             .resultList
+            .map {
+                ArtistCoverageResponse(
+                    artistId = it[0] as Long,
+                    artistName = it[1] as String,
+                    totalTracks = (it[2] as Number).toLong(),
+                    playedTracks = (it[3] as Number).toLong(),
+                    coveragePercent = (it[4] as Number).toDouble(),
+                )
+            }
 
     fun getAlbumCoverage(limit: Int): List<AlbumCoverageResponse> =
         entityManager
             .createQuery(
                 """
-            SELECT new dev.marcal.mediapulse.server.api.music.AlbumCoverageResponse(
+            SELECT 
                 al.id,
                 al.title,
                 a.id,
@@ -235,7 +243,6 @@ class MusicQueryRepository(
                     WHEN COUNT(DISTINCT t.id) = 0 THEN 0.0
                     ELSE (COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN t.id END) * 100.0 / COUNT(DISTINCT t.id))
                 END AS coveragePercent
-            )
             FROM Album al
             JOIN Artist a ON a.id = al.artistId
             LEFT JOIN Track t ON t.albumId = al.id
@@ -243,9 +250,20 @@ class MusicQueryRepository(
             GROUP BY al.id, al.title, a.id, a.name
             ORDER BY coveragePercent ASC, totalTracks DESC
             """,
-                AlbumCoverageResponse::class.java,
+                Array<Any>::class.java,
             ).setMaxResults(limit)
             .resultList
+            .map {
+                AlbumCoverageResponse(
+                    albumId = it[0] as Long,
+                    albumTitle = it[1] as String,
+                    artistId = it[2] as Long,
+                    artistName = it[3] as String,
+                    totalTracks = (it[4] as Number).toLong(),
+                    playedTracks = (it[5] as Number).toLong(),
+                    coveragePercent = (it[6] as Number).toDouble(),
+                )
+            }
 
     // Album details
     fun getAlbumPage(albumId: Long): AlbumPageResponse {
