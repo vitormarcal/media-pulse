@@ -145,7 +145,16 @@ class CanonicalizationService(
             }
         }
 
-        val fp = FingerprintUtil.trackFp(title, album.id, discNumber, trackNumber, durationMs)
+        if (discNumber != null && trackNumber != null) {
+            trackRepo.findByAlbumIdAndDiscNumberAndTrackNumber(album.id, discNumber, trackNumber)?.let { existing ->
+                musicbrainzId?.let { safeLink(EntityType.TRACK, existing.id, Provider.MUSICBRAINZ, it) }
+                plexGuid?.let { safeLink(EntityType.TRACK, existing.id, Provider.PLEX, it) }
+                spotifyId?.let { safeLink(EntityType.TRACK, existing.id, Provider.SPOTIFY, it) }
+                return existing
+            }
+        }
+
+        val fp = FingerprintUtil.trackFp(title, album.id, discNumber, trackNumber)
         val existing = trackRepo.findByFingerprint(fp)
         val track =
             existing ?: trackRepo.save(
