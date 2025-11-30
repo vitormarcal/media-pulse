@@ -59,6 +59,11 @@ class MusicSummaryController(
         @PathVariable albumId: Long,
     ): AlbumPageResponse = repository.getAlbumPage(albumId)
 
+    @GetMapping("/albums/never-played")
+    fun neverPlayedAlbums(
+        @RequestParam(defaultValue = "50") limit: Int,
+    ) = repository.getNeverPlayedAlbums(limit)
+
     @GetMapping("/search")
     fun search(
         @RequestParam q: String,
