@@ -5,4 +5,10 @@ import org.springframework.data.repository.CrudRepository
 
 interface TrackRepository : CrudRepository<Track, Long> {
     fun findByFingerprint(fingerprint: String): Track?
+
+    fun findByAlbumIdAndDiscNumberAndTrackNumber(
+        albumId: Long,
+        discNumber: Int,
+        trackNumber: Int,
+    ): Track?
 }

@@ -24,8 +24,7 @@ object FingerprintUtil {
         albumId: Long,
         disc: Int?,
         track: Int?,
-        durationMs: Int?,
     ) = DigestUtils.sha256Hex(
-        "${normalize(title)}|$albumId|${disc ?: ""}|${track ?: ""}|${durationMs ?: ""}",
+        "${normalize(title)}|$albumId|${disc ?: ""}|${track ?: ""}",
     )
 }
