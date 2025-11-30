@@ -30,7 +30,9 @@ class PlexStartupImporter(
                     plexImportService.importAllArtistsAndAlbums(
                         pageSize = plexProps.import.pageSize,
                     )
-                logger.info("Plex initial import done. artistsSeen=${stats.artistsSeen}, albumsSeen=${stats.albumsSeen}")
+                logger.info(
+                    "Plex initial import done. artistsSeen=${stats.artistsSeen}, albumsSeen=${stats.albumsSeen}, tracksSeen=${stats.tracksSeen}",
+                )
             } catch (e: Exception) {
                 logger.error("Error running Plex initial import", e)
             }

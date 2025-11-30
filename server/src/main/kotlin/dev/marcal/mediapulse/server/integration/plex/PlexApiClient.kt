@@ -5,6 +5,7 @@ import dev.marcal.mediapulse.server.integration.plex.dto.PlexAlbum
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexArtist
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexContainer
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
+import dev.marcal.mediapulse.server.integration.plex.dto.PlexTrack
 import dev.marcal.mediapulse.server.model.image.ImageContent
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.stereotype.Component
@@ -81,6 +82,35 @@ class PlexApiClient(
                 .uri(uri(auth, path))
                 .retrieve()
                 .toEntity(object : org.springframework.core.ParameterizedTypeReference<PlexContainer<PlexAlbum>>() {})
+                .awaitSingle()
+
+        val body = resp.body!!.mc
+        val total =
+            resp.headers
+                .getFirst("X-Plex-Container-Total-Size")
+                ?.toInt()
+                ?: body.totalSize ?: body.size ?: 0
+
+        val items = (body.Directory ?: body.Metadata).orEmpty()
+        return items to total
+    }
+
+    suspend fun listTracksByAlbumPaged(
+        sectionKey: String,
+        albumRatingKey: String,
+        start: Int,
+        size: Int,
+    ): Pair<List<PlexTrack>, Int> {
+        val path =
+            "/library/sections/$sectionKey/all?type=10&album.id=$albumRatingKey&includeGuids=1" +
+                "&X-Plex-Container-Start=$start&X-Plex-Container-Size=$size"
+
+        val resp =
+            plexWebClient
+                .get()
+                .uri(uri(auth, path))
+                .retrieve()
+                .toEntity(object : org.springframework.core.ParameterizedTypeReference<PlexContainer<PlexTrack>>() {})
                 .awaitSingle()
 
         val body = resp.body!!.mc

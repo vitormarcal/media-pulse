@@ -1,8 +1,10 @@
 package dev.marcal.mediapulse.server.repository
 
+import dev.marcal.mediapulse.server.api.music.AlbumCoverageResponse
 import dev.marcal.mediapulse.server.api.music.AlbumHeaderRow
 import dev.marcal.mediapulse.server.api.music.AlbumPageResponse
 import dev.marcal.mediapulse.server.api.music.AlbumTrackRow
+import dev.marcal.mediapulse.server.api.music.ArtistCoverageResponse
 import dev.marcal.mediapulse.server.api.music.IdName
 import dev.marcal.mediapulse.server.api.music.MusicSummaryResponse
 import dev.marcal.mediapulse.server.api.music.PlaysByDayRow
@@ -23,6 +25,7 @@ import java.time.Instant
 class MusicQueryRepository(
     private val entityManager: EntityManager,
 ) {
+    // Summary and tops
     fun getSummary(
         start: Instant,
         end: Instant,
@@ -168,6 +171,7 @@ class MusicQueryRepository(
             .setMaxResults(limit)
             .resultList
 
+    // Discovery
     fun getNeverPlayedAlbums(limit: Int): List<TopAlbumResponse> =
         entityManager
             .createQuery(
@@ -191,6 +195,59 @@ class MusicQueryRepository(
             ).setMaxResults(limit)
             .resultList
 
+    fun getArtistCoverage(limit: Int): List<ArtistCoverageResponse> =
+        entityManager
+            .createQuery(
+                """
+            SELECT new dev.marcal.mediapulse.server.api.music.ArtistCoverageResponse(
+                a.id,
+                a.name,
+                COUNT(DISTINCT t.id) AS totalTracks,
+                COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN t.id END) AS playedTracks,
+                CASE 
+                    WHEN COUNT(DISTINCT t.id) = 0 THEN 0.0
+                    ELSE (COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN t.id END) * 100.0 / COUNT(DISTINCT t.id))
+                END AS coveragePercent
+            )
+            FROM Artist a
+            JOIN Album al ON al.artistId = a.id
+            LEFT JOIN Track t ON t.albumId = al.id
+            LEFT JOIN TrackPlayback tp ON tp.trackId = t.id
+            GROUP BY a.id, a.name
+            ORDER BY coveragePercent ASC, totalTracks DESC
+            """,
+                ArtistCoverageResponse::class.java,
+            ).setMaxResults(limit)
+            .resultList
+
+    fun getAlbumCoverage(limit: Int): List<AlbumCoverageResponse> =
+        entityManager
+            .createQuery(
+                """
+            SELECT new dev.marcal.mediapulse.server.api.music.AlbumCoverageResponse(
+                al.id,
+                al.title,
+                a.id,
+                a.name,
+                COUNT(DISTINCT t.id) AS totalTracks,
+                COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN t.id END) AS playedTracks,
+                CASE 
+                    WHEN COUNT(DISTINCT t.id) = 0 THEN 0.0
+                    ELSE (COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN t.id END) * 100.0 / COUNT(DISTINCT t.id))
+                END AS coveragePercent
+            )
+            FROM Album al
+            JOIN Artist a ON a.id = al.artistId
+            LEFT JOIN Track t ON t.albumId = al.id
+            LEFT JOIN TrackPlayback tp ON tp.trackId = t.id
+            GROUP BY al.id, al.title, a.id, a.name
+            ORDER BY coveragePercent ASC, totalTracks DESC
+            """,
+                AlbumCoverageResponse::class.java,
+            ).setMaxResults(limit)
+            .resultList
+
+    // Album details
     fun getAlbumPage(albumId: Long): AlbumPageResponse {
         // header agregado em uma passada (sem subselect)
         val header =
@@ -281,6 +338,7 @@ class MusicQueryRepository(
         )
     }
 
+    // Search
     fun search(
         q: String,
         limit: Int,

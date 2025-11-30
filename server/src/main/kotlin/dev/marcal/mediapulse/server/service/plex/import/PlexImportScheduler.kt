@@ -28,7 +28,9 @@ class PlexImportScheduler(
                     plexImportService.importAllArtistsAndAlbums(
                         pageSize = plexProps.import.pageSize,
                     )
-                logger.info("Plex scheduled import done. artistsSeen=${stats.artistsSeen}, albumsSeen=${stats.albumsSeen}")
+                logger.info(
+                    "Plex scheduled import done. artistsSeen=${stats.artistsSeen}, albumsSeen=${stats.albumsSeen}, tracksSeen=${stats.tracksSeen}",
+                )
             } catch (e: Exception) {
                 logger.error("Error running Plex scheduled import", e)
             }

@@ -84,3 +84,11 @@ Accept: application/json
 ### Busca álbuns nunca ouvidos, limit default=50
 GET {{baseUrl}}/albums/never-played?limit=50
 Accept: application/json
+
+### Busca o quanto já ouviu dos albums
+GET {{baseUrl}}/coverage/albums?limit=50
+Accept: application/json
+
+### Busca o quanto já ouviu dos artitas
+GET {{baseUrl}}/coverage/artists?limit=50
+Accept: application/json
