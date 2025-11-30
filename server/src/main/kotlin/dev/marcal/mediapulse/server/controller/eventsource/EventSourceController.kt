@@ -15,7 +15,7 @@ class EventSourceController(
     private val reprocessEventSource: ReprocessEventSource,
 ) {
     @PostMapping("/reprocess")
-    fun reprocess(
+    suspend fun reprocess(
         @RequestBody reprocessRequest: ReprocessRequest,
     ): ApiResult<ReprocessCounter> {
         val counter = reprocessEventSource.count(reprocessRequest)

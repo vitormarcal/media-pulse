@@ -4,7 +4,7 @@ import dev.marcal.mediapulse.server.integration.plex.PlexApiClient
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
 import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
-import dev.marcal.mediapulse.server.service.image.ImageStorageService
+import dev.marcal.mediapulse.server.service.plex.PlexArtworkService
 import dev.marcal.mediapulse.server.service.plex.util.PlexGuidUtil
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -12,8 +12,8 @@ import org.springframework.stereotype.Service
 @Service
 class PlexImportService(
     private val plexApi: PlexApiClient,
-    private val imageStorageService: ImageStorageService,
     private val canonical: CanonicalizationService,
+    private val plexArtworkService: PlexArtworkService,
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
@@ -115,25 +115,11 @@ class PlexImportService(
                         spotifyId = null,
                     )
 
-                if (album.coverUrl == null && !al.thumb.isNullOrBlank()) {
-                    runCatching {
-                        val image = plexApi.downloadImageContent(al.thumb)
-                        val localPath =
-                            imageStorageService.saveImageForAlbum(
-                                image = image,
-                                provider = "PLEX",
-                                artistId = artist.id,
-                                albumId = album.id,
-                                fileNameHint = "${artist.name}_${al.title}",
-                            )
-                        canonical.updateAlbumCoverIfEmpty(album.id, localPath)
-                    }.onFailure { ex ->
-                        logger.warn(
-                            "Failed to download or store cover image for artist='${artist.name}', album='${al.title}', thumbPath='${al.thumb}'.",
-                            ex,
-                        )
-                    }
-                }
+                plexArtworkService.ensureAlbumCoverFromPlexThumb(
+                    artist = artist,
+                    album = album,
+                    plexThumbPath = al.thumb,
+                )
 
                 stats.albumsUpserted++
             }
