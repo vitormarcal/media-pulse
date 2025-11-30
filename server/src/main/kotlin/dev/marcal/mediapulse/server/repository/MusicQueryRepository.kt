@@ -168,6 +168,29 @@ class MusicQueryRepository(
             .setMaxResults(limit)
             .resultList
 
+    fun getNeverPlayedAlbums(limit: Int): List<TopAlbumResponse> =
+        entityManager
+            .createQuery(
+                """
+            SELECT new dev.marcal.mediapulse.server.api.music.TopAlbumResponse(
+                al.id,
+                al.title,
+                a.id,
+                a.name,
+                0L
+            )
+            FROM Album al
+            JOIN Artist a ON a.id = al.artistId
+            LEFT JOIN Track t ON t.albumId = al.id
+            LEFT JOIN TrackPlayback tp ON tp.trackId = t.id
+            GROUP BY al.id, al.title, a.id, a.name
+            HAVING COUNT(tp.id) = 0
+            ORDER BY a.name, al.year, al.title
+            """,
+                TopAlbumResponse::class.java,
+            ).setMaxResults(limit)
+            .resultList
+
     fun getAlbumPage(albumId: Long): AlbumPageResponse {
         // header agregado em uma passada (sem subselect)
         val header =

@@ -5,7 +5,7 @@
 @start = 2025-01-01T00:00:00Z
 @end = 2025-11-01T23:59:59Z
 
-### 1. Resumo semanal
+### Resumo semanal
 GET {{baseUrl}}/summary?range=week
 Accept: application/json
 
@@ -13,14 +13,14 @@ Accept: application/json
 <> 2025-11-02T161703.200.json
 <> 2025-11-02T161643.404.json
 
-### 2. Resumo mensal
+### Resumo mensal
 GET {{baseUrl}}/summary?range=month
 Accept: application/json
 
 <> 2025-11-02T161841.200.json
 <> 2025-11-02T161705.200.json
 
-### 3. Resumo personalizado
+### Resumo personalizado
 GET {{baseUrl}}/summary?range=custom&start={{start}}&end={{end}}
 Accept: application/json
 
@@ -29,54 +29,57 @@ Accept: application/json
 <> 2025-11-02T161719.200.json
 <> 2025-11-02T161709.200.json
 
-### 4. Últimos álbuns ouvidos
+### Últimos álbuns ouvidos
 GET {{baseUrl}}/recent-albums?limit=10
 Accept: application/json
 
 <> 2025-11-02T161851.200.json
 
-### 5. Top artistas do período
+### Top artistas do período
 GET {{baseUrl}}/tops/artists?start={{start}}&end={{end}}&limit=10
 Accept: application/json
 
 <> 2025-11-02T161858.200.json
 
-### 6. Top álbuns do período
+### Top álbuns do período
 GET {{baseUrl}}/tops/albums?start={{start}}&end={{end}}&limit=10
 Accept: application/json
 
 <> 2025-11-02T161901.200.json
 
-### 7. Top faixas do período
+### Top faixas do período
 GET {{baseUrl}}/tops/tracks?start={{start}}&end={{end}}&limit=10
 Accept: application/json
 
 <> 2025-11-02T161907.200.json
 
-### 8. Página do álbum (detalhes + faixas)
+### Página do álbum (detalhes + faixas)
 GET {{baseUrl}}/albums/{{albumId}}
 Accept: application/json
 
 <> 2025-11-02T161913.200.json
 
-### 9. Página do artista (se implementado futuramente)
+### Página do artista (se implementado futuramente)
 GET {{baseUrl}}/artists/{{artistId}}
 Accept: application/json
 
 <> 2025-11-02T161923.404.json
 
-### 10. Álbuns de um artista (ordem recente)
+### Álbuns de um artista (ordem recente)
 GET {{baseUrl}}/artists/{{artistId}}/albums?order=recent
 Accept: application/json
 
 <> 2025-11-02T161927.404.json
 
-### 11. Faixas de um artista
+### Faixas de um artista
 GET {{baseUrl}}/artists/{{artistId}}/tracks?limit=20
 Accept: application/json
 
-### 12. Busca geral (nome de artista, álbum ou música)
+### Busca geral (nome de artista, álbum ou música)
 GET {{baseUrl}}/search?q=therion&limit=10
 Accept: application/json
 
 <> 2025-11-02T161931.200.json
+
+### Busca álbuns nunca ouvidos, limit default=50
+GET /albums/never-played?limit=50
