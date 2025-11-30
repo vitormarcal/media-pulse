@@ -19,7 +19,7 @@ class ReprocessEventSource(
         private val logger = LoggerFactory.getLogger(this::class.java)
     }
 
-    fun count(reprocessRequest: ReprocessRequest): ReprocessCounter {
+    suspend fun count(reprocessRequest: ReprocessRequest): ReprocessCounter {
         val total =
             if (reprocessRequest.all) {
                 eventSourceCrudRepository.count()
@@ -39,12 +39,12 @@ class ReprocessEventSource(
     }
 
     @Async
-    fun reprocessAsync(reprocessRequest: ReprocessRequest) {
+    suspend fun reprocessAsync(reprocessRequest: ReprocessRequest) {
         logger.info("Reprocessing event sources asynchronously with request: $reprocessRequest")
         reprocess(reprocessRequest)
     }
 
-    fun reprocess(reprocessRequest: ReprocessRequest) {
+    suspend fun reprocess(reprocessRequest: ReprocessRequest) {
         logger.info("Reprocessing event sources with request: $reprocessRequest")
 
         count(reprocessRequest).let { counter ->

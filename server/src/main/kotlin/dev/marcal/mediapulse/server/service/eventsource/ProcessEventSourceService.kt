@@ -22,7 +22,7 @@ class ProcessEventSourceService(
      * @param eventId The ID of the webhook event to process.
      */
     @Async
-    fun executeAsync(eventId: Long) {
+    suspend fun executeAsync(eventId: Long) {
         this.execute(eventId)
     }
 
@@ -31,7 +31,7 @@ class ProcessEventSourceService(
      *
      * @param eventId The ID of the webhook event to process.
      */
-    fun execute(eventId: Long) {
+    suspend fun execute(eventId: Long) {
         val event = repository.findByIdOrNull(eventId) ?: return
 
         val eventUpdated =

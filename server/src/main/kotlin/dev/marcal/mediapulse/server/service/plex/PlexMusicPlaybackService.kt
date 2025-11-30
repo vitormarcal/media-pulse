@@ -16,11 +16,12 @@ import java.time.Instant
 class PlexMusicPlaybackService(
     private val canonical: CanonicalizationService,
     private val trackPlaybackRepo: TrackPlaybackCrudRepository,
+    private val plexArtworkService: PlexArtworkService,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Transactional
-    fun processScrobble(
+    suspend fun processScrobble(
         payload: PlexWebhookPayload,
         eventId: Long? = null,
     ): TrackPlayback? {
@@ -70,11 +71,17 @@ class PlexMusicPlaybackService(
                 artist = artist,
                 title = albumTitle,
                 year = albumYear,
-                coverUrl = coverUrl,
+                coverUrl = null,
                 musicbrainzId = mbidAlbum,
                 plexGuid = albumPlexGuid,
                 spotifyId = null,
             )
+
+        plexArtworkService.ensureAlbumCoverFromPlexThumb(
+            artist = artist,
+            album = album,
+            plexThumbPath = coverUrl,
+        )
 
         // 3) Track
         val track =

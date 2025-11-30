@@ -21,7 +21,7 @@ class WebhookController(
     }
 
     @PostMapping("/plex", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    fun webhook(
+    suspend fun webhook(
         @RequestPart("payload") payload: String,
         @RequestPart("thumb", required = false) thumb: MultipartFile?,
     ) {

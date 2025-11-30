@@ -21,7 +21,7 @@ class PlexWebhookDispatcher(
      * @param eventId The ID of the event, used for logging and tracking.
      * @throws IllegalStateException if the event type is unsupported or if processing fails.
      */
-    fun dispatch(
+    suspend fun dispatch(
         payload: String,
         eventId: Long?,
     ) {
@@ -46,7 +46,7 @@ class PlexWebhookDispatcher(
             throw IllegalStateException("Invalid webhook payload format", ex)
         }
 
-    private fun doPlaybackScrobble(
+    private suspend fun doPlaybackScrobble(
         webhookPayload: PlexWebhookPayload,
         eventId: Long?,
     ) {
