@@ -6,7 +6,7 @@ spring:
   mvc:
     static-path-pattern: /covers/**
   codec:
-    max-in-memory-size: 2MB
+    max-in-memory-size: 10MB
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
