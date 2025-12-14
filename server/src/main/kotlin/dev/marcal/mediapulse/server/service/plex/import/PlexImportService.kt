@@ -5,6 +5,7 @@ import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
 import dev.marcal.mediapulse.server.model.music.Album
 import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
+import dev.marcal.mediapulse.server.service.music.AlbumGenreService
 import dev.marcal.mediapulse.server.service.plex.PlexArtworkService
 import dev.marcal.mediapulse.server.service.plex.util.PlexGuidUtil
 import org.slf4j.LoggerFactory
@@ -15,6 +16,7 @@ class PlexImportService(
     private val plexApi: PlexApiClient,
     private val canonical: CanonicalizationService,
     private val plexArtworkService: PlexArtworkService,
+    private val albumGenreService: AlbumGenreService,
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
@@ -119,6 +121,13 @@ class PlexImportService(
                         plexGuid = plexAlbumGuid,
                         spotifyId = null,
                     )
+
+                val genreNames =
+                    al.genres
+                        ?.map { it.tag }
+                        .orEmpty()
+
+                albumGenreService.addGenres(album, genreNames)
 
                 plexArtworkService.ensureAlbumCoverFromPlexThumb(
                     artist = artist,

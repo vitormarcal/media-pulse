@@ -54,6 +54,13 @@ class MusicSummaryController(
         @RequestParam(defaultValue = "20") limit: Int,
     ) = repository.getTopTracks(start, end, limit)
 
+    @GetMapping("/tops/genres")
+    fun topGenres(
+        @RequestParam start: Instant,
+        @RequestParam end: Instant,
+        @RequestParam(defaultValue = "20") limit: Int,
+    ) = repository.getTopGenres(start, end, limit)
+
     @GetMapping("/albums/{albumId}")
     fun albumPage(
         @PathVariable albumId: Long,
