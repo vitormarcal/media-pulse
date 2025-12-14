@@ -51,6 +51,11 @@ Accept: application/json
 GET {{baseUrl}}/tops/tracks?start={{start}}&end={{end}}&limit=10
 Accept: application/json
 
+### Top gêneros do período
+GET {{baseUrl}}/tops/genres?start={{start}}&end={{end}}&limit=10
+Accept: application/json
+
+
 <> 2025-11-02T161907.200.json
 
 ### Página do álbum (detalhes + faixas)

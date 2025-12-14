@@ -24,3 +24,8 @@ data class TopTrackResponse(
     val artistName: String,
     val playCount: Long,
 )
+
+data class TopGenreResponse(
+    val genre: String,
+    val playCount: Long,
+)

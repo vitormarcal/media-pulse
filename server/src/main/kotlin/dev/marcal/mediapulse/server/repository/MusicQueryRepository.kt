@@ -15,6 +15,7 @@ import dev.marcal.mediapulse.server.api.music.SearchResponse
 import dev.marcal.mediapulse.server.api.music.SearchTrackRow
 import dev.marcal.mediapulse.server.api.music.TopAlbumResponse
 import dev.marcal.mediapulse.server.api.music.TopArtistResponse
+import dev.marcal.mediapulse.server.api.music.TopGenreResponse
 import dev.marcal.mediapulse.server.api.music.TopTrackResponse
 import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Repository
@@ -170,6 +171,38 @@ class MusicQueryRepository(
             .setParameter("e", end)
             .setMaxResults(limit)
             .resultList
+
+    fun getTopGenres(
+        start: Instant,
+        end: Instant,
+        limit: Int,
+    ): List<TopGenreResponse> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT
+                  g.name AS genre,
+                  COUNT(tp.id) AS play_count
+                FROM track_playbacks tp
+                JOIN tracks t        ON t.id = tp.track_id
+                JOIN albums al       ON al.id = t.album_id
+                JOIN album_genres ag ON ag.album_id = al.id
+                JOIN genres g        ON g.id = ag.genre_id
+                WHERE tp.played_at BETWEEN :s AND :e
+                GROUP BY g.name
+                ORDER BY COUNT(tp.id) DESC
+                """.trimIndent(),
+            ).setParameter("s", start)
+            .setParameter("e", end)
+            .setMaxResults(limit)
+            .resultList
+            .map {
+                val row = it as Array<*>
+                TopGenreResponse(
+                    genre = row[0] as String,
+                    playCount = (row[1] as Number).toLong(),
+                )
+            }
 
     // Discovery
     fun getNeverPlayedAlbums(limit: Int): List<TopAlbumResponse> =

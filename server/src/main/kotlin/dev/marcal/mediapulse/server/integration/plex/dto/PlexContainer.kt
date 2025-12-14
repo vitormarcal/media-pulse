@@ -29,6 +29,10 @@ data class PlexArtist(
     @JsonProperty("Guid") val guids: List<PlexGuid>? = emptyList(),
 )
 
+data class PlexTag(
+    val tag: String,
+)
+
 data class PlexAlbum(
     val ratingKey: String,
     val parentRatingKey: String? = null,
@@ -37,6 +41,7 @@ data class PlexAlbum(
     val year: Int? = null,
     val thumb: String? = null,
     @JsonProperty("Guid") val guids: List<PlexGuid>? = emptyList(),
+    @JsonProperty("Genre") val genres: List<PlexTag>? = emptyList(),
 )
 
 data class PlexTrack(
