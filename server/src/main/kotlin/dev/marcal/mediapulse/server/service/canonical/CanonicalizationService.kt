@@ -29,29 +29,30 @@ class CanonicalizationService(
         plexGuid: String? = null,
         spotifyId: String? = null,
     ): Artist {
-        // 1) por MBID
-        musicbrainzId?.let {
-            extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, it)?.let { ext ->
-                if (ext.entityType == EntityType.ARTIST) return artistRepo.findById(ext.entityId).get()
-            }
+        fun findByExternal(
+            provider: Provider,
+            externalId: String,
+        ): Artist? {
+            val ext = extRepo.findByProviderAndExternalId(provider, externalId) ?: return null
+            if (ext.entityType != EntityType.ARTIST) return null
+            return artistRepo.findById(ext.entityId).orElse(null)
         }
-        // 2) por provider
-        plexGuid?.let {
-            extRepo.findByProviderAndExternalId(Provider.PLEX, it)?.let { ext ->
-                if (ext.entityType == EntityType.ARTIST) return artistRepo.findById(ext.entityId).get()
-            }
-        }
-        spotifyId?.let {
-            extRepo.findByProviderAndExternalId(Provider.SPOTIFY, it)?.let { ext ->
-                if (ext.entityType == EntityType.ARTIST) return artistRepo.findById(ext.entityId).get()
-            }
-        }
-        // 3) por fingerprint
-        val fp = FingerprintUtil.artistFp(name)
-        val existing = artistRepo.findByFingerprint(fp)
-        val artist = existing ?: artistRepo.save(Artist(name = name, fingerprint = fp))
 
-        // vincula externos se vieram
+        val found: Artist? =
+            musicbrainzId?.let { findByExternal(Provider.MUSICBRAINZ, it) }
+                ?: plexGuid?.let { findByExternal(Provider.PLEX, it) }
+                ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
+                ?: run {
+                    val fp = FingerprintUtil.artistFp(name)
+                    artistRepo.findByFingerprint(fp)
+                }
+
+        val artist =
+            found ?: run {
+                val fp = FingerprintUtil.artistFp(name)
+                artistRepo.save(Artist(name = name, fingerprint = fp))
+            }
+
         musicbrainzId?.let { safeLink(EntityType.ARTIST, artist.id, Provider.MUSICBRAINZ, it) }
         plexGuid?.let { safeLink(EntityType.ARTIST, artist.id, Provider.PLEX, it) }
         spotifyId?.let { safeLink(EntityType.ARTIST, artist.id, Provider.SPOTIFY, it) }
@@ -69,34 +70,39 @@ class CanonicalizationService(
         plexGuid: String? = null,
         spotifyId: String? = null,
     ): Album {
-        // por MBID
-        musicbrainzId?.let {
-            extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, it)?.let { ext ->
-                if (ext.entityType == EntityType.ALBUM) return albumRepo.findById(ext.entityId).get()
-            }
+        fun findByExternal(
+            provider: Provider,
+            externalId: String,
+        ): Album? {
+            val ext = extRepo.findByProviderAndExternalId(provider, externalId) ?: return null
+            if (ext.entityType != EntityType.ALBUM) return null
+            return albumRepo.findById(ext.entityId).orElse(null)
         }
-        // por provider
-        plexGuid?.let {
-            extRepo.findByProviderAndExternalId(Provider.PLEX, it)?.let { ext ->
-                if (ext.entityType == EntityType.ALBUM) return albumRepo.findById(ext.entityId).get()
-            }
-        }
-        spotifyId?.let {
-            extRepo.findByProviderAndExternalId(Provider.SPOTIFY, it)?.let { ext ->
-                if (ext.entityType == EntityType.ALBUM) return albumRepo.findById(ext.entityId).get()
-            }
-        }
-        // fallback por chave natural
-        albumRepo.findByArtistIdAndTitleAndYear(artist.id, title, year)?.let { return it }
 
-        val fp = FingerprintUtil.albumFp(title, artist.id, year)
-        val existing = albumRepo.findByFingerprint(fp)
+        val found: Album? =
+            musicbrainzId?.let { findByExternal(Provider.MUSICBRAINZ, it) }
+                ?: plexGuid?.let { findByExternal(Provider.PLEX, it) }
+                ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
+                ?: albumRepo.findByArtistIdAndTitleAndYear(artist.id, title, year)
+                ?: run {
+                    val fp = FingerprintUtil.albumFp(title, artist.id, year)
+                    albumRepo.findByFingerprint(fp)
+                }
+
         val album =
-            existing ?: albumRepo.save(
-                Album(artistId = artist.id, title = title, year = year, coverUrl = coverUrl, fingerprint = fp),
-            )
+            found ?: run {
+                val fp = FingerprintUtil.albumFp(title, artist.id, year)
+                albumRepo.save(
+                    Album(
+                        artistId = artist.id,
+                        title = title,
+                        year = year,
+                        coverUrl = coverUrl,
+                        fingerprint = fp,
+                    ),
+                )
+            }
 
-        // vincula externos
         musicbrainzId?.let { safeLink(EntityType.ALBUM, album.id, Provider.MUSICBRAINZ, it) }
         plexGuid?.let { safeLink(EntityType.ALBUM, album.id, Provider.PLEX, it) }
         spotifyId?.let { safeLink(EntityType.ALBUM, album.id, Provider.SPOTIFY, it) }
@@ -127,48 +133,46 @@ class CanonicalizationService(
         plexGuid: String? = null,
         spotifyId: String? = null,
     ): Track {
-        // por MBID
-        musicbrainzId?.let {
-            extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, it)?.let { ext ->
-                if (ext.entityType == EntityType.TRACK) return trackRepo.findById(ext.entityId).get()
-            }
-        }
-        // por provider
-        plexGuid?.let {
-            extRepo.findByProviderAndExternalId(Provider.PLEX, it)?.let { ext ->
-                if (ext.entityType == EntityType.TRACK) return trackRepo.findById(ext.entityId).get()
-            }
-        }
-        spotifyId?.let {
-            extRepo.findByProviderAndExternalId(Provider.SPOTIFY, it)?.let { ext ->
-                if (ext.entityType == EntityType.TRACK) return trackRepo.findById(ext.entityId).get()
-            }
+        fun findByExternal(
+            provider: Provider,
+            externalId: String,
+        ): Track? {
+            val ext = extRepo.findByProviderAndExternalId(provider, externalId) ?: return null
+            if (ext.entityType != EntityType.TRACK) return null
+            return trackRepo.findById(ext.entityId).orElse(null)
         }
 
-        if (discNumber != null && trackNumber != null) {
-            trackRepo.findByAlbumIdAndDiscNumberAndTrackNumber(album.id, discNumber, trackNumber)?.let { existing ->
-                musicbrainzId?.let { safeLink(EntityType.TRACK, existing.id, Provider.MUSICBRAINZ, it) }
-                plexGuid?.let { safeLink(EntityType.TRACK, existing.id, Provider.PLEX, it) }
-                spotifyId?.let { safeLink(EntityType.TRACK, existing.id, Provider.SPOTIFY, it) }
-                return existing
-            }
-        }
+        val found: Track? =
+            musicbrainzId?.let { findByExternal(Provider.MUSICBRAINZ, it) }
+                ?: plexGuid?.let { findByExternal(Provider.PLEX, it) }
+                ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
+                ?: run {
+                    if (discNumber != null && trackNumber != null) {
+                        trackRepo.findByAlbumIdAndDiscNumberAndTrackNumber(album.id, discNumber, trackNumber)
+                    } else {
+                        null
+                    }
+                }
+                ?: run {
+                    val fp = FingerprintUtil.trackFp(title, album.id, discNumber, trackNumber)
+                    trackRepo.findByFingerprint(fp)
+                }
 
-        val fp = FingerprintUtil.trackFp(title, album.id, discNumber, trackNumber)
-        val existing = trackRepo.findByFingerprint(fp)
         val track =
-            existing ?: trackRepo.save(
-                Track(
-                    albumId = album.id,
-                    title = title,
-                    trackNumber = trackNumber,
-                    discNumber = discNumber,
-                    durationMs = durationMs,
-                    fingerprint = fp,
-                ),
-            )
+            found ?: run {
+                val fp = FingerprintUtil.trackFp(title, album.id, discNumber, trackNumber)
+                trackRepo.save(
+                    Track(
+                        albumId = album.id,
+                        title = title,
+                        trackNumber = trackNumber,
+                        discNumber = discNumber,
+                        durationMs = durationMs,
+                        fingerprint = fp,
+                    ),
+                )
+            }
 
-        // vincula externos
         musicbrainzId?.let { safeLink(EntityType.TRACK, track.id, Provider.MUSICBRAINZ, it) }
         plexGuid?.let { safeLink(EntityType.TRACK, track.id, Provider.PLEX, it) }
         spotifyId?.let { safeLink(EntityType.TRACK, track.id, Provider.SPOTIFY, it) }
