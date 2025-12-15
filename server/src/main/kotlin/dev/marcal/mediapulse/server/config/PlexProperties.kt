@@ -11,7 +11,5 @@ data class PlexProperties(
     data class ImportProperties(
         val enabled: Boolean = true,
         val pageSize: Int = 200,
-        val scheduleCron: String = "0 0 4 * * *",
-        val runOnStartup: Boolean = true,
     )
 }

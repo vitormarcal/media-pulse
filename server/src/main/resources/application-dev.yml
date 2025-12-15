@@ -9,14 +9,13 @@ spring:
       ddl-auto: create-drop
 
 media-pulse:
+  pipeline:
+    enabled: true
+    schedule-cron: "0 0 * * * *"
+    run-on-startup: false
   plex:
     base-url: http://localhost:32400
     token: "YOUR_DEV_TOKEN"
-    import:
-      enabled: true
-      page-size: 200
-      schedule-cron: "0 0 * * * *"
-      run-on-startup: false
   storage:
     covers-path: "."
 

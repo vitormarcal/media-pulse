@@ -1,0 +1,8 @@
+@baseUrl = {{host}}/api/musicbrainz
+
+### Batch
+POST {{baseUrl}}/enrich-album-genres?limit=200
+
+### ### Drain: varre tudo que não está DONE no sync_state (ou force_next)
+POST {{baseUrl}}/enrich-album-genres/drain?batchSize=200&maxTotal=50000
+
