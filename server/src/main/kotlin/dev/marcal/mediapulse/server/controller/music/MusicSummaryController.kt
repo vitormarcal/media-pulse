@@ -87,6 +87,35 @@ class MusicSummaryController(
         @RequestParam(defaultValue = "10") limit: Int,
     ): SearchResponse = repository.search(q, limit)
 
+    @GetMapping("/genres/trending")
+    fun trendingGenres(
+        @RequestParam start: Instant,
+        @RequestParam end: Instant,
+        @RequestParam compareStart: Instant,
+        @RequestParam compareEnd: Instant,
+        @RequestParam(defaultValue = "20") limit: Int,
+    ) = repository.getTrendingGenres(start, end, compareStart, compareEnd, limit)
+
+    @GetMapping("/genres/recent")
+    fun recentGenres(
+        @RequestParam(defaultValue = "50") limit: Int, // últimos N plays
+    ) = repository.getRecentGenres(limit)
+
+    @GetMapping("/genres/underplayed")
+    fun underplayedGenres(
+        @RequestParam start: Instant,
+        @RequestParam end: Instant,
+        @RequestParam(defaultValue = "3") minLibraryAlbums: Int,
+        @RequestParam(defaultValue = "20") limit: Int,
+    ) = repository.getUnderplayedGenres(start, end, minLibraryAlbums, limit)
+
+    @GetMapping("/genres/top-by-source")
+    fun topGenresBySource(
+        @RequestParam start: Instant,
+        @RequestParam end: Instant,
+        @RequestParam(defaultValue = "10") limit: Int,
+    ) = repository.getTopGenresBySource(start, end, limit)
+
     private fun resolveRange(
         range: String,
         start: Instant?,
