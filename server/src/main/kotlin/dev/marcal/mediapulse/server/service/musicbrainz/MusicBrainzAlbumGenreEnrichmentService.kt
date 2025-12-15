@@ -63,7 +63,10 @@ class MusicBrainzAlbumGenreEnrichmentService(
     }
 
     fun enrichBatchAsync(limit: Int) {
-        if (!running.compareAndSet(false, true)) return
+        if (!running.compareAndSet(false, true)) {
+            logger.info("MusicBrainz enrichment already running | ignored | op=batch | limit={}", limit)
+            return
+        }
         scope.launch {
             try {
                 enrichBatch(limit)
@@ -73,6 +76,68 @@ class MusicBrainzAlbumGenreEnrichmentService(
         }
     }
 
+    fun enrichAllAsync(
+        batchSize: Int,
+        maxTotal: Int,
+    ) {
+        if (!running.compareAndSet(false, true)) {
+            logger.info("MusicBrainz enrichment already running | ignored | op=drain | batchSize={} maxTotal={}", batchSize, maxTotal)
+            return
+        }
+        scope.launch {
+            try {
+                enrichAll(
+                    batchSize = batchSize,
+                    maxTotal = maxTotal,
+                )
+            } finally {
+                running.set(false)
+            }
+        }
+    }
+
+    suspend fun enrichAll(
+        batchSize: Int = props.enrich.batchSize,
+        maxTotal: Int = 50_000,
+    ): Int {
+        if (!props.enabled) {
+            logger.info("MusicBrainz enrichment skipped: disabled by config")
+            return 0
+        }
+
+        var total = 0
+        var batches = 0
+
+        logger.info(
+            "MusicBrainz enrichment drain started | batchSize={} | maxTotal={}",
+            batchSize,
+            maxTotal,
+        )
+
+        while (total < maxTotal) {
+            batches++
+            val processed = enrichBatch(limit = batchSize)
+
+            total += processed
+            logger.info(
+                "MusicBrainz enrichment drain progress | batches={} | processedThisBatch={} | totalProcessed={}",
+                batches,
+                processed,
+                total,
+            )
+
+            if (processed == 0) break
+        }
+
+        logger.info(
+            "MusicBrainz enrichment drain finished | batches={} | totalProcessed={}",
+            batches,
+            total,
+        )
+
+        return total
+    }
+
     suspend fun enrichBatch(limit: Int = props.enrich.batchSize): Int {
         if (!props.enabled) {
             logger.info("MusicBrainz enrichment skipped: disabled by config")
@@ -80,9 +145,22 @@ class MusicBrainzAlbumGenreEnrichmentService(
         }
 
         val source = GenreSource.MUSICBRAINZ
-        val albumIds = albumQuery.findAlbumIdsForGenreEnrichment(limit, props.enrich.onlyMissingAlbumGenres)
+        val albumIds =
+            albumQuery.findAlbumIdsPending(
+                limit = limit,
+                source = source.name,
+            )
 
-        logger.info("MusicBrainz enrichment started | limit={} | candidates={}", limit, albumIds.size)
+        if (albumIds.isEmpty()) {
+            logger.info("MusicBrainz enrichment batch empty | limit={}", limit)
+            return 0
+        }
+
+        logger.info(
+            "MusicBrainz enrichment batch started | limit={} | candidates={}",
+            limit,
+            albumIds.size,
+        )
 
         val c = Counters()
 
@@ -104,7 +182,7 @@ class MusicBrainzAlbumGenreEnrichmentService(
         }
 
         logger.info(
-            "MusicBrainz enrichment finished | candidates={} | processed={} | enriched={} | empty={} | skippedDone={} | skippedNoMbid={} | skippedAlbumMissing={} | failed={}",
+            "MusicBrainz enrichment batch finished | candidates={} | processed={} | enriched={} | empty={} | skippedDone={} | skippedNoMbid={} | skippedAlbumMissing={} | failed={}",
             albumIds.size,
             c.processed,
             c.enriched,
@@ -115,7 +193,7 @@ class MusicBrainzAlbumGenreEnrichmentService(
             c.failed,
         )
 
-        return c.processed
+        return c.enriched + c.empty + c.skippedNoMbid + c.skippedAlbumMissing + c.failed
     }
 
     private fun logProgress(

@@ -15,9 +15,21 @@ class MusicBrainzEnrichmentController(
 ) {
     @PostMapping("/enrich-album-genres")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    fun enrich(
+    fun enrichBatch(
         @RequestParam(defaultValue = "200") limit: Int,
     ) {
         service.enrichBatchAsync(limit)
+    }
+
+    @PostMapping("/enrich-album-genres/drain")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    fun drain(
+        @RequestParam(defaultValue = "200") batchSize: Int,
+        @RequestParam(defaultValue = "50000") maxTotal: Int,
+    ) {
+        service.enrichAllAsync(
+            batchSize = batchSize,
+            maxTotal = maxTotal,
+        )
     }
 }

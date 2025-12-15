@@ -7,29 +7,23 @@ import org.springframework.stereotype.Repository
 class AlbumQueryRepository(
     private val jdbc: JdbcTemplate,
 ) {
-    fun findAlbumIdsForGenreEnrichment(
+    fun findAlbumIdsPending(
         limit: Int,
-        onlyMissingAlbumGenres: Boolean,
-    ): List<Long> {
-        val sql =
-            if (onlyMissingAlbumGenres) {
-                """
-                SELECT a.id
-                FROM albums a
-                LEFT JOIN album_genres ag ON ag.album_id = a.id
-                WHERE ag.album_id IS NULL
-                ORDER BY a.id
-                LIMIT ?
-                """.trimIndent()
-            } else {
-                """
-                SELECT a.id
-                FROM albums a
-                ORDER BY a.id
-                LIMIT ?
-                """.trimIndent()
-            }
-
-        return jdbc.queryForList(sql, Long::class.java, limit)
-    }
+        source: String,
+    ): List<Long> =
+        jdbc.queryForList(
+            """
+            SELECT a.id
+            FROM albums a
+            LEFT JOIN album_genre_sync_state s
+              ON s.album_id = a.id AND s.source = ?
+            WHERE COALESCE(s.status, 'NEVER') <> 'DONE'
+               OR COALESCE(s.force_next, FALSE) = TRUE
+            ORDER BY a.id
+            LIMIT ?
+            """.trimIndent(),
+            Long::class.java,
+            source,
+            limit,
+        )
 }

@@ -11,7 +11,6 @@ data class MusicBrainzProperties(
 ) {
     data class Enrich(
         val batchSize: Int = 200,
-        val onlyMissingAlbumGenres: Boolean = true,
         val maxTags: Int = 10,
         val minRequestIntervalMs: Long = 1100, // 1 req/seg
     )

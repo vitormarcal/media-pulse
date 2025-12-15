@@ -35,7 +35,6 @@ media-pulse:
     user-agent: "media-pulse/1.0"
     enrich:
       batch-size: ${MB_ENRICH_BATCH_SIZE:200}
-      only-missing-album-genres: ${MB_ENRICH_ONLY_MISSING_ALBUM_GENRES:false}
       max-tags: ${MB_ENRICH_MAX_TAGS:30}
       min-request-interval-ms: ${MB_ENRICH_MIN_REQUEST_INTERVAL_MS:1200}
   storage:
