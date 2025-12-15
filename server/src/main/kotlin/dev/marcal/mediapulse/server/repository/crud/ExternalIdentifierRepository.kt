@@ -15,4 +15,10 @@ interface ExternalIdentifierRepository : CrudRepository<ExternalIdentifier, Long
         entityType: EntityType,
         entityId: Long,
     ): List<ExternalIdentifier>
+
+    fun findFirstByEntityTypeAndProviderAndEntityId(
+        entityType: EntityType,
+        provider: Provider,
+        entityId: Long,
+    ): ExternalIdentifier?
 }

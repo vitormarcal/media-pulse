@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.integration.plex.PlexApiClient
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
 import dev.marcal.mediapulse.server.model.music.Album
 import dev.marcal.mediapulse.server.model.music.Artist
+import dev.marcal.mediapulse.server.model.music.GenreSource
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
 import dev.marcal.mediapulse.server.service.music.AlbumGenreService
 import dev.marcal.mediapulse.server.service.plex.PlexArtworkService
@@ -127,7 +128,7 @@ class PlexImportService(
                         ?.map { it.tag }
                         .orEmpty()
 
-                albumGenreService.addGenres(album, genreNames)
+                albumGenreService.addGenres(album, genreNames, source = GenreSource.PLEX)
 
                 plexArtworkService.ensureAlbumCoverFromPlexThumb(
                     artist = artist,

@@ -1,0 +1,5 @@
+@baseUrl = {{host}}/api/musicbrainz
+
+### Importar tudo (descobre seções de música automaticamente)
+POST {{baseUrl}}/enrich-album-genres?limit=200
+Content-Type: application/json

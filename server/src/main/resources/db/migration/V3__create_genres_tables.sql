@@ -18,3 +18,36 @@ CREATE INDEX IF NOT EXISTS idx_album_genres_genre
 CREATE INDEX IF NOT EXISTS idx_tracks_album_id
     ON tracks(album_id);
 
+
+CREATE TABLE IF NOT EXISTS album_genre_sources (
+                                                   album_id   BIGINT NOT NULL REFERENCES albums(id) ON DELETE CASCADE,
+    genre_id   BIGINT NOT NULL REFERENCES genres(id) ON DELETE RESTRICT,
+    source     TEXT   NOT NULL CHECK (source IN ('PLEX','MUSICBRAINZ','LASTFM')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    PRIMARY KEY (album_id, genre_id, source)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_album_genre_sources_album
+    ON album_genre_sources(album_id);
+
+CREATE INDEX IF NOT EXISTS idx_album_genre_sources_source
+    ON album_genre_sources(source);
+
+CREATE TABLE IF NOT EXISTS album_genre_sync_state (
+                                                      album_id      BIGINT NOT NULL REFERENCES albums(id) ON DELETE CASCADE,
+    source        TEXT   NOT NULL CHECK (source IN ('MUSICBRAINZ','LASTFM')),
+    status        TEXT   NOT NULL CHECK (status IN ('NEVER','DONE','FAILED')) DEFAULT 'NEVER',
+    last_sync_at  TIMESTAMPTZ,
+    last_note    TEXT,
+    force_next    BOOLEAN NOT NULL DEFAULT FALSE,
+
+    PRIMARY KEY (album_id, source)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_album_genre_sync_state_source_status
+    ON album_genre_sync_state(source, status);
+
+CREATE INDEX IF NOT EXISTS idx_album_genre_sync_state_force_next
+    ON album_genre_sync_state(force_next)
+    WHERE force_next = TRUE;

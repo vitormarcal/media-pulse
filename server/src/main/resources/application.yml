@@ -20,14 +20,24 @@ spring:
     locations: classpath:db/migration
 
 media-pulse:
+  pipeline:
+    enabled: ${PIPELINE_IMPORT_ENABLED:true}
+    schedule-cron: ${PIPELINE_IMPORT_CRON:0 0 4 * * *}
+    run-on-startup: ${PIPELINE_RUN_ON_STARTUP:true}
   plex:
     base-url: ${PLEX_URL:http://plex:32400}
     token: ${PLEX_TOKEN}
     import:
       enabled: ${PLEX_IMPORT_ENABLED:true}
       page-size: ${PLEX_IMPORT_PAGE_SIZE:200}
-      schedule-cron: ${PLEX_IMPORT_CRON:0 0 4 * * *}
-      run-on-startup: ${PLEX_IMPORT_RUN_ON_STARTUP:true}
+  musicbrainz:
+    enabled: ${MB_IMPORT_ENABLED:true}
+    user-agent: "media-pulse/1.0"
+    enrich:
+      batch-size: ${MB_ENRICH_BATCH_SIZE:200}
+      only-missing-album-genres: ${MB_ENRICH_ONLY_MISSING_ALBUM_GENRES:false}
+      max-tags: ${MB_ENRICH_MAX_TAGS:30}
+      min-request-interval-ms: ${MB_ENRICH_MIN_REQUEST_INTERVAL_MS:1200}
   storage:
     covers-path: "/data/covers"
   allowed-origin:
