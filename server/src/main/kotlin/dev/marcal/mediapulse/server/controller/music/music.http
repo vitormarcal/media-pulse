@@ -4,6 +4,8 @@
 @artistId = 1
 @start = 2025-01-01T00:00:00Z
 @end = 2025-11-01T23:59:59Z
+@prevStart = 2024-11-01T00:00:00Z
+@prevEnd = 2024-12-01T23:59:59Z
 
 ### Resumo semanal
 GET {{baseUrl}}/summary?range=week
@@ -96,4 +98,21 @@ Accept: application/json
 
 ### Busca o quanto já ouviu dos artitas
 GET {{baseUrl}}/coverage/artists?limit=50
+Accept: application/json
+
+
+### Trending gêneros (período atual vs anterior)
+GET {{baseUrl}}/genres/trending?start={{start}}&end={{end}}&compareStart={{prevStart}}&compareEnd={{prevEnd}}&limit=10
+Accept: application/json
+
+### Gêneros recentes (últimos N plays)
+GET {{baseUrl}}/genres/recent?limit=50
+Accept: application/json
+
+### Underplayed gêneros (pouco tocados, mas presentes na biblioteca)
+GET {{baseUrl}}/genres/underplayed?start={{start}}&end={{end}}&minLibraryAlbums=3&limit=10
+Accept: application/json
+
+### Top gêneros por fonte (PLEX vs MUSICBRAINZ vs LASTFM)
+GET {{baseUrl}}/genres/top-by-source?start={{start}}&end={{end}}&limit=10
 Accept: application/json
