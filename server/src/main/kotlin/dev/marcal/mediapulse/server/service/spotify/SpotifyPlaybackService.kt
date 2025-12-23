@@ -13,6 +13,7 @@ import java.time.Instant
 class SpotifyPlaybackService(
     private val canonical: CanonicalizationService,
     private val trackPlaybackRepo: TrackPlaybackCrudRepository,
+    private val spotifyArtworkService: SpotifyArtworkService,
 ) {
     @Transactional
     suspend fun processRecentlyPlayedItem(
@@ -54,7 +55,7 @@ class SpotifyPlaybackService(
                 artist = artistEntity,
                 title = albumTitle,
                 year = albumYear,
-                coverUrl = coverUrl,
+                coverUrl = null,
                 spotifyId = albumSpotifyId,
                 plexGuid = null,
                 musicbrainzId = null,
@@ -81,5 +82,11 @@ class SpotifyPlaybackService(
             )
 
         trackPlaybackRepo.save(playback)
+
+        spotifyArtworkService.ensureAlbumCoverFromSpotifyUrl(
+            artist = artistEntity,
+            album = albumEntity,
+            spotifyImageUrl = coverUrl,
+        )
     }
 }
