@@ -4,10 +4,12 @@ import dev.marcal.mediapulse.server.controller.webhook.dto.PlexWebhookPayload
 import dev.marcal.mediapulse.server.model.music.PlaybackSource
 import dev.marcal.mediapulse.server.model.music.TrackPlayback
 import dev.marcal.mediapulse.server.model.plex.PlexEventType
+import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
 import dev.marcal.mediapulse.server.service.plex.util.PlexGuidExtractor
 import org.slf4j.LoggerFactory
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -17,6 +19,7 @@ class PlexMusicPlaybackService(
     private val canonical: CanonicalizationService,
     private val trackPlaybackRepo: TrackPlaybackCrudRepository,
     private val plexArtworkService: PlexArtworkService,
+    private val eventSourceCrudRepository: EventSourceCrudRepository,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -47,7 +50,7 @@ class PlexMusicPlaybackService(
         val trackNumber = meta.index
         val discNumber = meta.parentIndex
 
-        val playedAt = meta.lastViewedAt ?: Instant.now()
+        val playedAt = meta.lastViewedAt ?: eventId?.let { eventSourceCrudRepository.findByIdOrNull(it) }?.createdAt ?: Instant.now()
 
         val guids = PlexGuidExtractor.extractGuids(meta)
         val mbidTrack = guids["mbid"]
