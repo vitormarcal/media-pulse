@@ -51,6 +51,9 @@ media-pulse:
     import:
       enabled: ${SPOTIFY_IMPORT_ENABLED:true}
       page-size: ${SPOTIFY_IMPORT_PAGE_SIZE:50}
+    poll:
+      enabled: ${SPOTIFY_POLL_ENABLED:true}
+      cron: ${SPOTIFY_POLL_CRON:0 */10 * * * *}
   storage:
     covers-path: "/data/covers"
   allowed-origin:
