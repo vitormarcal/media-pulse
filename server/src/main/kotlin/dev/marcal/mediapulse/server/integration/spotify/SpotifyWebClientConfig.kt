@@ -22,4 +22,10 @@ class SpotifyWebClientConfig(
             .builder()
             .baseUrl(props.accountsBaseUrl)
             .build()
+
+    @Bean
+    fun spotifyImageWebClient(): WebClient =
+        WebClient
+            .builder()
+            .build()
 }
