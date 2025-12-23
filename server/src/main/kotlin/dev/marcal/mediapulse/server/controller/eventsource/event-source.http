@@ -6,3 +6,13 @@ Content-Type: application/json
   "all": true,
   "pageSize": 50
 }
+
+### Reprocess pending events
+POST {{host}}/event-sources/reprocess
+Content-Type: application/json
+
+{
+  "all": true,
+  "status": ["PENDING"],
+  "pageSize": 50
+}

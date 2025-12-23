@@ -43,19 +43,6 @@ class PlexWebhookDispatcherTest {
         }
 
     @Test
-    fun `test dispatch with unsupported event type`() =
-        runBlocking {
-            val unsupportedEventPayload =
-                PlexEventsFixture.musicEventsJsonNode.first().deepCopy().let {
-                    it.put("event", "unsupported.event")
-                    it.toString()
-                }
-
-            val exception = assertThrows<IllegalStateException> { dispatcher.dispatch(unsupportedEventPayload, null) }
-            assertTrue(exception.message!!.contains("Unsupported event: unsupported.event"))
-        }
-
-    @Test
     fun `test dispatch with invalid scrobble event`() =
         runBlocking {
             val invalidScrobblePayload =

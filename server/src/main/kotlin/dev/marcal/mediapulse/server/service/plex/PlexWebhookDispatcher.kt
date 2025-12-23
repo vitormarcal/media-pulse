@@ -19,7 +19,7 @@ class PlexWebhookDispatcher(
      *
      * @param payload The JSON payload received from the Plex webhook.
      * @param eventId The ID of the event, used for logging and tracking.
-     * @throws IllegalStateException if the event type is unsupported or if processing fails.
+     * @throws IllegalStateException if processing fails.
      */
     suspend fun dispatch(
         payload: String,
@@ -32,8 +32,7 @@ class PlexWebhookDispatcher(
                 doPlaybackScrobble(webhookPayload, eventId)
             }
             else -> {
-                logger.warn("Unsupported event: ${webhookPayload.event}")
-                throw IllegalStateException("Unsupported event: ${webhookPayload.event}")
+                logger.debug("Unsupported event: ${webhookPayload.event}")
             }
         }
     }
