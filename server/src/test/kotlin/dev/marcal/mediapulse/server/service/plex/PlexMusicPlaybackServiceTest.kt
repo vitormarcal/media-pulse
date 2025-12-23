@@ -8,6 +8,7 @@ import dev.marcal.mediapulse.server.model.music.PlaybackSource
 import dev.marcal.mediapulse.server.model.music.Track
 import dev.marcal.mediapulse.server.model.music.TrackPlayback
 import dev.marcal.mediapulse.server.model.plex.PlexEventType
+import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
 import dev.marcal.mediapulse.server.service.plex.util.PlexGuidExtractor
@@ -23,6 +24,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.data.repository.findByIdOrNull
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -32,6 +34,7 @@ class PlexMusicPlaybackServiceTest {
     private lateinit var canonical: CanonicalizationService
     private lateinit var playbackRepo: TrackPlaybackCrudRepository
     private lateinit var plexArtworkService: PlexArtworkService
+    private lateinit var eventSourceCrudRepository: EventSourceCrudRepository
     private lateinit var service: PlexMusicPlaybackService
 
     @BeforeEach
@@ -40,8 +43,10 @@ class PlexMusicPlaybackServiceTest {
         canonical = mockk(relaxed = true)
         playbackRepo = mockk(relaxed = true)
         plexArtworkService = mockk(relaxed = true)
-        service = PlexMusicPlaybackService(canonical, playbackRepo, plexArtworkService)
+        eventSourceCrudRepository = mockk(relaxed = true)
+        service = PlexMusicPlaybackService(canonical, playbackRepo, plexArtworkService, eventSourceCrudRepository)
 
+        every { eventSourceCrudRepository.findByIdOrNull(any()) } returns null
         mockkObject(PlexGuidExtractor)
     }
 
