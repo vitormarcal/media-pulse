@@ -1,0 +1,20 @@
+@host = http://localhost:8080
+
+### 1) Iniciar login OAuth no Spotify
+### Abre o navegador e pede autorização
+GET {{host}}/oauth/spotify/login
+
+
+### 2) Callback OAuth (NÃO chamar manualmente)
+### Esse endpoint é chamado automaticamente pelo Spotify
+### após você aceitar o login.
+###
+### Exemplo do que o Spotify vai chamar:
+### GET {{host}}/oauth/spotify/callback?code=AAA&state=BBB
+###
+### Você NÃO executa isso no client.
+### O resultado aparece no navegador com o refresh token.
+
+
+### 3) (Opcional) Testar se OAuth está habilitado
+GET {{host}}/oauth/spotify/login

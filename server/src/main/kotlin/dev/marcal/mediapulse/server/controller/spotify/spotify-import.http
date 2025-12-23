@@ -1,0 +1,33 @@
+@host = http://localhost:8080
+@baseUrl = {{host}}/api/spotify
+
+### Import incremental normal (usa cursor)
+POST {{baseUrl}}/import
+Content-Type: application/json
+
+{}
+
+### Import incremental limitando páginas (debug)
+POST {{baseUrl}}/import
+Content-Type: application/json
+
+{
+  "maxPages": 2
+}
+
+### Import resetando cursor (reimporta tudo que a API ainda retorna)
+POST {{baseUrl}}/import
+Content-Type: application/json
+
+{
+  "resetCursor": true
+}
+
+### Reset + limite (debug controlado)
+POST {{baseUrl}}/import
+Content-Type: application/json
+
+{
+  "resetCursor": true,
+  "maxPages": 1
+}

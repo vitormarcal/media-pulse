@@ -37,6 +37,20 @@ media-pulse:
       batch-size: ${MB_ENRICH_BATCH_SIZE:200}
       max-tags: ${MB_ENRICH_MAX_TAGS:30}
       min-request-interval-ms: ${MB_ENRICH_MIN_REQUEST_INTERVAL_MS:1200}
+  spotify:
+    enabled: ${SPOTIFY_ENABLED:true}
+    api-base-url: ${SPOTIFY_API_BASE_URL:https://api.spotify.com/v1}
+    accounts-base-url: ${SPOTIFY_ACCOUNTS_BASE_URL:https://accounts.spotify.com}
+    client-id: ${SPOTIFY_CLIENT_ID:}
+    client-secret: ${SPOTIFY_CLIENT_SECRET:}
+    refresh-token: ${SPOTIFY_REFRESH_TOKEN:}
+    oauth:
+      enabled: ${SPOTIFY_OAUTH_ENABLED:false}
+      redirect-uri: ${SPOTIFY_REDIRECT_URI:http://localhost:8080/oauth/spotify/callback}
+      scopes: ${SPOTIFY_SCOPES:user-read-recently-played}
+    import:
+      enabled: ${SPOTIFY_IMPORT_ENABLED:true}
+      page-size: ${SPOTIFY_IMPORT_PAGE_SIZE:50}
   storage:
     covers-path: "/data/covers"
   allowed-origin:

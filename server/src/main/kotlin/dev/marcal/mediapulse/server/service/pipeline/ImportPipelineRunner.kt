@@ -5,6 +5,7 @@ import dev.marcal.mediapulse.server.config.PipelineProperties
 import dev.marcal.mediapulse.server.config.PlexProperties
 import dev.marcal.mediapulse.server.service.musicbrainz.MusicBrainzAlbumGenreEnrichmentService
 import dev.marcal.mediapulse.server.service.plex.import.PlexImportService
+import dev.marcal.mediapulse.server.service.spotify.SpotifyImportService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.concurrent.atomic.AtomicBoolean
@@ -14,8 +15,10 @@ class ImportPipelineRunner(
     private val pipelineProps: PipelineProperties,
     private val plexProps: PlexProperties,
     private val mbProps: MusicBrainzProperties,
+    private val spotifyProps: MusicBrainzProperties,
     private val plexImportService: PlexImportService,
     private val mbService: MusicBrainzAlbumGenreEnrichmentService,
+    private val spotifyImportService: SpotifyImportService,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val running = AtomicBoolean(false)
@@ -48,6 +51,13 @@ class ImportPipelineRunner(
                 logger.info("Pipeline MusicBrainz done | processed={}", processed)
             } else {
                 logger.info("Pipeline MusicBrainz skipped | reason=disabled")
+            }
+
+            if (spotifyProps.enabled) {
+                val imported = spotifyImportService.importRecentlyPlayed()
+                logger.info("Pipeline Spotify done | imported={}", imported)
+            } else {
+                logger.info("Pipeline Spotify skipped | reason=disabled")
             }
 
             logger.info("Pipeline finished | reason={}", reason)
