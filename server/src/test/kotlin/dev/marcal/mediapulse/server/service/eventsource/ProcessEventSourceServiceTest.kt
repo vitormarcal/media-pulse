@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.fixture.EventSourceFixture
 import dev.marcal.mediapulse.server.model.EventSource
 import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
 import dev.marcal.mediapulse.server.service.plex.PlexWebhookDispatcher
+import dev.marcal.mediapulse.server.service.spotify.SpotifyEventDispatcher
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -18,10 +19,12 @@ import kotlin.test.Test
 class ProcessEventSourceServiceTest {
     private val repository = mockk<EventSourceCrudRepository>()
     private val plexWebhookDispatcher = mockk<PlexWebhookDispatcher>()
+    private val spotifyEventDispatcher = mockk<SpotifyEventDispatcher>()
     private val service =
         ProcessEventSourceService(
             repository = repository,
             plexWebhookDispatcher = plexWebhookDispatcher,
+            spotifyEventDispatcher = spotifyEventDispatcher,
         )
 
     @BeforeEach
