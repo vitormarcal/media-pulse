@@ -26,6 +26,21 @@ class SpotifyApiClient(
         val accessToken = authService.getValidAccessToken()
 
         return executeWith429Retry {
+            val teste =
+                spotifyApiWebClient
+                    .get()
+                    .uri { builder ->
+                        builder
+                            .path("/me/player/recently-played")
+                            .queryParam("after", afterMs)
+                            .queryParam("limit", limit)
+                            .build()
+                    }.header(HttpHeaders.AUTHORIZATION, "Bearer $accessToken")
+                    .retrieve()
+                    .toEntity(object : ParameterizedTypeReference<String>() {})
+                    .awaitSingle()
+                    .body
+            logger.info(teste)
             spotifyApiWebClient
                 .get()
                 .uri { builder ->

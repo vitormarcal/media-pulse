@@ -11,11 +11,17 @@ data class SpotifyProperties(
     val clientSecret: String,
     val refreshToken: String,
     val import: Import = Import(),
+    val poll: Poll = Poll(),
     val oauth: OAuth = OAuth(),
 ) {
     data class Import(
         val enabled: Boolean = true,
         val pageSize: Int = 50,
+    )
+
+    data class Poll(
+        val enabled: Boolean = true,
+        val cron: String = "0 */10 * * * *",
     )
 
     data class OAuth(
