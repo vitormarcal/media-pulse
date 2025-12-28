@@ -2,6 +2,8 @@ package dev.marcal.mediapulse.server.service.plex
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import dev.marcal.mediapulse.server.controller.webhook.dto.PlexWebhookPayload
+import dev.marcal.mediapulse.server.service.dispatch.DispatchResult
+import dev.marcal.mediapulse.server.service.dispatch.EventDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
@@ -9,22 +11,23 @@ import org.springframework.stereotype.Component
 class PlexWebhookDispatcher(
     private val objectMapper: ObjectMapper,
     private val plexMusicPlaybackService: PlexMusicPlaybackService,
-) {
+) : EventDispatcher {
+    override val provider: String = "plex"
+
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
     }
 
     /**
-     * Dispatches the webhook payload to the appropriate handler based on the event type.
+     * Dispatches a Plex webhook payload and returns the semantic processing result.
      *
-     * @param payload The JSON payload received from the Plex webhook.
-     * @param eventId The ID of the event, used for logging and tracking.
-     * @throws IllegalStateException if processing fails.
+     * Domain outcomes are returned as DispatchResult.
+     * Technical failures are propagated as exceptions.
      */
-    suspend fun dispatch(
+    override suspend fun dispatch(
         payload: String,
         eventId: Long?,
-    ) {
+    ): DispatchResult {
         val webhookPayload = parsePayload(payload)
 
         return when (webhookPayload.event) {
@@ -32,7 +35,8 @@ class PlexWebhookDispatcher(
                 doPlaybackScrobble(webhookPayload, eventId)
             }
             else -> {
-                logger.debug("Unsupported event: ${webhookPayload.event}")
+                logger.debug("Unsupported Plex event: ${webhookPayload.event}")
+                DispatchResult.UNSUPPORTED
             }
         }
     }
@@ -48,17 +52,24 @@ class PlexWebhookDispatcher(
     private suspend fun doPlaybackScrobble(
         webhookPayload: PlexWebhookPayload,
         eventId: Long?,
-    ) {
+    ): DispatchResult =
         when (webhookPayload.metadata.type) {
-            "track" ->
-                plexMusicPlaybackService.processScrobble(webhookPayload, eventId)
-                    ?: throw IllegalStateException("Track playback not found for: ${webhookPayload.metadata.title}")
-            "episode" ->
-                throw IllegalStateException("Episode playback not found for: ${webhookPayload.metadata.title}")
+            "track" -> {
+                val processed = plexMusicPlaybackService.processScrobble(webhookPayload, eventId)
+                if (processed != null) {
+                    DispatchResult.SUCCESS
+                } else {
+                    throw IllegalStateException("Track playback not found for: ${webhookPayload.metadata.title}")
+                }
+            }
+            "episode" -> {
+                logger.debug("Ignored Plex scrobble type: episode")
+                DispatchResult.IGNORED
+            }
+
             else -> {
-                logger.warn("Unsupported metadata type for scrobble: ${webhookPayload.metadata.type}")
-                throw IllegalStateException("Unsupported metadata type: ${webhookPayload.metadata.type}")
+                logger.debug("Unsupported Plex scrobble metadata type: ${webhookPayload.metadata.type}")
+                DispatchResult.UNSUPPORTED
             }
         }
-    }
 }

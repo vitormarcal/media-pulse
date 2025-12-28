@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.dispatcher
 import com.fasterxml.jackson.databind.node.ObjectNode
 import dev.marcal.mediapulse.server.config.JacksonConfig
 import dev.marcal.mediapulse.server.fixture.PlexEventsFixture
+import dev.marcal.mediapulse.server.service.dispatch.DispatchResult
 import dev.marcal.mediapulse.server.service.plex.PlexMusicPlaybackService
 import dev.marcal.mediapulse.server.service.plex.PlexWebhookDispatcher
 import io.mockk.clearAllMocks
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class PlexWebhookDispatcherTest {
     private val objectMapper = JacksonConfig().objectMapper()
@@ -51,8 +53,8 @@ class PlexWebhookDispatcherTest {
                     it.toString()
                 }
 
-            val exception = assertThrows<IllegalStateException> { dispatcher.dispatch(invalidScrobblePayload, null) }
-            assertTrue(exception.message!!.contains("Unsupported metadata type: eventTypeXyz"))
+            val result = dispatcher.dispatch(invalidScrobblePayload, null)
+            assertEquals(DispatchResult.UNSUPPORTED, result)
         }
 
     @Test

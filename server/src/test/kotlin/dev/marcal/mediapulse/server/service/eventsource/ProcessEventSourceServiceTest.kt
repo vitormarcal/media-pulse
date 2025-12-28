@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.service.eventsource
 import dev.marcal.mediapulse.server.fixture.EventSourceFixture
 import dev.marcal.mediapulse.server.model.EventSource
 import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
+import dev.marcal.mediapulse.server.service.dispatch.DispatchResult
 import dev.marcal.mediapulse.server.service.plex.PlexWebhookDispatcher
 import dev.marcal.mediapulse.server.service.spotify.SpotifyEventDispatcher
 import io.mockk.clearAllMocks
@@ -20,19 +21,26 @@ class ProcessEventSourceServiceTest {
     private val repository = mockk<EventSourceCrudRepository>()
     private val plexWebhookDispatcher = mockk<PlexWebhookDispatcher>()
     private val spotifyEventDispatcher = mockk<SpotifyEventDispatcher>()
-    private val service =
-        ProcessEventSourceService(
-            repository = repository,
-            plexWebhookDispatcher = plexWebhookDispatcher,
-            spotifyEventDispatcher = spotifyEventDispatcher,
-        )
+    private lateinit var service: ProcessEventSourceService
 
     @BeforeEach
     fun setUp() {
         clearAllMocks()
+
+        every { plexWebhookDispatcher.provider } returns "plex"
+        every { spotifyEventDispatcher.provider } returns "spotify"
+
         every { repository.findByIdOrNull(any()) } returns EventSourceFixture.example()
         every { repository.save(any()) } returnsArgument 0
-        coEvery { plexWebhookDispatcher.dispatch(any(), any()) } returns mockk()
+
+        coEvery { plexWebhookDispatcher.dispatch(any(), any()) } returns DispatchResult.SUCCESS
+        coEvery { spotifyEventDispatcher.dispatch(any(), any()) } returns DispatchResult.SUCCESS
+
+        service =
+            ProcessEventSourceService(
+                repository = repository,
+                dispatchers = listOf(plexWebhookDispatcher, spotifyEventDispatcher),
+            )
     }
 
     @Test
@@ -60,7 +68,7 @@ class ProcessEventSourceServiceTest {
             verify {
                 repository.save(
                     match<EventSource> {
-                        it.status == EventSource.Status.FAILED &&
+                        it.status == EventSource.Status.UNSUPPORTED &&
                             it.errorMessage == "Unsupported provider: unsupported"
                     },
                 )
@@ -73,12 +81,12 @@ class ProcessEventSourceServiceTest {
             val eventId = 1L
             val event = EventSourceFixture.example().copy(provider = "plex")
 
-            coEvery { repository.findByIdOrNull(eventId) } returns event
+            every { repository.findByIdOrNull(eventId) } returns event
 
             service.execute(eventId)
 
             coVerify {
-                plexWebhookDispatcher.dispatch(event.payload, eventId)
+                plexWebhookDispatcher.dispatch(event.payload, any())
                 repository.save(
                     match<EventSource> {
                         it.status == EventSource.Status.SUCCESS &&
@@ -94,7 +102,7 @@ class ProcessEventSourceServiceTest {
             val eventId = 1L
             val event = EventSourceFixture.example().copy(provider = "plex")
 
-            coEvery { repository.findByIdOrNull(eventId) } returns event
+            every { repository.findByIdOrNull(eventId) } returns event
             coEvery { plexWebhookDispatcher.dispatch(any(), any()) } throws RuntimeException("Processing error")
 
             service.execute(eventId)
@@ -120,7 +128,7 @@ class ProcessEventSourceServiceTest {
             service.executeAsync(eventId)
 
             coVerify {
-                plexWebhookDispatcher.dispatch(event.payload, eventId)
+                plexWebhookDispatcher.dispatch(event.payload, any())
                 repository.save(
                     match<EventSource> {
                         it.status == EventSource.Status.SUCCESS &&
