@@ -20,6 +20,25 @@ spring:
     locations: classpath:db/migration
 
 media-pulse:
+  http:
+    remote:
+      max-connections: 20
+      pending-acquire-timeout-ms: 10000
+      connect-timeout-ms: 10000
+      response-timeout-ms: 25000
+      read-timeout-ms: 25000
+      write-timeout-ms: 25000
+      max-idle-time-ms: 60000
+      max-life-time-ms: 300000
+    local:
+      max-connections: 20
+      pending-acquire-timeout-ms: 5000
+      connect-timeout-ms: 2000
+      response-timeout-ms: 12000
+      read-timeout-ms: 12000
+      write-timeout-ms: 12000
+      max-idle-time-ms: 60000
+      max-life-time-ms: 300000
   pipeline:
     enabled: ${PIPELINE_IMPORT_ENABLED:true}
     schedule-cron: ${PIPELINE_IMPORT_CRON:0 0 4 * * *}
