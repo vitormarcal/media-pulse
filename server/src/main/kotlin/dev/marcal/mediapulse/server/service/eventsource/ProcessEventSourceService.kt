@@ -1,8 +1,9 @@
 package dev.marcal.mediapulse.server.service.eventsource
 
+import dev.marcal.mediapulse.server.model.EventSource
 import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
-import dev.marcal.mediapulse.server.service.plex.PlexWebhookDispatcher
-import dev.marcal.mediapulse.server.service.spotify.SpotifyEventDispatcher
+import dev.marcal.mediapulse.server.service.dispatch.DispatchResult
+import dev.marcal.mediapulse.server.service.dispatch.EventDispatcher
 import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.scheduling.annotation.Async
@@ -11,12 +12,11 @@ import org.springframework.stereotype.Service
 @Service
 class ProcessEventSourceService(
     private val repository: EventSourceCrudRepository,
-    private val plexWebhookDispatcher: PlexWebhookDispatcher,
-    private val spotifyEventDispatcher: SpotifyEventDispatcher,
+    dispatchers: List<EventDispatcher>,
 ) {
-    companion object {
-        private val logger = LoggerFactory.getLogger(this::class.java)
-    }
+    private val byProvider = dispatchers.associateBy { it.provider }
+
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     /**
      * Asynchronously processes a webhook event by its ID.
@@ -36,31 +36,35 @@ class ProcessEventSourceService(
     suspend fun execute(eventId: Long) {
         val event = repository.findByIdOrNull(eventId) ?: return
 
-        val eventUpdated =
-            try {
-                when (event.provider) {
-                    "plex" -> {
-                        logger.info("Processing Plex webhook event with ID: $eventId")
-                        plexWebhookDispatcher.dispatch(event.payload, eventId)
-                        event.markAsSuccess()
-                    }
+        val updated = dispatch(event)
 
-                    "spotify" -> {
-                        logger.info("Processing spotify event with ID: $eventId")
-                        spotifyEventDispatcher.dispatch(event.payload, eventId)
-                        event.markAsSuccess()
-                    }
-
-                    else -> {
-                        logger.warn("Unsupported provider: ${event.provider} for event ID: $eventId")
-                        event.markAsFailed("Unsupported provider: ${event.provider}")
-                    }
-                }
-            } catch (ex: Exception) {
-                logger.error("Error processing webhook event with ID $eventId", ex)
-                event.markAsFailed(ex.message?.take(255) ?: "Unknown error")
-            }
-
-        repository.save(eventUpdated)
+        repository.save(updated)
     }
+
+    private suspend fun dispatch(event: EventSource): EventSource {
+        val eventId = event.id
+        val dispatcher = byProvider[event.provider] ?: return event.markAsUnsupported("Unsupported provider: ${event.provider}".take(255))
+        return try {
+            val result = dispatcher.dispatch(event.payload, eventId)
+            applyResult(event, result, event.provider)
+        } catch (ex: Exception) {
+            logger.error("Error processing eventId=$eventId", ex)
+            event.markAsFailed(ex.message?.take(255) ?: "Unknown error")
+        }
+    }
+
+    private fun applyResult(
+        event: EventSource,
+        result: DispatchResult,
+        provider: String,
+    ): EventSource =
+        when (result) {
+            DispatchResult.SUCCESS -> event.markAsSuccess()
+
+            DispatchResult.UNSUPPORTED ->
+                event.markAsUnsupported("Unsupported $provider event".take(255))
+
+            DispatchResult.IGNORED ->
+                event.markAsUnsupported("Ignored $provider event".take(255))
+        }
 }

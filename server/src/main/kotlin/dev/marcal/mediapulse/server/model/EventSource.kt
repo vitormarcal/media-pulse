@@ -33,9 +33,12 @@ data class EventSource(
         PENDING,
         FAILED,
         SUCCESS,
+        UNSUPPORTED,
     }
 
     fun markAsSuccess(): EventSource = this.copy(status = Status.SUCCESS, updatedAt = Instant.now(), errorMessage = null)
 
     fun markAsFailed(error: String): EventSource = this.copy(status = Status.FAILED, errorMessage = error, updatedAt = Instant.now())
+
+    fun markAsUnsupported(reason: String): EventSource = copy(status = Status.UNSUPPORTED, updatedAt = Instant.now(), errorMessage = reason)
 }
