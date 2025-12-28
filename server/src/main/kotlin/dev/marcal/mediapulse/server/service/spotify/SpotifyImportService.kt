@@ -27,8 +27,16 @@ class SpotifyImportService(
     ): Int {
         if (!running.compareAndSet(false, true)) {
             logger.info("Spotify import already running | ignored")
-            return 0
+            return -1
         }
+
+        val runId =
+            java.util.UUID
+                .randomUUID()
+                .toString()
+                .take(8)
+        val start = System.currentTimeMillis()
+        logger.info("Spotify import started | runId={} resetCursor={} maxPages={}", runId, resetCursor, maxPages)
 
         try {
             if (resetCursor) {
@@ -79,6 +87,7 @@ class SpotifyImportService(
 
             return imported
         } finally {
+            logger.info("Spotify import finished | runId={} elapsedMs={}", runId, System.currentTimeMillis() - start)
             running.set(false)
         }
     }
