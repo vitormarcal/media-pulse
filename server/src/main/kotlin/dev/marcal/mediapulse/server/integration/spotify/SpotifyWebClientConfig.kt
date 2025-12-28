@@ -10,22 +10,17 @@ class SpotifyWebClientConfig(
     private val props: SpotifyProperties,
 ) {
     @Bean
-    fun spotifyApiWebClient(): WebClient =
-        WebClient
-            .builder()
+    fun spotifyApiWebClient(builder: WebClient.Builder): WebClient =
+        builder
             .baseUrl(props.apiBaseUrl)
             .build()
 
     @Bean
-    fun spotifyAccountsWebClient(): WebClient =
-        WebClient
-            .builder()
+    fun spotifyAccountsWebClient(builder: WebClient.Builder): WebClient =
+        builder
             .baseUrl(props.accountsBaseUrl)
             .build()
 
     @Bean
-    fun spotifyImageWebClient(): WebClient =
-        WebClient
-            .builder()
-            .build()
+    fun spotifyImageWebClient(builder: WebClient.Builder): WebClient = builder.build()
 }
