@@ -18,4 +18,5 @@ media-pulse:
     token: "YOUR_DEV_TOKEN"
   storage:
     covers-path: "."
+    imports-path: "."
 

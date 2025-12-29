@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:15MB}
+      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:15MB}
   web:
     resources:
       static-locations:
@@ -75,6 +79,7 @@ media-pulse:
       cron: ${SPOTIFY_POLL_CRON:0 */10 * * * *}
   storage:
     covers-path: "/data/covers"
+    imports-path: "/data/imports"
   allowed-origin:
     - http://localhost:8080
 
