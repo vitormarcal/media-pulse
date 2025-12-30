@@ -22,4 +22,12 @@ class EventSourceController(
         reprocessEventSource.reprocessAsync(reprocessRequest)
         return ApiResult(counter)
     }
+
+    @PostMapping("/{id}/reprocess")
+    fun reprocessById(
+        @org.springframework.web.bind.annotation.PathVariable id: Long,
+    ): ApiResult<Unit> {
+        reprocessEventSource.reprocessById(id)
+        return ApiResult(Unit)
+    }
 }
