@@ -13,7 +13,7 @@ interface TrackPlaybackCrudRepository : JpaRepository<TrackPlayback, Long> {
         value = """
         INSERT INTO track_playbacks (track_id, source, source_event_id, played_at, created_at)
         VALUES (:trackId, :source, :sourceEventId, :playedAt, NOW())
-        ON CONFLICT ON CONSTRAINT uq_playbacks_source_track_time DO NOTHING
+        ON CONFLICT (source, track_id, played_at) DO NOTHING
     """,
         nativeQuery = true,
     )
