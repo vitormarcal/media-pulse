@@ -99,10 +99,16 @@ class SpotifyExtendedPlaybackService(
                 playedAt = playedAt,
             )
 
-        runCatching { trackPlaybackRepo.save(playback) }
-            .onFailure { ex ->
-                logger.debug("Playback insert skipped (likely duplicate) | playedAt={} trackId={}", playedAt, trackEntity.id)
-            }
+        runCatching {
+            trackPlaybackRepo.insertIgnore(
+                trackId = trackEntity.id,
+                source = PlaybackSource.SPOTIFY.name,
+                sourceEventId = eventId,
+                playedAt = playedAt,
+            )
+        }.onFailure { ex ->
+            logger.debug("Playback insert skipped (likely duplicate) | playedAt={} trackId={}", playedAt, trackEntity.id)
+        }
     }
 
     private fun extractTrackId(uri: String?): String? {
