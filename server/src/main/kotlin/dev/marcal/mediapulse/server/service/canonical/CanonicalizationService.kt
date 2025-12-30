@@ -85,6 +85,14 @@ class CanonicalizationService(
                 ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
                 ?: albumRepo.findByArtistIdAndTitleAndYear(artist.id, title, year)
                 ?: run {
+                    if (year == null) {
+                        val candidates = albumRepo.findAllByArtistIdAndTitle(artist.id, title)
+                        if (candidates.size == 1) candidates.first() else null
+                    } else {
+                        null
+                    }
+                }
+                ?: run {
                     val fp = FingerprintUtil.albumFp(title, artist.id, year)
                     albumRepo.findByFingerprint(fp)
                 }
@@ -102,6 +110,10 @@ class CanonicalizationService(
                     ),
                 )
             }
+
+        if (year != null && album.year == null) {
+            albumRepo.save(album.copy(year = year, updatedAt = Instant.now()))
+        }
 
         musicbrainzId?.let { safeLink(EntityType.ALBUM, album.id, Provider.MUSICBRAINZ, it) }
         plexGuid?.let { safeLink(EntityType.ALBUM, album.id, Provider.PLEX, it) }
@@ -149,6 +161,14 @@ class CanonicalizationService(
                 ?: run {
                     if (discNumber != null && trackNumber != null) {
                         trackRepo.findByAlbumIdAndDiscNumberAndTrackNumber(album.id, discNumber, trackNumber)
+                    } else {
+                        null
+                    }
+                }
+                ?: run {
+                    if (discNumber == null && trackNumber == null) {
+                        val candidates = trackRepo.findAllByAlbumIdAndTitle(album.id, title)
+                        if (candidates.size == 1) candidates.first() else null
                     } else {
                         null
                     }
