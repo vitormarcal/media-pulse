@@ -1,3 +1,5 @@
+@eventId = 4905
+
 ###
 POST {{host}}/event-sources/reprocess
 Content-Type: application/json
@@ -16,3 +18,7 @@ Content-Type: application/json
   "status": ["PENDING"],
   "pageSize": 50
 }
+
+### Reprocess by id
+POST {{host}}/event-sources/{{eventId}}/reprocess
+Content-Type: application/json
