@@ -66,6 +66,24 @@ class ReprocessEventSource(
         }
     }
 
+    fun reprocessById(eventSourceId: Long) {
+        val event =
+            eventSourceCrudRepository
+                .findById(eventSourceId)
+                .orElseThrow { IllegalArgumentException("EventSource not found: $eventSourceId") }
+
+        val reset =
+            event.copy(
+                status = EventSource.Status.PENDING,
+                errorMessage = null,
+                updatedAt = java.time.Instant.now(),
+            )
+
+        eventSourceCrudRepository.save(reset)
+
+        processEventSourceService.executeAsync(eventSourceId)
+    }
+
     private fun findByFilter(
         reprocessRequest: ReprocessRequest,
         pageRequest: PageRequest,
