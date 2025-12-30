@@ -11,4 +11,9 @@ interface AlbumRepository : CrudRepository<Album, Long> {
         title: String,
         year: Int?,
     ): Album?
+
+    fun findAllByArtistIdAndTitle(
+        artistId: Long,
+        title: String,
+    ): List<Album>
 }

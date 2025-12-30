@@ -11,4 +11,9 @@ interface TrackRepository : CrudRepository<Track, Long> {
         discNumber: Int,
         trackNumber: Int,
     ): Track?
+
+    fun findAllByAlbumIdAndTitle(
+        albumId: Long,
+        title: String,
+    ): List<Track>
 }

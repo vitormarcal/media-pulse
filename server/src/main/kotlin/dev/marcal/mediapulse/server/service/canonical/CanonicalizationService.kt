@@ -85,11 +85,19 @@ class CanonicalizationService(
                 ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
                 ?: albumRepo.findByArtistIdAndTitleAndYear(artist.id, title, year)
                 ?: run {
+                    if (year == null) {
+                        val candidates = albumRepo.findAllByArtistIdAndTitle(artist.id, title)
+                        if (candidates.size == 1) candidates.first() else null
+                    } else {
+                        null
+                    }
+                }
+                ?: run {
                     val fp = FingerprintUtil.albumFp(title, artist.id, year)
                     albumRepo.findByFingerprint(fp)
                 }
 
-        val album =
+        val album0 =
             found ?: run {
                 val fp = FingerprintUtil.albumFp(title, artist.id, year)
                 albumRepo.save(
@@ -101,6 +109,13 @@ class CanonicalizationService(
                         fingerprint = fp,
                     ),
                 )
+            }
+
+        val album =
+            if (year != null && album0.year == null) {
+                albumRepo.save(album0.copy(year = year, updatedAt = Instant.now()))
+            } else {
+                album0
             }
 
         musicbrainzId?.let { safeLink(EntityType.ALBUM, album.id, Provider.MUSICBRAINZ, it) }
@@ -149,6 +164,14 @@ class CanonicalizationService(
                 ?: run {
                     if (discNumber != null && trackNumber != null) {
                         trackRepo.findByAlbumIdAndDiscNumberAndTrackNumber(album.id, discNumber, trackNumber)
+                    } else {
+                        null
+                    }
+                }
+                ?: run {
+                    if (discNumber == null && trackNumber == null) {
+                        val candidates = trackRepo.findAllByAlbumIdAndTitle(album.id, title)
+                        if (candidates.size == 1) candidates.first() else null
                     } else {
                         null
                     }
