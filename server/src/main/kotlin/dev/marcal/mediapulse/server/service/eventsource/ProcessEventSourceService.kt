@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.model.EventSource
 import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
 import dev.marcal.mediapulse.server.service.dispatch.DispatchResult
 import dev.marcal.mediapulse.server.service.dispatch.EventDispatcher
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.scheduling.annotation.Async
@@ -24,8 +25,8 @@ class ProcessEventSourceService(
      * @param eventId The ID of the webhook event to process.
      */
     @Async
-    suspend fun executeAsync(eventId: Long) {
-        this.execute(eventId)
+    fun executeAsync(eventId: Long) {
+        runBlocking { execute(eventId) }
     }
 
     /**

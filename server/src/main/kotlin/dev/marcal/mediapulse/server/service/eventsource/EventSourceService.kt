@@ -20,8 +20,9 @@ class EventSourceService(
     fun save(
         payload: String,
         provider: String,
+        fingerprint: String? = null,
     ): EventSource {
-        val fingerprint = DigestUtils.sha256Hex(payload)
+        val fingerprint = fingerprint ?: DigestUtils.sha256Hex(payload)
 
         val existing = repository.findByFingerprint(fingerprint)
         if (existing != null) return existing
