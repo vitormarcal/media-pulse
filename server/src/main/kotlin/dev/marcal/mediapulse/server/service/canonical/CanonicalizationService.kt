@@ -97,7 +97,7 @@ class CanonicalizationService(
                     albumRepo.findByFingerprint(fp)
                 }
 
-        val album =
+        val album0 =
             found ?: run {
                 val fp = FingerprintUtil.albumFp(title, artist.id, year)
                 albumRepo.save(
@@ -111,9 +111,12 @@ class CanonicalizationService(
                 )
             }
 
-        if (year != null && album.year == null) {
-            albumRepo.save(album.copy(year = year, updatedAt = Instant.now()))
-        }
+        val album =
+            if (year != null && album0.year == null) {
+                albumRepo.save(album0.copy(year = year, updatedAt = Instant.now()))
+            } else {
+                album0
+            }
 
         musicbrainzId?.let { safeLink(EntityType.ALBUM, album.id, Provider.MUSICBRAINZ, it) }
         plexGuid?.let { safeLink(EntityType.ALBUM, album.id, Provider.PLEX, it) }
