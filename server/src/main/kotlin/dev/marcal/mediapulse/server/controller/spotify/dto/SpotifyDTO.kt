@@ -6,6 +6,5 @@ data class SpotifyImportRequest(
 )
 
 data class SpotifyImportResponse(
-    val imported: Int,
     val resetCursor: Boolean,
 )

@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
+import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.netty.http.client.HttpClient
 import reactor.netty.resources.ConnectionProvider
@@ -23,6 +24,9 @@ class WebClientBaseConfig(
     @Bean
     fun localHttpClient(): HttpClient = buildHttpClient("local", props.local)
 
+    @Bean
+    fun imagesHttpClient(): HttpClient = buildHttpClient("images", props.images)
+
     @Bean("remoteWebClientBuilder")
     @Primary
     fun remoteWebClientBuilder(remoteHttpClient: HttpClient): WebClient.Builder =
@@ -30,11 +34,28 @@ class WebClientBaseConfig(
             .builder()
             .clientConnector(ReactorClientHttpConnector(remoteHttpClient))
 
-    @Bean("plexWebClientBuilder")
-    fun plexWebClientBuilder(localHttpClient: HttpClient): WebClient.Builder =
+    @Bean("imagesWebClientBuilder")
+    fun imagesWebClientBuilder(imagesHttpClient: HttpClient): WebClient.Builder =
         WebClient
             .builder()
+            .clientConnector(ReactorClientHttpConnector(imagesHttpClient))
+
+    @Bean("plexWebClientBuilder")
+    fun plexWebClientBuilder(localHttpClient: HttpClient): WebClient.Builder {
+        val maxBytes = 50 * 1024 * 1024 // 50MB
+
+        val strategies =
+            ExchangeStrategies
+                .builder()
+                .codecs { codecs ->
+                    codecs.defaultCodecs().maxInMemorySize(maxBytes)
+                }.build()
+
+        return WebClient
+            .builder()
             .clientConnector(ReactorClientHttpConnector(localHttpClient))
+            .exchangeStrategies(strategies)
+    }
 
     private fun buildHttpClient(
         name: String,

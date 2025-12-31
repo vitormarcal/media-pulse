@@ -17,6 +17,8 @@ data class TrackPlayback(
     val id: Long = 0,
     @Column(name = "track_id", nullable = false)
     val trackId: Long,
+    @Column(name = "album_id", nullable = false)
+    val albumId: Long,
     @Column(name = "source_event_id")
     val sourceEventId: Long? = null,
     @Enumerated(EnumType.STRING)

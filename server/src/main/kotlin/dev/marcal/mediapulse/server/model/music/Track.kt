@@ -17,12 +17,16 @@ import java.time.Instant
 data class Track(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
-    @Column(name = "album_id", nullable = false) val albumId: Long,
-    @Column(nullable = false) val title: String,
-    @Column(name = "track_number") val trackNumber: Int? = null,
-    @Column(name = "disc_number") val discNumber: Int? = null,
-    @Column(name = "duration_ms") val durationMs: Int? = null,
-    @Column(nullable = false, unique = true) val fingerprint: String,
-    @Column(name = "created_at") val createdAt: Instant = Instant.now(),
-    @Column(name = "updated_at") val updatedAt: Instant? = null,
+    @Column(name = "artist_id", nullable = false)
+    val artistId: Long,
+    @Column(nullable = false)
+    val title: String,
+    @Column(name = "duration_ms")
+    val durationMs: Int? = null,
+    @Column(nullable = false, unique = true)
+    val fingerprint: String,
+    @Column(name = "created_at")
+    val createdAt: Instant = Instant.now(),
+    @Column(name = "updated_at")
+    val updatedAt: Instant? = null,
 )

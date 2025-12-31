@@ -10,7 +10,7 @@ spring:
   mvc:
     static-path-pattern: /covers/**
   codec:
-    max-in-memory-size: 10MB
+    max-in-memory-size: 200MB
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
@@ -26,8 +26,8 @@ spring:
 media-pulse:
   http:
     remote:
-      max-connections: 20
-      pending-acquire-timeout-ms: 10000
+      max-connections: 100
+      pending-acquire-timeout-ms: 30000
       connect-timeout-ms: 10000
       response-timeout-ms: 25000
       read-timeout-ms: 25000
@@ -41,6 +41,15 @@ media-pulse:
       response-timeout-ms: 12000
       read-timeout-ms: 12000
       write-timeout-ms: 12000
+      max-idle-time-ms: 60000
+      max-life-time-ms: 300000
+    images:
+      max-connections: 20
+      pending-acquire-timeout-ms: 10000
+      connect-timeout-ms: 3000
+      response-timeout-ms: 15000
+      read-timeout-ms: 15000
+      write-timeout-ms: 15000
       max-idle-time-ms: 60000
       max-life-time-ms: 300000
   pipeline:

@@ -36,11 +36,6 @@ class PlexMusicPlaybackService(
 
         if (eventType != PlexEventType.SCROBBLE) return null
 
-        // IDs externos diretos do Plex (strings completas "plex://...")
-        val trackPlexGuid: String? = meta.guid
-        val albumPlexGuid: String? = meta.parentGuid
-        val artistPlexGuid: String? = meta.grandparentGuid
-
         // Metadados canônicos
         val artistName = meta.grandparentTitle.orEmpty()
         val albumTitle = meta.parentTitle.orEmpty()
@@ -64,7 +59,6 @@ class PlexMusicPlaybackService(
             canonical.ensureArtist(
                 name = artistName,
                 musicbrainzId = mbidArtist,
-                plexGuid = artistPlexGuid,
                 spotifyId = null,
             )
 
@@ -76,7 +70,6 @@ class PlexMusicPlaybackService(
                 year = albumYear,
                 coverUrl = null,
                 musicbrainzId = mbidAlbum,
-                plexGuid = albumPlexGuid,
                 spotifyId = null,
             )
 
@@ -89,27 +82,37 @@ class PlexMusicPlaybackService(
         // 3) Track
         val track =
             canonical.ensureTrack(
-                album = album,
+                artist = artist,
                 title = trackTitle,
-                trackNumber = trackNumber,
-                discNumber = discNumber,
-                durationMs = null, // Plex nem sempre manda; se vier, preencha
-                musicbrainzId = mbidTrack, // aqui normalmente aparece MBID de track
-                plexGuid = trackPlexGuid,
-                spotifyId = null,
+                durationMs = null,
+                musicbrainzId = mbidTrack,
             )
+
+        canonical.linkTrackToAlbum(
+            album = album,
+            track = track,
+            discNumber = discNumber,
+            trackNumber = trackNumber,
+        )
 
         // 4) Playback
         val playback =
             TrackPlayback(
                 trackId = track.id,
+                albumId = album.id, // NEW
                 source = PlaybackSource.PLEX,
                 sourceEventId = eventId,
                 playedAt = playedAt,
             )
 
-        val saved = trackPlaybackRepo.save(playback)
+        trackPlaybackRepo.insertIgnore(
+            trackId = track.id,
+            albumId = album.id, // NEW
+            source = PlaybackSource.PLEX.name,
+            sourceEventId = eventId,
+            playedAt = playedAt,
+        )
         logger.info("Playback registrado: trackId=${track.id}, playedAt=$playedAt, event=$eventId")
-        return saved
+        return playback
     }
 }

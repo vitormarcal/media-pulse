@@ -19,7 +19,7 @@ class EventSourceController(
         @RequestBody reprocessRequest: ReprocessRequest,
     ): ApiResult<ReprocessCounter> {
         val counter = reprocessEventSource.count(reprocessRequest)
-        reprocessEventSource.reprocessAsync(reprocessRequest)
+        reprocessEventSource.reprocess(reprocessRequest)
         return ApiResult(counter)
     }
 
