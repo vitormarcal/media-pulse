@@ -5,7 +5,6 @@ import dev.marcal.mediapulse.server.model.music.Album
 import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.model.music.PlaybackSource
 import dev.marcal.mediapulse.server.model.music.Track
-import dev.marcal.mediapulse.server.model.music.TrackPlayback
 import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
 import dev.marcal.mediapulse.server.util.TxUtil
@@ -64,8 +63,6 @@ class SpotifyExtendedPlaybackService(
         val artistName = item.artistName?.takeIf { it.isNotBlank() } ?: "Unknown"
         val albumTitle = item.albumName?.takeIf { it.isNotBlank() } ?: "Unknown"
 
-        val trackSpotifyId = extractTrackId(item.spotifyTrackUri)
-
         val artistEntity =
             artistCache.getOrPut(artistName) {
                 canonical.ensureArtist(name = artistName)
@@ -78,30 +75,30 @@ class SpotifyExtendedPlaybackService(
                 canonical.ensureAlbum(artist = artistEntity, title = albumTitle, year = null, coverUrl = null)
             }
 
-        val trackKey = albumEntity.id.toString() + "|" + trackTitle
+        val trackSpotifyId = extractTrackId(item.spotifyTrackUri)
+
+        val trackKey = trackSpotifyId ?: ("t:$trackTitle")
         val trackEntity =
             trackCache.getOrPut(trackKey) {
                 canonical.ensureTrack(
-                    album = albumEntity,
+                    artist = artistEntity,
                     title = trackTitle,
-                    trackNumber = null,
-                    discNumber = null,
                     durationMs = null,
                     spotifyId = trackSpotifyId,
                 )
             }
 
-        val playback =
-            TrackPlayback(
-                trackId = trackEntity.id,
-                source = PlaybackSource.SPOTIFY,
-                sourceEventId = eventId,
-                playedAt = playedAt,
-            )
+        canonical.linkTrackToAlbum(
+            album = albumEntity,
+            track = trackEntity,
+            discNumber = null,
+            trackNumber = null,
+        )
 
         runCatching {
             trackPlaybackRepo.insertIgnore(
                 trackId = trackEntity.id,
+                albumId = albumEntity.id,
                 source = PlaybackSource.SPOTIFY.name,
                 sourceEventId = eventId,
                 playedAt = playedAt,

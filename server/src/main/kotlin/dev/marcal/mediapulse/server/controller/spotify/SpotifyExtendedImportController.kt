@@ -19,10 +19,9 @@ class SpotifyExtendedImportController(
     suspend fun import(
         @RequestPart("file") file: MultipartFile,
     ): ResponseEntity<SpotifyImportResponse> {
-        val imported = importService.importExtendedHistory(file)
+        importService.importExtendedHistory(file)
         return ResponseEntity.ok(
             SpotifyImportResponse(
-                imported = imported,
                 resetCursor = false,
             ),
         )

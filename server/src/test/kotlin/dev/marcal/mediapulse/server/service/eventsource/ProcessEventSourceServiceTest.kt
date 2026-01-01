@@ -125,7 +125,7 @@ class ProcessEventSourceServiceTest {
 
             every { repository.findByIdOrNull(eventId) } returns event
 
-            service.executeAsync(eventId)
+            service.execute(eventId)
 
             coVerify {
                 plexWebhookDispatcher.dispatch(event.payload, any())

@@ -33,6 +33,6 @@ class WebhookController(
                     payload = payload,
                 ).id
 
-        processEventSourceService.executeAsync(eventId)
+        processEventSourceService.execute(eventId)
     }
 }

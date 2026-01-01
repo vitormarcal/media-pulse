@@ -3,6 +3,8 @@ package dev.marcal.mediapulse.server.controller.spotify
 import dev.marcal.mediapulse.server.controller.spotify.dto.SpotifyImportRequest
 import dev.marcal.mediapulse.server.controller.spotify.dto.SpotifyImportResponse
 import dev.marcal.mediapulse.server.service.spotify.SpotifyImportService
+import kotlinx.coroutines.runBlocking
+import org.springframework.core.task.TaskExecutor
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -13,21 +15,27 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class SpotifyImportController(
     private val importService: SpotifyImportService,
+    private val backgroundExecutor: TaskExecutor,
 ) {
     @PostMapping("/import")
-    suspend fun import(
+    fun import(
         @RequestBody request: SpotifyImportRequest?,
     ): ResponseEntity<SpotifyImportResponse> {
-        val imported =
-            importService.importRecentlyPlayed(
-                resetCursor = request?.resetCursor ?: false,
-                maxPages = request?.maxPages,
-            )
+        val resetCursor = request?.resetCursor ?: false
+        val maxPages = request?.maxPages
 
-        return ResponseEntity.ok(
+        backgroundExecutor.execute {
+            runBlocking {
+                importService.importRecentlyPlayed(
+                    resetCursor = resetCursor,
+                    maxPages = maxPages,
+                )
+            }
+        }
+
+        return ResponseEntity.accepted().body(
             SpotifyImportResponse(
-                imported = imported,
-                resetCursor = request?.resetCursor ?: false,
+                resetCursor = resetCursor,
             ),
         )
     }

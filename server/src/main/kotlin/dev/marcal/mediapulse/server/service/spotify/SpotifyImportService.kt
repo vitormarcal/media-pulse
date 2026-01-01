@@ -70,7 +70,7 @@ class SpotifyImportService(
                             payload = payload,
                         )
 
-                    processEventSourceService.executeAsync(saved.id)
+                    processEventSourceService.execute(saved.id)
 
                     imported++
                     val ms = playedAt.toEpochMilli()

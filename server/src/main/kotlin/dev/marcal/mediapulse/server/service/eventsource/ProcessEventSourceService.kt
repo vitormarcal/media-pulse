@@ -7,7 +7,6 @@ import dev.marcal.mediapulse.server.service.dispatch.EventDispatcher
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 
 @Service
@@ -20,24 +19,14 @@ class ProcessEventSourceService(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     /**
-     * Asynchronously processes a webhook event by its ID.
-     *
-     * @param eventId The ID of the webhook event to process.
-     */
-    @Async
-    fun executeAsync(eventId: Long) {
-        runBlocking { execute(eventId) }
-    }
-
-    /**
      * Processes a webhook event by dispatching it to the appropriate handler based on the provider.
      *
      * @param eventId The ID of the webhook event to process.
      */
-    suspend fun execute(eventId: Long) {
+    fun execute(eventId: Long) {
         val event = repository.findByIdOrNull(eventId) ?: return
 
-        val updated = dispatch(event)
+        val updated = runBlocking { dispatch(event) }
 
         repository.save(updated)
     }

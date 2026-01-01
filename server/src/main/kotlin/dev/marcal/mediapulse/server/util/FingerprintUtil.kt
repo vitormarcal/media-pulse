@@ -19,6 +19,13 @@ object FingerprintUtil {
         year: Int?,
     ) = DigestUtils.sha256Hex("${normalize(title)}|$artistId|${year ?: ""}")
 
+    // NEW: track identity independent of album
+    fun trackFpV2(
+        title: String,
+        artistId: Long,
+        durationMs: Int?,
+    ) = DigestUtils.sha256Hex("${normalize(title)}|$artistId|${durationMs ?: ""}")
+
     fun trackFp(
         title: String,
         albumId: Long,

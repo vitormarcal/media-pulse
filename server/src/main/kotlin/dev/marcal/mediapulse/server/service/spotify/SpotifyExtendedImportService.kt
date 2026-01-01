@@ -98,7 +98,7 @@ class SpotifyExtendedImportService(
                 finalFile.absolutePath,
             )
 
-            processEventSourceService.executeAsync(saved.id)
+            processEventSourceService.execute(saved.id)
 
             return 0
         } finally {

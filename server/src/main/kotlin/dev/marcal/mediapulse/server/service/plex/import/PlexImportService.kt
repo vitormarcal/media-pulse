@@ -62,12 +62,10 @@ class PlexImportService(
                 for (a in artists) {
                     stats.artistsSeen++
                     val mbidArtist = PlexGuidUtil.firstValue(a.guids, "mbid")
-                    val plexArtistGuid = PlexGuidUtil.firstValue(a.guids, "plex")?.let { "plex://$it" }
                     val artist =
                         canonical.ensureArtist(
                             name = a.title,
                             musicbrainzId = mbidArtist,
-                            plexGuid = plexArtistGuid,
                             spotifyId = null,
                         )
                     stats.artistsUpserted++
@@ -110,7 +108,6 @@ class PlexImportService(
                 stats.albumsSeen++
 
                 val mbidAlbum = PlexGuidUtil.firstValue(al.guids, "mbid")
-                val plexAlbumGuid = PlexGuidUtil.firstValue(al.guids, "plex")?.let { "plex://$it" }
 
                 val album =
                     canonical.ensureAlbum(
@@ -119,7 +116,6 @@ class PlexImportService(
                         year = al.year,
                         coverUrl = null,
                         musicbrainzId = mbidAlbum,
-                        plexGuid = plexAlbumGuid,
                         spotifyId = null,
                     )
 
@@ -140,6 +136,7 @@ class PlexImportService(
                     sectionKey = sectionKey,
                     albumRatingKey = al.ratingKey,
                     album = album,
+                    artist = artist,
                     stats = stats,
                     pageSize = pageSize,
                 )
@@ -155,6 +152,7 @@ class PlexImportService(
         sectionKey: String,
         albumRatingKey: String,
         album: Album,
+        artist: Artist,
         stats: ImportStats,
         pageSize: Int,
     ) {
@@ -170,17 +168,20 @@ class PlexImportService(
                 stats.tracksSeen++
 
                 val mbidTrack = PlexGuidUtil.firstValue(track.guids, "mbid")
-                val plexTrackGuid = PlexGuidUtil.firstValue(track.guids, "plex")?.let { "plex://$it" }
 
-                canonical.ensureTrack(
+                val t =
+                    canonical.ensureTrack(
+                        artist = artist,
+                        title = track.title,
+                        durationMs = track.duration?.toInt(),
+                        musicbrainzId = mbidTrack,
+                    )
+
+                canonical.linkTrackToAlbum(
                     album = album,
-                    title = track.title,
-                    trackNumber = track.index,
+                    track = t,
                     discNumber = track.parentIndex,
-                    durationMs = track.duration?.toInt(),
-                    musicbrainzId = mbidTrack,
-                    plexGuid = plexTrackGuid,
-                    spotifyId = null,
+                    trackNumber = track.index,
                 )
 
                 stats.tracksUpserted++

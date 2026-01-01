@@ -2,7 +2,6 @@ package dev.marcal.mediapulse.server.service.spotify
 
 import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyRecentlyPlayedItem
 import dev.marcal.mediapulse.server.model.music.PlaybackSource
-import dev.marcal.mediapulse.server.model.music.TrackPlayback
 import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
 import org.springframework.stereotype.Service
@@ -46,7 +45,6 @@ class SpotifyPlaybackService(
             canonical.ensureArtist(
                 name = artistName,
                 spotifyId = artistSpotifyId,
-                plexGuid = null,
                 musicbrainzId = null,
             )
 
@@ -57,31 +55,30 @@ class SpotifyPlaybackService(
                 year = albumYear,
                 coverUrl = null,
                 spotifyId = albumSpotifyId,
-                plexGuid = null,
-                musicbrainzId = null,
             )
 
         val trackEntity =
             canonical.ensureTrack(
-                album = albumEntity,
+                artist = artistEntity,
                 title = trackTitle,
-                trackNumber = trackNumber,
-                discNumber = discNumber,
                 durationMs = durationMs,
                 spotifyId = trackSpotifyId,
-                plexGuid = null,
-                musicbrainzId = null,
             )
 
-        val playback =
-            TrackPlayback(
-                trackId = trackEntity.id,
-                source = PlaybackSource.SPOTIFY,
-                sourceEventId = eventId,
-                playedAt = playedAt,
-            )
+        canonical.linkTrackToAlbum(
+            album = albumEntity,
+            track = trackEntity,
+            discNumber = discNumber,
+            trackNumber = trackNumber,
+        )
 
-        trackPlaybackRepo.save(playback)
+        trackPlaybackRepo.insertIgnore(
+            trackId = trackEntity.id,
+            albumId = albumEntity.id, // NEW
+            source = PlaybackSource.SPOTIFY.name,
+            sourceEventId = eventId,
+            playedAt = playedAt,
+        )
 
         spotifyArtworkService.ensureAlbumCoverFromSpotifyUrl(
             artist = artistEntity,

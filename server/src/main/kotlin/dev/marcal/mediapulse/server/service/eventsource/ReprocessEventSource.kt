@@ -7,7 +7,6 @@ import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
-import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 
 @Service
@@ -19,7 +18,7 @@ class ReprocessEventSource(
         private val logger = LoggerFactory.getLogger(this::class.java)
     }
 
-    suspend fun count(reprocessRequest: ReprocessRequest): ReprocessCounter {
+    fun count(reprocessRequest: ReprocessRequest): ReprocessCounter {
         val total =
             if (reprocessRequest.all) {
                 eventSourceCrudRepository.count()
@@ -38,13 +37,7 @@ class ReprocessEventSource(
         )
     }
 
-    @Async
-    suspend fun reprocessAsync(reprocessRequest: ReprocessRequest) {
-        logger.info("Reprocessing event sources asynchronously with request: $reprocessRequest")
-        reprocess(reprocessRequest)
-    }
-
-    suspend fun reprocess(reprocessRequest: ReprocessRequest) {
+    fun reprocess(reprocessRequest: ReprocessRequest) {
         logger.info("Reprocessing event sources with request: $reprocessRequest")
 
         count(reprocessRequest).let { counter ->
@@ -81,7 +74,7 @@ class ReprocessEventSource(
 
         eventSourceCrudRepository.save(reset)
 
-        processEventSourceService.executeAsync(eventSourceId)
+        processEventSourceService.execute(eventSourceId)
     }
 
     private fun findByFilter(

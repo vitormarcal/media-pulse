@@ -41,8 +41,7 @@ class MusicQueryRepository(
                     """
             SELECT COUNT(DISTINCT a.id)
             FROM TrackPlayback tp
-            JOIN Track t ON t.id = tp.trackId
-            JOIN Album al ON al.id = t.albumId
+            JOIN Album al ON al.id = tp.albumId
             JOIN Artist a ON a.id = al.artistId
             WHERE tp.playedAt BETWEEN :s AND :e
             """,
@@ -57,8 +56,7 @@ class MusicQueryRepository(
                     """
             SELECT COUNT(DISTINCT al.id)
             FROM TrackPlayback tp
-            JOIN Track t ON t.id = tp.trackId
-            JOIN Album al ON al.id = t.albumId
+            JOIN Album al ON al.id = tp.albumId
             WHERE tp.playedAt BETWEEN :s AND :e
             """,
                     Long::class.java,
@@ -91,8 +89,7 @@ class MusicQueryRepository(
                 al.id, al.title, a.id, a.name, al.year, al.coverUrl, MAX(tp.playedAt), COUNT(tp.id)
             )
             FROM TrackPlayback tp
-            JOIN Track t  ON t.id = tp.trackId
-            JOIN Album al ON al.id = t.albumId
+            JOIN Album al ON al.id = tp.albumId
             JOIN Artist a ON a.id = al.artistId
             GROUP BY al.id, al.title, a.id, a.name, al.year, al.coverUrl
             ORDER BY MAX(tp.playedAt) DESC
@@ -113,8 +110,7 @@ class MusicQueryRepository(
                 a.id, a.name, COUNT(tp.id)
             )
             FROM TrackPlayback tp
-            JOIN Track t  ON t.id = tp.trackId
-            JOIN Album al ON al.id = t.albumId
+            JOIN Album al ON al.id = tp.albumId
             JOIN Artist a ON a.id = al.artistId
             WHERE tp.playedAt BETWEEN :s AND :e
             GROUP BY a.id, a.name
@@ -138,8 +134,7 @@ class MusicQueryRepository(
                 al.id, al.title, a.id, a.name, COUNT(tp.id)
             )
             FROM TrackPlayback tp
-            JOIN Track t  ON t.id = tp.trackId
-            JOIN Album al ON al.id = t.albumId
+            JOIN Album al ON al.id = tp.albumId
             JOIN Artist a ON a.id = al.artistId
             WHERE tp.playedAt BETWEEN :s AND :e
             GROUP BY al.id, al.title, a.id, a.name
@@ -160,11 +155,14 @@ class MusicQueryRepository(
             .createQuery(
                 """
             SELECT new dev.marcal.mediapulse.server.api.music.TopTrackResponse(
-                t.id, t.title, al.id, al.title, a.id, a.name, COUNT(tp.id)
+                t.id, t.title,
+                al.id, al.title,
+                a.id, a.name,
+                COUNT(tp.id)
             )
             FROM TrackPlayback tp
-            JOIN Track t  ON t.id = tp.trackId
-            JOIN Album al ON al.id = t.albumId
+            JOIN Track t ON t.id = tp.trackId
+            JOIN Album al ON al.id = tp.albumId
             JOIN Artist a ON a.id = al.artistId
             WHERE tp.playedAt BETWEEN :s AND :e
             GROUP BY t.id, t.title, al.id, al.title, a.id, a.name
@@ -188,8 +186,7 @@ class MusicQueryRepository(
                   g.name AS genre,
                   COUNT(tp.id) AS play_count
                 FROM track_playbacks tp
-                JOIN tracks t        ON t.id = tp.track_id
-                JOIN albums al       ON al.id = t.album_id
+                JOIN albums al       ON al.id = tp.album_id
                 JOIN album_genres ag ON ag.album_id = al.id
                 JOIN genres g        ON g.id = ag.genre_id
                 WHERE tp.played_at BETWEEN :s AND :e
@@ -222,8 +219,7 @@ class MusicQueryRepository(
             )
             FROM Album al
             JOIN Artist a ON a.id = al.artistId
-            LEFT JOIN Track t ON t.albumId = al.id
-            LEFT JOIN TrackPlayback tp ON tp.trackId = t.id
+            LEFT JOIN TrackPlayback tp ON tp.albumId = al.id
             GROUP BY al.id, al.title, a.id, a.name
             HAVING COUNT(tp.id) = 0
             ORDER BY a.name, al.year, al.title
@@ -234,77 +230,82 @@ class MusicQueryRepository(
 
     fun getArtistCoverage(limit: Int): List<ArtistCoverageResponse> =
         entityManager
-            .createQuery(
+            .createNativeQuery(
                 """
-            SELECT 
-                a.id,
-                a.name,
-                COUNT(DISTINCT t.id) AS totalTracks,
-                COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN t.id END) AS playedTracks,
-                CASE 
-                    WHEN COUNT(DISTINCT t.id) = 0 THEN 0.0
-                    ELSE (COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN t.id END) * 100.0 / COUNT(DISTINCT t.id))
-                END AS coveragePercent
-            FROM Artist a
-            JOIN Album al ON al.artistId = a.id
-            LEFT JOIN Track t ON t.albumId = al.id
-            LEFT JOIN TrackPlayback tp ON tp.trackId = t.id
-            GROUP BY a.id, a.name
-            ORDER BY coveragePercent ASC, totalTracks DESC
-            """,
-                Array<Any>::class.java,
-            ).setMaxResults(limit)
+                SELECT
+                  a.id AS artist_id,
+                  a.name AS artist_name,
+                  COUNT(DISTINCT at.track_id) AS total_tracks,
+                  COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN at.track_id END) AS played_tracks,
+                  CASE
+                    WHEN COUNT(DISTINCT at.track_id) = 0 THEN 0.0
+                    ELSE (COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN at.track_id END) * 100.0 / COUNT(DISTINCT at.track_id))
+                  END AS coverage_percent
+                FROM artists a
+                JOIN albums al ON al.artist_id = a.id
+                LEFT JOIN album_tracks at ON at.album_id = al.id
+                LEFT JOIN track_playbacks tp
+                  ON tp.album_id = al.id
+                 AND tp.track_id = at.track_id
+                GROUP BY a.id, a.name
+                ORDER BY coverage_percent ASC, total_tracks DESC
+                LIMIT :n
+                """.trimIndent(),
+            ).setParameter("n", limit)
             .resultList
             .map {
+                val row = it as Array<*>
                 ArtistCoverageResponse(
-                    artistId = it[0] as Long,
-                    artistName = it[1] as String,
-                    totalTracks = (it[2] as Number).toLong(),
-                    playedTracks = (it[3] as Number).toLong(),
-                    coveragePercent = (it[4] as Number).toDouble(),
+                    artistId = (row[0] as Number).toLong(),
+                    artistName = row[1] as String,
+                    totalTracks = (row[2] as Number).toLong(),
+                    playedTracks = (row[3] as Number).toLong(),
+                    coveragePercent = (row[4] as Number).toDouble(),
                 )
             }
 
     fun getAlbumCoverage(limit: Int): List<AlbumCoverageResponse> =
         entityManager
-            .createQuery(
+            .createNativeQuery(
                 """
-            SELECT 
-                al.id,
-                al.title,
-                a.id,
-                a.name,
-                COUNT(DISTINCT t.id) AS totalTracks,
-                COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN t.id END) AS playedTracks,
-                CASE 
-                    WHEN COUNT(DISTINCT t.id) = 0 THEN 0.0
-                    ELSE (COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN t.id END) * 100.0 / COUNT(DISTINCT t.id))
-                END AS coveragePercent
-            FROM Album al
-            JOIN Artist a ON a.id = al.artistId
-            LEFT JOIN Track t ON t.albumId = al.id
-            LEFT JOIN TrackPlayback tp ON tp.trackId = t.id
-            GROUP BY al.id, al.title, a.id, a.name
-            ORDER BY coveragePercent ASC, totalTracks DESC
-            """,
-                Array<Any>::class.java,
-            ).setMaxResults(limit)
+                SELECT
+                  al.id AS album_id,
+                  al.title AS album_title,
+                  a.id AS artist_id,
+                  a.name AS artist_name,
+                  COUNT(DISTINCT at.track_id) AS total_tracks,
+                  COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN at.track_id END) AS played_tracks,
+                  CASE
+                    WHEN COUNT(DISTINCT at.track_id) = 0 THEN 0.0
+                    ELSE (COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN at.track_id END) * 100.0 / COUNT(DISTINCT at.track_id))
+                  END AS coverage_percent
+                FROM albums al
+                JOIN artists a ON a.id = al.artist_id
+                LEFT JOIN album_tracks at ON at.album_id = al.id
+                LEFT JOIN track_playbacks tp
+                  ON tp.album_id = al.id
+                 AND tp.track_id = at.track_id
+                GROUP BY al.id, al.title, a.id, a.name
+                ORDER BY coverage_percent ASC, total_tracks DESC
+                LIMIT :n
+                """.trimIndent(),
+            ).setParameter("n", limit)
             .resultList
             .map {
+                val row = it as Array<*>
                 AlbumCoverageResponse(
-                    albumId = it[0] as Long,
-                    albumTitle = it[1] as String,
-                    artistId = it[2] as Long,
-                    artistName = it[3] as String,
-                    totalTracks = (it[4] as Number).toLong(),
-                    playedTracks = (it[5] as Number).toLong(),
-                    coveragePercent = (it[6] as Number).toDouble(),
+                    albumId = (row[0] as Number).toLong(),
+                    albumTitle = row[1] as String,
+                    artistId = (row[2] as Number).toLong(),
+                    artistName = row[3] as String,
+                    totalTracks = (row[4] as Number).toLong(),
+                    playedTracks = (row[5] as Number).toLong(),
+                    coveragePercent = (row[6] as Number).toDouble(),
                 )
             }
 
     // Album details
     fun getAlbumPage(albumId: Long): AlbumPageResponse {
-        // header agregado em uma passada (sem subselect)
         val header =
             entityManager
                 .createQuery(
@@ -321,8 +322,7 @@ class MusicQueryRepository(
         )
         FROM Album al
         JOIN Artist a ON a.id = al.artistId
-        LEFT JOIN Track t ON t.albumId = al.id
-        LEFT JOIN TrackPlayback tp ON tp.trackId = t.id
+        LEFT JOIN TrackPlayback tp ON tp.albumId = al.id
         WHERE al.id = :albumId
         GROUP BY al.id, al.title, a.id, a.name, al.year, al.coverUrl
         """,
@@ -330,42 +330,47 @@ class MusicQueryRepository(
                 ).setParameter("albumId", albumId)
                 .singleResult
 
-        // tracks por álbum
         val tracks =
             entityManager
-                .createQuery(
+                .createNativeQuery(
                     """
-        SELECT t.id, t.title, t.discNumber, t.trackNumber,
-               COUNT(tp.id) AS playCount,
-               MAX(tp.playedAt) AS lastPlayed
-        FROM Track t
-        LEFT JOIN TrackPlayback tp ON tp.trackId = t.id
-        WHERE t.albumId = :albumId
-        GROUP BY t.id, t.title, t.discNumber, t.trackNumber
-        ORDER BY COALESCE(t.discNumber,1), COALESCE(t.trackNumber,999), t.title
-        """,
-                    Array<Any>::class.java,
+                    SELECT
+                      t.id AS track_id,
+                      t.title AS title,
+                      at.disc_number AS disc_number,
+                      at.track_number AS track_number,
+                      COUNT(tp.id) AS play_count,
+                      MAX(tp.played_at) AS last_played
+                    FROM album_tracks at
+                    JOIN tracks t ON t.id = at.track_id
+                    LEFT JOIN track_playbacks tp
+                      ON tp.album_id = at.album_id
+                     AND tp.track_id = at.track_id
+                    WHERE at.album_id = :albumId
+                    GROUP BY t.id, t.title, at.disc_number, at.track_number
+                    ORDER BY COALESCE(at.disc_number, 1), COALESCE(at.track_number, 999), t.title
+                    """.trimIndent(),
                 ).setParameter("albumId", albumId)
                 .resultList
                 .map {
+                    val row = it as Array<*>
                     AlbumTrackRow(
-                        trackId = it[0] as Long,
-                        title = it[1] as String,
-                        discNumber = it[2] as Int?,
-                        trackNumber = it[3] as Int?,
-                        playCount = (it[4] as Long?) ?: 0L,
-                        lastPlayed = it[5] as Instant?,
+                        trackId = (row[0] as Number).toLong(),
+                        title = row[1] as String,
+                        discNumber = row[2] as Int?,
+                        trackNumber = row[3] as Int?,
+                        playCount = (row[4] as Number).toLong(),
+                        lastPlayed = row[5] as Instant?,
                     )
                 }
 
-        // plays por dia
         val days =
             entityManager
                 .createQuery(
                     """
     SELECT FUNCTION('date', tp.playedAt) AS day, COUNT(tp.id) AS plays
-    FROM TrackPlayback tp JOIN Track t ON t.id = tp.trackId
-    WHERE t.albumId = :albumId
+    FROM TrackPlayback tp
+    WHERE tp.albumId = :albumId
     GROUP BY FUNCTION('date', tp.playedAt)
     ORDER BY FUNCTION('date', tp.playedAt)
     """,
@@ -374,7 +379,7 @@ class MusicQueryRepository(
                 .resultList
                 .map {
                     PlaysByDayRow(
-                        day = (it[0] as Date).toLocalDate(), // Hibernate retorna java.sql.Date
+                        day = (it[0] as Date).toLocalDate(),
                         plays = (it[1] as Long),
                     )
                 }
@@ -427,21 +432,44 @@ class MusicQueryRepository(
                     SearchAlbumRow(it[0] as Long, it[1] as String, it[2] as String, it[3] as Int?)
                 }
 
+        // tracks: agora Track tem artistId, mas não tem albumId.
+        // Mostrar "albumTitle" aqui é mais caro: precisa escolher um álbum (ex: o mais ouvido).
+        // Solução simples: pega o álbum mais tocado do track (ou qualquer um), via query nativa.
         val tracks =
             entityManager
-                .createQuery(
+                .createNativeQuery(
                     """
-            SELECT t.id, t.title, ar.name, al.title
-            FROM Track t JOIN Album al ON al.id = t.albumId JOIN Artist ar ON ar.id = al.artistId
-            WHERE LOWER(t.title) LIKE :q OR LOWER(ar.name) LIKE :q OR LOWER(al.title) LIKE :q
-            ORDER BY t.title
-            """,
-                    Array<Any>::class.java,
+                    SELECT
+                      t.id AS track_id,
+                      t.title AS track_title,
+                      a.name AS artist_name,
+                      COALESCE(al.title, '') AS album_title
+                    FROM tracks t
+                    JOIN artists a ON a.id = t.artist_id
+                    LEFT JOIN LATERAL (
+                      SELECT al2.title
+                      FROM track_playbacks tp2
+                      JOIN albums al2 ON al2.id = tp2.album_id
+                      WHERE tp2.track_id = t.id
+                      GROUP BY al2.title
+                      ORDER BY COUNT(*) DESC, MAX(tp2.played_at) DESC
+                      LIMIT 1
+                    ) al ON TRUE
+                    WHERE LOWER(t.title) LIKE :q OR LOWER(a.name) LIKE :q
+                    ORDER BY t.title
+                    LIMIT :n
+                    """.trimIndent(),
                 ).setParameter("q", like)
-                .setMaxResults(limit)
+                .setParameter("n", limit)
                 .resultList
                 .map {
-                    SearchTrackRow(it[0] as Long, it[1] as String, it[2] as String, it[3] as String)
+                    val row = it as Array<*>
+                    SearchTrackRow(
+                        row[0] as Long,
+                        row[1] as String,
+                        row[2] as String,
+                        row[3] as String,
+                    )
                 }
 
         return SearchResponse(artists, albums, tracks)
@@ -463,8 +491,7 @@ class MusicQueryRepository(
                     g.name AS genre,
                     COUNT(tp.id) AS play_count
                   FROM track_playbacks tp
-                  JOIN tracks t  ON t.id = tp.track_id
-                  JOIN albums al ON al.id = t.album_id
+                  JOIN albums al ON al.id = tp.album_id
                   JOIN album_genres ag ON ag.album_id = al.id
                   JOIN genres g ON g.id = ag.genre_id
                   WHERE tp.played_at BETWEEN :s AND :e
@@ -475,8 +502,7 @@ class MusicQueryRepository(
                     g.name AS genre,
                     COUNT(tp.id) AS play_count
                   FROM track_playbacks tp
-                  JOIN tracks t  ON t.id = tp.track_id
-                  JOIN albums al ON al.id = t.album_id
+                  JOIN albums al ON al.id = tp.album_id
                   JOIN album_genres ag ON ag.album_id = al.id
                   JOIN genres g ON g.id = ag.genre_id
                   WHERE tp.played_at BETWEEN :ps AND :pe
@@ -490,12 +516,13 @@ class MusicQueryRepository(
                 FROM now_counts n
                 FULL OUTER JOIN prev_counts p ON p.genre = n.genre
                 ORDER BY delta DESC, play_count_now DESC, genre ASC
+                LIMIT :n
                 """.trimIndent(),
             ).setParameter("s", start)
             .setParameter("e", end)
             .setParameter("ps", compareStart)
             .setParameter("pe", compareEnd)
-            .setMaxResults(limit)
+            .setParameter("n", limit)
             .resultList
             .map {
                 val row = it as Array<*>
@@ -512,7 +539,7 @@ class MusicQueryRepository(
             .createNativeQuery(
                 """
                 WITH recent_plays AS (
-                  SELECT tp.id, tp.track_id, tp.played_at
+                  SELECT tp.id, tp.album_id, tp.played_at
                   FROM track_playbacks tp
                   ORDER BY tp.played_at DESC
                   LIMIT :n
@@ -522,9 +549,7 @@ class MusicQueryRepository(
                   MAX(rp.played_at) AS last_played,
                   COUNT(*) AS play_count_in_window
                 FROM recent_plays rp
-                JOIN tracks t  ON t.id = rp.track_id
-                JOIN albums al ON al.id = t.album_id
-                JOIN album_genres ag ON ag.album_id = al.id
+                JOIN album_genres ag ON ag.album_id = rp.album_id
                 JOIN genres g ON g.id = ag.genre_id
                 GROUP BY g.name
                 ORDER BY MAX(rp.played_at) DESC
@@ -556,9 +581,8 @@ class MusicQueryRepository(
                   MAX(tp.played_at) AS last_played
                 FROM album_genres ag
                 JOIN genres g ON g.id = ag.genre_id
-                LEFT JOIN tracks t ON t.album_id = ag.album_id
                 LEFT JOIN track_playbacks tp
-                  ON tp.track_id = t.id
+                  ON tp.album_id = ag.album_id
                  AND tp.played_at BETWEEN :s AND :e
                 GROUP BY g.name
                 HAVING COUNT(DISTINCT ag.album_id) >= :minAlbums
@@ -567,11 +591,12 @@ class MusicQueryRepository(
                   MAX(tp.played_at) NULLS FIRST,
                   COUNT(DISTINCT ag.album_id) DESC,
                   g.name ASC
+                LIMIT :n
                 """.trimIndent(),
             ).setParameter("s", start)
             .setParameter("e", end)
             .setParameter("minAlbums", minLibraryAlbums)
-            .setMaxResults(limit)
+            .setParameter("n", limit)
             .resultList
             .map {
                 val row = it as Array<*>
@@ -597,8 +622,7 @@ class MusicQueryRepository(
                       g.name AS genre,
                       COUNT(tp.id) AS play_count
                     FROM track_playbacks tp
-                    JOIN tracks t  ON t.id = tp.track_id
-                    JOIN albums al ON al.id = t.album_id
+                    JOIN albums al ON al.id = tp.album_id
                     JOIN album_genre_sources ags ON ags.album_id = al.id
                     JOIN genres g ON g.id = ags.genre_id
                     WHERE tp.played_at BETWEEN :s AND :e
@@ -617,7 +641,6 @@ class MusicQueryRepository(
                     )
                 }
 
-        // aplica top N por source no Kotlin (simples e suficiente)
         val grouped =
             rows
                 .groupBy({ it.first }, { TopGenreResponse(it.second, it.third) })
