@@ -7,6 +7,7 @@ import dev.marcal.mediapulse.server.model.music.PlaybackSource
 import dev.marcal.mediapulse.server.model.music.Track
 import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
+import dev.marcal.mediapulse.server.util.TitleKeyUtil
 import dev.marcal.mediapulse.server.util.TxUtil
 import jakarta.persistence.EntityManager
 import org.slf4j.LoggerFactory
@@ -68,7 +69,7 @@ class SpotifyExtendedPlaybackService(
                 canonical.ensureArtist(name = artistName)
             }
 
-        val albumKey = artistEntity.id.toString() + "|" + albumTitle
+        val albumKey = artistEntity.id.toString() + "|" + TitleKeyUtil.albumTitleKey(albumTitle).ifBlank { "unknown" }
 
         val albumEntity =
             albumCache.getOrPut(albumKey) {

@@ -11,6 +11,7 @@ import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
 import dev.marcal.mediapulse.server.service.plex.util.PlexGuidExtractor
+import dev.marcal.mediapulse.server.util.TitleKeyUtil
 import io.mockk.Called
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -83,11 +84,13 @@ class PlexMusicPlaybackServiceTest {
 
             // capture do Artist passado para ensureAlbum
             val albumArtistSlot = slot<Artist>()
+            val title = "Cover Songs 1993–2007"
             val album =
                 Album(
                     id = 20,
                     artistId = 10,
-                    title = "Cover Songs 1993–2007",
+                    title = title,
+                    titleKey = TitleKeyUtil.albumTitleKey(title),
                     year = 2020,
                     coverUrl = null,
                     fingerprint = "fp-album",
@@ -96,7 +99,7 @@ class PlexMusicPlaybackServiceTest {
             every {
                 canonical.ensureAlbum(
                     artist = capture(albumArtistSlot),
-                    title = "Cover Songs 1993–2007",
+                    title = title,
                     year = 2020,
                     coverUrl = null,
                     musicbrainzId = null,
@@ -241,7 +244,7 @@ class PlexMusicPlaybackServiceTest {
             every { PlexGuidExtractor.extractGuids(any()) } returns emptyMap()
 
             val artist = Artist(id = 1, name = "x", fingerprint = "fp-a")
-            val album = Album(id = 2, artistId = 1, title = "y", year = 2000, coverUrl = null, fingerprint = "fp-b")
+            val album = Album(id = 2, artistId = 1, title = "y", year = 2000, coverUrl = null, fingerprint = "fp-b", titleKey = "y")
             val track = Track(id = 3, artistId = 1, title = "z", durationMs = null, fingerprint = "fp-c")
 
             every { canonical.ensureArtist(any(), any(), any()) } returns artist
@@ -288,7 +291,7 @@ class PlexMusicPlaybackServiceTest {
                 mapOf("mbid" to "2ccf8d0b-8724-456d-b8b4-7820c87974c2")
 
             val artist = Artist(id = 10, name = "Therion", fingerprint = "fp-a")
-            val album = Album(id = 20, artistId = 10, title = "Alb", year = 2020, coverUrl = null, fingerprint = "fp-b")
+            val album = Album(id = 20, artistId = 10, title = "Alb", year = 2020, coverUrl = null, fingerprint = "fp-b", titleKey = "y")
 
             every { canonical.ensureArtist(any(), any(), any()) } returns artist
             every { canonical.ensureAlbum(any(), any(), any(), any(), any(), any()) } returns album
