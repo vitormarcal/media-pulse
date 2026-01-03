@@ -13,6 +13,7 @@ import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TrackRepository
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.TitleKeyUtil
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -78,40 +79,56 @@ class CanonicalizationService(
         }
 
         val titleKey = TitleKeyUtil.albumTitleKey(title).ifBlank { "unknown" }
-        val fp = FingerprintUtil.albumFp(titleKey, artist.id, year)
+        val fp = FingerprintUtil.albumFp(titleKey, artist.id)
 
-        val found =
+        fun pickBestForNullYear(): Album? =
+            albumRepo.findFirstByArtistIdAndTitleKeyAndYearIsNotNullOrderByYearAscIdAsc(artist.id, titleKey)
+                ?: albumRepo.findFirstByArtistIdAndTitleKeyAndYearIsNullOrderByIdAsc(artist.id, titleKey)
+
+        val byExternal =
             musicbrainzId?.let { findByExternal(Provider.MUSICBRAINZ, it) }
                 ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
-                ?: albumRepo.findByArtistIdAndTitleKeyAndYear(artist.id, titleKey, year)
-                ?: run {
-                    if (year == null) {
-                        albumRepo.findFirstByArtistIdAndTitleKeyOrderByIdAsc(artist.id, titleKey)
-                    } else {
-                        null
-                    }
-                }
-                ?: albumRepo.findByFingerprint(fp)
 
-        val album0 =
+        val byExactYear =
+            if (byExternal == null && year != null) {
+                albumRepo.findByArtistIdAndTitleKeyAndYear(artist.id, titleKey, year)
+            } else {
+                null
+            }
+
+        val byNullYearPolicy =
+            if (byExternal == null && byExactYear == null && year == null) {
+                pickBestForNullYear()
+            } else {
+                null
+            }
+
+        val found = byExternal ?: byExactYear ?: byNullYearPolicy ?: albumRepo.findByFingerprint(fp)
+
+        val created =
             found ?: albumRepo.save(
                 Album(
                     artistId = artist.id,
-                    title = title, // preserva original
-                    titleKey = titleKey, // normalizado
+                    title = title,
+                    titleKey = titleKey,
                     year = year,
                     coverUrl = coverUrl,
-                    fingerprint = fp, // fingerprint usa titleKey
+                    fingerprint = fp,
                 ),
             )
 
-        // Se chegar o year depois (ex: Spotify extended), atualiza.
-        // Se existir outro com (artist_id, title_key, year), o UNIQUE do banco barra, revelando conflito real.
         val album =
-            if (year != null && album0.year == null) {
-                albumRepo.save(album0.copy(year = year, updatedAt = Instant.now()))
+            if (year != null && created.year == null) {
+                try {
+                    albumRepo.promoteNullYear(created.id, year)
+                    albumRepo.findById(created.id).orElseThrow()
+                } catch (ex: DataIntegrityViolationException) {
+                    // alguém já tem (artist,titleKey,year). Então use o correto.
+                    albumRepo.findByArtistIdAndTitleKeyAndYear(artist.id, titleKey, year)
+                        ?: throw ex
+                }
             } else {
-                album0
+                created
             }
 
         musicbrainzId?.let { safeLink(EntityType.ALBUM, album.id, Provider.MUSICBRAINZ, it) }
@@ -181,6 +198,7 @@ class CanonicalizationService(
     ) {
         if (discNumber != null && trackNumber != null) {
             albumTrackRepo.upsertByPosition(
+                lockKey = album.id,
                 albumId = album.id,
                 trackId = track.id,
                 discNumber = discNumber,

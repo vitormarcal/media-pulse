@@ -15,12 +15,16 @@ CREATE TABLE IF NOT EXISTS albums (
   cover_url    TEXT,
   fingerprint  TEXT        NOT NULL UNIQUE,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ,
-  CONSTRAINT uq_albums_artist_titlekey_year UNIQUE (artist_id, title_key, year)
+  updated_at   TIMESTAMPTZ
 );
 
-CREATE INDEX IF NOT EXISTS idx_albums_artist_title_key
-    ON albums(artist_id, title_key);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_albums_artist_titlekey_year_notnull
+    ON albums(artist_id, title_key, year)
+    WHERE year IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_albums_artist_titlekey_year_null
+    ON albums(artist_id, title_key)
+    WHERE year IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_albums_artist_year
     ON albums(artist_id, year);

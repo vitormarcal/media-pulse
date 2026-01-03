@@ -16,8 +16,7 @@ object FingerprintUtil {
     fun albumFp(
         titleKey: String,
         artistId: Long,
-        year: Int?,
-    ) = DigestUtils.sha256Hex("album|$artistId|${year ?: ""}|$titleKey")
+    ) = DigestUtils.sha256Hex("album|$artistId|$titleKey")
 
     fun trackFp(
         title: String,
