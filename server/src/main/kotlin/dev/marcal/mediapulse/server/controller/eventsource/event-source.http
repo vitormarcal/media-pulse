@@ -1,23 +1,42 @@
 @eventId = 4910
 
 ###
+### Reprocess ALL events (cursor-based)
 POST {{host}}/event-sources/reprocess
 Content-Type: application/json
 
 {
   "all": true,
-  "pageSize": 50
+  "pageSize": 50,
+  "fromIdExclusive": 0
 }
 
-### Reprocess pending events
+###
+### Reprocess only PENDING events
 POST {{host}}/event-sources/reprocess
 Content-Type: application/json
 
 {
+  "all": false,
   "status": ["PENDING"],
-  "pageSize": 50
+  "pageSize": 50,
+  "fromIdExclusive": 0
 }
 
+###
+### Reprocess only FAILED events from a given provider
+POST {{host}}/event-sources/reprocess
+Content-Type: application/json
+
+{
+  "all": false,
+  "status": ["FAILED"],
+  "providers": ["plex"],
+  "pageSize": 50,
+  "fromIdExclusive": 0
+}
+
+###
 ### Reprocess by id
 POST {{host}}/event-sources/{{eventId}}/reprocess
 Content-Type: application/json

@@ -5,9 +5,10 @@ import dev.marcal.mediapulse.server.controller.eventsource.dto.ReprocessRequest
 import dev.marcal.mediapulse.server.model.EventSource
 import dev.marcal.mediapulse.server.repository.crud.EventSourceCrudRepository
 import org.slf4j.LoggerFactory
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
+import java.time.Instant
+import kotlin.math.ceil
 
 @Service
 class ReprocessEventSource(
@@ -15,48 +16,70 @@ class ReprocessEventSource(
     private val eventSourceCrudRepository: EventSourceCrudRepository,
 ) {
     companion object {
-        private val logger = LoggerFactory.getLogger(this::class.java)
+        private val logger = LoggerFactory.getLogger(ReprocessEventSource::class.java)
     }
 
     fun count(reprocessRequest: ReprocessRequest): ReprocessCounter {
+        val pageSize = reprocessRequest.pageSize.takeIf { it in 1..1000 } ?: 1000
         val total =
-            if (reprocessRequest.all) {
-                eventSourceCrudRepository.count()
-            } else {
-                eventSourceCrudRepository.countByStatusIn(reprocessRequest.status)
-            }
+            eventSourceCrudRepository.countForReprocess(
+                all = reprocessRequest.all,
+                statuses = reprocessRequest.status,
+                providersEmpty = reprocessRequest.providers.isEmpty(),
+                providers = reprocessRequest.providers,
+            )
 
-        val pageSize = reprocessRequest.pageSize.takeIf { it > 0 && it <= 1000 } ?: 1000
-        val pages = total / pageSize + 1
+        val pages =
+            if (total == 0L) 0L else ceil(total.toDouble() / pageSize.toDouble()).toLong()
 
         return ReprocessCounter(
             total = total,
             pageSize = pageSize,
             pages = pages,
-            fromPage = reprocessRequest.fromPage,
+            fromIdExclusive = reprocessRequest.fromIdExclusive,
         )
     }
 
     fun reprocess(reprocessRequest: ReprocessRequest) {
-        logger.info("Reprocessing event sources with request: $reprocessRequest")
+        logger.info("Reprocessing event sources: $reprocessRequest")
 
-        count(reprocessRequest).let { counter ->
-            if (counter.total == 0L) {
-                logger.info("No event sources found for reprocessing with request: $reprocessRequest")
-                return
-            }
-
-            var page = reprocessRequest.fromPage
-
-            while (page < counter.pages) {
-                val pageRequest = PageRequest.of(page, counter.pageSize)
-                findByFilter(reprocessRequest, pageRequest).forEach { eventSource ->
-                    processEventSourceService.execute(eventSource.id)
-                }
-                page++
-                logger.info("Reprocessed page $page of ${counter.pages} with request: $reprocessRequest")
-            }
+        val counter = count(reprocessRequest)
+        if (counter.total == 0L) {
+            logger.info("No event sources found for reprocessing: $reprocessRequest")
+            return
         }
+
+        val pageSize = counter.pageSize
+        var afterId = reprocessRequest.fromIdExclusive
+        var processed = 0L
+        var batches = 0L
+
+        while (true) {
+            val batch =
+                eventSourceCrudRepository.findBatchForReprocess(
+                    afterId = afterId,
+                    all = reprocessRequest.all,
+                    statuses = reprocessRequest.status,
+                    providersEmpty = reprocessRequest.providers.isEmpty(),
+                    providers = reprocessRequest.providers,
+                    pageable = PageRequest.of(0, pageSize),
+                )
+
+            if (batch.isEmpty()) break
+
+            batches++
+            for (es in batch) {
+                processEventSourceService.execute(es.id)
+                processed++
+                afterId = es.id
+            }
+
+            logger.info(
+                "Reprocess progress: processed=$processed/${counter.total} batches=$batches lastId=$afterId request=$reprocessRequest",
+            )
+        }
+
+        logger.info("Reprocess finished: processed=$processed totalSnapshot=${counter.total} lastId=$afterId request=$reprocessRequest")
     }
 
     fun reprocessById(eventSourceId: Long) {
@@ -69,21 +92,10 @@ class ReprocessEventSource(
             event.copy(
                 status = EventSource.Status.PENDING,
                 errorMessage = null,
-                updatedAt = java.time.Instant.now(),
+                updatedAt = Instant.now(),
             )
 
         eventSourceCrudRepository.save(reset)
-
         processEventSourceService.execute(eventSourceId)
-    }
-
-    private fun findByFilter(
-        reprocessRequest: ReprocessRequest,
-        pageRequest: PageRequest,
-    ): Page<EventSource> {
-        if (reprocessRequest.all) {
-            return eventSourceCrudRepository.findAll(pageRequest)
-        }
-        return eventSourceCrudRepository.findAllByStatusIn(reprocessRequest.status, pageRequest)
     }
 }
