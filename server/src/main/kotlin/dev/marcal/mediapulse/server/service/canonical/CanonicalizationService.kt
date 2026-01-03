@@ -116,7 +116,7 @@ class CanonicalizationService(
 
     /**
      * Track is a recording (artist-scoped), not "track in album".
-     * Identity priority: MBID > Plex GUID > Spotify ID > fingerprint(title+artist+duration?).
+     * Identity priority: MBID > Spotify ID > fingerprint(title+artist+duration?).
      */
     @Transactional
     fun ensureTrack(
@@ -139,13 +139,13 @@ class CanonicalizationService(
             musicbrainzId?.let { findByExternal(Provider.MUSICBRAINZ, it) }
                 ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
                 ?: run {
-                    val fp = FingerprintUtil.trackFpV2(title = title, artistId = artist.id, durationMs = durationMs)
+                    val fp = FingerprintUtil.trackFp(title = title, artistId = artist.id)
                     trackRepo.findByFingerprint(fp)
                 }
 
         val track =
             found ?: run {
-                val fp = FingerprintUtil.trackFpV2(title = title, artistId = artist.id, durationMs = durationMs)
+                val fp = FingerprintUtil.trackFp(title = title, artistId = artist.id)
                 trackRepo.save(
                     Track(
                         artistId = artist.id,
@@ -164,7 +164,7 @@ class CanonicalizationService(
 
     /**
      * Links track to an album edition, capturing position when known.
-     * Idempotent.
+     * Idempotent. Never forces position when disc/track is unknown.
      */
     @Transactional
     fun linkTrackToAlbum(
@@ -173,21 +173,22 @@ class CanonicalizationService(
         discNumber: Int?,
         trackNumber: Int?,
     ) {
-        if (discNumber != null && trackNumber != null) {
-            albumTrackRepo.upsertByPosition(
-                albumId = album.id,
-                trackId = track.id,
-                discNumber = discNumber,
-                trackNumber = trackNumber,
-            )
-        } else {
+        if (discNumber == null || trackNumber == null) {
             albumTrackRepo.insertIgnoreByPk(
                 albumId = album.id,
                 trackId = track.id,
-                discNumber = discNumber,
-                trackNumber = trackNumber,
+                discNumber = null,
+                trackNumber = null,
             )
+            return
         }
+
+        albumTrackRepo.upsertByPosition(
+            albumId = album.id,
+            trackId = track.id,
+            discNumber = discNumber,
+            trackNumber = trackNumber,
+        )
     }
 
     @Transactional

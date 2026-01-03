@@ -1,4 +1,4 @@
-@eventId = 51
+@eventId = 4910
 
 ###
 POST {{host}}/event-sources/reprocess
@@ -14,7 +14,6 @@ POST {{host}}/event-sources/reprocess
 Content-Type: application/json
 
 {
-  "all": true,
   "status": ["PENDING"],
   "pageSize": 50
 }

@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.integration.spotify
 
+import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyAlbumTracksResponse
 import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyRecentlyPlayedResponse
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactor.awaitSingle
@@ -40,6 +41,54 @@ class SpotifyApiClient(
                 .awaitSingle()
                 .body ?: SpotifyRecentlyPlayedResponse()
         }
+    }
+
+    /**
+     * Returns ALL album tracks (paginates using offset/limit).
+     * Endpoint: GET /albums/{id}/tracks
+     */
+    suspend fun getAllAlbumTracks(
+        spotifyAlbumId: String,
+        pageSize: Int = 50,
+    ): List<dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyAlbumTrackItem> {
+        require(pageSize in 1..50)
+        val accessToken = authService.getValidAccessToken()
+
+        val out = ArrayList<dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyAlbumTrackItem>(64)
+        var offset = 0
+
+        while (true) {
+            val resp: SpotifyAlbumTracksResponse =
+                executeWith429Retry {
+                    spotifyApiWebClient
+                        .get()
+                        .uri { b ->
+                            b
+                                .path("/albums/{id}/tracks")
+                                .queryParam("limit", pageSize)
+                                .queryParam("offset", offset)
+                                .build(spotifyAlbumId)
+                        }.header(HttpHeaders.AUTHORIZATION, "Bearer $accessToken")
+                        .retrieve()
+                        .toEntity(object : ParameterizedTypeReference<SpotifyAlbumTracksResponse>() {})
+                        .awaitSingle()
+                        .body ?: SpotifyAlbumTracksResponse()
+                }
+
+            if (resp.items.isNotEmpty()) out.addAll(resp.items)
+
+            val got = resp.items.size
+            val total = resp.total
+
+            offset += got
+
+            // Stop conditions:
+            if (got == 0) break
+            if (total != null && offset >= total) break
+            if (resp.next.isNullOrBlank()) break
+        }
+
+        return out
     }
 
     private suspend fun <T> executeWith429Retry(

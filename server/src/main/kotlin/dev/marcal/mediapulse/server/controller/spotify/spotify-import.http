@@ -30,3 +30,6 @@ Content-Type: application/json
   "resetCursor": true,
   "maxPages": 1
 }
+
+### Backfill de tracklist de álbuns (Spotify)
+POST {{baseUrl}}/backfill-album-tracks?limit=50
