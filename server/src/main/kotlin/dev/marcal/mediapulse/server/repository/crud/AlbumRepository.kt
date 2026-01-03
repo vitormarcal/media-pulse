@@ -6,14 +6,14 @@ import org.springframework.data.repository.CrudRepository
 interface AlbumRepository : CrudRepository<Album, Long> {
     fun findByFingerprint(fingerprint: String): Album?
 
-    fun findByArtistIdAndTitleAndYear(
+    fun findByArtistIdAndTitleKeyAndYear(
         artistId: Long,
-        title: String,
+        titleKey: String,
         year: Int?,
     ): Album?
 
-    fun findAllByArtistIdAndTitle(
+    fun findFirstByArtistIdAndTitleKeyOrderByIdAsc(
         artistId: Long,
-        title: String,
-    ): List<Album>
+        titleKey: String,
+    ): Album?
 }

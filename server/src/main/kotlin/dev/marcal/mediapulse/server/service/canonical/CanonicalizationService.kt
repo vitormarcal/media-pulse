@@ -12,6 +12,7 @@ import dev.marcal.mediapulse.server.repository.crud.ArtistRepository
 import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TrackRepository
 import dev.marcal.mediapulse.server.util.FingerprintUtil
+import dev.marcal.mediapulse.server.util.TitleKeyUtil
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -76,31 +77,36 @@ class CanonicalizationService(
             return albumRepo.findById(ext.entityId).orElse(null)
         }
 
+        val titleKey = TitleKeyUtil.albumTitleKey(title).ifBlank { "unknown" }
+        val fp = FingerprintUtil.albumFp(titleKey, artist.id, year)
+
         val found =
             musicbrainzId?.let { findByExternal(Provider.MUSICBRAINZ, it) }
                 ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
-                ?: albumRepo.findByArtistIdAndTitleAndYear(artist.id, title, year)
+                ?: albumRepo.findByArtistIdAndTitleKeyAndYear(artist.id, titleKey, year)
                 ?: run {
                     if (year == null) {
-                        val candidates = albumRepo.findAllByArtistIdAndTitle(artist.id, title)
-                        if (candidates.size == 1) candidates.first() else null
+                        albumRepo.findFirstByArtistIdAndTitleKeyOrderByIdAsc(artist.id, titleKey)
                     } else {
                         null
                     }
                 }
-                ?: albumRepo.findByFingerprint(FingerprintUtil.albumFp(title, artist.id, year))
+                ?: albumRepo.findByFingerprint(fp)
 
         val album0 =
             found ?: albumRepo.save(
                 Album(
                     artistId = artist.id,
-                    title = title,
+                    title = title, // preserva original
+                    titleKey = titleKey, // normalizado
                     year = year,
                     coverUrl = coverUrl,
-                    fingerprint = FingerprintUtil.albumFp(title, artist.id, year),
+                    fingerprint = fp, // fingerprint usa titleKey
                 ),
             )
 
+        // Se chegar o year depois (ex: Spotify extended), atualiza.
+        // Se existir outro com (artist_id, title_key, year), o UNIQUE do banco barra, revelando conflito real.
         val album =
             if (year != null && album0.year == null) {
                 albumRepo.save(album0.copy(year = year, updatedAt = Instant.now()))
@@ -139,13 +145,13 @@ class CanonicalizationService(
             musicbrainzId?.let { findByExternal(Provider.MUSICBRAINZ, it) }
                 ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
                 ?: run {
-                    val fp = FingerprintUtil.trackFp(title = title, artistId = artist.id)
+                    val fp = FingerprintUtil.trackFp(title = title, artistId = artist.id, durationMs = durationMs)
                     trackRepo.findByFingerprint(fp)
                 }
 
         val track =
             found ?: run {
-                val fp = FingerprintUtil.trackFp(title = title, artistId = artist.id)
+                val fp = FingerprintUtil.trackFp(title = title, artistId = artist.id, durationMs = durationMs)
                 trackRepo.save(
                     Track(
                         artistId = artist.id,
@@ -164,7 +170,7 @@ class CanonicalizationService(
 
     /**
      * Links track to an album edition, capturing position when known.
-     * Idempotent. Never forces position when disc/track is unknown.
+     * Idempotent.
      */
     @Transactional
     fun linkTrackToAlbum(
@@ -173,22 +179,21 @@ class CanonicalizationService(
         discNumber: Int?,
         trackNumber: Int?,
     ) {
-        if (discNumber == null || trackNumber == null) {
+        if (discNumber != null && trackNumber != null) {
+            albumTrackRepo.upsertByPosition(
+                albumId = album.id,
+                trackId = track.id,
+                discNumber = discNumber,
+                trackNumber = trackNumber,
+            )
+        } else {
             albumTrackRepo.insertIgnoreByPk(
                 albumId = album.id,
                 trackId = track.id,
-                discNumber = null,
-                trackNumber = null,
+                discNumber = discNumber,
+                trackNumber = trackNumber,
             )
-            return
         }
-
-        albumTrackRepo.upsertByPosition(
-            albumId = album.id,
-            trackId = track.id,
-            discNumber = discNumber,
-            trackNumber = trackNumber,
-        )
     }
 
     @Transactional

@@ -14,13 +14,14 @@ object FingerprintUtil {
     fun artistFp(name: String) = DigestUtils.sha256Hex(normalize(name))
 
     fun albumFp(
-        title: String,
+        titleKey: String,
         artistId: Long,
         year: Int?,
-    ) = DigestUtils.sha256Hex("${normalize(title)}|$artistId|${year ?: ""}")
+    ) = DigestUtils.sha256Hex("album|$artistId|${year ?: ""}|$titleKey")
 
     fun trackFp(
         title: String,
         artistId: Long,
-    ) = DigestUtils.sha256Hex("${normalize(title)}|$artistId")
+        durationMs: Int?,
+    ) = DigestUtils.sha256Hex("${normalize(title)}|$artistId|${durationMs ?: ""}")
 }
