@@ -4,5 +4,5 @@ data class ReprocessCounter(
     val total: Long,
     val pageSize: Int,
     val pages: Long,
-    val fromPage: Int,
+    val fromIdExclusive: Long,
 )
