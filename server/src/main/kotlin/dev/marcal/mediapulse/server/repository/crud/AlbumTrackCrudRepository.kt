@@ -8,41 +8,35 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.query.Param
 
 interface AlbumTrackCrudRepository : CrudRepository<AlbumTrack, AlbumTrackId> {
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
-        value = """
-        WITH _lock AS (
-          SELECT pg_advisory_xact_lock(:albumId)
-        ),
-        evict AS (
-          UPDATE album_tracks
-          SET disc_number = NULL,
-              track_number = NULL
-          WHERE album_id = :albumId
-            AND disc_number = :discNumber
-            AND track_number = :trackNumber
-            AND track_id <> :trackId
-          RETURNING 1
-        ),
-        upd AS (
-          UPDATE album_tracks
-          SET disc_number = :discNumber,
-              track_number = :trackNumber
-          WHERE album_id = :albumId
-            AND track_id = :trackId
-          RETURNING 1
-        )
-        INSERT INTO album_tracks(album_id, track_id, disc_number, track_number)
-        SELECT :albumId, :trackId, :discNumber, :trackNumber
-        WHERE NOT EXISTS (SELECT 1 FROM upd)
-        ON CONFLICT (album_id, track_id)
-        DO UPDATE SET
-          disc_number = EXCLUDED.disc_number,
-          track_number = EXCLUDED.track_number
-        """,
         nativeQuery = true,
+        value = """
+    WITH _lock AS (
+      SELECT pg_advisory_xact_lock(:lockKey) AS locked
+    ),
+    evict AS (
+      UPDATE album_tracks
+         SET disc_number = NULL,
+             track_number = NULL
+       WHERE album_id = :albumId
+         AND disc_number = :discNumber
+         AND track_number = :trackNumber
+         AND track_id <> :trackId
+       RETURNING 1
+    )
+    INSERT INTO album_tracks(album_id, track_id, disc_number, track_number)
+    SELECT :albumId, :trackId, :discNumber, :trackNumber
+      FROM _lock
+      LEFT JOIN evict ON TRUE
+    ON CONFLICT (album_id, track_id)
+    DO UPDATE SET
+      disc_number = EXCLUDED.disc_number,
+      track_number = EXCLUDED.track_number
+    """,
     )
     fun upsertByPosition(
+        @Param("lockKey") lockKey: Long,
         @Param("albumId") albumId: Long,
         @Param("trackId") trackId: Long,
         @Param("discNumber") discNumber: Int,

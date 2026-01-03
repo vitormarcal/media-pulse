@@ -14,7 +14,6 @@ import java.time.Instant
     name = "albums",
     uniqueConstraints = [
         UniqueConstraint(columnNames = ["fingerprint"]),
-        UniqueConstraint(columnNames = ["artist_id", "title_key", "year"]),
     ],
 )
 data class Album(
