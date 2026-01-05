@@ -42,7 +42,9 @@ class AlbumGenreService(
         // 1) Estado final: album_genres
         val existing = albumGenreRepository.findGenreIdsByAlbum(album.id)
         val toInsert = genreIds.filterNot { it in existing }
-        albumGenreRepository.insert(album.id, toInsert)
+        if (toInsert.isNotEmpty()) {
+            albumGenreRepository.insert(album.id, toInsert)
+        }
 
         // 2) Proveniência: album_genre_sources
         // registra todos os gêneros processados (mesmo se já existiam no album_genres)

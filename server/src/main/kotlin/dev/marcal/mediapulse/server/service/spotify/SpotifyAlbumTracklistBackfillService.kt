@@ -111,8 +111,6 @@ class SpotifyAlbumTracklistBackfillService(
                                 )
                             }
 
-                            linksUpserted++
-
                             i++
                             if (i % 200 == 0) {
                                 em.flush()
