@@ -19,8 +19,8 @@ class SpotifyPlaybackService(
         item: SpotifyRecentlyPlayedItem,
         eventId: Long?,
     ) {
-        val playedAt = Instant.parse(item.playedAt)
         val track = item.track ?: return
+        val playedAt = Instant.parse(item.playedAt)
 
         val mainArtist =
             track.artists?.firstOrNull()
