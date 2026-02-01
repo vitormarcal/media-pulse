@@ -27,8 +27,14 @@ class SpotifyExtendedFileDispatcherTest {
     fun setUp() {
         MockKAnnotations.init(this)
         // Use real ObjectMapper with Kotlin module for JSON processing
-        val objectMapper = com.fasterxml.jackson.databind.ObjectMapper()
-        objectMapper.registerModule(com.fasterxml.jackson.module.kotlin.KotlinModule.Builder().build())
+        val objectMapper =
+            com.fasterxml.jackson.databind
+                .ObjectMapper()
+        objectMapper.registerModule(
+            com.fasterxml.jackson.module.kotlin.KotlinModule
+                .Builder()
+                .build(),
+        )
         dispatcher =
             SpotifyExtendedFileDispatcher(
                 objectMapper = objectMapper,

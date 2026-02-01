@@ -1,9 +1,11 @@
 package dev.marcal.mediapulse.server.service.pipeline
 
+import dev.marcal.mediapulse.server.config.HardcoverProperties
 import dev.marcal.mediapulse.server.config.MusicBrainzProperties
 import dev.marcal.mediapulse.server.config.PipelineProperties
 import dev.marcal.mediapulse.server.config.PlexProperties
 import dev.marcal.mediapulse.server.config.SpotifyProperties
+import dev.marcal.mediapulse.server.service.hardcover.HardcoverImportService
 import dev.marcal.mediapulse.server.service.musicbrainz.MusicBrainzAlbumGenreEnrichmentService
 import dev.marcal.mediapulse.server.service.plex.import.PlexImportService
 import dev.marcal.mediapulse.server.service.spotify.SpotifyImportService
@@ -17,9 +19,11 @@ class ImportPipelineRunner(
     private val plexProps: PlexProperties,
     private val mbProps: MusicBrainzProperties,
     private val spotifyProps: SpotifyProperties,
+    private val hardcoverProperties: HardcoverProperties,
     private val plexImportService: PlexImportService,
     private val mbService: MusicBrainzAlbumGenreEnrichmentService,
     private val spotifyImportService: SpotifyImportService,
+    private val hardcoverImportService: HardcoverImportService,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val running = AtomicBoolean(false)
@@ -59,6 +63,13 @@ class ImportPipelineRunner(
                 logger.info("Pipeline MusicBrainz done | processed={}", processed)
             } else {
                 logger.info("Pipeline MusicBrainz skipped | reason=disabled")
+            }
+
+            if (hardcoverProperties.enabled) {
+                val processed = hardcoverImportService.importUserBooks()
+                logger.info("Pipeline Hardcover done | processed={}", processed)
+            } else {
+                logger.info("Pipeline Hardcover skipped | reason=disabled")
             }
 
             logger.info("Pipeline finished | reason={}", reason)

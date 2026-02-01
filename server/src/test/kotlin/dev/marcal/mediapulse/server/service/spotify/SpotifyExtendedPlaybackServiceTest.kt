@@ -18,9 +18,6 @@ import io.mockk.verify
 import jakarta.persistence.EntityManager
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.time.Instant
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class SpotifyExtendedPlaybackServiceTest {
     @MockK lateinit var canonical: CanonicalizationService
@@ -52,15 +49,16 @@ class SpotifyExtendedPlaybackServiceTest {
         val track = Track(id = 3L, artistId = 1L, title = "Track", durationMs = 180000, fingerprint = "fpT")
 
         // Create 150 items to test flushing at 100
-        val items = (1..150).map { i ->
-            SpotifyExtendedHistoryItem(
-                ts = "2020-01-01T${String.format("%02d", i % 24)}:${String.format("%02d", (i / 24) % 60)}:00Z",
-                trackName = "Track $i",
-                artistName = "Artist",
-                albumName = "Album",
-                spotifyTrackUri = "spotify:track:track$i",
-            )
-        }
+        val items =
+            (1..150).map { i ->
+                SpotifyExtendedHistoryItem(
+                    ts = "2020-01-01T${String.format("%02d", i % 24)}:${String.format("%02d", (i / 24) % 60)}:00Z",
+                    trackName = "Track $i",
+                    artistName = "Artist",
+                    albumName = "Album",
+                    spotifyTrackUri = "spotify:track:track$i",
+                )
+            }
 
         // Mock transaction execution
         val txLambda = slot<() -> Unit>()
@@ -70,8 +68,11 @@ class SpotifyExtendedPlaybackServiceTest {
 
         // Mock canonical service
         every { canonical.ensureArtist(name = "Artist", musicbrainzId = null, spotifyId = null) } returns artist
-        every { canonical.ensureAlbum(artist = artist, title = "Album", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null) } returns album
-        every { canonical.ensureTrack(artist = artist, title = any(), durationMs = null, musicbrainzId = null, spotifyId = any()) } returns track
+        every {
+            canonical.ensureAlbum(artist = artist, title = "Album", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null)
+        } returns album
+        every { canonical.ensureTrack(artist = artist, title = any(), durationMs = null, musicbrainzId = null, spotifyId = any()) } returns
+            track
         every { canonical.linkTrackToAlbum(album = album, track = track, discNumber = null, trackNumber = null) } just runs
 
         // Mock playback repo
@@ -90,8 +91,12 @@ class SpotifyExtendedPlaybackServiceTest {
 
         // Verify canonical service was called
         verify(atLeast = 1) { canonical.ensureArtist(name = "Artist", musicbrainzId = null, spotifyId = null) }
-        verify(atLeast = 1) { canonical.ensureAlbum(artist = artist, title = "Album", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null) }
-        verify(exactly = 150) { canonical.ensureTrack(artist = artist, title = any(), durationMs = null, musicbrainzId = null, spotifyId = any()) }
+        verify(atLeast = 1) {
+            canonical.ensureAlbum(artist = artist, title = "Album", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null)
+        }
+        verify(
+            exactly = 150,
+        ) { canonical.ensureTrack(artist = artist, title = any(), durationMs = null, musicbrainzId = null, spotifyId = any()) }
         verify(exactly = 150) { canonical.linkTrackToAlbum(album = album, track = track, discNumber = null, trackNumber = null) }
 
         // Verify playback inserts
@@ -117,8 +122,18 @@ class SpotifyExtendedPlaybackServiceTest {
         every { tx.inTx(capture(txLambda)) } answers { txLambda.captured.invoke() }
 
         every { canonical.ensureArtist(name = "Artist", musicbrainzId = null, spotifyId = null) } returns artist
-        every { canonical.ensureAlbum(artist = artist, title = "Album", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null) } returns album
-        every { canonical.ensureTrack(artist = artist, title = "Track Name", durationMs = null, musicbrainzId = null, spotifyId = "123abc456def") } returns track
+        every {
+            canonical.ensureAlbum(artist = artist, title = "Album", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null)
+        } returns album
+        every {
+            canonical.ensureTrack(
+                artist = artist,
+                title = "Track Name",
+                durationMs = null,
+                musicbrainzId = null,
+                spotifyId = "123abc456def",
+            )
+        } returns track
         every { canonical.linkTrackToAlbum(album = album, track = track, discNumber = null, trackNumber = null) } just runs
         every { trackPlaybackRepo.insertIgnore(any(), any(), any(), any(), any()) } just runs
         every { em.flush() } just runs
@@ -126,7 +141,15 @@ class SpotifyExtendedPlaybackServiceTest {
 
         service.processChunk(listOf(item), eventId = 123L)
 
-        verify(exactly = 1) { canonical.ensureTrack(artist = artist, title = "Track Name", durationMs = null, musicbrainzId = null, spotifyId = "123abc456def") }
+        verify(exactly = 1) {
+            canonical.ensureTrack(
+                artist = artist,
+                title = "Track Name",
+                durationMs = null,
+                musicbrainzId = null,
+                spotifyId = "123abc456def",
+            )
+        }
     }
 
     @Test
@@ -138,8 +161,20 @@ class SpotifyExtendedPlaybackServiceTest {
 
         val items =
             listOf(
-                SpotifyExtendedHistoryItem(ts = null, trackName = "Track", artistName = "Artist", albumName = "Album", spotifyTrackUri = null),
-                SpotifyExtendedHistoryItem(ts = "invalid-date", trackName = "Track", artistName = "Artist", albumName = "Album", spotifyTrackUri = null),
+                SpotifyExtendedHistoryItem(
+                    ts = null,
+                    trackName = "Track",
+                    artistName = "Artist",
+                    albumName = "Album",
+                    spotifyTrackUri = null,
+                ),
+                SpotifyExtendedHistoryItem(
+                    ts = "invalid-date",
+                    trackName = "Track",
+                    artistName = "Artist",
+                    albumName = "Album",
+                    spotifyTrackUri = null,
+                ),
             )
 
         service.processChunk(items, eventId = 123L)
@@ -157,8 +192,20 @@ class SpotifyExtendedPlaybackServiceTest {
 
         val items =
             listOf(
-                SpotifyExtendedHistoryItem(ts = "2020-01-01T00:00:00Z", trackName = null, artistName = "Artist", albumName = "Album", spotifyTrackUri = null),
-                SpotifyExtendedHistoryItem(ts = "2020-01-01T00:00:00Z", trackName = "  ", artistName = "Artist", albumName = "Album", spotifyTrackUri = null),
+                SpotifyExtendedHistoryItem(
+                    ts = "2020-01-01T00:00:00Z",
+                    trackName = null,
+                    artistName = "Artist",
+                    albumName = "Album",
+                    spotifyTrackUri = null,
+                ),
+                SpotifyExtendedHistoryItem(
+                    ts = "2020-01-01T00:00:00Z",
+                    trackName = "  ",
+                    artistName = "Artist",
+                    albumName = "Album",
+                    spotifyTrackUri = null,
+                ),
             )
 
         service.processChunk(items, eventId = 123L)
@@ -169,7 +216,8 @@ class SpotifyExtendedPlaybackServiceTest {
     @Test
     fun `should use Unknown for missing artist and album names`() {
         val artist = Artist(id = 1L, name = "Unknown", fingerprint = "fpA")
-        val album = Album(id = 2L, artistId = 1L, title = "Unknown", titleKey = "unknown", year = 2020, coverUrl = null, fingerprint = "fpB")
+        val album =
+            Album(id = 2L, artistId = 1L, title = "Unknown", titleKey = "unknown", year = 2020, coverUrl = null, fingerprint = "fpB")
         val track = Track(id = 3L, artistId = 1L, title = "Track", durationMs = 180000, fingerprint = "fpT")
 
         val item =
@@ -185,8 +233,11 @@ class SpotifyExtendedPlaybackServiceTest {
         every { tx.inTx(capture(txLambda)) } answers { txLambda.captured.invoke() }
 
         every { canonical.ensureArtist(name = "Unknown", musicbrainzId = null, spotifyId = null) } returns artist
-        every { canonical.ensureAlbum(artist = artist, title = "Unknown", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null) } returns album
-        every { canonical.ensureTrack(artist = artist, title = "Track", durationMs = null, musicbrainzId = null, spotifyId = null) } returns track
+        every {
+            canonical.ensureAlbum(artist = artist, title = "Unknown", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null)
+        } returns album
+        every { canonical.ensureTrack(artist = artist, title = "Track", durationMs = null, musicbrainzId = null, spotifyId = null) } returns
+            track
         every { canonical.linkTrackToAlbum(album = album, track = track, discNumber = null, trackNumber = null) } just runs
         every { trackPlaybackRepo.insertIgnore(any(), any(), any(), any(), any()) } just runs
         every { em.flush() } just runs
@@ -195,7 +246,9 @@ class SpotifyExtendedPlaybackServiceTest {
         service.processChunk(listOf(item), eventId = 123L)
 
         verify(exactly = 1) { canonical.ensureArtist(name = "Unknown", musicbrainzId = null, spotifyId = null) }
-        verify(exactly = 1) { canonical.ensureAlbum(artist = artist, title = "Unknown", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null) }
+        verify(exactly = 1) {
+            canonical.ensureAlbum(artist = artist, title = "Unknown", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null)
+        }
     }
 
     @Test
@@ -217,8 +270,19 @@ class SpotifyExtendedPlaybackServiceTest {
         every { tx.inTx(capture(txLambda)) } answers { txLambda.captured.invoke() }
 
         every { canonical.ensureArtist(name = "Artist", musicbrainzId = null, spotifyId = null) } returns artist
-        every { canonical.ensureAlbum(artist = artist, title = "Album", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null) } returns album
-        every { canonical.ensureTrack(artist = artist, title = "Track", durationMs = null, musicbrainzId = null, spotifyId = "track123") } returns track
+        every {
+            canonical.ensureAlbum(artist = artist, title = "Album", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null)
+        } returns album
+        every {
+            canonical.ensureTrack(
+                artist = artist,
+                title = "Track",
+                durationMs = null,
+                musicbrainzId = null,
+                spotifyId = "track123",
+            )
+        } returns
+            track
         every { canonical.linkTrackToAlbum(album = album, track = track, discNumber = null, trackNumber = null) } just runs
 
         // insertIgnore might fail or succeed - should not affect processing
@@ -230,7 +294,15 @@ class SpotifyExtendedPlaybackServiceTest {
         // Should not throw exception even if insertIgnore fails
         service.processChunk(listOf(item), eventId = 123L)
 
-        verify(exactly = 1) { trackPlaybackRepo.insertIgnore(trackId = 3L, albumId = 2L, source = PlaybackSource.SPOTIFY.name, sourceEventId = 123L, playedAt = any()) }
+        verify(exactly = 1) {
+            trackPlaybackRepo.insertIgnore(
+                trackId = 3L,
+                albumId = 2L,
+                source = PlaybackSource.SPOTIFY.name,
+                sourceEventId = 123L,
+                playedAt = any(),
+            )
+        }
     }
 
     @Test
@@ -242,17 +314,49 @@ class SpotifyExtendedPlaybackServiceTest {
 
         val items =
             listOf(
-                SpotifyExtendedHistoryItem(ts = "2020-01-01T00:00:00Z", trackName = "Track 1", artistName = "Artist", albumName = "Album", spotifyTrackUri = "spotify:track:track1"),
-                SpotifyExtendedHistoryItem(ts = "2020-01-01T00:01:00Z", trackName = "Track 2", artistName = "Artist", albumName = "Album", spotifyTrackUri = "spotify:track:track2"),
+                SpotifyExtendedHistoryItem(
+                    ts = "2020-01-01T00:00:00Z",
+                    trackName = "Track 1",
+                    artistName = "Artist",
+                    albumName = "Album",
+                    spotifyTrackUri = "spotify:track:track1",
+                ),
+                SpotifyExtendedHistoryItem(
+                    ts = "2020-01-01T00:01:00Z",
+                    trackName = "Track 2",
+                    artistName = "Artist",
+                    albumName = "Album",
+                    spotifyTrackUri = "spotify:track:track2",
+                ),
             )
 
         val txLambda = slot<() -> Unit>()
         every { tx.inTx(capture(txLambda)) } answers { txLambda.captured.invoke() }
 
         every { canonical.ensureArtist(name = "Artist", musicbrainzId = null, spotifyId = null) } returns artist
-        every { canonical.ensureAlbum(artist = artist, title = "Album", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null) } returns album
-        every { canonical.ensureTrack(artist = artist, title = "Track 1", durationMs = null, musicbrainzId = null, spotifyId = "track1") } returns track1
-        every { canonical.ensureTrack(artist = artist, title = "Track 2", durationMs = null, musicbrainzId = null, spotifyId = "track2") } returns track2
+        every {
+            canonical.ensureAlbum(artist = artist, title = "Album", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null)
+        } returns album
+        every {
+            canonical.ensureTrack(
+                artist = artist,
+                title = "Track 1",
+                durationMs = null,
+                musicbrainzId = null,
+                spotifyId = "track1",
+            )
+        } returns
+            track1
+        every {
+            canonical.ensureTrack(
+                artist = artist,
+                title = "Track 2",
+                durationMs = null,
+                musicbrainzId = null,
+                spotifyId = "track2",
+            )
+        } returns
+            track2
         every { canonical.linkTrackToAlbum(album = album, track = any(), discNumber = null, trackNumber = null) } just runs
         every { trackPlaybackRepo.insertIgnore(any(), any(), any(), any(), any()) } just runs
         every { em.flush() } just runs
@@ -262,10 +366,16 @@ class SpotifyExtendedPlaybackServiceTest {
 
         // Artist and album should be created only once due to caching
         verify(exactly = 1) { canonical.ensureArtist(name = "Artist", musicbrainzId = null, spotifyId = null) }
-        verify(exactly = 1) { canonical.ensureAlbum(artist = artist, title = "Album", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null) }
+        verify(exactly = 1) {
+            canonical.ensureAlbum(artist = artist, title = "Album", year = null, coverUrl = null, musicbrainzId = null, spotifyId = null)
+        }
 
         // Tracks should be created for each item
-        verify(exactly = 1) { canonical.ensureTrack(artist = artist, title = "Track 1", durationMs = null, musicbrainzId = null, spotifyId = "track1") }
-        verify(exactly = 1) { canonical.ensureTrack(artist = artist, title = "Track 2", durationMs = null, musicbrainzId = null, spotifyId = "track2") }
+        verify(exactly = 1) {
+            canonical.ensureTrack(artist = artist, title = "Track 1", durationMs = null, musicbrainzId = null, spotifyId = "track1")
+        }
+        verify(exactly = 1) {
+            canonical.ensureTrack(artist = artist, title = "Track 2", durationMs = null, musicbrainzId = null, spotifyId = "track2")
+        }
     }
 }

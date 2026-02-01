@@ -86,9 +86,17 @@ media-pulse:
     poll:
       enabled: ${SPOTIFY_POLL_ENABLED:true}
       cron: ${SPOTIFY_POLL_CRON:0 */10 * * * *}
+  hardcover:
+    enabled: ${HARDCOVER_ENABLED:false}
+    api-base-url: ${HARDCOVER_API_BASE_URL:https://api.hardcover.app/v1/graphql}
+    token: ${HARDCOVER_TOKEN:}
+    user-id: ${HARDCOVER_USER_ID:0}
+    poll:
+      enabled: ${HARDCOVER_POLL_ENABLED:true}
+      cron: ${HARDCOVER_POLL_CRON:0 */15 * * * *}
+      page-size: ${HARDCOVER_POLL_PAGE_SIZE:100}
   storage:
     covers-path: "/data/covers"
     imports-path: "/data/imports"
   allowed-origin:
     - http://localhost:8080
-

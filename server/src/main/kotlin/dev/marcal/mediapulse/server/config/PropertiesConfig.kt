@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration
     PlexProperties::class,
     MusicBrainzProperties::class,
     SpotifyProperties::class,
+    HardcoverProperties::class,
     HttpClientsProperties::class,
 )
 class PropertiesConfig
