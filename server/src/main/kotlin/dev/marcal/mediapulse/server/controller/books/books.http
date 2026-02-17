@@ -1,6 +1,7 @@
 ### Variables
 @baseUrl = {{host}}/api/books
 @bookId = 9
+@bookSlug = 9_book
 @year = 2026
 @start = 2026-01-01T00:00:00Z
 @end = 2026-12-31T23:59:59Z
@@ -11,6 +12,10 @@ Accept: application/json
 
 ### Detalhes do livro
 GET {{baseUrl}}/{{bookId}}
+Accept: application/json
+
+### Detalhes do livro por slug
+GET {{baseUrl}}/slug/{{bookSlug}}
 Accept: application/json
 
 ### Lista de leituras (paginado)

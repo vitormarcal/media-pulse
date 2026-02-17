@@ -58,6 +58,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BookDetailsResponse"
+  /api/books/slug/{slug}:
+    get:
+      summary: Book details by slug
+      tags: [Books]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookDetailsResponse"
   /api/books/list:
     get:
       summary: List reads
