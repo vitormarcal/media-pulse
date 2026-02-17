@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.repository.hardcover
 
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.Provider
+import dev.marcal.mediapulse.server.util.BookSlugUtil
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import org.springframework.stereotype.Repository
@@ -64,12 +65,13 @@ class HardcoverNativeRepository {
             em
                 .createNativeQuery(
                     """
-                    INSERT INTO books(title, release_date, description, cover_url, rating, review_raw, reviewed_at, fingerprint)
-                    VALUES (:title, :releaseDate, :description, :coverUrl, :rating, :reviewRaw, :reviewedAt, :fingerprint)
+                    INSERT INTO books(title, slug, release_date, description, cover_url, rating, review_raw, reviewed_at, fingerprint)
+                    VALUES (:title, :slugOnInsert, :releaseDate, :description, :coverUrl, :rating, :reviewRaw, :reviewedAt, :fingerprint)
                     ON CONFLICT (fingerprint) DO NOTHING
                     RETURNING id
                     """.trimIndent(),
                 ).setParameter("title", title)
+                .setParameter("slugOnInsert", fingerprint)
                 .setParameter("releaseDate", releaseDate)
                 .setParameter("description", description)
                 .setParameter("coverUrl", coverUrl)
@@ -82,6 +84,7 @@ class HardcoverNativeRepository {
                 ?.let { (it as Number).toLong() }
 
         val id = insertedId ?: findIdByFingerprint("books", fingerprint)
+        val slug = BookSlugUtil.from(id, title)
 
         em
             .createNativeQuery(
@@ -90,6 +93,7 @@ class HardcoverNativeRepository {
                    SET release_date = COALESCE(:releaseDate, release_date),
                        description = COALESCE(:description, description),
                        cover_url = COALESCE(:coverUrl, cover_url),
+                       slug = :slug,
                        rating = :rating,
                        review_raw = :reviewRaw,
                        reviewed_at = :reviewedAt,
@@ -104,6 +108,7 @@ class HardcoverNativeRepository {
             ).setParameter("releaseDate", releaseDate)
             .setParameter("description", description)
             .setParameter("coverUrl", coverUrl)
+            .setParameter("slug", slug)
             .setParameter("rating", rating)
             .setParameter("reviewRaw", reviewRaw)
             .setParameter("reviewedAt", reviewedAt)

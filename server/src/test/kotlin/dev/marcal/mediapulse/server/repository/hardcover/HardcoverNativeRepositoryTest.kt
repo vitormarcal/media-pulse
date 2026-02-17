@@ -33,7 +33,7 @@ class HardcoverNativeRepositoryTest {
             sqls += firstArg<String>()
             query
         }
-        every { query.setParameter(any<String>(), any<String>()) } returns query
+        every { query.setParameter(any<String>(), any()) } returns query
         every { query.resultList } returns listOf(1L)
         every { query.executeUpdate() } returns 1
     }
@@ -56,6 +56,7 @@ class HardcoverNativeRepositoryTest {
 
         val updateSql = sqls.firstOrNull { it.contains("UPDATE books") }
         assertNotNull(updateSql)
+        assertTrue(updateSql.contains("slug = :slug,"))
         assertTrue(updateSql.contains("rating = :rating"))
         assertTrue(updateSql.contains("review_raw = :reviewRaw"))
         assertTrue(updateSql.contains("reviewed_at = :reviewedAt"))
@@ -64,6 +65,7 @@ class HardcoverNativeRepositoryTest {
         assertTrue(updateSql.contains("updated_at <= :sourceUpdatedAt"))
 
         verify(atLeast = 1) { query.setParameter("sourceUpdatedAt", sourceUpdatedAt) }
+        verify(atLeast = 1) { query.setParameter("slug", "1_book") }
     }
 
     @Test
