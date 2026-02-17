@@ -29,6 +29,11 @@ class BooksController(
         @PathVariable bookId: Long,
     ): BookDetailsResponse = repository.getBookDetails(bookId)
 
+    @GetMapping("/slug/{slug}")
+    fun bookDetailsBySlug(
+        @PathVariable slug: String,
+    ): BookDetailsResponse = repository.getBookDetailsBySlug(slug)
+
     @GetMapping("/list")
     fun listReads(
         @RequestParam(required = false) status: String?,

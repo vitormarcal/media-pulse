@@ -8,6 +8,7 @@ A Books API fornece uma visão read-only da biblioteca e leituras. Ela expõe ca
 | --- | --- | --- |
 | `GET /api/books/year/{year}` | `year` (path) | `YearReadsResponse` |
 | `GET /api/books/{bookId}` | `bookId` (path) | `BookDetailsResponse` |
+| `GET /api/books/slug/{slug}` | `slug` (path) | `BookDetailsResponse` |
 | `GET /api/books/list` | `status?`, `limit=20`, `cursor?` | `BooksListResponse` |
 | `GET /api/books/search` | `q`, `limit=10` | `BooksSearchResponse` |
 | `GET /api/books/summary` | `range=month|year|custom`, `start?`, `end?` | `BooksSummaryResponse` |
@@ -93,6 +94,29 @@ curl "{{host}}/api/books/year/2025"
 
 ```bash
 curl "{{host}}/api/books/52"
+```
+
+### Book details by slug
+
+```bash
+curl "{{host}}/api/books/slug/52_the_dispossessed"
+```
+
+```json
+{
+  "bookId": 52,
+  "slug": "52_the_dispossessed",
+  "title": "The Dispossessed",
+  "description": "A brilliant utopian novel about two worlds.",
+  "coverUrl": "https://img.example/book/52.jpg",
+  "releaseDate": "1974-05-01",
+  "rating": 4.5,
+  "reviewRaw": "Loved the contrast between the worlds.",
+  "reviewedAt": "2025-03-02T12:00:00Z",
+  "authors": [{ "id": 9, "name": "Ursula K. Le Guin" }],
+  "editions": [],
+  "reads": []
+}
 ```
 
 ```json

@@ -181,6 +181,11 @@ class BookQueryRepository(
         )
     }
 
+    fun getBookDetailsBySlug(slug: String): BookDetailsResponse {
+        val book = fetchBookDetailsRowBySlug(slug)
+        return getBookDetails(book.bookId)
+    }
+
     fun listReads(
         status: BookReadStatus?,
         limit: Int,
@@ -581,6 +586,40 @@ class BookQueryRepository(
                     WHERE b.id = :bookId
                     """.trimIndent(),
                 ).setParameter("bookId", bookId)
+                .singleResult as Array<*>
+
+        return BookDetailsRow(
+            bookId = (row[0] as Number).toLong(),
+            slug = row[1] as String,
+            title = row[2] as String,
+            description = row[3] as String?,
+            coverUrl = row[4] as String?,
+            releaseDate = asLocalDate(row[5]),
+            rating = asDouble(row[6]),
+            reviewRaw = row[7] as String?,
+            reviewedAt = asInstant(row[8]),
+        )
+    }
+
+    private fun fetchBookDetailsRowBySlug(slug: String): BookDetailsRow {
+        val row =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      b.id,
+                      b.slug,
+                      b.title,
+                      b.description,
+                      b.cover_url,
+                      b.release_date,
+                      b.rating,
+                      b.review_raw,
+                      b.reviewed_at
+                    FROM books b
+                    WHERE b.slug = :slug
+                    """.trimIndent(),
+                ).setParameter("slug", slug)
                 .singleResult as Array<*>
 
         return BookDetailsRow(
