@@ -55,8 +55,26 @@ class PlexImportServiceTest {
             val artist1 = Artist(id = 100L, name = "Artist 1", fingerprint = "fp1")
             val artist2 = Artist(id = 101L, name = "Artist 2", fingerprint = "fp2")
 
-            val album1 = Album(id = 200L, artistId = 100L, title = "Album 1", titleKey = "album-1", year = 2020, coverUrl = null, fingerprint = "fpalbum1")
-            val album2 = Album(id = 201L, artistId = 101L, title = "Album 2", titleKey = "album-2", year = 2021, coverUrl = null, fingerprint = "fpalbum2")
+            val album1 =
+                Album(
+                    id = 200L,
+                    artistId = 100L,
+                    title = "Album 1",
+                    titleKey = "album-1",
+                    year = 2020,
+                    coverUrl = null,
+                    fingerprint = "fpalbum1",
+                )
+            val album2 =
+                Album(
+                    id = 201L,
+                    artistId = 101L,
+                    title = "Album 2",
+                    titleKey = "album-2",
+                    year = 2021,
+                    coverUrl = null,
+                    fingerprint = "fpalbum2",
+                )
 
             val track1 = Track(id = 300L, artistId = 100L, title = "Track 1", durationMs = 180000, fingerprint = "fptrack1")
             val track2 = Track(id = 301L, artistId = 101L, title = "Track 2", durationMs = 200000, fingerprint = "fptrack2")
@@ -130,11 +148,33 @@ class PlexImportServiceTest {
             every { canonical.ensureArtist(name = "Artist 1", musicbrainzId = null, spotifyId = null) } returns artist1
             every { canonical.ensureArtist(name = "Artist 2", musicbrainzId = null, spotifyId = null) } returns artist2
 
-            every { canonical.ensureAlbum(artist = artist1, title = "Album 1", year = 2020, coverUrl = null, musicbrainzId = null, spotifyId = null) } returns album1
-            every { canonical.ensureAlbum(artist = artist2, title = "Album 2", year = 2021, coverUrl = null, musicbrainzId = null, spotifyId = null) } returns album2
+            every {
+                canonical.ensureAlbum(
+                    artist = artist1,
+                    title = "Album 1",
+                    year = 2020,
+                    coverUrl = null,
+                    musicbrainzId = null,
+                    spotifyId = null,
+                )
+            } returns album1
+            every {
+                canonical.ensureAlbum(
+                    artist = artist2,
+                    title = "Album 2",
+                    year = 2021,
+                    coverUrl = null,
+                    musicbrainzId = null,
+                    spotifyId = null,
+                )
+            } returns album2
 
-            every { canonical.ensureTrack(artist = artist1, title = "Track 1", durationMs = 180000, musicbrainzId = null, spotifyId = null) } returns track1
-            every { canonical.ensureTrack(artist = artist2, title = "Track 2", durationMs = 200000, musicbrainzId = null, spotifyId = null) } returns track2
+            every {
+                canonical.ensureTrack(artist = artist1, title = "Track 1", durationMs = 180000, musicbrainzId = null, spotifyId = null)
+            } returns track1
+            every {
+                canonical.ensureTrack(artist = artist2, title = "Track 2", durationMs = 200000, musicbrainzId = null, spotifyId = null)
+            } returns track2
 
             every { canonical.linkTrackToAlbum(album = album1, track = track1, discNumber = 1, trackNumber = 1) } just runs
             every { canonical.linkTrackToAlbum(album = album2, track = track2, discNumber = 1, trackNumber = 1) } just runs
@@ -163,8 +203,12 @@ class PlexImportServiceTest {
 
             // Verify canonical calls
             coVerify(exactly = 2) { canonical.ensureArtist(name = any(), musicbrainzId = null, spotifyId = null) }
-            coVerify(exactly = 2) { canonical.ensureAlbum(artist = any(), title = any(), year = any(), coverUrl = null, musicbrainzId = null, spotifyId = null) }
-            coVerify(exactly = 2) { canonical.ensureTrack(artist = any(), title = any(), durationMs = any(), musicbrainzId = null, spotifyId = null) }
+            coVerify(exactly = 2) {
+                canonical.ensureAlbum(artist = any(), title = any(), year = any(), coverUrl = null, musicbrainzId = null, spotifyId = null)
+            }
+            coVerify(
+                exactly = 2,
+            ) { canonical.ensureTrack(artist = any(), title = any(), durationMs = any(), musicbrainzId = null, spotifyId = null) }
             coVerify(exactly = 2) { canonical.linkTrackToAlbum(album = any(), track = any(), discNumber = any(), trackNumber = any()) }
 
             // Verify artwork and genre services
@@ -177,7 +221,16 @@ class PlexImportServiceTest {
         runBlocking {
             val sectionKey = "1"
             val artist = Artist(id = 100L, name = "Artist", fingerprint = "fp1")
-            val album = Album(id = 200L, artistId = 100L, title = "Album", titleKey = "album", year = 2020, coverUrl = null, fingerprint = "fpalbum")
+            val album =
+                Album(
+                    id = 200L,
+                    artistId = 100L,
+                    title = "Album",
+                    titleKey = "album",
+                    year = 2020,
+                    coverUrl = null,
+                    fingerprint = "fpalbum",
+                )
             val track = Track(id = 300L, artistId = 100L, title = "Track", durationMs = 180000, fingerprint = "fptrack")
 
             // Create Plex objects with MBID guids
@@ -221,8 +274,25 @@ class PlexImportServiceTest {
 
             // Mock canonical service with MBID verification
             every { canonical.ensureArtist(name = "Artist", musicbrainzId = "artist-mbid-123", spotifyId = null) } returns artist
-            every { canonical.ensureAlbum(artist = artist, title = "Album", year = 2020, coverUrl = null, musicbrainzId = "album-mbid-456", spotifyId = null) } returns album
-            every { canonical.ensureTrack(artist = artist, title = "Track", durationMs = 180000, musicbrainzId = "track-mbid-789", spotifyId = null) } returns track
+            every {
+                canonical.ensureAlbum(
+                    artist = artist,
+                    title = "Album",
+                    year = 2020,
+                    coverUrl = null,
+                    musicbrainzId = "album-mbid-456",
+                    spotifyId = null,
+                )
+            } returns album
+            every {
+                canonical.ensureTrack(
+                    artist = artist,
+                    title = "Track",
+                    durationMs = 180000,
+                    musicbrainzId = "track-mbid-789",
+                    spotifyId = null,
+                )
+            } returns track
 
             every { canonical.linkTrackToAlbum(album = album, track = track, discNumber = 1, trackNumber = 1) } just runs
 
@@ -243,8 +313,25 @@ class PlexImportServiceTest {
 
             // Verify that MBID values were extracted and passed correctly
             coVerify(exactly = 1) { canonical.ensureArtist(name = "Artist", musicbrainzId = "artist-mbid-123", spotifyId = null) }
-            coVerify(exactly = 1) { canonical.ensureAlbum(artist = artist, title = "Album", year = 2020, coverUrl = null, musicbrainzId = "album-mbid-456", spotifyId = null) }
-            coVerify(exactly = 1) { canonical.ensureTrack(artist = artist, title = "Track", durationMs = 180000, musicbrainzId = "track-mbid-789", spotifyId = null) }
+            coVerify(exactly = 1) {
+                canonical.ensureAlbum(
+                    artist = artist,
+                    title = "Album",
+                    year = 2020,
+                    coverUrl = null,
+                    musicbrainzId = "album-mbid-456",
+                    spotifyId = null,
+                )
+            }
+            coVerify(exactly = 1) {
+                canonical.ensureTrack(
+                    artist = artist,
+                    title = "Track",
+                    durationMs = 180000,
+                    musicbrainzId = "track-mbid-789",
+                    spotifyId = null,
+                )
+            }
         }
 
     @Test
@@ -252,7 +339,16 @@ class PlexImportServiceTest {
         runBlocking {
             val sectionKey = "1"
             val artist = Artist(id = 100L, name = "Artist", fingerprint = "fp1")
-            val album = Album(id = 200L, artistId = 100L, title = "Album", titleKey = "album", year = 2020, coverUrl = null, fingerprint = "fpalbum")
+            val album =
+                Album(
+                    id = 200L,
+                    artistId = 100L,
+                    title = "Album",
+                    titleKey = "album",
+                    year = 2020,
+                    coverUrl = null,
+                    fingerprint = "fpalbum",
+                )
             val track = Track(id = 300L, artistId = 100L, title = "Track", durationMs = 180000, fingerprint = "fptrack")
 
             val plexArtist =
@@ -295,8 +391,26 @@ class PlexImportServiceTest {
 
             // Mock canonical service
             every { canonical.ensureArtist(name = "Artist", musicbrainzId = null, spotifyId = null) } returns artist
-            every { canonical.ensureAlbum(artist = artist, title = "Album", year = 2020, coverUrl = null, musicbrainzId = null, spotifyId = null) } returns album
-            every { canonical.ensureTrack(artist = artist, title = "Track", durationMs = 180000, musicbrainzId = null, spotifyId = null) } returns track
+            every {
+                canonical.ensureAlbum(
+                    artist = artist,
+                    title = "Album",
+                    year = 2020,
+                    coverUrl = null,
+                    musicbrainzId = null,
+                    spotifyId = null,
+                )
+            } returns album
+            every {
+                canonical.ensureTrack(
+                    artist = artist,
+                    title = "Track",
+                    durationMs = 180000,
+                    musicbrainzId = null,
+                    spotifyId = null,
+                )
+            } returns
+                track
 
             every { canonical.linkTrackToAlbum(album = album, track = track, discNumber = 1, trackNumber = 1) } just runs
 
@@ -325,7 +439,16 @@ class PlexImportServiceTest {
         runBlocking {
             val sectionKey = "2"
             val artist = Artist(id = 100L, name = "Artist", fingerprint = "fp1")
-            val album = Album(id = 200L, artistId = 100L, title = "Album", titleKey = "album", year = 2020, coverUrl = null, fingerprint = "fpalbum")
+            val album =
+                Album(
+                    id = 200L,
+                    artistId = 100L,
+                    title = "Album",
+                    titleKey = "album",
+                    year = 2020,
+                    coverUrl = null,
+                    fingerprint = "fpalbum",
+                )
             val track = Track(id = 300L, artistId = 100L, title = "Track", durationMs = 180000, fingerprint = "fptrack")
 
             val plexArtist =
@@ -367,8 +490,26 @@ class PlexImportServiceTest {
 
             // Mock canonical service
             every { canonical.ensureArtist(name = "Artist", musicbrainzId = null, spotifyId = null) } returns artist
-            every { canonical.ensureAlbum(artist = artist, title = "Album", year = 2020, coverUrl = null, musicbrainzId = null, spotifyId = null) } returns album
-            every { canonical.ensureTrack(artist = artist, title = "Track", durationMs = 180000, musicbrainzId = null, spotifyId = null) } returns track
+            every {
+                canonical.ensureAlbum(
+                    artist = artist,
+                    title = "Album",
+                    year = 2020,
+                    coverUrl = null,
+                    musicbrainzId = null,
+                    spotifyId = null,
+                )
+            } returns album
+            every {
+                canonical.ensureTrack(
+                    artist = artist,
+                    title = "Track",
+                    durationMs = 180000,
+                    musicbrainzId = null,
+                    spotifyId = null,
+                )
+            } returns
+                track
 
             every { canonical.linkTrackToAlbum(album = album, track = track, discNumber = 1, trackNumber = 1) } just runs
 

@@ -25,7 +25,11 @@ class SpotifyEventDispatcherTest {
     fun setUp() {
         MockKAnnotations.init(this)
         objectMapper = ObjectMapper()
-        objectMapper.registerModule(com.fasterxml.jackson.module.kotlin.KotlinModule.Builder().build())
+        objectMapper.registerModule(
+            com.fasterxml.jackson.module.kotlin.KotlinModule
+                .Builder()
+                .build(),
+        )
         dispatcher =
             SpotifyEventDispatcher(
                 objectMapper = objectMapper,

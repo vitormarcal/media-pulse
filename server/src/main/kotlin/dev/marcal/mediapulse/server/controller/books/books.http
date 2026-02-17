@@ -1,0 +1,38 @@
+### Variables
+@baseUrl = {{host}}/api/books
+@bookId = 9
+@year = 2026
+@start = 2026-01-01T00:00:00Z
+@end = 2026-12-31T23:59:59Z
+
+### Leituras do ano (UTC)
+GET {{baseUrl}}/year/{{year}}
+Accept: application/json
+
+### Detalhes do livro
+GET {{baseUrl}}/{{bookId}}
+Accept: application/json
+
+### Lista de leituras (paginado)
+GET {{baseUrl}}/list?status=read&limit=20
+Accept: application/json
+
+### Próxima página de leituras
+GET {{baseUrl}}/list?status=read&limit=20&cursor=id:123
+Accept: application/json
+
+### Busca (livros + autores)
+GET {{baseUrl}}/search?q=ursula&limit=10
+Accept: application/json
+
+### Resumo mensal
+GET {{baseUrl}}/summary?range=month
+Accept: application/json
+
+### Resumo anual
+GET {{baseUrl}}/summary?range=year
+Accept: application/json
+
+### Resumo personalizado
+GET {{baseUrl}}/summary?range=custom&start={{start}}&end={{end}}
+Accept: application/json

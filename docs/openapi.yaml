@@ -1,0 +1,1516 @@
+openapi: 3.0.3
+info:
+  title: MediaPulse API
+  version: 1.0.0
+  description: API surface for MediaPulse. This document covers all HTTP endpoints in the server.
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: Books
+    description: Read-only books endpoints.
+  - name: Music
+    description: Music library and listening insights.
+  - name: Spotify
+    description: Spotify import and backfill endpoints.
+  - name: Plex
+    description: Plex import endpoints.
+  - name: Webhook
+    description: External webhook endpoints.
+  - name: OAuth
+    description: OAuth flows.
+  - name: EventSources
+    description: Event source reprocessing utilities.
+  - name: MusicBrainz
+    description: MusicBrainz enrichment utilities.
+paths:
+  /api/books/year/{year}:
+    get:
+      summary: Books year reads
+      tags: [Books]
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YearReadsResponse"
+  /api/books/{bookId}:
+    get:
+      summary: Book details
+      tags: [Books]
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookDetailsResponse"
+  /api/books/list:
+    get:
+      summary: List reads
+      tags: [Books]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/BookReadStatus"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            example: id:123
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BooksListResponse"
+  /api/books/search:
+    get:
+      summary: Search books and authors
+      tags: [Books]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BooksSearchResponse"
+  /api/books/summary:
+    get:
+      summary: Books summary
+      tags: [Books]
+      parameters:
+        - name: range
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [month, year, custom]
+            default: month
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BooksSummaryResponse"
+
+  /api/music/summary:
+    get:
+      summary: Music summary
+      tags: [Music]
+      parameters:
+        - name: range
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [week, month, custom]
+            default: week
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MusicSummaryResponse"
+  /api/music/recent-albums:
+    get:
+      summary: Recent albums
+      tags: [Music]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecentAlbumResponse"
+  /api/music/tops/artists:
+    get:
+      summary: Top artists
+      tags: [Music]
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopArtistResponse"
+  /api/music/tops/albums:
+    get:
+      summary: Top albums
+      tags: [Music]
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopAlbumResponse"
+  /api/music/tops/tracks:
+    get:
+      summary: Top tracks
+      tags: [Music]
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopTrackResponse"
+  /api/music/tops/genres:
+    get:
+      summary: Top genres
+      tags: [Music]
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopGenreResponse"
+  /api/music/albums/{albumId}:
+    get:
+      summary: Album page
+      tags: [Music]
+      parameters:
+        - name: albumId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumPageResponse"
+  /api/music/albums/never-played:
+    get:
+      summary: Never played albums
+      tags: [Music]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopAlbumResponse"
+  /api/music/coverage/artists:
+    get:
+      summary: Artist coverage
+      tags: [Music]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ArtistCoverageResponse"
+  /api/music/coverage/albums:
+    get:
+      summary: Album coverage
+      tags: [Music]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AlbumCoverageResponse"
+  /api/music/search:
+    get:
+      summary: Music search
+      tags: [Music]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+  /api/music/genres/trending:
+    get:
+      summary: Trending genres
+      tags: [Music]
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: compareStart
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: compareEnd
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendingGenreResponse"
+  /api/music/genres/recent:
+    get:
+      summary: Recent genres
+      tags: [Music]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecentGenreResponse"
+  /api/music/genres/underplayed:
+    get:
+      summary: Underplayed genres
+      tags: [Music]
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: minLibraryAlbums
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 3
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UnderplayedGenreResponse"
+  /api/music/genres/top-by-source:
+    get:
+      summary: Top genres by source
+      tags: [Music]
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopGenreBySourceResponse"
+
+  /api/spotify/import:
+    post:
+      summary: Spotify import
+      tags: [Spotify]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpotifyImportRequest"
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpotifyImportResponse"
+  /api/spotify/backfill-album-tracks:
+    post:
+      summary: Spotify backfill album tracks
+      tags: [Spotify]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpotifyBackfillResponse"
+  /api/spotify/extended/import:
+    post:
+      summary: Spotify extended import
+      tags: [Spotify]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpotifyImportResponse"
+
+  /oauth/spotify/login:
+    get:
+      summary: Spotify OAuth login
+      tags: [OAuth]
+      responses:
+        "302":
+          description: Redirect to Spotify authorize URL
+        "404":
+          description: OAuth disabled
+  /oauth/spotify/callback:
+    get:
+      summary: Spotify OAuth callback
+      tags: [OAuth]
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: error
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+        "400":
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+        "401":
+          description: Unauthorized
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: Not found
+          content:
+            text/plain:
+              schema:
+                type: string
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /webhook/plex:
+    post:
+      summary: Plex webhook
+      tags: [Webhook]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [payload]
+              properties:
+                payload:
+                  type: string
+                thumb:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: OK
+
+  /api/plex/import:
+    post:
+      summary: Plex import
+      tags: [Plex]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlexImportRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlexImportResponse"
+
+  /event-sources/reprocess:
+    post:
+      summary: Reprocess event sources
+      tags: [EventSources]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReprocessRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResultReprocessCounter"
+  /event-sources/{id}/reprocess:
+    post:
+      summary: Reprocess event source by id
+      tags: [EventSources]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResultUnit"
+
+  /api/musicbrainz/enrich-album-genres:
+    post:
+      summary: Enrich album genres
+      tags: [MusicBrainz]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 200
+      responses:
+        "202":
+          description: Accepted
+  /api/musicbrainz/enrich-album-genres/drain:
+    post:
+      summary: Enrich album genres (drain)
+      tags: [MusicBrainz]
+      parameters:
+        - name: batchSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 200
+        - name: maxTotal
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50000
+      responses:
+        "202":
+          description: Accepted
+
+components:
+  schemas:
+    BookReadStatus:
+      type: string
+      enum: [READ, CURRENTLY_READING, WANT_TO_READ, DID_NOT_FINISH, PAUSED, UNKNOWN]
+    AuthorDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+      required: [id, name]
+    EditionDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+          nullable: true
+        isbn10:
+          type: string
+          nullable: true
+        isbn13:
+          type: string
+          nullable: true
+        pages:
+          type: integer
+          nullable: true
+        language:
+          type: string
+          nullable: true
+        publisher:
+          type: string
+          nullable: true
+        format:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+      required: [id]
+    BookCardDto:
+      type: object
+      properties:
+        bookId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        coverUrl:
+          type: string
+          nullable: true
+        releaseDate:
+          type: string
+          format: date
+          nullable: true
+        rating:
+          type: number
+          format: double
+          nullable: true
+        reviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        authors:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthorDto"
+      required: [bookId, title, authors]
+    ReadCardDto:
+      type: object
+      properties:
+        readId:
+          type: integer
+          format: int64
+        status:
+          $ref: "#/components/schemas/BookReadStatus"
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        progressPct:
+          type: number
+          format: double
+          nullable: true
+        progressPages:
+          type: integer
+          nullable: true
+        source:
+          type: string
+        book:
+          $ref: "#/components/schemas/BookCardDto"
+        edition:
+          $ref: "#/components/schemas/EditionDto"
+          nullable: true
+      required: [readId, status, source, book]
+    BooksRangeDto:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+      required: [start, end]
+    YearStatsDto:
+      type: object
+      properties:
+        finishedCount:
+          type: integer
+          format: int64
+        currentlyReadingCount:
+          type: integer
+          format: int64
+        wantCount:
+          type: integer
+          format: int64
+        didNotFinishCount:
+          type: integer
+          format: int64
+        pausedCount:
+          type: integer
+          format: int64
+        pagesFinished:
+          type: integer
+          format: int64
+          nullable: true
+      required:
+        - finishedCount
+        - currentlyReadingCount
+        - wantCount
+        - didNotFinishCount
+        - pausedCount
+    YearReadsResponse:
+      type: object
+      properties:
+        year:
+          type: integer
+        range:
+          $ref: "#/components/schemas/BooksRangeDto"
+        currentlyReading:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadCardDto"
+        finished:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadCardDto"
+        paused:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadCardDto"
+        didNotFinish:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadCardDto"
+        wantToRead:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadCardDto"
+        unknown:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadCardDto"
+        stats:
+          $ref: "#/components/schemas/YearStatsDto"
+      required:
+        - year
+        - range
+        - currentlyReading
+        - finished
+        - paused
+        - didNotFinish
+        - wantToRead
+        - unknown
+        - stats
+    BookDetailsResponse:
+      type: object
+      properties:
+        bookId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        releaseDate:
+          type: string
+          format: date
+          nullable: true
+        rating:
+          type: number
+          format: double
+          nullable: true
+        reviewRaw:
+          type: string
+          nullable: true
+        reviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        authors:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthorDto"
+        editions:
+          type: array
+          items:
+            $ref: "#/components/schemas/EditionDto"
+        reads:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadCardDto"
+      required: [bookId, title, authors, editions, reads]
+    BooksListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadCardDto"
+        nextCursor:
+          type: string
+          nullable: true
+      required: [items]
+    BooksSearchResponse:
+      type: object
+      properties:
+        books:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookCardDto"
+        authors:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthorDto"
+      required: [books, authors]
+    SummaryCountsDto:
+      type: object
+      properties:
+        finished:
+          type: integer
+          format: int64
+        reading:
+          type: integer
+          format: int64
+        want:
+          type: integer
+          format: int64
+        dnf:
+          type: integer
+          format: int64
+        paused:
+          type: integer
+          format: int64
+        total:
+          type: integer
+          format: int64
+      required: [finished, reading, want, dnf, paused, total]
+    TopAuthorDto:
+      type: object
+      properties:
+        authorId:
+          type: integer
+          format: int64
+        authorName:
+          type: string
+        finishedCount:
+          type: integer
+          format: int64
+      required: [authorId, authorName, finishedCount]
+    BooksSummaryResponse:
+      type: object
+      properties:
+        range:
+          $ref: "#/components/schemas/BooksRangeDto"
+        counts:
+          $ref: "#/components/schemas/SummaryCountsDto"
+        topAuthors:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopAuthorDto"
+      required: [range, counts, topAuthors]
+
+    MusicRangeDto:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+      required: [start, end]
+    MusicSummaryResponse:
+      type: object
+      properties:
+        range:
+          $ref: "#/components/schemas/MusicRangeDto"
+        artistsCount:
+          type: integer
+          format: int64
+        albumsCount:
+          type: integer
+          format: int64
+        tracksCount:
+          type: integer
+          format: int64
+      required: [range, artistsCount, albumsCount, tracksCount]
+    RecentAlbumResponse:
+      type: object
+      properties:
+        albumId:
+          type: integer
+          format: int64
+        albumTitle:
+          type: string
+        artistId:
+          type: integer
+          format: int64
+        artistName:
+          type: string
+        year:
+          type: integer
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        lastPlayed:
+          type: string
+          format: date-time
+        playCount:
+          type: integer
+          format: int64
+      required: [albumId, albumTitle, artistId, artistName, lastPlayed, playCount]
+    TopArtistResponse:
+      type: object
+      properties:
+        artistId:
+          type: integer
+          format: int64
+        artistName:
+          type: string
+        playCount:
+          type: integer
+          format: int64
+      required: [artistId, artistName, playCount]
+    TopAlbumResponse:
+      type: object
+      properties:
+        albumId:
+          type: integer
+          format: int64
+        albumTitle:
+          type: string
+        artistId:
+          type: integer
+          format: int64
+        artistName:
+          type: string
+        playCount:
+          type: integer
+          format: int64
+      required: [albumId, albumTitle, artistId, artistName, playCount]
+    TopTrackResponse:
+      type: object
+      properties:
+        trackId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        albumId:
+          type: integer
+          format: int64
+        albumTitle:
+          type: string
+        artistId:
+          type: integer
+          format: int64
+        artistName:
+          type: string
+        playCount:
+          type: integer
+          format: int64
+      required: [trackId, title, albumId, albumTitle, artistId, artistName, playCount]
+    TopGenreResponse:
+      type: object
+      properties:
+        genre:
+          type: string
+        playCount:
+          type: integer
+          format: int64
+      required: [genre, playCount]
+    SearchResponse:
+      type: object
+      properties:
+        artists:
+          type: array
+          items:
+            $ref: "#/components/schemas/IdName"
+        albums:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchAlbumRow"
+        tracks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchTrackRow"
+      required: [artists, albums, tracks]
+    IdName:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+      required: [id, name]
+    SearchAlbumRow:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        artistName:
+          type: string
+        year:
+          type: integer
+          nullable: true
+      required: [id, title, artistName]
+    SearchTrackRow:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        artistName:
+          type: string
+        albumTitle:
+          type: string
+      required: [id, title, artistName, albumTitle]
+    TrendingGenreResponse:
+      type: object
+      properties:
+        genre:
+          type: string
+        playCountNow:
+          type: integer
+          format: int64
+        playCountPrev:
+          type: integer
+          format: int64
+        delta:
+          type: integer
+          format: int64
+      required: [genre, playCountNow, playCountPrev, delta]
+    RecentGenreResponse:
+      type: object
+      properties:
+        genre:
+          type: string
+        lastPlayed:
+          type: string
+          format: date-time
+        playCountInWindow:
+          type: integer
+          format: int64
+      required: [genre, lastPlayed, playCountInWindow]
+    UnderplayedGenreResponse:
+      type: object
+      properties:
+        genre:
+          type: string
+        libraryAlbums:
+          type: integer
+          format: int64
+        playCount:
+          type: integer
+          format: int64
+        lastPlayed:
+          type: string
+          format: date-time
+          nullable: true
+      required: [genre, libraryAlbums, playCount]
+    TopGenreBySourceResponse:
+      type: object
+      properties:
+        source:
+          type: string
+        genres:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopGenreResponse"
+      required: [source, genres]
+    ArtistCoverageResponse:
+      type: object
+      properties:
+        artistId:
+          type: integer
+          format: int64
+        artistName:
+          type: string
+        totalTracks:
+          type: integer
+          format: int64
+        playedTracks:
+          type: integer
+          format: int64
+        coveragePercent:
+          type: number
+          format: double
+      required: [artistId, artistName, totalTracks, playedTracks, coveragePercent]
+    AlbumCoverageResponse:
+      type: object
+      properties:
+        albumId:
+          type: integer
+          format: int64
+        artistId:
+          type: integer
+          format: int64
+        albumTitle:
+          type: string
+        artistName:
+          type: string
+        totalTracks:
+          type: integer
+          format: int64
+        playedTracks:
+          type: integer
+          format: int64
+        coveragePercent:
+          type: number
+          format: double
+      required: [albumId, artistId, albumTitle, artistName, totalTracks, playedTracks, coveragePercent]
+    AlbumPageResponse:
+      type: object
+      properties:
+        albumId:
+          type: integer
+          format: int64
+        albumTitle:
+          type: string
+        artistId:
+          type: integer
+          format: int64
+        artistName:
+          type: string
+        year:
+          type: integer
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        lastPlayed:
+          type: string
+          format: date-time
+          nullable: true
+        totalPlays:
+          type: integer
+          format: int64
+        tracks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlbumTrackRow"
+        playsByDay:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlaysByDayRow"
+      required: [albumId, albumTitle, artistId, artistName, totalPlays, tracks, playsByDay]
+    AlbumTrackRow:
+      type: object
+      properties:
+        trackId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        discNumber:
+          type: integer
+          nullable: true
+        trackNumber:
+          type: integer
+          nullable: true
+        playCount:
+          type: integer
+          format: int64
+        lastPlayed:
+          type: string
+          format: date-time
+          nullable: true
+      required: [trackId, title, playCount]
+    PlaysByDayRow:
+      type: object
+      properties:
+        day:
+          type: string
+          format: date
+        plays:
+          type: integer
+          format: int64
+      required: [day, plays]
+
+    SpotifyImportRequest:
+      type: object
+      properties:
+        resetCursor:
+          type: boolean
+          default: false
+        maxPages:
+          type: integer
+          nullable: true
+    SpotifyImportResponse:
+      type: object
+      properties:
+        resetCursor:
+          type: boolean
+      required: [resetCursor]
+    SpotifyBackfillResponse:
+      type: object
+      properties:
+        limit:
+          type: integer
+        accepted:
+          type: boolean
+      required: [limit, accepted]
+
+    PlexImportRequest:
+      type: object
+      properties:
+        sectionKey:
+          type: string
+          nullable: true
+        pageSize:
+          type: integer
+          nullable: true
+          default: 200
+    PlexImportResponse:
+      type: object
+      properties:
+        sectionKey:
+          type: string
+          nullable: true
+        stats:
+          $ref: "#/components/schemas/PlexImportStats"
+      required: [stats]
+    PlexImportStats:
+      type: object
+      properties:
+        artistsSeen:
+          type: integer
+        artistsUpserted:
+          type: integer
+        albumsSeen:
+          type: integer
+        albumsUpserted:
+          type: integer
+        tracksSeen:
+          type: integer
+        tracksUpserted:
+          type: integer
+      required: [artistsSeen, artistsUpserted, albumsSeen, albumsUpserted, tracksSeen, tracksUpserted]
+
+    ReprocessRequest:
+      type: object
+      properties:
+        all:
+          type: boolean
+        status:
+          type: array
+          items:
+            type: string
+            enum: [PENDING, FAILED, SUCCESS, UNSUPPORTED]
+        providers:
+          type: array
+          items:
+            type: string
+        pageSize:
+          type: integer
+        fromIdExclusive:
+          type: integer
+          format: int64
+    ReprocessCounter:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int64
+        pageSize:
+          type: integer
+        pages:
+          type: integer
+          format: int64
+        fromIdExclusive:
+          type: integer
+          format: int64
+      required: [total, pageSize, pages, fromIdExclusive]
+    ApiResultReprocessCounter:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ReprocessCounter"
+      required: [data]
+    ApiResultUnit:
+      type: object
+      properties:
+        data:
+          type: object
+      required: [data]

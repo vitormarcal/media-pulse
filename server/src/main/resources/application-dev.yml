@@ -16,7 +16,9 @@ media-pulse:
   plex:
     base-url: http://localhost:32400
     token: "YOUR_DEV_TOKEN"
+  hardcover:
+    enabled: false
+    user-id: 0
   storage:
     covers-path: "."
     imports-path: "."
-

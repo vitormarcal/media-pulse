@@ -4,7 +4,6 @@ import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.music.Album
-import dev.marcal.mediapulse.server.model.music.AlbumTrack
 import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.model.music.Track
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
@@ -15,8 +14,6 @@ import dev.marcal.mediapulse.server.repository.crud.TrackRepository
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import io.mockk.just
-import io.mockk.runs
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -120,12 +117,13 @@ class CanonicalizationServiceTest {
         every { extRepo.findByProviderAndExternalId(any(), any()) } returns null
         every { artistRepo.findByFingerprint(any()) } returns null
         every { artistRepo.save(any()) } returns newArtist
-        every { extRepo.save(any()) } returns ExternalIdentifier(
-            entityType = EntityType.ARTIST,
-            entityId = 103L,
-            provider = Provider.SPOTIFY,
-            externalId = "spotify-123",
-        )
+        every { extRepo.save(any()) } returns
+            ExternalIdentifier(
+                entityType = EntityType.ARTIST,
+                entityId = 103L,
+                provider = Provider.SPOTIFY,
+                externalId = "spotify-123",
+            )
 
         val result = service.ensureArtist(name = "New Artist", spotifyId = "spotify-123")
 
@@ -141,10 +139,11 @@ class CanonicalizationServiceTest {
         every { extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, "mb-123") } returns null
         every { extRepo.findByProviderAndExternalId(Provider.SPOTIFY, any()) } returns null
         every { artistRepo.findByFingerprint(any()) } returns artist
-        every { extRepo.save(any()) } returnsMany listOf(
-            ExternalIdentifier(entityType = EntityType.ARTIST, entityId = 104L, provider = Provider.MUSICBRAINZ, externalId = "mb-123"),
-            ExternalIdentifier(entityType = EntityType.ARTIST, entityId = 104L, provider = Provider.SPOTIFY, externalId = "sp-123"),
-        )
+        every { extRepo.save(any()) } returnsMany
+            listOf(
+                ExternalIdentifier(entityType = EntityType.ARTIST, entityId = 104L, provider = Provider.MUSICBRAINZ, externalId = "mb-123"),
+                ExternalIdentifier(entityType = EntityType.ARTIST, entityId = 104L, provider = Provider.SPOTIFY, externalId = "sp-123"),
+            )
 
         val result = service.ensureArtist(name = "Multi Provider", musicbrainzId = "mb-123", spotifyId = "sp-123")
 
@@ -178,13 +177,14 @@ class CanonicalizationServiceTest {
         every { extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, "mb-album-123") } returns externalId
         every { albumRepo.findById(210L) } returns java.util.Optional.of(existingAlbum)
 
-        val result = service.ensureAlbum(
-            artist = artist,
-            title = "New Album",
-            year = 2021,
-            coverUrl = null,
-            musicbrainzId = "mb-album-123",
-        )
+        val result =
+            service.ensureAlbum(
+                artist = artist,
+                title = "New Album",
+                year = 2021,
+                coverUrl = null,
+                musicbrainzId = "mb-album-123",
+            )
 
         assertEquals(existingAlbum.id, result.id)
         verify(exactly = 0) { albumRepo.save(any()) }
@@ -208,12 +208,13 @@ class CanonicalizationServiceTest {
         every { extRepo.findByProviderAndExternalId(Provider.SPOTIFY, any()) } returns null
         every { albumRepo.findByArtistIdAndTitleKeyAndYear(201L, "album", 2020) } returns existingAlbum
 
-        val result = service.ensureAlbum(
-            artist = artist,
-            title = "Album",
-            year = 2020,
-            coverUrl = null,
-        )
+        val result =
+            service.ensureAlbum(
+                artist = artist,
+                title = "Album",
+                year = 2020,
+                coverUrl = null,
+            )
 
         assertEquals(existingAlbum.id, result.id)
         verify(exactly = 0) { albumRepo.save(any()) }
@@ -239,12 +240,13 @@ class CanonicalizationServiceTest {
             albumRepo.findFirstByArtistIdAndTitleKeyAndYearIsNotNullOrderByYearAscIdAsc(202L, "album")
         } returns albumWithYear
 
-        val result = service.ensureAlbum(
-            artist = artist,
-            title = "Album",
-            year = null,
-            coverUrl = null,
-        )
+        val result =
+            service.ensureAlbum(
+                artist = artist,
+                title = "Album",
+                year = null,
+                coverUrl = null,
+            )
 
         assertEquals(albumWithYear.id, result.id)
         verify(exactly = 0) { albumRepo.save(any()) }
@@ -273,12 +275,13 @@ class CanonicalizationServiceTest {
         every { albumRepo.findByFingerprint(any()) } returns null
         every { albumRepo.save(any()) } returns newAlbum
 
-        val result = service.ensureAlbum(
-            artist = artist,
-            title = "New Album",
-            year = 2023,
-            coverUrl = null,
-        )
+        val result =
+            service.ensureAlbum(
+                artist = artist,
+                title = "New Album",
+                year = 2023,
+                coverUrl = null,
+            )
 
         assertEquals(newAlbum.id, result.id)
         verify(exactly = 1) { albumRepo.save(any()) }
@@ -309,12 +312,13 @@ class CanonicalizationServiceTest {
         every { albumRepo.promoteNullYear(214L, 2020) } returns 1
         every { albumRepo.findById(214L) } returns java.util.Optional.of(promotedAlbum)
 
-        val result = service.ensureAlbum(
-            artist = artist,
-            title = "Album",
-            year = 2020,
-            coverUrl = null,
-        )
+        val result =
+            service.ensureAlbum(
+                artist = artist,
+                title = "Album",
+                year = 2020,
+                coverUrl = null,
+            )
 
         assertEquals(promotedAlbum.id, result.id)
         assertEquals(2020, result.year)
@@ -355,12 +359,13 @@ class CanonicalizationServiceTest {
         every { albumRepo.save(any()) } returns albumWithoutYear
         every { albumRepo.promoteNullYear(any(), any()) } throws DataIntegrityViolationException("Unique constraint violation")
 
-        val result = service.ensureAlbum(
-            artist = artist,
-            title = "Album",
-            year = 2020,
-            coverUrl = null,
-        )
+        val result =
+            service.ensureAlbum(
+                artist = artist,
+                title = "Album",
+                year = 2020,
+                coverUrl = null,
+            )
 
         assertEquals(winnerAlbum.id, result.id)
         verify(exactly = 2) { albumRepo.findByArtistIdAndTitleKeyAndYear(any(), any(), any()) }
@@ -384,10 +389,21 @@ class CanonicalizationServiceTest {
         every { extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, any()) } returns null
         every { extRepo.findByProviderAndExternalId(Provider.SPOTIFY, any()) } returns null
         every { albumRepo.findByArtistIdAndTitleKeyAndYear(206L, "album", 2020) } returns album
-        every { extRepo.save(any()) } returnsMany listOf(
-            ExternalIdentifier(entityType = EntityType.ALBUM, entityId = 216L, provider = Provider.MUSICBRAINZ, externalId = "mb-album-456"),
-            ExternalIdentifier(entityType = EntityType.ALBUM, entityId = 216L, provider = Provider.SPOTIFY, externalId = "sp-album-456"),
-        )
+        every { extRepo.save(any()) } returnsMany
+            listOf(
+                ExternalIdentifier(
+                    entityType = EntityType.ALBUM,
+                    entityId = 216L,
+                    provider = Provider.MUSICBRAINZ,
+                    externalId = "mb-album-456",
+                ),
+                ExternalIdentifier(
+                    entityType = EntityType.ALBUM,
+                    entityId = 216L,
+                    provider = Provider.SPOTIFY,
+                    externalId = "sp-album-456",
+                ),
+            )
 
         service.ensureAlbum(
             artist = artist,
@@ -406,7 +422,14 @@ class CanonicalizationServiceTest {
     @Test
     fun `should find existing track by musicbrainz id`() {
         val artist = Artist(id = 300L, name = "Artist", fingerprint = "fp300")
-        val existingTrack = Track(id = 310L, artistId = 300L, title = "Track", durationMs = 180000, fingerprint = "fptrack")
+        val existingTrack =
+            Track(
+                id = 310L,
+                artistId = 300L,
+                title = "Track",
+                durationMs = 180000,
+                fingerprint = "fptrack",
+            )
         val externalId =
             ExternalIdentifier(
                 entityType = EntityType.TRACK,
@@ -418,12 +441,13 @@ class CanonicalizationServiceTest {
         every { extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, "mb-track-123") } returns externalId
         every { trackRepo.findById(310L) } returns java.util.Optional.of(existingTrack)
 
-        val result = service.ensureTrack(
-            artist = artist,
-            title = "New Track",
-            durationMs = 200000,
-            musicbrainzId = "mb-track-123",
-        )
+        val result =
+            service.ensureTrack(
+                artist = artist,
+                title = "New Track",
+                durationMs = 200000,
+                musicbrainzId = "mb-track-123",
+            )
 
         assertEquals(existingTrack.id, result.id)
         verify(exactly = 0) { trackRepo.save(any()) }
@@ -445,12 +469,13 @@ class CanonicalizationServiceTest {
         every { extRepo.findByProviderAndExternalId(Provider.SPOTIFY, "spotify-track-456") } returns externalId
         every { trackRepo.findById(311L) } returns java.util.Optional.of(existingTrack)
 
-        val result = service.ensureTrack(
-            artist = artist,
-            title = "Track",
-            durationMs = 180000,
-            spotifyId = "spotify-track-456",
-        )
+        val result =
+            service.ensureTrack(
+                artist = artist,
+                title = "Track",
+                durationMs = 180000,
+                spotifyId = "spotify-track-456",
+            )
 
         assertEquals(existingTrack.id, result.id)
         verify(exactly = 0) { trackRepo.save(any()) }
@@ -465,11 +490,12 @@ class CanonicalizationServiceTest {
         every { extRepo.findByProviderAndExternalId(Provider.SPOTIFY, any()) } returns null
         every { trackRepo.findByFingerprint(any()) } returns existingTrack
 
-        val result = service.ensureTrack(
-            artist = artist,
-            title = "Track",
-            durationMs = 180000,
-        )
+        val result =
+            service.ensureTrack(
+                artist = artist,
+                title = "Track",
+                durationMs = 180000,
+            )
 
         assertEquals(existingTrack.id, result.id)
         verify(exactly = 0) { trackRepo.save(any()) }
@@ -484,19 +510,21 @@ class CanonicalizationServiceTest {
         every { extRepo.findByProviderAndExternalId(Provider.SPOTIFY, any()) } returns null
         every { trackRepo.findByFingerprint(any()) } returns null
         every { trackRepo.save(any()) } returns newTrack
-        every { extRepo.save(any()) } returns ExternalIdentifier(
-            entityType = EntityType.TRACK,
-            entityId = 313L,
-            provider = Provider.SPOTIFY,
-            externalId = "spotify-123",
-        )
+        every { extRepo.save(any()) } returns
+            ExternalIdentifier(
+                entityType = EntityType.TRACK,
+                entityId = 313L,
+                provider = Provider.SPOTIFY,
+                externalId = "spotify-123",
+            )
 
-        val result = service.ensureTrack(
-            artist = artist,
-            title = "New Track",
-            durationMs = 240000,
-            spotifyId = "spotify-123",
-        )
+        val result =
+            service.ensureTrack(
+                artist = artist,
+                title = "New Track",
+                durationMs = 240000,
+                spotifyId = "spotify-123",
+            )
 
         assertEquals(newTrack.id, result.id)
         verify(exactly = 1) { trackRepo.save(any()) }
@@ -513,11 +541,12 @@ class CanonicalizationServiceTest {
         every { trackRepo.findByFingerprint(any()) } returns null
         every { trackRepo.save(any()) } returns newTrack
 
-        val result = service.ensureTrack(
-            artist = artist,
-            title = "Unknown Duration",
-            durationMs = null,
-        )
+        val result =
+            service.ensureTrack(
+                artist = artist,
+                title = "Unknown Duration",
+                durationMs = null,
+            )
 
         assertEquals(newTrack.id, result.id)
         assertNotNull(result)
