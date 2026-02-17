@@ -57,6 +57,7 @@ class HardcoverNativeRepository {
         rating: BigDecimal?,
         reviewRaw: String?,
         reviewedAt: Instant?,
+        sourceUpdatedAt: Instant?,
         fingerprint: String,
     ): Long {
         val insertedId =
@@ -89,11 +90,16 @@ class HardcoverNativeRepository {
                    SET release_date = COALESCE(:releaseDate, release_date),
                        description = COALESCE(:description, description),
                        cover_url = COALESCE(:coverUrl, cover_url),
-                       rating = COALESCE(:rating, rating),
-                       review_raw = COALESCE(:reviewRaw, review_raw),
-                       reviewed_at = COALESCE(:reviewedAt, reviewed_at),
-                       updated_at = NOW()
+                       rating = :rating,
+                       review_raw = :reviewRaw,
+                       reviewed_at = :reviewedAt,
+                       updated_at = COALESCE(:sourceUpdatedAt, updated_at, NOW())
                  WHERE id = :id
+                   AND (
+                        :sourceUpdatedAt IS NULL
+                        OR updated_at IS NULL
+                        OR updated_at <= :sourceUpdatedAt
+                   )
                 """.trimIndent(),
             ).setParameter("releaseDate", releaseDate)
             .setParameter("description", description)
@@ -101,6 +107,7 @@ class HardcoverNativeRepository {
             .setParameter("rating", rating)
             .setParameter("reviewRaw", reviewRaw)
             .setParameter("reviewedAt", reviewedAt)
+            .setParameter("sourceUpdatedAt", sourceUpdatedAt)
             .setParameter("id", id)
             .executeUpdate()
 
@@ -239,13 +246,17 @@ class HardcoverNativeRepository {
                 ON CONFLICT (source, source_event_id)
                 DO UPDATE SET
                     book_id = EXCLUDED.book_id,
-                    edition_id = COALESCE(EXCLUDED.edition_id, book_reads.edition_id),
+                    edition_id = EXCLUDED.edition_id,
                     status = EXCLUDED.status,
-                    started_at = COALESCE(EXCLUDED.started_at, book_reads.started_at),
-                    finished_at = COALESCE(EXCLUDED.finished_at, book_reads.finished_at),
-                    progress_pct = COALESCE(EXCLUDED.progress_pct, book_reads.progress_pct),
-                    progress_pages = COALESCE(EXCLUDED.progress_pages, book_reads.progress_pages),
+                    started_at = EXCLUDED.started_at,
+                    finished_at = EXCLUDED.finished_at,
+                    progress_pct = EXCLUDED.progress_pct,
+                    progress_pages = EXCLUDED.progress_pages,
                     updated_at = EXCLUDED.updated_at
+                WHERE
+                    book_reads.updated_at IS NULL
+                    OR EXCLUDED.updated_at IS NULL
+                    OR book_reads.updated_at <= EXCLUDED.updated_at
                 RETURNING id
                 """.trimIndent(),
             ).setParameter("bookId", bookId)

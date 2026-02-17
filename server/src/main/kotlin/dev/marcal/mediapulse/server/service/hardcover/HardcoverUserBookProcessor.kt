@@ -112,6 +112,7 @@ class HardcoverUserBookProcessor(
         val rating = item.rating
         val reviewRaw = if (item.hasReview == true) item.reviewRaw else null
         val reviewedAt = parseInstant(item.reviewedAt)
+        val updatedAt = parseInstant(item.updatedAt)
 
         val bookId =
             nativeRepo.ensureBookId(
@@ -122,6 +123,7 @@ class HardcoverUserBookProcessor(
                 rating = rating,
                 reviewRaw = reviewRaw,
                 reviewedAt = reviewedAt,
+                sourceUpdatedAt = updatedAt,
                 fingerprint = bookFingerprint,
             )
 
@@ -176,7 +178,6 @@ class HardcoverUserBookProcessor(
         }
 
         val status = HardcoverStatusMapper.mapSlug(item.userBookStatus?.slug)
-        val updatedAt = parseInstant(item.updatedAt)
 
         if (reads.isEmpty()) {
             val fallbackStartedAt = parseInstant(item.firstStartedReadingDate)
