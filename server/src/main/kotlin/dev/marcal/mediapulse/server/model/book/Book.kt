@@ -25,6 +25,8 @@ data class Book(
     val id: Long = 0,
     @Column(nullable = false)
     val title: String,
+    @Column(nullable = false, unique = true)
+    val slug: String,
     @Column(name = "release_date")
     val releaseDate: LocalDate? = null,
     val description: String? = null,
