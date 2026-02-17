@@ -167,6 +167,7 @@ class BookQueryRepository(
 
         return BookDetailsResponse(
             bookId = book.bookId,
+            slug = book.slug,
             title = book.title,
             description = book.description,
             coverUrl = book.coverUrl,
@@ -254,7 +255,7 @@ class BookQueryRepository(
             entityManager
                 .createNativeQuery(
                     """
-                    SELECT b.id, b.title, b.cover_url, b.release_date, b.rating, b.reviewed_at
+                    SELECT b.id, b.slug, b.title, b.cover_url, b.release_date, b.rating, b.reviewed_at
                     FROM books b
                     WHERE LOWER(b.title) LIKE :q
                     ORDER BY b.title
@@ -266,11 +267,12 @@ class BookQueryRepository(
                     val fields = row as Array<*>
                     BookRow(
                         bookId = (fields[0] as Number).toLong(),
-                        title = fields[1] as String,
-                        coverUrl = fields[2] as String?,
-                        releaseDate = asLocalDate(fields[3]),
-                        rating = asDouble(fields[4]),
-                        reviewedAt = asInstant(fields[5]),
+                        slug = fields[1] as String,
+                        title = fields[2] as String,
+                        coverUrl = fields[3] as String?,
+                        releaseDate = asLocalDate(fields[4]),
+                        rating = asDouble(fields[5]),
+                        reviewedAt = asInstant(fields[6]),
                     )
                 }
 
@@ -280,6 +282,7 @@ class BookQueryRepository(
             bookRows.map { row ->
                 BookCardDto(
                     bookId = row.bookId,
+                    slug = row.slug,
                     title = row.title,
                     coverUrl = row.coverUrl,
                     releaseDate = row.releaseDate,
@@ -424,6 +427,7 @@ class BookQueryRepository(
                       br.updated_at AS updated_at,
                       b.id AS book_id,
                       b.title AS book_title,
+                      b.slug AS book_slug,
                       b.cover_url AS book_cover_url,
                       b.release_date AS book_release_date,
                       b.rating AS book_rating,
@@ -463,19 +467,20 @@ class BookQueryRepository(
                 updatedAt = asInstant(fields[8]),
                 bookId = (fields[9] as Number).toLong(),
                 bookTitle = fields[10] as String,
-                bookCoverUrl = fields[11] as String?,
-                bookReleaseDate = asLocalDate(fields[12]),
-                bookRating = asDouble(fields[13]),
-                bookReviewedAt = asInstant(fields[14]),
-                editionId = (fields[15] as Number?)?.toLong(),
-                editionTitle = fields[16] as String?,
-                editionIsbn10 = fields[17] as String?,
-                editionIsbn13 = fields[18] as String?,
-                editionPages = (fields[19] as Number?)?.toInt(),
-                editionLanguage = fields[20] as String?,
-                editionPublisher = fields[21] as String?,
-                editionFormat = fields[22] as String?,
-                editionCoverUrl = fields[23] as String?,
+                bookSlug = fields[11] as String,
+                bookCoverUrl = fields[12] as String?,
+                bookReleaseDate = asLocalDate(fields[13]),
+                bookRating = asDouble(fields[14]),
+                bookReviewedAt = asInstant(fields[15]),
+                editionId = (fields[16] as Number?)?.toLong(),
+                editionTitle = fields[17] as String?,
+                editionIsbn10 = fields[18] as String?,
+                editionIsbn13 = fields[19] as String?,
+                editionPages = (fields[20] as Number?)?.toInt(),
+                editionLanguage = fields[21] as String?,
+                editionPublisher = fields[22] as String?,
+                editionFormat = fields[23] as String?,
+                editionCoverUrl = fields[24] as String?,
             )
         }
     }
@@ -564,6 +569,7 @@ class BookQueryRepository(
                     """
                     SELECT
                       b.id,
+                      b.slug,
                       b.title,
                       b.description,
                       b.cover_url,
@@ -579,13 +585,14 @@ class BookQueryRepository(
 
         return BookDetailsRow(
             bookId = (row[0] as Number).toLong(),
-            title = row[1] as String,
-            description = row[2] as String?,
-            coverUrl = row[3] as String?,
-            releaseDate = asLocalDate(row[4]),
-            rating = asDouble(row[5]),
-            reviewRaw = row[6] as String?,
-            reviewedAt = asInstant(row[7]),
+            slug = row[1] as String,
+            title = row[2] as String,
+            description = row[3] as String?,
+            coverUrl = row[4] as String?,
+            releaseDate = asLocalDate(row[5]),
+            rating = asDouble(row[6]),
+            reviewRaw = row[7] as String?,
+            reviewedAt = asInstant(row[8]),
         )
     }
 
@@ -675,6 +682,7 @@ class BookQueryRepository(
 
     private data class BookRow(
         val bookId: Long,
+        val slug: String,
         val title: String,
         val coverUrl: String?,
         val releaseDate: LocalDate?,
@@ -684,6 +692,7 @@ class BookQueryRepository(
 
     private data class BookDetailsRow(
         val bookId: Long,
+        val slug: String,
         val title: String,
         val description: String?,
         val coverUrl: String?,
@@ -705,6 +714,7 @@ class BookQueryRepository(
         val updatedAt: Instant?,
         val bookId: Long,
         val bookTitle: String,
+        val bookSlug: String,
         val bookCoverUrl: String?,
         val bookReleaseDate: LocalDate?,
         val bookRating: Double?,
@@ -731,6 +741,7 @@ class BookQueryRepository(
                 book =
                     BookCardDto(
                         bookId = bookId,
+                        slug = bookSlug,
                         title = bookTitle,
                         coverUrl = bookCoverUrl,
                         releaseDate = bookReleaseDate,

@@ -97,12 +97,12 @@ class HardcoverNativeRepository {
                        rating = :rating,
                        review_raw = :reviewRaw,
                        reviewed_at = :reviewedAt,
-                       updated_at = COALESCE(:sourceUpdatedAt, updated_at, NOW())
+                       updated_at = COALESCE(CAST(:sourceUpdatedAt AS TIMESTAMPTZ), updated_at, NOW())
                  WHERE id = :id
                    AND (
-                        :sourceUpdatedAt IS NULL
+                        CAST(:sourceUpdatedAt AS TIMESTAMPTZ) IS NULL
                         OR updated_at IS NULL
-                        OR updated_at <= :sourceUpdatedAt
+                        OR updated_at <= CAST(:sourceUpdatedAt AS TIMESTAMPTZ)
                    )
                 """.trimIndent(),
             ).setParameter("releaseDate", releaseDate)

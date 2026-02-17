@@ -22,6 +22,7 @@ data class EditionDto(
 
 data class BookCardDto(
     val bookId: Long,
+    val slug: String,
     val title: String,
     val coverUrl: String?,
     val releaseDate: LocalDate?,
@@ -70,6 +71,7 @@ data class YearReadsResponse(
 
 data class BookDetailsResponse(
     val bookId: Long,
+    val slug: String,
     val title: String,
     val description: String?,
     val coverUrl: String?,

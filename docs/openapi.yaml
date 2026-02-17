@@ -837,6 +837,8 @@ components:
         bookId:
           type: integer
           format: int64
+        slug:
+          type: string
         title:
           type: string
         coverUrl:
@@ -858,7 +860,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AuthorDto"
-      required: [bookId, title, authors]
+      required: [bookId, slug, title, authors]
     ReadCardDto:
       type: object
       properties:
@@ -977,6 +979,8 @@ components:
         bookId:
           type: integer
           format: int64
+        slug:
+          type: string
         title:
           type: string
         description:
@@ -1012,7 +1016,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReadCardDto"
-      required: [bookId, title, authors, editions, reads]
+      required: [bookId, slug, title, authors, editions, reads]
     BooksListResponse:
       type: object
       properties:

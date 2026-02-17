@@ -53,6 +53,7 @@ curl "{{host}}/api/books/year/2025"
       "source": "HARDCOVER",
       "book": {
         "bookId": 52,
+        "slug": "52_the_dispossessed",
         "title": "The Dispossessed",
         "coverUrl": "https://img.example/book/52.jpg",
         "releaseDate": "1974-05-01",
@@ -97,6 +98,7 @@ curl "{{host}}/api/books/52"
 ```json
 {
   "bookId": 52,
+  "slug": "52_the_dispossessed",
   "title": "The Dispossessed",
   "description": "A brilliant utopian novel about two worlds.",
   "coverUrl": "https://img.example/book/52.jpg",
@@ -129,6 +131,7 @@ curl "{{host}}/api/books/52"
       "source": "HARDCOVER",
       "book": {
         "bookId": 52,
+        "slug": "52_the_dispossessed",
         "title": "The Dispossessed",
         "coverUrl": "https://img.example/book/52.jpg",
         "releaseDate": "1974-05-01",
@@ -171,6 +174,7 @@ curl "{{host}}/api/books/list?status=read&limit=2"
       "source": "HARDCOVER",
       "book": {
         "bookId": 52,
+        "slug": "52_the_dispossessed",
         "title": "The Dispossessed",
         "coverUrl": "https://img.example/book/52.jpg",
         "releaseDate": "1974-05-01",
@@ -190,6 +194,7 @@ curl "{{host}}/api/books/list?status=read&limit=2"
       "source": "HARDCOVER",
       "book": {
         "bookId": 49,
+        "slug": "49_kindred",
         "title": "Kindred",
         "coverUrl": "https://img.example/book/49.jpg",
         "releaseDate": "1979-06-01",
@@ -215,6 +220,7 @@ curl "{{host}}/api/books/search?q=ursula&limit=5"
   "books": [
     {
       "bookId": 52,
+      "slug": "52_the_dispossessed",
       "title": "The Dispossessed",
       "coverUrl": "https://img.example/book/52.jpg",
       "releaseDate": "1974-05-01",

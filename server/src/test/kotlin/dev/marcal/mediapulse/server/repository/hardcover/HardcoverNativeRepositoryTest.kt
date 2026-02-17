@@ -60,9 +60,9 @@ class HardcoverNativeRepositoryTest {
         assertTrue(updateSql.contains("rating = :rating"))
         assertTrue(updateSql.contains("review_raw = :reviewRaw"))
         assertTrue(updateSql.contains("reviewed_at = :reviewedAt"))
-        assertTrue(updateSql.contains("updated_at = COALESCE(:sourceUpdatedAt, updated_at, NOW())"))
-        assertTrue(updateSql.contains(":sourceUpdatedAt IS NULL"))
-        assertTrue(updateSql.contains("updated_at <= :sourceUpdatedAt"))
+        assertTrue(updateSql.contains("updated_at = COALESCE(CAST(:sourceUpdatedAt AS TIMESTAMPTZ), updated_at, NOW())"))
+        assertTrue(updateSql.contains("CAST(:sourceUpdatedAt AS TIMESTAMPTZ) IS NULL"))
+        assertTrue(updateSql.contains("updated_at <= CAST(:sourceUpdatedAt AS TIMESTAMPTZ)"))
 
         verify(atLeast = 1) { query.setParameter("sourceUpdatedAt", sourceUpdatedAt) }
         verify(atLeast = 1) { query.setParameter("slug", "1_book") }
