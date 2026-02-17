@@ -15,7 +15,9 @@ import dev.marcal.mediapulse.server.api.books.TopAuthorDto
 import dev.marcal.mediapulse.server.api.books.YearReadsResponse
 import dev.marcal.mediapulse.server.api.books.YearStatsDto
 import jakarta.persistence.EntityManager
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
+import org.springframework.web.server.ResponseStatusException
 import java.sql.Date
 import java.sql.Timestamp
 import java.time.Instant
@@ -620,7 +622,9 @@ class BookQueryRepository(
                     WHERE b.slug = :slug
                     """.trimIndent(),
                 ).setParameter("slug", slug)
-                .singleResult as Array<*>
+                .resultList
+                .firstOrNull() as Array<*>?
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Book not found")
 
         return BookDetailsRow(
             bookId = (row[0] as Number).toLong(),
