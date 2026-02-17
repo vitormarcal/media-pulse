@@ -21,4 +21,10 @@ class BookSlugUtilTest {
         val slug = BookSlugUtil.from(7L, "!!!@@@")
         assertEquals("7", slug)
     }
+
+    @Test
+    fun `from should remove accents instead of replacing letters`() {
+        val slug = BookSlugUtil.from(257L, "Blade - A Lâmina do Imortal, Volume 05")
+        assertEquals("257_blade_a_lamina_do_imortal_volume_05", slug)
+    }
 }

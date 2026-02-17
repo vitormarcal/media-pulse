@@ -5,12 +5,7 @@ object BookSlugUtil {
         bookId: Long,
         title: String,
     ): String {
-        val safeTitle =
-            title
-                .lowercase()
-                .replace("[^a-z0-9]+".toRegex(), "_")
-                .trim('_')
-                .take(40)
+        val safeTitle = SlugTextUtil.normalize(title)
 
         return if (safeTitle.isBlank()) "$bookId" else "${bookId}_$safeTitle"
     }

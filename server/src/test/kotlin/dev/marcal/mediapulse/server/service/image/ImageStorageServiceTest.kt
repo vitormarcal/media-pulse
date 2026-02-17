@@ -193,4 +193,37 @@ class ImageStorageServiceTest {
 
         assertEquals(first.bytes.toList(), file.readBytes().toList())
     }
+
+    @Test
+    fun `should remove accents from book filename hint`() {
+        val service = service()
+
+        val image =
+            ImageContent(
+                bytes = byteArrayOf(1, 2, 3),
+                contentType = MediaType.IMAGE_JPEG,
+            )
+
+        val path =
+            service.saveImageForBook(
+                image = image,
+                provider = "HARDCOVER",
+                bookId = 257L,
+                fileNameHint = "Blade - A Lâmina do Imortal, Volume 05",
+            )
+
+        assertEquals(
+            "/covers/hardcover/books/257/257_blade_a_lamina_do_imortal_volume_05.jpg",
+            path,
+        )
+
+        val file =
+            tempDir
+                .resolve("hardcover")
+                .resolve("books")
+                .resolve("257")
+                .resolve("257_blade_a_lamina_do_imortal_volume_05.jpg")
+
+        assertTrue(file.exists())
+    }
 }

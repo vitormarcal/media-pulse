@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.service.image
 
 import dev.marcal.mediapulse.server.model.image.ImageContent
+import dev.marcal.mediapulse.server.util.SlugTextUtil
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
@@ -40,12 +41,7 @@ class ImageStorageService(
 
         Files.createDirectories(artistDir)
 
-        val safeHint =
-            fileNameHint
-                ?.lowercase()
-                ?.replace("[^a-z0-9]+".toRegex(), "_")
-                ?.trim('_')
-                ?.take(40)
+        val safeHint = fileNameHint?.let { SlugTextUtil.normalize(it) }
 
         val baseName =
             if (!safeHint.isNullOrBlank()) {
@@ -96,12 +92,7 @@ class ImageStorageService(
 
         Files.createDirectories(bookDir)
 
-        val safeHint =
-            fileNameHint
-                ?.lowercase()
-                ?.replace("[^a-z0-9]+".toRegex(), "_")
-                ?.trim('_')
-                ?.take(40)
+        val safeHint = fileNameHint?.let { SlugTextUtil.normalize(it) }
 
         val baseName =
             when {
