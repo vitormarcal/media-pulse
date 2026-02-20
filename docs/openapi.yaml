@@ -26,6 +26,7 @@ paths:
   /api/books/year/{year}:
     get:
       summary: Books year reads
+      description: Returns reading sessions grouped by status for the requested year.
       tags: [Books]
       parameters:
         - name: year
@@ -43,6 +44,7 @@ paths:
   /api/books/{bookId}:
     get:
       summary: Book details
+      description: Returns book metadata plus reading sessions for that book.
       tags: [Books]
       parameters:
         - name: bookId
@@ -61,6 +63,7 @@ paths:
   /api/books/slug/{slug}:
     get:
       summary: Book details by slug
+      description: Returns book metadata plus reading sessions for the matched slug.
       tags: [Books]
       parameters:
         - name: slug
@@ -78,6 +81,7 @@ paths:
   /api/books/list:
     get:
       summary: List reads
+      description: Lists reading sessions (not raw sync events), paginated by readId cursor.
       tags: [Books]
       parameters:
         - name: status
@@ -880,10 +884,12 @@ components:
       required: [bookId, slug, title, authors]
     ReadCardDto:
       type: object
+      description: Consolidated reading session card; independent from provider event ids.
       properties:
         readId:
           type: integer
           format: int64
+          description: Internal session identifier in Media Pulse.
         status:
           $ref: "#/components/schemas/BookReadStatus"
         startedAt:

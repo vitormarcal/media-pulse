@@ -74,7 +74,8 @@ class HardcoverNativeRepositoryTest {
             bookId = 10L,
             editionId = null,
             source = "HARDCOVER",
-            sourceEventId = 777L,
+            sourceSessionId = 777L,
+            sourceContainerId = 123L,
             status = "READ",
             startedAt = null,
             finishedAt = null,
@@ -85,7 +86,10 @@ class HardcoverNativeRepositoryTest {
 
         val upsertSql = sqls.firstOrNull { it.contains("INSERT INTO book_reads") }
         assertNotNull(upsertSql)
+        assertTrue(upsertSql.contains("source_session_id"))
+        assertTrue(upsertSql.contains("source_container_id"))
         assertTrue(upsertSql.contains("edition_id = EXCLUDED.edition_id"))
+        assertTrue(upsertSql.contains("source_container_id = EXCLUDED.source_container_id"))
         assertTrue(upsertSql.contains("started_at = EXCLUDED.started_at"))
         assertTrue(upsertSql.contains("finished_at = EXCLUDED.finished_at"))
         assertTrue(upsertSql.contains("progress_pct = EXCLUDED.progress_pct"))

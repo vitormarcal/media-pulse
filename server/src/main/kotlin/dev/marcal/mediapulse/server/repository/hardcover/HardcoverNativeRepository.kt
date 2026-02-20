@@ -227,7 +227,8 @@ class HardcoverNativeRepository {
         bookId: Long,
         editionId: Long?,
         source: String,
-        sourceEventId: Long,
+        sourceSessionId: Long,
+        sourceContainerId: Long?,
         status: String,
         startedAt: Instant?,
         finishedAt: Instant?,
@@ -239,19 +240,20 @@ class HardcoverNativeRepository {
             .createNativeQuery(
                 """
                 INSERT INTO book_reads(
-                    book_id, edition_id, source, source_event_id, status,
+                    book_id, edition_id, source, source_session_id, source_container_id, status,
                     started_at, finished_at, progress_pct, progress_pages,
                     updated_at
                 )
                 VALUES (
-                    :bookId, :editionId, :source, :sourceEventId, :status,
+                    :bookId, :editionId, :source, :sourceSessionId, :sourceContainerId, :status,
                     :startedAt, :finishedAt, :progressPct, :progressPages,
                     :updatedAt
                 )
-                ON CONFLICT (source, source_event_id)
+                ON CONFLICT (source, source_session_id)
                 DO UPDATE SET
                     book_id = EXCLUDED.book_id,
                     edition_id = EXCLUDED.edition_id,
+                    source_container_id = EXCLUDED.source_container_id,
                     status = EXCLUDED.status,
                     started_at = EXCLUDED.started_at,
                     finished_at = EXCLUDED.finished_at,
@@ -267,7 +269,8 @@ class HardcoverNativeRepository {
             ).setParameter("bookId", bookId)
             .setParameter("editionId", editionId)
             .setParameter("source", source)
-            .setParameter("sourceEventId", sourceEventId)
+            .setParameter("sourceSessionId", sourceSessionId)
+            .setParameter("sourceContainerId", sourceContainerId)
             .setParameter("status", status)
             .setParameter("startedAt", startedAt)
             .setParameter("finishedAt", finishedAt)
@@ -277,6 +280,24 @@ class HardcoverNativeRepository {
             .resultList
             .firstOrNull()
             ?.let { (it as Number).toLong() }
+
+    @Transactional
+    fun deleteSyntheticSessionRead(
+        source: String,
+        sourceContainerId: Long,
+    ) {
+        em
+            .createNativeQuery(
+                """
+                DELETE FROM book_reads
+                WHERE source = :source
+                  AND source_container_id = :sourceContainerId
+                  AND source_session_id = :sourceContainerId
+                """.trimIndent(),
+            ).setParameter("source", source)
+            .setParameter("sourceContainerId", sourceContainerId)
+            .executeUpdate()
+    }
 
     @Transactional
     fun insertExternalIdentifier(

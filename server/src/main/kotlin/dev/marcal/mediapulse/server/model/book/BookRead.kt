@@ -15,7 +15,7 @@ import java.time.Instant
 @Entity
 @Table(
     name = "book_reads",
-    uniqueConstraints = [UniqueConstraint(columnNames = ["source", "source_event_id"])],
+    uniqueConstraints = [UniqueConstraint(columnNames = ["source", "source_session_id"])],
 )
 data class BookRead(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,8 +27,10 @@ data class BookRead(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val source: BookReadSource,
-    @Column(name = "source_event_id", nullable = false)
-    val sourceEventId: Long,
+    @Column(name = "source_session_id", nullable = false)
+    val sourceSessionId: Long,
+    @Column(name = "source_container_id")
+    val sourceContainerId: Long? = null,
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val status: BookReadStatus,
