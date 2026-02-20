@@ -447,6 +447,7 @@ class BookQueryRepository(
                       be.language AS edition_language,
                       be.publisher AS edition_publisher,
                       be.format AS edition_format,
+                      be.edition_information AS edition_information,
                       be.cover_url AS edition_cover_url
                     FROM book_reads br
                     JOIN books b ON b.id = br.book_id
@@ -487,7 +488,8 @@ class BookQueryRepository(
                 editionLanguage = fields[21] as String?,
                 editionPublisher = fields[22] as String?,
                 editionFormat = fields[23] as String?,
-                editionCoverUrl = fields[24] as String?,
+                editionInformation = fields[24] as String?,
+                editionCoverUrl = fields[25] as String?,
             )
         }
     }
@@ -547,7 +549,7 @@ class BookQueryRepository(
         entityManager
             .createNativeQuery(
                 """
-                SELECT id, title, isbn_10, isbn_13, pages, language, publisher, format, cover_url
+                SELECT id, title, isbn_10, isbn_13, pages, language, publisher, format, edition_information, cover_url
                 FROM book_editions
                 WHERE book_id = :bookId
                 ORDER BY id
@@ -565,7 +567,8 @@ class BookQueryRepository(
                     language = fields[5] as String?,
                     publisher = fields[6] as String?,
                     format = fields[7] as String?,
-                    coverUrl = fields[8] as String?,
+                    editionInformation = fields[8] as String?,
+                    coverUrl = fields[9] as String?,
                 )
             }
 
@@ -770,6 +773,7 @@ class BookQueryRepository(
         val editionLanguage: String?,
         val editionPublisher: String?,
         val editionFormat: String?,
+        val editionInformation: String?,
         val editionCoverUrl: String?,
     ) {
         fun toDto(authorsByBookId: Map<Long, List<AuthorDto>>): ReadCardDto =
@@ -805,6 +809,7 @@ class BookQueryRepository(
                             language = editionLanguage,
                             publisher = editionPublisher,
                             format = editionFormat,
+                            editionInformation = editionInformation,
                             coverUrl = editionCoverUrl,
                         )
                     },

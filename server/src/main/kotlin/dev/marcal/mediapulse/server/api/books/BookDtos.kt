@@ -17,6 +17,7 @@ data class EditionDto(
     val language: String?,
     val publisher: String?,
     val format: String?,
+    val editionInformation: String?,
     val coverUrl: String?,
 )
 

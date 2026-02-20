@@ -28,6 +28,8 @@ data class BookEdition(
     val language: String? = null,
     val publisher: String? = null,
     val format: String? = null,
+    @Column(name = "edition_information", columnDefinition = "TEXT")
+    val editionInformation: String? = null,
     @Column(name = "cover_url")
     val coverUrl: String? = null,
     @Column(nullable = false, unique = true)

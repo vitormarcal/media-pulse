@@ -56,7 +56,7 @@ class HardcoverApiClient(
                   image { url }
                   contributions { contribution author { name } }
                 }
-                book { id title release_date pages }
+                book { id title release_date pages description }
               }
             }
             """.trimIndent()

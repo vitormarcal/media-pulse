@@ -129,6 +129,7 @@ class HardcoverNativeRepository {
         language: String?,
         publisher: String?,
         format: String?,
+        editionInformation: String?,
         coverUrl: String?,
         fingerprint: String,
     ): Long {
@@ -136,8 +137,8 @@ class HardcoverNativeRepository {
             em
                 .createNativeQuery(
                     """
-                    INSERT INTO book_editions(book_id, title, isbn_10, isbn_13, pages, language, publisher, format, cover_url, fingerprint)
-                    VALUES (:bookId, :title, :isbn10, :isbn13, :pages, :language, :publisher, :format, :coverUrl, :fingerprint)
+                    INSERT INTO book_editions(book_id, title, isbn_10, isbn_13, pages, language, publisher, format, edition_information, cover_url, fingerprint)
+                    VALUES (:bookId, :title, :isbn10, :isbn13, :pages, :language, :publisher, :format, :editionInformation, :coverUrl, :fingerprint)
                     ON CONFLICT (fingerprint) DO NOTHING
                     RETURNING id
                     """.trimIndent(),
@@ -149,6 +150,7 @@ class HardcoverNativeRepository {
                 .setParameter("language", language)
                 .setParameter("publisher", publisher)
                 .setParameter("format", format)
+                .setParameter("editionInformation", editionInformation)
                 .setParameter("coverUrl", coverUrl)
                 .setParameter("fingerprint", fingerprint)
                 .resultList
@@ -168,6 +170,7 @@ class HardcoverNativeRepository {
                        language = COALESCE(:language, language),
                        publisher = COALESCE(:publisher, publisher),
                        format = COALESCE(:format, format),
+                       edition_information = COALESCE(:editionInformation, edition_information),
                        cover_url = COALESCE(:coverUrl, cover_url),
                        updated_at = NOW()
                  WHERE id = :id
@@ -179,6 +182,7 @@ class HardcoverNativeRepository {
             .setParameter("language", language)
             .setParameter("publisher", publisher)
             .setParameter("format", format)
+            .setParameter("editionInformation", editionInformation)
             .setParameter("coverUrl", coverUrl)
             .setParameter("id", id)
             .executeUpdate()
