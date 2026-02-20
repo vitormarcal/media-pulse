@@ -2,6 +2,14 @@
 
 A Books API fornece uma visão read-only da biblioteca e leituras. Ela expõe cards para UI (livros, autores, edições e leituras), detalhes de um livro, listagens paginadas com cursor e um resumo agregado por período.
 
+## Modelo de leitura
+
+As leituras são armazenadas como **sessões/jornadas consolidadas** (não como eventos brutos de sincronização).
+
+- Cada sessão possui um `readId` interno no Media Pulse.
+- O payload da API de livros não depende de `source_event_id`.
+- Transições de status da mesma jornada (`want -> reading -> read`) são refletidas na própria sessão.
+
 ## Endpoints
 
 | Path | Params | Retorna |
@@ -15,7 +23,7 @@ A Books API fornece uma visão read-only da biblioteca e leituras. Ela expõe ca
 
 ## Cursor de paginação
 
-O cursor é simples e baseado no `readId`. Formato: `id:123`.
+O cursor é simples e baseado no `readId` (id interno da sessão de leitura). Formato: `id:123`.
 
 - O endpoint `GET /api/books/list` retorna `nextCursor` quando há mais itens.
 - Para a próxima página, envie `cursor=id:123` (o último `readId` retornado) para buscar itens com `id` menor.

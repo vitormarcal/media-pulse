@@ -5,6 +5,7 @@ import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverUserBook
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.book.BookReadSource
+import dev.marcal.mediapulse.server.model.book.BookReadStatus
 import dev.marcal.mediapulse.server.repository.hardcover.HardcoverNativeRepository
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.TxUtil
@@ -189,7 +190,8 @@ class HardcoverUserBookProcessor(
                 bookId = bookId,
                 editionId = editionId,
                 source = BookReadSource.HARDCOVER.name,
-                sourceEventId = item.id,
+                sourceSessionId = item.id,
+                sourceContainerId = item.id,
                 status = status.name,
                 startedAt = fallbackStartedAt,
                 finishedAt = fallbackFinishedAt,
@@ -207,6 +209,11 @@ class HardcoverUserBookProcessor(
             )
         }
 
+        nativeRepo.deleteSyntheticSessionRead(
+            source = BookReadSource.HARDCOVER.name,
+            sourceContainerId = item.id,
+        )
+
         for (r in reads) {
             val readId = r.id ?: continue
 
@@ -217,13 +224,15 @@ class HardcoverUserBookProcessor(
                     ?: parseInstant(item.firstReadDate)
             val progressPct = r.progress?.let { BigDecimal.valueOf(it) }
             val progressPages = r.progressPages
+            val readStatus = resolvedStatusForRead(status = status, finishedAt = finishedAt)
 
             nativeRepo.upsertBookRead(
                 bookId = bookId,
                 editionId = editionId,
                 source = BookReadSource.HARDCOVER.name,
-                sourceEventId = readId,
-                status = status.name,
+                sourceSessionId = readId,
+                sourceContainerId = item.id,
+                status = readStatus.name,
                 startedAt = startedAt,
                 finishedAt = finishedAt,
                 progressPct = progressPct,
@@ -241,6 +250,16 @@ class HardcoverUserBookProcessor(
             editionCoverUrl = edition?.image?.url,
         )
     }
+
+    private fun resolvedStatusForRead(
+        status: BookReadStatus,
+        finishedAt: Instant?,
+    ): BookReadStatus =
+        if (finishedAt != null) {
+            BookReadStatus.READ
+        } else {
+            status
+        }
 
     private fun parseInstant(value: String?): Instant? =
         value?.let {
