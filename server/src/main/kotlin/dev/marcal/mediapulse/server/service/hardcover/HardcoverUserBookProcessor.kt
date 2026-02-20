@@ -108,7 +108,7 @@ class HardcoverUserBookProcessor(
         val bookTitle = book?.title?.ifBlank { "Unknown" } ?: "Unknown"
         val bookFingerprint = FingerprintUtil.bookFp(bookTitle)
         val bookReleaseDate = parseLocalDate(book?.releaseDate) ?: parseLocalDate(edition?.releaseDate)
-        val bookDescription = edition?.editionInformation
+        val bookDescription = book?.description
         val bookCoverUrl = edition?.image?.url
         val rating = item.rating
         val reviewRaw = if (item.hasReview == true) item.reviewRaw else null
@@ -155,6 +155,7 @@ class HardcoverUserBookProcessor(
                     language = edition?.language?.code2,
                     publisher = edition?.publisher?.name,
                     format = edition?.editionFormat,
+                    editionInformation = edition?.editionInformation,
                     coverUrl = null,
                     fingerprint = it,
                 )

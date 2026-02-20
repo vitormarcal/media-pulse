@@ -93,6 +93,7 @@ data class HardcoverBook(
     @JsonProperty("release_date")
     val releaseDate: String? = null,
     val pages: Int? = null,
+    val description: String? = null,
 )
 
 data class HardcoverLanguage(

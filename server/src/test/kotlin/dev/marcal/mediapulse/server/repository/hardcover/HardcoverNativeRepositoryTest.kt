@@ -98,4 +98,31 @@ class HardcoverNativeRepositoryTest {
         assertTrue(upsertSql.contains("EXCLUDED.updated_at IS NULL"))
         assertTrue(upsertSql.contains("book_reads.updated_at <= EXCLUDED.updated_at"))
     }
+
+    @Test
+    fun `ensureEditionId should persist edition information`() {
+        repository.ensureEditionId(
+            bookId = 1L,
+            title = "Edition",
+            isbn10 = "1234567890",
+            isbn13 = "9781234567890",
+            pages = 320,
+            language = "en",
+            publisher = "Publisher",
+            format = "hardcover",
+            editionInformation = "Extended edition with author notes",
+            coverUrl = null,
+            fingerprint = "fp-edition",
+        )
+
+        val insertSql = sqls.firstOrNull { it.contains("INSERT INTO book_editions") }
+        assertNotNull(insertSql)
+        assertTrue(insertSql.contains("edition_information"))
+
+        val updateSql = sqls.firstOrNull { it.contains("UPDATE book_editions") }
+        assertNotNull(updateSql)
+        assertTrue(updateSql.contains("edition_information = COALESCE(:editionInformation, edition_information)"))
+
+        verify(atLeast = 1) { query.setParameter("editionInformation", "Extended edition with author notes") }
+    }
 }
