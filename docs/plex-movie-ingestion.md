@@ -55,3 +55,12 @@ Movie library import runs in the existing startup pipeline (`ApplicationReadyEve
 - It imports from Plex `movie` sections using paginated reads.
 - It persists canonical movies, localized titles, and TMDB/IMDB external ids.
 - It does not create rows in `movie_watches` (watch history comes only from scrobble events).
+
+## Movies API
+
+Read-only movie endpoints:
+
+- `GET /api/movies/recent?limit=20`
+- `GET /api/movies/{movieId}`
+- `GET /api/movies/search?q=...&limit=10`
+- `GET /api/movies/summary?range=month|year|custom&start=...&end=...`
