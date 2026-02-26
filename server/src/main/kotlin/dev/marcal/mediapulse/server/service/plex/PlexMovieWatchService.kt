@@ -24,6 +24,7 @@ class PlexMovieWatchService(
     private val movieTitleCrudRepository: MovieTitleCrudRepository,
     private val movieWatchCrudRepository: MovieWatchCrudRepository,
     private val externalIdentifierRepository: ExternalIdentifierRepository,
+    private val plexMovieArtworkService: PlexMovieArtworkService,
 ) {
     @Transactional
     suspend fun processScrobble(payload: PlexWebhookPayload): MovieWatch? {
@@ -75,6 +76,17 @@ class PlexMovieWatchService(
         }
 
         persistExternalIds(movie.id, meta.guidList)
+        plexMovieArtworkService.ensureMovieImagesFromPlex(
+            movie = movie,
+            images =
+                meta.image.map { img ->
+                    PlexMovieArtworkService.PlexMovieImageCandidate(
+                        url = img.url,
+                        isPoster = img.type.equals("coverPoster", ignoreCase = true),
+                    )
+                },
+            fallbackThumbPath = meta.thumb,
+        )
 
         val watchedAt = meta.lastViewedAt ?: Instant.now()
 

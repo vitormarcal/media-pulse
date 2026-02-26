@@ -55,11 +55,18 @@ data class PlexTrack(
     @JsonProperty("Guid") val guids: List<PlexGuid>? = emptyList(),
 )
 
+data class PlexImageAsset(
+    val type: String? = null,
+    val url: String? = null,
+)
+
 data class PlexMovie(
     val ratingKey: String,
     val title: String,
     val originalTitle: String? = null,
     val year: Int? = null,
     val summary: String? = null,
+    val thumb: String? = null,
+    @JsonProperty("Image") val image: List<PlexImageAsset> = emptyList(),
     @JsonProperty("Guid") val guids: List<PlexGuid>? = emptyList(),
 )

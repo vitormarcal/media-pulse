@@ -10,6 +10,8 @@ import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTitleCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieWatchCrudRepository
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -28,6 +30,7 @@ class PlexMovieWatchServiceTest {
     private lateinit var movieTitleCrudRepository: MovieTitleCrudRepository
     private lateinit var movieWatchCrudRepository: MovieWatchCrudRepository
     private lateinit var externalIdentifierRepository: ExternalIdentifierRepository
+    private lateinit var plexMovieArtworkService: PlexMovieArtworkService
     private lateinit var service: PlexMovieWatchService
 
     @BeforeEach
@@ -36,6 +39,7 @@ class PlexMovieWatchServiceTest {
         movieTitleCrudRepository = mockk(relaxed = true)
         movieWatchCrudRepository = mockk(relaxed = true)
         externalIdentifierRepository = mockk(relaxed = true)
+        plexMovieArtworkService = mockk(relaxed = true)
 
         service =
             PlexMovieWatchService(
@@ -43,6 +47,7 @@ class PlexMovieWatchServiceTest {
                 movieTitleCrudRepository = movieTitleCrudRepository,
                 movieWatchCrudRepository = movieWatchCrudRepository,
                 externalIdentifierRepository = externalIdentifierRepository,
+                plexMovieArtworkService = plexMovieArtworkService,
             )
     }
 
@@ -65,6 +70,7 @@ class PlexMovieWatchServiceTest {
             every { movieWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
             every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
             every { externalIdentifierRepository.save(any()) } returns mockk()
+            coEvery { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) } returns Unit
 
             val result = service.processScrobble(payload)
 
@@ -74,6 +80,7 @@ class PlexMovieWatchServiceTest {
             assertEquals(Instant.ofEpochSecond(1772082419), result.watchedAt)
 
             verify(exactly = 1) { movieWatchCrudRepository.insertIgnore(42, MovieWatchSource.PLEX.name, Instant.ofEpochSecond(1772082419)) }
+            coVerify(exactly = 1) { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) }
             verify(exactly = 1) {
                 externalIdentifierRepository.save(
                     match {
@@ -125,6 +132,7 @@ class PlexMovieWatchServiceTest {
             every { movieWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
             every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
             every { externalIdentifierRepository.save(any()) } returns mockk()
+            coEvery { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) } returns Unit
 
             val before = Instant.now()
             val result: MovieWatch? = service.processScrobble(payload)
@@ -149,6 +157,18 @@ class PlexMovieWatchServiceTest {
                     year = 1999,
                     summary = "desc",
                     lastViewedAt = lastViewedAt,
+                    thumb = "/library/metadata/3828/thumb/1771458357",
+                    image =
+                        listOf(
+                            PlexWebhookPayload.PlexMetadata.PlexImageMetadata(
+                                type = "coverPoster",
+                                url = "/library/metadata/3828/thumb/1771458357",
+                            ),
+                            PlexWebhookPayload.PlexMetadata.PlexImageMetadata(
+                                type = "background",
+                                url = "/library/metadata/3828/art/1771458357",
+                            ),
+                        ),
                     guidList =
                         listOf(
                             PlexWebhookPayload.PlexMetadata.PlexGuidMetadata(id = "tmdb://345"),

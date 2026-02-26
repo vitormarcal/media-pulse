@@ -19,6 +19,7 @@ Plex payload -> Media Pulse domain:
 - `Metadata.title` -> `movie_titles.title` (localized/alternate title)
 - `Metadata.lastViewedAt` -> `movie_watches.watched_at`
 - `Metadata.Guid` with `tmdb://` and `imdb://` -> `external_identifiers` (`entity_type=MOVIE`)
+- `Metadata.Image[]` + `Metadata.thumb` -> downloaded from Plex and stored locally
 
 ## Canonical identity
 
@@ -32,8 +33,19 @@ Movie identity uses fingerprint by `original_title + year`.
 - `movies`
 - `movie_titles`
 - `movie_watches`
+- `movie_images`
 
-Migration: `V7__create_movies_schema.sql`.
+Migrations: `V7__create_movies_schema.sql`, `V8__add_movie_images.sql`.
+
+## Movie images
+
+- The service downloads all relevant movie images available in Plex payload (`Image[]`).
+- Image type is not persisted in DB.
+- One image is chosen as primary with deterministic rule:
+  1. First image marked as `coverPoster`.
+  2. Fallback to first valid image.
+  3. Fallback to `thumb` if list is empty.
+- Primary image path is stored in `movies.cover_url`.
 
 ## Startup full import
 

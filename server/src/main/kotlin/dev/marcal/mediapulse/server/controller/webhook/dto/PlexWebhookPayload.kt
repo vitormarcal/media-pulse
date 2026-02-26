@@ -19,6 +19,7 @@ data class PlexWebhookPayload(
         val parentGuid: String? = null,
         val guid: String? = null,
         val grandparentGuid: String? = null,
+        val thumb: String? = null,
         val parentThumb: String? = null,
         val parentIndex: Int? = null,
         val index: Int? = null,

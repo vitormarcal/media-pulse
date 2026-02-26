@@ -19,6 +19,8 @@ data class Movie(
     val year: Int? = null,
     @Column(columnDefinition = "TEXT")
     val description: String? = null,
+    @Column(name = "cover_url")
+    val coverUrl: String? = null,
     @Column(nullable = false, unique = true)
     val fingerprint: String,
     @Column(name = "created_at")

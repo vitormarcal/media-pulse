@@ -11,6 +11,7 @@ import dev.marcal.mediapulse.server.model.movie.MovieTitleSource
 import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTitleCrudRepository
+import dev.marcal.mediapulse.server.service.plex.PlexMovieArtworkService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -23,6 +24,7 @@ class PlexMovieImportService(
     private val movieRepository: MovieRepository,
     private val movieTitleCrudRepository: MovieTitleCrudRepository,
     private val externalIdentifierRepository: ExternalIdentifierRepository,
+    private val plexMovieArtworkService: PlexMovieArtworkService,
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
@@ -62,12 +64,24 @@ class PlexMovieImportService(
 
                 for (m in movies) {
                     stats.moviesSeen++
-                    upsertMovie(
-                        title = m.title,
-                        originalTitle = m.originalTitle,
-                        year = m.year,
-                        summary = m.summary,
-                        guids = m.guids.orEmpty(),
+                    val movie =
+                        upsertMovie(
+                            title = m.title,
+                            originalTitle = m.originalTitle,
+                            year = m.year,
+                            summary = m.summary,
+                            guids = m.guids.orEmpty(),
+                        )
+                    plexMovieArtworkService.ensureMovieImagesFromPlex(
+                        movie = movie,
+                        images =
+                            m.image.map { img ->
+                                PlexMovieArtworkService.PlexMovieImageCandidate(
+                                    url = img.url,
+                                    isPoster = img.type.equals("coverPoster", ignoreCase = true),
+                                )
+                            },
+                        fallbackThumbPath = m.thumb,
                     )
                     stats.moviesUpserted++
                 }
@@ -92,7 +106,7 @@ class PlexMovieImportService(
         year: Int?,
         summary: String?,
         guids: List<PlexGuid>,
-    ) {
+    ): Movie {
         val normalizedOriginal = originalTitle?.trim()?.ifBlank { null } ?: title
         val normalizedTitle = title.trim()
         val normalizedSummary = summary?.trim()?.ifBlank { null }
@@ -139,6 +153,7 @@ class PlexMovieImportService(
         }
 
         persistExternalIds(movie.id, guids)
+        return movie
     }
 
     private fun mergeMovie(
