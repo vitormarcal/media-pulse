@@ -54,3 +54,12 @@ data class PlexTrack(
     val duration: Long? = null, // em ms, se vier
     @JsonProperty("Guid") val guids: List<PlexGuid>? = emptyList(),
 )
+
+data class PlexMovie(
+    val ratingKey: String,
+    val title: String,
+    val originalTitle: String? = null,
+    val year: Int? = null,
+    val summary: String? = null,
+    @JsonProperty("Guid") val guids: List<PlexGuid>? = emptyList(),
+)

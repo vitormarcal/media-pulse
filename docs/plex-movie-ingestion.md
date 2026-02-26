@@ -7,6 +7,8 @@ This feature ingests only Plex `media.scrobble` events for `Metadata.type=movie`
 - `media.play` and `media.stop` are ignored for movie completion.
 - Domain persistence is decoupled from `event_sources` (no FK, no `source_event_id`).
 
+It also supports full movie library import during pipeline startup.
+
 ## Mapping
 
 Plex payload -> Media Pulse domain:
@@ -32,3 +34,12 @@ Movie identity uses fingerprint by `original_title + year`.
 - `movie_watches`
 
 Migration: `V7__create_movies_schema.sql`.
+
+## Startup full import
+
+Movie library import runs in the existing startup pipeline (`ApplicationReadyEvent`) when enabled.
+
+- Property: `media-pulse.plex.import.movies-enabled` (env: `PLEX_IMPORT_MOVIES_ENABLED`, default `true`)
+- It imports from Plex `movie` sections using paginated reads.
+- It persists canonical movies, localized titles, and TMDB/IMDB external ids.
+- It does not create rows in `movie_watches` (watch history comes only from scrobble events).

@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
-class PlexImportServiceTest {
+class PlexMusicImportServiceTest {
     @MockK lateinit var plexApi: PlexApiClient
 
     @MockK lateinit var canonical: CanonicalizationService
@@ -34,13 +34,13 @@ class PlexImportServiceTest {
 
     @MockK lateinit var albumGenreService: AlbumGenreService
 
-    private lateinit var service: PlexImportService
+    private lateinit var service: PlexMusicImportService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
         service =
-            PlexImportService(
+            PlexMusicImportService(
                 plexApi = plexApi,
                 canonical = canonical,
                 plexArtworkService = plexArtworkService,
@@ -184,7 +184,7 @@ class PlexImportServiceTest {
             coEvery { albumGenreService.addGenres(album = any(), genres = emptyList(), source = any()) } just runs
 
             // Execute
-            val stats = service.importAllArtistsAndAlbums(sectionKey = sectionKey, pageSize = 200)
+            val stats = service.importAllMusicLibrary(sectionKey = sectionKey, pageSize = 200)
 
             // Verify stats
             assertEquals(2, stats.artistsSeen)
@@ -301,7 +301,7 @@ class PlexImportServiceTest {
             coEvery { albumGenreService.addGenres(album = any(), genres = emptyList(), source = any()) } just runs
 
             // Execute
-            val stats = service.importAllArtistsAndAlbums(sectionKey = sectionKey, pageSize = 200)
+            val stats = service.importAllMusicLibrary(sectionKey = sectionKey, pageSize = 200)
 
             // Verify stats
             assertEquals(1, stats.artistsSeen)
@@ -419,7 +419,7 @@ class PlexImportServiceTest {
             coEvery { albumGenreService.addGenres(album = album, genres = listOf("Rock", "Pop"), source = any()) } just runs
 
             // Execute
-            val stats = service.importAllArtistsAndAlbums(sectionKey = sectionKey, pageSize = 200)
+            val stats = service.importAllMusicLibrary(sectionKey = sectionKey, pageSize = 200)
 
             // Verify stats
             assertEquals(1, stats.artistsSeen)
@@ -518,7 +518,7 @@ class PlexImportServiceTest {
             coEvery { albumGenreService.addGenres(album = any(), genres = emptyList(), source = any()) } just runs
 
             // Execute with specific section key
-            val stats = service.importAllArtistsAndAlbums(sectionKey = sectionKey, pageSize = 200)
+            val stats = service.importAllMusicLibrary(sectionKey = sectionKey, pageSize = 200)
 
             // Verify stats
             assertEquals(1, stats.artistsSeen)
@@ -542,7 +542,7 @@ class PlexImportServiceTest {
             coEvery { plexApi.listArtistsPaged(sectionKey, 0, 200) } returns Pair(emptyList(), 0)
 
             // Execute
-            val stats = service.importAllArtistsAndAlbums(sectionKey = sectionKey, pageSize = 200)
+            val stats = service.importAllMusicLibrary(sectionKey = sectionKey, pageSize = 200)
 
             // Verify stats are all zero
             assertEquals(0, stats.artistsSeen)

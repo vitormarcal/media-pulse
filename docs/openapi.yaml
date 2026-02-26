@@ -718,23 +718,23 @@ paths:
         "200":
           description: OK
 
-  /api/plex/import:
+  /api/plex/music/import:
     post:
-      summary: Plex import
+      summary: Plex music import
       tags: [Plex]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PlexImportRequest"
+              $ref: "#/components/schemas/PlexMusicImportRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlexImportResponse"
+                $ref: "#/components/schemas/PlexMusicImportResponse"
 
   /event-sources/reprocess:
     post:
@@ -1459,7 +1459,7 @@ components:
           type: boolean
       required: [limit, accepted]
 
-    PlexImportRequest:
+    PlexMusicImportRequest:
       type: object
       properties:
         sectionKey:
@@ -1469,16 +1469,16 @@ components:
           type: integer
           nullable: true
           default: 200
-    PlexImportResponse:
+    PlexMusicImportResponse:
       type: object
       properties:
         sectionKey:
           type: string
           nullable: true
         stats:
-          $ref: "#/components/schemas/PlexImportStats"
+          $ref: "#/components/schemas/PlexMusicImportStats"
       required: [stats]
-    PlexImportStats:
+    PlexMusicImportStats:
       type: object
       properties:
         artistsSeen:

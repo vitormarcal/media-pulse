@@ -61,6 +61,7 @@ media-pulse:
     token: ${PLEX_TOKEN}
     import:
       enabled: ${PLEX_IMPORT_ENABLED:true}
+      movies-enabled: ${PLEX_IMPORT_MOVIES_ENABLED:true}
       page-size: ${PLEX_IMPORT_PAGE_SIZE:200}
   musicbrainz:
     enabled: ${MB_IMPORT_ENABLED:true}

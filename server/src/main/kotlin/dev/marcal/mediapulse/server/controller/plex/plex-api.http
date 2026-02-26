@@ -1,4 +1,4 @@
-@baseUrl = {{host}}/api/plex
+@baseUrl = {{host}}/api/plex/music
 
 ### Importar tudo (descobre seções de música automaticamente)
 POST {{baseUrl}}/import

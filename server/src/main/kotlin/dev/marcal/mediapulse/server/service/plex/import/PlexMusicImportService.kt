@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
-class PlexImportService(
+class PlexMusicImportService(
     private val plexApi: PlexApiClient,
     private val canonical: CanonicalizationService,
     private val plexArtworkService: PlexArtworkService,
@@ -32,14 +32,14 @@ class PlexImportService(
         var tracksUpserted: Int = 0,
     )
 
-    suspend fun importAllArtistsAndAlbums(
+    suspend fun importAllMusicLibrary(
         sectionKey: String? = null,
         pageSize: Int = 200,
     ): ImportStats {
         val stats = ImportStats()
 
         logger.info(
-            "Starting Plex library import. sectionKey={}, pageSize={}",
+            "Starting Plex music library import. sectionKey={}, pageSize={}",
             sectionKey ?: "<all-sections>",
             pageSize,
         )
@@ -78,7 +78,7 @@ class PlexImportService(
         }
 
         logger.info(
-            "Finished Plex library import. artistsSeen={}, artistsUpserted={}, albumsSeen={}, albumsUpserted={}, tracksSeen={}, tracksUpserted={}",
+            "Finished Plex music library import. artistsSeen={}, artistsUpserted={}, albumsSeen={}, albumsUpserted={}, tracksSeen={}, tracksUpserted={}",
             stats.artistsSeen,
             stats.artistsUpserted,
             stats.albumsSeen,
