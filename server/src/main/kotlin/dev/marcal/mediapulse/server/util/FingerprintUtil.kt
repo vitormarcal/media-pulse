@@ -47,4 +47,9 @@ object FingerprintUtil {
         artistId: Long,
         durationMs: Int?,
     ) = DigestUtils.sha256Hex("${normalize(title)}|$artistId|${durationMs ?: ""}")
+
+    fun movieFp(
+        originalTitle: String,
+        year: Int?,
+    ) = DigestUtils.sha256Hex("movie|${normalize(originalTitle)}|${year ?: ""}")
 }

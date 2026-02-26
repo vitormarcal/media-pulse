@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component
 class PlexWebhookDispatcher(
     private val objectMapper: ObjectMapper,
     private val plexMusicPlaybackService: PlexMusicPlaybackService,
+    private val plexMovieWatchService: PlexMovieWatchService,
 ) : EventDispatcher {
     override val provider: String = "plex"
 
@@ -60,6 +61,14 @@ class PlexWebhookDispatcher(
                     DispatchResult.SUCCESS
                 } else {
                     throw IllegalStateException("Track playback not found for: ${webhookPayload.metadata.title}")
+                }
+            }
+            "movie" -> {
+                val processed = plexMovieWatchService.processScrobble(webhookPayload)
+                if (processed != null) {
+                    DispatchResult.SUCCESS
+                } else {
+                    throw IllegalStateException("Movie watch not found for: ${webhookPayload.metadata.title}")
                 }
             }
             "episode" -> {

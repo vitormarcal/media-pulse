@@ -6,4 +6,6 @@ enum class Provider {
     MUSICBRAINZ,
     ISBN_10,
     ISBN_13,
+    TMDB,
+    IMDB,
 }
