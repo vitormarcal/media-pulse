@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import dev.marcal.mediapulse.server.config.JacksonConfig
 import dev.marcal.mediapulse.server.fixture.PlexEventsFixture
 import dev.marcal.mediapulse.server.service.dispatch.DispatchResult
+import dev.marcal.mediapulse.server.service.plex.PlexMovieWatchService
 import dev.marcal.mediapulse.server.service.plex.PlexMusicPlaybackService
 import dev.marcal.mediapulse.server.service.plex.PlexWebhookDispatcher
 import io.mockk.clearAllMocks
@@ -20,10 +21,12 @@ import kotlin.test.assertEquals
 class PlexWebhookDispatcherTest {
     private val objectMapper = JacksonConfig().objectMapper()
     private val plexMusicPlaybackService: PlexMusicPlaybackService = mockk()
+    private val plexMovieWatchService: PlexMovieWatchService = mockk()
     private val dispatcher: PlexWebhookDispatcher =
         PlexWebhookDispatcher(
             objectMapper = objectMapper,
             plexMusicPlaybackService = plexMusicPlaybackService,
+            plexMovieWatchService = plexMovieWatchService,
         )
 
     @BeforeEach
@@ -93,5 +96,49 @@ class PlexWebhookDispatcherTest {
 
             coEvery { plexMusicPlaybackService.processScrobble(any(), any()) } returns mockk()
             dispatcher.dispatch(validScrobblePayload, eventId = 123L)
+        }
+
+    @Test
+    fun `test dispatch with valid movie scrobble event`() =
+        runBlocking {
+            val movieScrobblePayload =
+                """
+                {
+                  "event": "media.scrobble",
+                  "Metadata": {
+                    "type": "movie",
+                    "title": "De Olhos Bem Fechados",
+                    "originalTitle": "Eyes Wide Shut",
+                    "year": 1999,
+                    "summary": "desc",
+                    "lastViewedAt": 1772082419,
+                    "Guid": [{"id":"imdb://tt0120663"},{"id":"tmdb://345"}]
+                  }
+                }
+                """.trimIndent()
+
+            coEvery { plexMovieWatchService.processScrobble(any()) } returns mockk()
+
+            val result = dispatcher.dispatch(movieScrobblePayload, eventId = 123L)
+            assertEquals(DispatchResult.SUCCESS, result)
+        }
+
+    @Test
+    fun `test dispatch with valid movie scrobble event but movie service returns null`() =
+        runBlocking {
+            val movieScrobblePayload =
+                """
+                {
+                  "event": "media.scrobble",
+                  "Metadata": {
+                    "type": "movie",
+                    "title": "De Olhos Bem Fechados"
+                  }
+                }
+                """.trimIndent()
+
+            coEvery { plexMovieWatchService.processScrobble(any()) } returns null
+            val exception = assertThrows<RuntimeException> { dispatcher.dispatch(movieScrobblePayload, eventId = null) }
+            assertTrue(exception.message!!.contains("Movie watch not found for: "))
         }
 }

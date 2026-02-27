@@ -13,15 +13,18 @@ data class PlexWebhookPayload(
         val ratingKey: String? = null,
         val type: String, // "track", "episode" etc. (obrigatório p/ sua lógica)
         val title: String, // título da faixa (obrigatório p/ sua lógica)
+        val originalTitle: String? = null,
         val grandparentTitle: String? = null, // artista
         val parentTitle: String? = null, // álbum
         val parentGuid: String? = null,
         val guid: String? = null,
         val grandparentGuid: String? = null,
+        val thumb: String? = null,
         val parentThumb: String? = null,
         val parentIndex: Int? = null,
         val index: Int? = null,
         val parentYear: Int? = null,
+        val year: Int? = null,
         // cuidado: no seu fixture vem como string ISO-8601; deixe opcional.
         val lastViewedAt: Instant? = null,
         val summary: String? = null,

@@ -7,7 +7,8 @@ import dev.marcal.mediapulse.server.config.PlexProperties
 import dev.marcal.mediapulse.server.config.SpotifyProperties
 import dev.marcal.mediapulse.server.service.hardcover.HardcoverImportService
 import dev.marcal.mediapulse.server.service.musicbrainz.MusicBrainzAlbumGenreEnrichmentService
-import dev.marcal.mediapulse.server.service.plex.import.PlexImportService
+import dev.marcal.mediapulse.server.service.plex.import.PlexMovieImportService
+import dev.marcal.mediapulse.server.service.plex.import.PlexMusicImportService
 import dev.marcal.mediapulse.server.service.spotify.SpotifyImportService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -20,7 +21,8 @@ class ImportPipelineRunner(
     private val mbProps: MusicBrainzProperties,
     private val spotifyProps: SpotifyProperties,
     private val hardcoverProperties: HardcoverProperties,
-    private val plexImportService: PlexImportService,
+    private val plexMusicImportService: PlexMusicImportService,
+    private val plexMovieImportService: PlexMovieImportService,
     private val mbService: MusicBrainzAlbumGenreEnrichmentService,
     private val spotifyImportService: SpotifyImportService,
     private val hardcoverImportService: HardcoverImportService,
@@ -40,15 +42,26 @@ class ImportPipelineRunner(
             logger.info("Pipeline started | reason={}", reason)
 
             if (plexProps.import.enabled) {
-                val stats = plexImportService.importAllArtistsAndAlbums(pageSize = plexProps.import.pageSize)
+                val stats = plexMusicImportService.importAllMusicLibrary(pageSize = plexProps.import.pageSize)
                 logger.info(
-                    "Pipeline Plex done | artistsSeen={} albumsSeen={} tracksSeen={}",
+                    "Pipeline Plex music done | artistsSeen={} albumsSeen={} tracksSeen={}",
                     stats.artistsSeen,
                     stats.albumsSeen,
                     stats.tracksSeen,
                 )
             } else {
-                logger.info("Pipeline Plex skipped | reason=disabled")
+                logger.info("Pipeline Plex music skipped | reason=disabled")
+            }
+
+            if (plexProps.import.moviesEnabled) {
+                val stats = plexMovieImportService.importAllMovies(pageSize = plexProps.import.pageSize)
+                logger.info(
+                    "Pipeline Plex movies done | moviesSeen={} moviesUpserted={}",
+                    stats.moviesSeen,
+                    stats.moviesUpserted,
+                )
+            } else {
+                logger.info("Pipeline Plex movies skipped | reason=disabled")
             }
 
             if (spotifyProps.enabled && spotifyProps.import.enabled) {

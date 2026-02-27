@@ -5,6 +5,7 @@ import dev.marcal.mediapulse.server.integration.plex.dto.PlexAlbum
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexArtist
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexContainer
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
+import dev.marcal.mediapulse.server.integration.plex.dto.PlexMovie
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexTrack
 import dev.marcal.mediapulse.server.model.image.ImageContent
 import kotlinx.coroutines.reactor.awaitSingle
@@ -38,6 +39,18 @@ class PlexApiClient(
                 it.mc.Directory
                     .orEmpty()
                     .filter { s -> s.type == "artist" }
+            }.awaitSingle()
+
+    suspend fun listMovieSections(): List<PlexLibrarySection> =
+        plexWebClient
+            .get()
+            .uri(uri(auth, "/library/sections"))
+            .retrieve()
+            .bodyToMono(object : org.springframework.core.ParameterizedTypeReference<PlexContainer<PlexLibrarySection>>() {})
+            .map {
+                it.mc.Directory
+                    .orEmpty()
+                    .filter { s -> s.type == "movie" }
             }.awaitSingle()
 
     suspend fun listArtistsPaged(
@@ -111,6 +124,33 @@ class PlexApiClient(
                 .uri(uri(auth, path))
                 .retrieve()
                 .toEntity(object : org.springframework.core.ParameterizedTypeReference<PlexContainer<PlexTrack>>() {})
+                .awaitSingle()
+
+        val body = resp.body!!.mc
+        val total =
+            resp.headers
+                .getFirst("X-Plex-Container-Total-Size")
+                ?.toInt()
+                ?: body.totalSize ?: body.size ?: 0
+
+        val items = (body.Directory ?: body.Metadata).orEmpty()
+        return items to total
+    }
+
+    suspend fun listMoviesPaged(
+        sectionKey: String,
+        start: Int,
+        size: Int,
+    ): Pair<List<PlexMovie>, Int> {
+        val path =
+            "/library/sections/$sectionKey/all?type=1&includeGuids=1" +
+                "&X-Plex-Container-Start=$start&X-Plex-Container-Size=$size"
+        val resp =
+            plexWebClient
+                .get()
+                .uri(uri(auth, path))
+                .retrieve()
+                .toEntity(object : org.springframework.core.ParameterizedTypeReference<PlexContainer<PlexMovie>>() {})
                 .awaitSingle()
 
         val body = resp.body!!.mc
