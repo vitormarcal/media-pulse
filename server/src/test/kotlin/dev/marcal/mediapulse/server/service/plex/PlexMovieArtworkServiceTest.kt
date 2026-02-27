@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.service.image.ImageStorageService
+import dev.marcal.mediapulse.server.service.movie.MovieImagePrimaryService
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -20,6 +21,7 @@ class PlexMovieArtworkServiceTest {
     private lateinit var plexApiClient: PlexApiClient
     private lateinit var imageStorageService: ImageStorageService
     private lateinit var movieImageCrudRepository: MovieImageCrudRepository
+    private lateinit var movieImagePrimaryService: MovieImagePrimaryService
     private lateinit var movieRepository: MovieRepository
     private lateinit var service: PlexMovieArtworkService
 
@@ -28,6 +30,7 @@ class PlexMovieArtworkServiceTest {
         plexApiClient = mockk(relaxed = true)
         imageStorageService = mockk(relaxed = true)
         movieImageCrudRepository = mockk(relaxed = true)
+        movieImagePrimaryService = mockk(relaxed = true)
         movieRepository = mockk(relaxed = true)
 
         service =
@@ -35,6 +38,7 @@ class PlexMovieArtworkServiceTest {
                 plexApi = plexApiClient,
                 imageStorageService = imageStorageService,
                 movieImageCrudRepository = movieImageCrudRepository,
+                movieImagePrimaryService = movieImagePrimaryService,
                 movieRepository = movieRepository,
             )
     }
@@ -70,7 +74,7 @@ class PlexMovieArtworkServiceTest {
             service.ensureMovieImagesFromPlex(movie = movie, images = images, fallbackThumbPath = null)
 
             verify(exactly = 2) { movieImageCrudRepository.insertIgnore(movieId = 10, url = any(), isPrimary = false) }
-            verify(exactly = 1) { movieImageCrudRepository.setPrimaryForMovie(10, "/covers/plex/movies/10/poster.jpg") }
+            verify(exactly = 1) { movieImagePrimaryService.setPrimaryForMovie(10, "/covers/plex/movies/10/poster.jpg") }
             verify(exactly = 1) { movieRepository.save(match { it.coverUrl == "/covers/plex/movies/10/poster.jpg" }) }
         }
 
@@ -98,7 +102,7 @@ class PlexMovieArtworkServiceTest {
             )
 
             verify(exactly = 1) { movieImageCrudRepository.insertIgnore(11, "/covers/plex/movies/11/cover.jpg", false) }
-            verify(exactly = 1) { movieImageCrudRepository.setPrimaryForMovie(11, "/covers/plex/movies/11/cover.jpg") }
+            verify(exactly = 1) { movieImagePrimaryService.setPrimaryForMovie(11, "/covers/plex/movies/11/cover.jpg") }
             io.mockk.slot<Movie>().also { slot ->
                 verify(exactly = 1) { movieRepository.save(capture(slot)) }
                 assertEquals("/covers/plex/movies/11/cover.jpg", slot.captured.coverUrl)

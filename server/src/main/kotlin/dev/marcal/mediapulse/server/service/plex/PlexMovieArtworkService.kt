@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.service.image.ImageStorageService
+import dev.marcal.mediapulse.server.service.movie.MovieImagePrimaryService
 import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -14,6 +15,7 @@ class PlexMovieArtworkService(
     private val plexApi: dev.marcal.mediapulse.server.integration.plex.PlexApiClient,
     private val imageStorageService: ImageStorageService,
     private val movieImageCrudRepository: MovieImageCrudRepository,
+    private val movieImagePrimaryService: MovieImagePrimaryService,
     private val movieRepository: MovieRepository,
 ) {
     data class PlexMovieImageCandidate(
@@ -79,7 +81,7 @@ class PlexMovieArtworkService(
 
         val primaryLocalPath = savedBySource[preferredPrimarySource] ?: savedBySource.values.first()
 
-        movieImageCrudRepository.setPrimaryForMovie(movie.id, primaryLocalPath)
+        movieImagePrimaryService.setPrimaryForMovie(movie.id, primaryLocalPath)
 
         if (movie.coverUrl != primaryLocalPath) {
             movieRepository.save(
