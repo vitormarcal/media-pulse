@@ -34,14 +34,27 @@ class PlexMovieWatchService(
         val eventType = requireNotNull(PlexEventType.fromType(payload.event)) { "event type is not supported: ${payload.event}" }
         if (eventType != PlexEventType.SCROBBLE) return null
 
-        val originalTitle = meta.originalTitle?.trim()?.ifBlank { null } ?: meta.title
+        val originalTitle =
+            meta.originalTitle?.trim()?.ifBlank { null }
+                ?: meta.titleSort?.trim()?.ifBlank { null }
+                ?: meta.title
         val localizedTitle = meta.title.trim()
         val description = meta.summary?.trim()?.ifBlank { null }
         val year = meta.year
         val slug = resolveSlug(meta.slug)
 
         val fingerprint = FingerprintUtil.movieFp(originalTitle = originalTitle, year = year)
-        val existing = movieRepository.findByFingerprint(fingerprint)
+        val existing =
+            movieRepository.findByFingerprint(fingerprint)
+                ?: findExistingByKnownTitles(
+                    year = year,
+                    candidates =
+                        listOfNotNull(
+                            meta.originalTitle?.trim()?.ifBlank { null },
+                            meta.titleSort?.trim()?.ifBlank { null },
+                            localizedTitle.ifBlank { null },
+                        ),
+                )
 
         val movie =
             if (existing == null) {
@@ -129,6 +142,24 @@ class PlexMovieWatchService(
     }
 
     private fun resolveSlug(slug: String?): String? = slug?.trim()?.ifBlank { null }
+
+    private fun findExistingByKnownTitles(
+        year: Int?,
+        candidates: List<String>,
+    ): Movie? {
+        val uniqueCandidates =
+            candidates
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .distinctBy { it.lowercase() }
+
+        for (candidate in uniqueCandidates) {
+            val byTitle = movieRepository.findByMovieTitleAndYear(title = candidate, year = year)
+            if (byTitle != null) return byTitle
+        }
+
+        return null
+    }
 
     private fun persistExternalIds(
         movieId: Long,

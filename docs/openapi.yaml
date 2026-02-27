@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.6
+  version: 1.0.0-beta.7
   description: API surface for MediaPulse. This document covers all HTTP endpoints in the server.
 servers:
   - url: http://localhost:8080
