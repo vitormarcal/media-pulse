@@ -28,9 +28,16 @@ interface MovieImageCrudRepository : CrudRepository<MovieImage, Long> {
     @Query(
         nativeQuery = true,
         value = """
+            WITH clear_current AS (
+                UPDATE movie_images
+                SET is_primary = FALSE
+                WHERE movie_id = :movieId
+                  AND is_primary = TRUE
+            )
             UPDATE movie_images
-            SET is_primary = (url = :url)
+            SET is_primary = TRUE
             WHERE movie_id = :movieId
+              AND url = :url
         """,
     )
     fun setPrimaryForMovie(
