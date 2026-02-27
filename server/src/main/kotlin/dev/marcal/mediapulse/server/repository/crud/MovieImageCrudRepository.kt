@@ -28,16 +28,21 @@ interface MovieImageCrudRepository : CrudRepository<MovieImage, Long> {
     @Query(
         nativeQuery = true,
         value = """
-            WITH clear_current AS (
+            WITH lock_movie AS (
+                SELECT pg_advisory_xact_lock(CAST(:movieId AS BIGINT))
+            ),
+            clear_current AS (
                 UPDATE movie_images
                 SET is_primary = FALSE
                 WHERE movie_id = :movieId
                   AND is_primary = TRUE
+                  AND EXISTS (SELECT 1 FROM lock_movie)
             )
             UPDATE movie_images
             SET is_primary = TRUE
             WHERE movie_id = :movieId
               AND url = :url
+              AND EXISTS (SELECT 1 FROM lock_movie)
         """,
     )
     fun setPrimaryForMovie(
