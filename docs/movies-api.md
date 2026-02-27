@@ -27,6 +27,7 @@ A Movies API fornece uma visão read-only dos filmes assistidos e do histórico 
   "movieId": 42,
   "title": "De Olhos Bem Fechados",
   "originalTitle": "Eyes Wide Shut",
+  "slug": "eyes-wide-shut",
   "year": 1999,
   "coverUrl": "/covers/plex/movies/42/poster.jpg",
   "watchedAt": "2026-02-27T19:40:19Z"
@@ -40,6 +41,7 @@ A Movies API fornece uma visão read-only dos filmes assistidos e do histórico 
   "movieId": 42,
   "title": "De Olhos Bem Fechados",
   "originalTitle": "Eyes Wide Shut",
+  "slug": "eyes-wide-shut",
   "year": 1999,
   "description": "desc",
   "coverUrl": "/covers/plex/movies/42/poster.jpg",
@@ -79,6 +81,7 @@ A Movies API fornece uma visão read-only dos filmes assistidos e do histórico 
       "movieId": 42,
       "title": "De Olhos Bem Fechados",
       "originalTitle": "Eyes Wide Shut",
+      "slug": "eyes-wide-shut",
       "year": 1999,
       "coverUrl": "/covers/plex/movies/42/poster.jpg",
       "watchedAt": "2026-02-27T19:40:19Z"

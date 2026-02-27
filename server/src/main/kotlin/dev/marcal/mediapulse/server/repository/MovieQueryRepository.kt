@@ -33,12 +33,13 @@ class MovieQueryRepository(
                     LIMIT 1
                   ), m.original_title) AS title,
                   m.original_title,
+                  m.slug,
                   m.year,
                   m.cover_url,
                   MAX(mw.watched_at) AS watched_at
                 FROM movies m
                 JOIN movie_watches mw ON mw.movie_id = m.id
-                GROUP BY m.id, m.original_title, m.year, m.cover_url
+                GROUP BY m.id, m.original_title, m.slug, m.year, m.cover_url
                 ORDER BY MAX(mw.watched_at) DESC
                 LIMIT :n
                 """.trimIndent(),
@@ -50,9 +51,10 @@ class MovieQueryRepository(
                     movieId = (fields[0] as Number).toLong(),
                     title = fields[1] as String,
                     originalTitle = fields[2] as String,
-                    year = (fields[3] as Number?)?.toInt(),
-                    coverUrl = fields[4] as String?,
-                    watchedAt = asInstant(fields[5]),
+                    slug = fields[3] as String?,
+                    year = (fields[4] as Number?)?.toInt(),
+                    coverUrl = fields[5] as String?,
+                    watchedAt = asInstant(fields[6]),
                 )
             }
 
@@ -71,6 +73,7 @@ class MovieQueryRepository(
                         LIMIT 1
                       ), m.original_title) AS title,
                       m.original_title,
+                      m.slug,
                       m.year,
                       m.description,
                       m.cover_url
@@ -147,9 +150,10 @@ class MovieQueryRepository(
             movieId = (base[0] as Number).toLong(),
             title = base[1] as String,
             originalTitle = base[2] as String,
-            year = (base[3] as Number?)?.toInt(),
-            description = base[4] as String?,
-            coverUrl = base[5] as String?,
+            slug = base[3] as String?,
+            year = (base[4] as Number?)?.toInt(),
+            description = base[5] as String?,
+            coverUrl = base[6] as String?,
             images = images,
             watches = watches,
             externalIds = externalIds,
@@ -196,6 +200,7 @@ class MovieQueryRepository(
                         LIMIT 1
                       ), m.original_title) AS title,
                       m.original_title,
+                      m.slug,
                       m.year,
                       m.cover_url,
                       (
@@ -222,9 +227,10 @@ class MovieQueryRepository(
                     movieId = (fields[0] as Number).toLong(),
                     title = fields[1] as String,
                     originalTitle = fields[2] as String,
-                    year = (fields[3] as Number?)?.toInt(),
-                    coverUrl = fields[4] as String?,
-                    watchedAt = asInstant(fields[5]),
+                    slug = fields[3] as String?,
+                    year = (fields[4] as Number?)?.toInt(),
+                    coverUrl = fields[5] as String?,
+                    watchedAt = asInstant(fields[6]),
                 )
             }
 

@@ -1619,6 +1619,9 @@ components:
           type: string
         originalTitle:
           type: string
+        slug:
+          type: string
+          nullable: true
         year:
           type: integer
           nullable: true
@@ -1671,6 +1674,9 @@ components:
           type: string
         originalTitle:
           type: string
+        slug:
+          type: string
+          nullable: true
         year:
           type: integer
           nullable: true

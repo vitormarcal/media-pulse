@@ -40,6 +40,7 @@ class MovieQueryRepositoryTest {
                     10L,
                     "De Olhos Bem Fechados",
                     "Eyes Wide Shut",
+                    "eyes-wide-shut",
                     1999,
                     "/covers/plex/movies/10/poster.jpg",
                     Timestamp.from(Instant.parse("2026-02-26T10:00:00Z")),
@@ -52,6 +53,7 @@ class MovieQueryRepositoryTest {
         assertEquals(10L, result[0].movieId)
         assertEquals("De Olhos Bem Fechados", result[0].title)
         assertEquals("Eyes Wide Shut", result[0].originalTitle)
+        assertEquals("eyes-wide-shut", result[0].slug)
         assertEquals(1999, result[0].year)
         assertEquals("/covers/plex/movies/10/poster.jpg", result[0].coverUrl)
         verify { query.setParameter("n", 5) }
@@ -100,6 +102,7 @@ class MovieQueryRepositoryTest {
                         10L,
                         "De Olhos Bem Fechados",
                         "Eyes Wide Shut",
+                        "eyes-wide-shut",
                         1999,
                         "desc",
                         "/covers/plex/movies/10/poster.jpg",
