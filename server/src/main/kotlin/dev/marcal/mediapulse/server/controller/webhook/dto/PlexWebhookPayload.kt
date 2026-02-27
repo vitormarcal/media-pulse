@@ -12,6 +12,7 @@ data class PlexWebhookPayload(
         val librarySectionType: String? = null,
         val ratingKey: String? = null,
         val key: String? = null,
+        val slug: String? = null,
         val type: String, // "track", "episode" etc. (obrigatório p/ sua lógica)
         val title: String, // título da faixa (obrigatório p/ sua lógica)
         val originalTitle: String? = null,

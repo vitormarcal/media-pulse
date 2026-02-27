@@ -70,7 +70,7 @@ class PlexMovieImportService(
                             originalTitle = m.originalTitle,
                             year = m.year,
                             summary = m.summary,
-                            slug = resolveSlug(m.ratingKey, m.key),
+                            slug = resolveSlug(m.slug),
                             guids = m.guids.orEmpty(),
                         )
                     plexMovieArtworkService.ensureMovieImagesFromPlex(
@@ -185,17 +185,7 @@ class PlexMovieImportService(
         }
     }
 
-    private fun resolveSlug(
-        ratingKey: String?,
-        key: String?,
-    ): String? {
-        val normalizedRatingKey = ratingKey?.trim()?.ifBlank { null }
-        if (normalizedRatingKey != null) return normalizedRatingKey
-
-        val normalizedKey = key?.trim()?.ifBlank { null } ?: return null
-        val extracted = normalizedKey.substringAfterLast("/").trim()
-        return extracted.ifBlank { normalizedKey }
-    }
+    private fun resolveSlug(slug: String?): String? = slug?.trim()?.ifBlank { null }
 
     private fun persistExternalIds(
         movieId: Long,

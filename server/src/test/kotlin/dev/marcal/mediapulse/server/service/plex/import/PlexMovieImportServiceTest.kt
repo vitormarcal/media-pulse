@@ -58,6 +58,7 @@ class PlexMovieImportServiceTest {
             val movie =
                 PlexMovie(
                     ratingKey = "3828",
+                    slug = "eyes-wide-shut",
                     title = "De Olhos Bem Fechados",
                     originalTitle = "Eyes Wide Shut",
                     year = 1999,
@@ -96,7 +97,7 @@ class PlexMovieImportServiceTest {
             coVerify(exactly = 1) { plexApiClient.listMovieSections() }
             coVerify(exactly = 1) { plexApiClient.listMoviesPaged("1", 0, 200) }
             coVerify(exactly = 1) { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) }
-            verify(exactly = 1) { movieRepository.save(match { it.slug == "3828" }) }
+            verify(exactly = 1) { movieRepository.save(match { it.slug == "eyes-wide-shut" }) }
             verify(exactly = 2) {
                 externalIdentifierRepository.save(
                     match {
@@ -114,6 +115,7 @@ class PlexMovieImportServiceTest {
             val movie =
                 PlexMovie(
                     ratingKey = "3828",
+                    slug = "eyes-wide-shut",
                     title = "De Olhos Bem Fechados",
                     originalTitle = "Eyes Wide Shut",
                     year = 1999,
@@ -136,7 +138,7 @@ class PlexMovieImportServiceTest {
             assertEquals(1, stats.moviesSeen)
             assertEquals(1, stats.moviesUpserted)
             coVerify(exactly = 1) { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) }
-            verify(exactly = 1) { movieRepository.save(match { it.description == "updated" && it.slug == "3828" }) }
+            verify(exactly = 1) { movieRepository.save(match { it.description == "updated" && it.slug == "eyes-wide-shut" }) }
             verify(exactly = 0) { externalIdentifierRepository.save(any()) }
         }
 }

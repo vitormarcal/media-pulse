@@ -142,7 +142,7 @@ curl "{{host}}/api/movies/42"
 ### Detalhes por slug
 
 ```bash
-curl "{{host}}/api/movies/slug/3828"
+curl "{{host}}/api/movies/slug/eyes-wide-shut"
 ```
 
 ### Busca

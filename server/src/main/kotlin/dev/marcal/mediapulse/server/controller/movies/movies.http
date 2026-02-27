@@ -13,7 +13,7 @@ GET {{baseUrl}}/{{movieId}}
 Accept: application/json
 
 ### Detalhes do filme por slug
-GET {{baseUrl}}/slug/3828
+GET {{baseUrl}}/slug/eyes-wide-shut
 Accept: application/json
 
 ### Busca de filmes

@@ -38,7 +38,7 @@ class PlexMovieWatchService(
         val localizedTitle = meta.title.trim()
         val description = meta.summary?.trim()?.ifBlank { null }
         val year = meta.year
-        val slug = resolveSlug(meta.ratingKey, meta.key)
+        val slug = resolveSlug(meta.slug)
 
         val fingerprint = FingerprintUtil.movieFp(originalTitle = originalTitle, year = year)
         val existing = movieRepository.findByFingerprint(fingerprint)
@@ -128,17 +128,7 @@ class PlexMovieWatchService(
         }
     }
 
-    private fun resolveSlug(
-        ratingKey: String?,
-        key: String?,
-    ): String? {
-        val normalizedRatingKey = ratingKey?.trim()?.ifBlank { null }
-        if (normalizedRatingKey != null) return normalizedRatingKey
-
-        val normalizedKey = key?.trim()?.ifBlank { null } ?: return null
-        val extracted = normalizedKey.substringAfterLast("/").trim()
-        return extracted.ifBlank { normalizedKey }
-    }
+    private fun resolveSlug(slug: String?): String? = slug?.trim()?.ifBlank { null }
 
     private fun persistExternalIds(
         movieId: Long,
