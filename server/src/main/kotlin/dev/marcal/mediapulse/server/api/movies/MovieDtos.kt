@@ -66,6 +66,26 @@ data class MoviesByYearStatsDto(
     val rewatchesCount: Long,
 )
 
+data class MoviesStatsResponse(
+    val total: MoviesTotalStatsDto,
+    val unwatchedCount: Long,
+    val years: List<MoviesYearStatsDto>,
+    val latestWatchAt: Instant?,
+    val firstWatchAt: Instant?,
+)
+
+data class MoviesTotalStatsDto(
+    val watchesCount: Long,
+    val uniqueMoviesCount: Long,
+)
+
+data class MoviesYearStatsDto(
+    val year: Int,
+    val watchesCount: Long,
+    val uniqueMoviesCount: Long,
+    val rewatchesCount: Long,
+)
+
 data class MovieYearWatchedDto(
     val movieId: Long,
     val slug: String?,

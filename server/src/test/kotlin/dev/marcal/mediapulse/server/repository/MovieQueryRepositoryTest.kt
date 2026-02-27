@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test
 import java.sql.Timestamp
 import java.time.Instant
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class MovieQueryRepositoryTest {
@@ -181,5 +182,68 @@ class MovieQueryRepositoryTest {
         assertEquals(0L, response.stats.rewatchesCount)
         assertTrue(response.watched.isEmpty())
         assertTrue(response.unwatched.isEmpty())
+    }
+
+    @Test
+    fun `stats should aggregate totals years and unwatched`() {
+        var singleCall = 0
+        every { query.singleResult } answers {
+            singleCall++
+            when (singleCall) {
+                1 -> arrayOf(120L, 85L)
+                2 -> 240L
+                else ->
+                    arrayOf(
+                        Timestamp.from(Instant.parse("2026-02-27T19:40:19Z")),
+                        Timestamp.from(Instant.parse("2024-01-10T11:00:00Z")),
+                    )
+            }
+        }
+        every { query.resultList } returns
+            listOf(
+                arrayOf(2026, 42L, 30L),
+                arrayOf(2025, 18L, 16L),
+            )
+
+        val response = repository.stats()
+
+        assertEquals(120L, response.total.watchesCount)
+        assertEquals(85L, response.total.uniqueMoviesCount)
+        assertEquals(240L, response.unwatchedCount)
+        assertEquals(2, response.years.size)
+        assertEquals(2026, response.years[0].year)
+        assertEquals(12L, response.years[0].rewatchesCount)
+        assertEquals(2025, response.years[1].year)
+        assertEquals(2L, response.years[1].rewatchesCount)
+        assertEquals(Instant.parse("2026-02-27T19:40:19Z"), response.latestWatchAt)
+        assertEquals(Instant.parse("2024-01-10T11:00:00Z"), response.firstWatchAt)
+        assertTrue(sqls.any { it.contains("COUNT(DISTINCT mw.movie_id)") })
+        assertTrue(sqls.any { it.contains("WHERE NOT EXISTS") })
+        assertTrue(sqls.any { it.contains("EXTRACT(YEAR FROM (mw.watched_at AT TIME ZONE 'UTC'))") })
+        assertTrue(sqls.any { it.contains("ORDER BY year DESC") })
+        assertTrue(sqls.any { it.contains("MAX(mw.watched_at), MIN(mw.watched_at)") })
+    }
+
+    @Test
+    fun `stats without watches should return empty years and null bounds`() {
+        var singleCall = 0
+        every { query.singleResult } answers {
+            singleCall++
+            when (singleCall) {
+                1 -> arrayOf(0L, 0L)
+                2 -> 10L
+                else -> arrayOf<Any?>(null, null)
+            }
+        }
+        every { query.resultList } returns emptyList<Any>()
+
+        val response = repository.stats()
+
+        assertEquals(0L, response.total.watchesCount)
+        assertEquals(0L, response.total.uniqueMoviesCount)
+        assertEquals(10L, response.unwatchedCount)
+        assertTrue(response.years.isEmpty())
+        assertNull(response.latestWatchAt)
+        assertNull(response.firstWatchAt)
     }
 }

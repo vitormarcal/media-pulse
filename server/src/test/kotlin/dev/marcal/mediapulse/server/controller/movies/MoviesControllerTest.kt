@@ -6,7 +6,10 @@ import dev.marcal.mediapulse.server.api.movies.MovieYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.movies.MovieYearWatchedDto
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearStatsDto
+import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
+import dev.marcal.mediapulse.server.api.movies.MoviesTotalStatsDto
+import dev.marcal.mediapulse.server.api.movies.MoviesYearStatsDto
 import dev.marcal.mediapulse.server.api.movies.RangeDto
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import io.mockk.every
@@ -155,5 +158,28 @@ class MoviesControllerTest {
         assertFailsWith<ResponseStatusException> {
             controller.byYear(year = 2026, limitWatched = 200, limitUnwatched = 0)
         }
+    }
+
+    @Test
+    fun `stats should delegate to repository`() {
+        val expected =
+            MoviesStatsResponse(
+                total = MoviesTotalStatsDto(watchesCount = 120, uniqueMoviesCount = 85),
+                unwatchedCount = 240,
+                years =
+                    listOf(
+                        MoviesYearStatsDto(year = 2026, watchesCount = 42, uniqueMoviesCount = 30, rewatchesCount = 12),
+                        MoviesYearStatsDto(year = 2025, watchesCount = 18, uniqueMoviesCount = 16, rewatchesCount = 2),
+                    ),
+                latestWatchAt = Instant.parse("2026-02-27T19:40:19Z"),
+                firstWatchAt = Instant.parse("2024-01-10T11:00:00Z"),
+            )
+        every { repository.stats() } returns expected
+
+        val response = controller.stats()
+
+        assertEquals(240, response.unwatchedCount)
+        assertEquals(2, response.years.size)
+        verify(exactly = 1) { repository.stats() }
     }
 }

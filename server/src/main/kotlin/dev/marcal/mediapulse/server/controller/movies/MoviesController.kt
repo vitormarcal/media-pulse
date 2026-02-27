@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieCardDto
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSearchResponse
+import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import org.springframework.http.HttpStatus
@@ -54,6 +55,9 @@ class MoviesController(
         val (resolvedStart, resolvedEnd) = resolveRange(range, start, end)
         return repository.summary(resolvedStart, resolvedEnd)
     }
+
+    @GetMapping("/stats")
+    fun stats(): MoviesStatsResponse = repository.stats()
 
     @GetMapping("/year/{year}")
     fun byYear(

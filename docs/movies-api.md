@@ -18,6 +18,7 @@ A Movies API fornece uma visão read-only dos filmes assistidos e do histórico 
 | `GET /api/movies/search` | `q` (busca em `originalTitle`, `movie_titles.title` e `slug`), `limit=10` | `MoviesSearchResponse` |
 | `GET /api/movies/summary` | `range=month\|year\|custom`, `start?`, `end?` | `MoviesSummaryResponse` |
 | `GET /api/movies/year/{year}` | `year` (path), `limitWatched=200` (máx. `1000`), `limitUnwatched=200` (máx. `1000`) | `MoviesByYearResponse` |
+| `GET /api/movies/stats` | - | `MoviesStatsResponse` |
 
 ## Contratos
 
@@ -144,6 +145,34 @@ A Movies API fornece uma visão read-only dos filmes assistidos e do histórico 
 }
 ```
 
+### MoviesStatsResponse
+
+```json
+{
+  "total": {
+    "watchesCount": 120,
+    "uniqueMoviesCount": 85
+  },
+  "unwatchedCount": 240,
+  "years": [
+    {
+      "year": 2026,
+      "watchesCount": 42,
+      "uniqueMoviesCount": 30,
+      "rewatchesCount": 12
+    },
+    {
+      "year": 2025,
+      "watchesCount": 18,
+      "uniqueMoviesCount": 16,
+      "rewatchesCount": 2
+    }
+  ],
+  "latestWatchAt": "2026-02-27T19:40:19Z",
+  "firstWatchAt": "2024-01-10T11:00:00Z"
+}
+```
+
 ## Regras de range (`/summary`)
 
 - `range=month`: últimos 30 dias a partir de `now`.
@@ -216,4 +245,10 @@ curl "{{host}}/api/movies/summary?range=custom&start=2026-01-01T00:00:00Z&end=20
 
 ```bash
 curl "{{host}}/api/movies/year/2026?limitWatched=200&limitUnwatched=200"
+```
+
+### Stats globais
+
+```bash
+curl "{{host}}/api/movies/stats"
 ```

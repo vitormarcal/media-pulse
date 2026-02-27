@@ -10,7 +10,10 @@ import dev.marcal.mediapulse.server.api.movies.MovieYearWatchedDto
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearStatsDto
 import dev.marcal.mediapulse.server.api.movies.MoviesSearchResponse
+import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
+import dev.marcal.mediapulse.server.api.movies.MoviesTotalStatsDto
+import dev.marcal.mediapulse.server.api.movies.MoviesYearStatsDto
 import dev.marcal.mediapulse.server.api.movies.RangeDto
 import jakarta.persistence.EntityManager
 import org.springframework.http.HttpStatus
@@ -401,6 +404,81 @@ class MovieQueryRepository(
                 ),
             watched = watched,
             unwatched = unwatched,
+        )
+    }
+
+    fun stats(): MoviesStatsResponse {
+        val totalRow =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      COUNT(*) AS watches_count,
+                      COUNT(DISTINCT mw.movie_id) AS unique_movies_count
+                    FROM movie_watches mw
+                    """.trimIndent(),
+                ).singleResult as Array<*>
+
+        val unwatchedCount =
+            (
+                entityManager
+                    .createNativeQuery(
+                        """
+                        SELECT COUNT(*)
+                        FROM movies m
+                        WHERE NOT EXISTS (
+                          SELECT 1
+                          FROM movie_watches mw
+                          WHERE mw.movie_id = m.id
+                        )
+                        """.trimIndent(),
+                    ).singleResult as Number
+            ).toLong()
+
+        val years =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      EXTRACT(YEAR FROM (mw.watched_at AT TIME ZONE 'UTC')) AS year,
+                      COUNT(*) AS watches_count,
+                      COUNT(DISTINCT mw.movie_id) AS unique_movies_count
+                    FROM movie_watches mw
+                    GROUP BY EXTRACT(YEAR FROM (mw.watched_at AT TIME ZONE 'UTC'))
+                    ORDER BY year DESC
+                    """.trimIndent(),
+                ).resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    val watchesCount = (fields[1] as Number).toLong()
+                    val uniqueMoviesCount = (fields[2] as Number).toLong()
+                    MoviesYearStatsDto(
+                        year = (fields[0] as Number).toInt(),
+                        watchesCount = watchesCount,
+                        uniqueMoviesCount = uniqueMoviesCount,
+                        rewatchesCount = watchesCount - uniqueMoviesCount,
+                    )
+                }
+
+        val boundsRow =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT MAX(mw.watched_at), MIN(mw.watched_at)
+                    FROM movie_watches mw
+                    """.trimIndent(),
+                ).singleResult as Array<*>
+
+        return MoviesStatsResponse(
+            total =
+                MoviesTotalStatsDto(
+                    watchesCount = (totalRow[0] as Number).toLong(),
+                    uniqueMoviesCount = (totalRow[1] as Number).toLong(),
+                ),
+            unwatchedCount = unwatchedCount,
+            years = years,
+            latestWatchAt = asInstant(boundsRow[0]),
+            firstWatchAt = asInstant(boundsRow[1]),
         )
     }
 
