@@ -1,0 +1,29 @@
+### Variables
+@baseUrl = {{host}}/api/movies
+@movieId = 1
+@start = 2026-01-01T00:00:00Z
+@end = 2026-12-31T23:59:59Z
+
+### Filmes recentes
+GET {{baseUrl}}/recent?limit=20
+Accept: application/json
+
+### Detalhes do filme
+GET {{baseUrl}}/{{movieId}}
+Accept: application/json
+
+### Busca de filmes
+GET {{baseUrl}}/search?q=matrix&limit=10
+Accept: application/json
+
+### Resumo mensal
+GET {{baseUrl}}/summary?range=month
+Accept: application/json
+
+### Resumo anual
+GET {{baseUrl}}/summary?range=year
+Accept: application/json
+
+### Resumo personalizado
+GET {{baseUrl}}/summary?range=custom&start={{start}}&end={{end}}
+Accept: application/json
