@@ -117,4 +117,69 @@ class MovieQueryRepositoryTest {
         assertEquals(10L, response.movieId)
         verify(exactly = 1) { query.setParameter("slug", "3828") }
     }
+
+    @Test
+    fun `by year should map stats watched and unwatched`() {
+        every { query.singleResult } returns arrayOf(8L, 3L)
+        every { query.resultList } returnsMany
+            listOf(
+                listOf(
+                    arrayOf(
+                        10L,
+                        "eyes-wide-shut",
+                        "De Olhos Bem Fechados",
+                        "Eyes Wide Shut",
+                        1999,
+                        "/covers/plex/movies/10/poster.jpg",
+                        2L,
+                        Timestamp.from(Instant.parse("2026-01-10T21:00:00Z")),
+                        Timestamp.from(Instant.parse("2026-02-27T19:40:19Z")),
+                    ),
+                ),
+                listOf(
+                    arrayOf(
+                        9L,
+                        "movie-x",
+                        "Movie X",
+                        "Movie X",
+                        2001,
+                        "/covers/plex/movies/9/poster.jpg",
+                    ),
+                ),
+            )
+
+        val start = Instant.parse("2026-01-01T00:00:00Z")
+        val end = Instant.parse("2026-12-31T23:59:59Z")
+        val response = repository.byYear(year = 2026, start = start, end = end, limitWatched = 200, limitUnwatched = 120)
+
+        assertEquals(2026, response.year)
+        assertEquals(8L, response.stats.watchesCount)
+        assertEquals(3L, response.stats.uniqueMoviesCount)
+        assertEquals(5L, response.stats.rewatchesCount)
+        assertEquals(1, response.watched.size)
+        assertEquals(2L, response.watched.first().watchCountInYear)
+        assertEquals(1, response.unwatched.size)
+        assertEquals(9L, response.unwatched.first().movieId)
+        assertTrue(sqls.any { it.contains("COUNT(DISTINCT mw.movie_id)") })
+        assertTrue(sqls.any { it.contains("ORDER BY MAX(mw.watched_at) DESC, title ASC") })
+        assertTrue(sqls.any { it.contains("WHERE NOT EXISTS") })
+        verify(exactly = 1) { query.setParameter("limitWatched", 200) }
+        verify(exactly = 1) { query.setParameter("limitUnwatched", 120) }
+    }
+
+    @Test
+    fun `by year without data should return empty lists and zero rewatches`() {
+        every { query.singleResult } returns arrayOf(0L, 0L)
+        every { query.resultList } returnsMany listOf(emptyList<Any>(), emptyList<Any>())
+
+        val start = Instant.parse("2025-01-01T00:00:00Z")
+        val end = Instant.parse("2025-12-31T23:59:59Z")
+        val response = repository.byYear(year = 2025, start = start, end = end, limitWatched = 10, limitUnwatched = 10)
+
+        assertEquals(0L, response.stats.watchesCount)
+        assertEquals(0L, response.stats.uniqueMoviesCount)
+        assertEquals(0L, response.stats.rewatchesCount)
+        assertTrue(response.watched.isEmpty())
+        assertTrue(response.unwatched.isEmpty())
+    }
 }

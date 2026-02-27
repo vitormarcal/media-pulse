@@ -21,6 +21,7 @@ Media Pulse centraliza dados pessoais de consumo (music, books e movies) com ing
 - `GET /api/movies/slug/{slug}`
 - `GET /api/movies/search` (busca por título e slug)
 - `GET /api/movies/summary`
+- `GET /api/movies/year/{year}` (stats anuais, filmes assistidos no ano e filmes nunca assistidos)
 
 ## Docs
 

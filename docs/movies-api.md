@@ -17,6 +17,7 @@ A Movies API fornece uma visão read-only dos filmes assistidos e do histórico 
 | `GET /api/movies/slug/{slug}` | `slug` (path) | `MovieDetailsResponse` |
 | `GET /api/movies/search` | `q` (busca em `originalTitle`, `movie_titles.title` e `slug`), `limit=10` | `MoviesSearchResponse` |
 | `GET /api/movies/summary` | `range=month\|year\|custom`, `start?`, `end?` | `MoviesSummaryResponse` |
+| `GET /api/movies/year/{year}` | `year` (path), `limitWatched=200` (máx. `1000`), `limitUnwatched=200` (máx. `1000`) | `MoviesByYearResponse` |
 
 ## Contratos
 
@@ -103,6 +104,46 @@ A Movies API fornece uma visão read-only dos filmes assistidos e do histórico 
 }
 ```
 
+### MoviesByYearResponse
+
+```json
+{
+  "year": 2026,
+  "range": {
+    "start": "2026-01-01T00:00:00Z",
+    "end": "2026-12-31T23:59:59Z"
+  },
+  "stats": {
+    "watchesCount": 42,
+    "uniqueMoviesCount": 30,
+    "rewatchesCount": 12
+  },
+  "watched": [
+    {
+      "movieId": 1,
+      "slug": "eyes-wide-shut",
+      "title": "Eyes Wide Shut",
+      "originalTitle": "Eyes Wide Shut",
+      "year": 1999,
+      "coverUrl": "/covers/plex/movies/1/poster.jpg",
+      "watchCountInYear": 2,
+      "firstWatchedAt": "2026-01-10T21:00:00Z",
+      "lastWatchedAt": "2026-02-27T19:40:19Z"
+    }
+  ],
+  "unwatched": [
+    {
+      "movieId": 9,
+      "slug": "movie-x",
+      "title": "Movie X",
+      "originalTitle": "Movie X",
+      "year": 2001,
+      "coverUrl": "/covers/plex/movies/9/poster.jpg"
+    }
+  ]
+}
+```
+
 ## Regras de range (`/summary`)
 
 - `range=month`: últimos 30 dias a partir de `now`.
@@ -114,6 +155,9 @@ A Movies API fornece uma visão read-only dos filmes assistidos e do histórico 
 - `watchesCount`: conta todas as linhas em `movie_watches` no range.
 - `uniqueMoviesCount`: conta `DISTINCT movie_id` no range.
 - Se o mesmo filme for assistido 2 vezes em horários diferentes, conta como 2 em `watchesCount` e 1 em `uniqueMoviesCount`.
+- Em `GET /api/movies/year/{year}`, `rewatchesCount = watchesCount - uniqueMoviesCount`.
+- `watched` inclui filmes com pelo menos 1 watch no range do ano solicitado.
+- `unwatched` inclui apenas filmes sem qualquer linha em `movie_watches` (nunca assistidos).
 
 ## Deduplicação de watches
 
@@ -127,6 +171,8 @@ A deduplicação ocorre por `(source, movie_id, watched_at)`.
 - `GET /api/movies/{movieId}` retorna `404` se filme não existir.
 - `GET /api/movies/slug/{slug}` retorna `404` se filme não existir.
 - `GET /api/movies/summary` com `range=custom` sem `start`/`end`, ou com `range` inválido, lança `IllegalArgumentException` (`"range inválido"`).
+- `GET /api/movies/year/{year}` retorna `400` se `year < 1900` ou `year > ano atual + 1`.
+- `GET /api/movies/year/{year}` retorna `400` se `limitWatched < 1` ou `limitUnwatched < 1`.
 
 ## Exemplos de uso
 
@@ -164,4 +210,10 @@ curl "{{host}}/api/movies/summary?range=month"
 
 ```bash
 curl "{{host}}/api/movies/summary?range=custom&start=2026-01-01T00:00:00Z&end=2026-12-31T23:59:59Z"
+```
+
+### Movies por ano
+
+```bash
+curl "{{host}}/api/movies/year/2026?limitWatched=200&limitUnwatched=200"
 ```

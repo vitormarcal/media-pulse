@@ -5,6 +5,10 @@ import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieExternalIdDto
 import dev.marcal.mediapulse.server.api.movies.MovieImageDto
 import dev.marcal.mediapulse.server.api.movies.MovieWatchDto
+import dev.marcal.mediapulse.server.api.movies.MovieYearUnwatchedDto
+import dev.marcal.mediapulse.server.api.movies.MovieYearWatchedDto
+import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
+import dev.marcal.mediapulse.server.api.movies.MoviesByYearStatsDto
 import dev.marcal.mediapulse.server.api.movies.MoviesSearchResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
 import dev.marcal.mediapulse.server.api.movies.RangeDto
@@ -273,6 +277,130 @@ class MovieQueryRepository(
             range = RangeDto(start = start, end = end),
             watchesCount = watchesCount,
             uniqueMoviesCount = uniqueMoviesCount,
+        )
+    }
+
+    fun byYear(
+        year: Int,
+        start: Instant,
+        end: Instant,
+        limitWatched: Int,
+        limitUnwatched: Int,
+    ): MoviesByYearResponse {
+        val statsRow =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      COUNT(*) AS watches_count,
+                      COUNT(DISTINCT mw.movie_id) AS unique_movies_count
+                    FROM movie_watches mw
+                    WHERE mw.watched_at BETWEEN :s AND :e
+                    """.trimIndent(),
+                ).setParameter("s", start)
+                .setParameter("e", end)
+                .singleResult as Array<*>
+
+        val watchesCount = (statsRow[0] as Number).toLong()
+        val uniqueMoviesCount = (statsRow[1] as Number).toLong()
+
+        val watched =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      m.id,
+                      m.slug,
+                      COALESCE((
+                        SELECT mt.title
+                        FROM movie_titles mt
+                        WHERE mt.movie_id = m.id
+                        ORDER BY mt.is_primary ASC, mt.id ASC
+                        LIMIT 1
+                      ), m.original_title) AS title,
+                      m.original_title,
+                      m.year,
+                      m.cover_url,
+                      COUNT(*) AS watch_count_in_year,
+                      MIN(mw.watched_at) AS first_watched_at,
+                      MAX(mw.watched_at) AS last_watched_at
+                    FROM movies m
+                    JOIN movie_watches mw ON mw.movie_id = m.id
+                    WHERE mw.watched_at BETWEEN :s AND :e
+                    GROUP BY m.id, m.slug, m.original_title, m.year, m.cover_url
+                    ORDER BY MAX(mw.watched_at) DESC, title ASC
+                    LIMIT :limitWatched
+                    """.trimIndent(),
+                ).setParameter("s", start)
+                .setParameter("e", end)
+                .setParameter("limitWatched", limitWatched)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    MovieYearWatchedDto(
+                        movieId = (fields[0] as Number).toLong(),
+                        slug = fields[1] as String?,
+                        title = fields[2] as String,
+                        originalTitle = fields[3] as String,
+                        year = (fields[4] as Number?)?.toInt(),
+                        coverUrl = fields[5] as String?,
+                        watchCountInYear = (fields[6] as Number).toLong(),
+                        firstWatchedAt = asInstant(fields[7])!!,
+                        lastWatchedAt = asInstant(fields[8])!!,
+                    )
+                }
+
+        val unwatched =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      m.id,
+                      m.slug,
+                      COALESCE((
+                        SELECT mt.title
+                        FROM movie_titles mt
+                        WHERE mt.movie_id = m.id
+                        ORDER BY mt.is_primary ASC, mt.id ASC
+                        LIMIT 1
+                      ), m.original_title) AS title,
+                      m.original_title,
+                      m.year,
+                      m.cover_url
+                    FROM movies m
+                    WHERE NOT EXISTS (
+                      SELECT 1
+                      FROM movie_watches mw
+                      WHERE mw.movie_id = m.id
+                    )
+                    ORDER BY title ASC
+                    LIMIT :limitUnwatched
+                    """.trimIndent(),
+                ).setParameter("limitUnwatched", limitUnwatched)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    MovieYearUnwatchedDto(
+                        movieId = (fields[0] as Number).toLong(),
+                        slug = fields[1] as String?,
+                        title = fields[2] as String,
+                        originalTitle = fields[3] as String,
+                        year = (fields[4] as Number?)?.toInt(),
+                        coverUrl = fields[5] as String?,
+                    )
+                }
+
+        return MoviesByYearResponse(
+            year = year,
+            range = RangeDto(start = start, end = end),
+            stats =
+                MoviesByYearStatsDto(
+                    watchesCount = watchesCount,
+                    uniqueMoviesCount = uniqueMoviesCount,
+                    rewatchesCount = watchesCount - uniqueMoviesCount,
+                ),
+            watched = watched,
+            unwatched = unwatched,
         )
     }
 

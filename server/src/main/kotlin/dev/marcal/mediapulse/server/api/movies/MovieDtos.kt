@@ -52,6 +52,41 @@ data class MoviesSummaryResponse(
     val uniqueMoviesCount: Long,
 )
 
+data class MoviesByYearResponse(
+    val year: Int,
+    val range: RangeDto,
+    val stats: MoviesByYearStatsDto,
+    val watched: List<MovieYearWatchedDto>,
+    val unwatched: List<MovieYearUnwatchedDto>,
+)
+
+data class MoviesByYearStatsDto(
+    val watchesCount: Long,
+    val uniqueMoviesCount: Long,
+    val rewatchesCount: Long,
+)
+
+data class MovieYearWatchedDto(
+    val movieId: Long,
+    val slug: String?,
+    val title: String,
+    val originalTitle: String,
+    val year: Int?,
+    val coverUrl: String?,
+    val watchCountInYear: Long,
+    val firstWatchedAt: Instant,
+    val lastWatchedAt: Instant,
+)
+
+data class MovieYearUnwatchedDto(
+    val movieId: Long,
+    val slug: String?,
+    val title: String,
+    val originalTitle: String,
+    val year: Int?,
+    val coverUrl: String?,
+)
+
 data class RangeDto(
     val start: Instant,
     val end: Instant,

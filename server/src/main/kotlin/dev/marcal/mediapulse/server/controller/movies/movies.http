@@ -1,6 +1,7 @@
 ### Variables
 @baseUrl = {{host}}/api/movies
 @movieId = 1
+@year = 2026
 @start = 2026-01-01T00:00:00Z
 @end = 2026-12-31T23:59:59Z
 
@@ -30,4 +31,8 @@ Accept: application/json
 
 ### Resumo personalizado
 GET {{baseUrl}}/summary?range=custom&start={{start}}&end={{end}}
+Accept: application/json
+
+### Filmes por ano
+GET {{baseUrl}}/year/{{year}}?limitWatched=200&limitUnwatched=200
 Accept: application/json
