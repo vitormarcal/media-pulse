@@ -23,7 +23,6 @@ interface MovieImageCrudRepository : CrudRepository<MovieImage, Long> {
         isPrimary: Boolean,
     )
 
-    @Modifying
     @Transactional
     @Query(
         nativeQuery = true,
