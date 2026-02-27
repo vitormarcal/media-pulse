@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.controller.movies
 
 import dev.marcal.mediapulse.server.api.movies.MovieCardDto
+import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
 import dev.marcal.mediapulse.server.api.movies.RangeDto
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
@@ -24,6 +25,28 @@ class MoviesControllerTest {
 
         assertEquals(0, result.size)
         verify(exactly = 1) { repository.recent(15) }
+    }
+
+    @Test
+    fun `details by slug should delegate to repository`() {
+        val expected =
+            MovieDetailsResponse(
+                movieId = 10,
+                title = "De Olhos Bem Fechados",
+                originalTitle = "Eyes Wide Shut",
+                year = 1999,
+                description = null,
+                coverUrl = null,
+                images = emptyList(),
+                watches = emptyList(),
+                externalIds = emptyList(),
+            )
+        every { repository.getMovieDetailsBySlug("3828") } returns expected
+
+        val response = controller.detailsBySlug("3828")
+
+        assertEquals(10, response.movieId)
+        verify(exactly = 1) { repository.getMovieDetailsBySlug("3828") }
     }
 
     @Test

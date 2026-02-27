@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0
+  version: 1.0.0-beta.6
   description: API surface for MediaPulse. This document covers all HTTP endpoints in the server.
 servers:
   - url: http://localhost:8080
@@ -776,9 +776,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieDetailsResponse"
 
+  /api/movies/slug/{slug}:
+    get:
+      summary: Movie details by slug
+      tags: [Movies]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieDetailsResponse"
+
   /api/movies/search:
     get:
-      summary: Search movies
+      summary: Search movies by title or slug
       tags: [Movies]
       parameters:
         - name: q

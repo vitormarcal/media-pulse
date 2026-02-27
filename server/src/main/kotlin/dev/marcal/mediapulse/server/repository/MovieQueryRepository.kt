@@ -156,6 +156,26 @@ class MovieQueryRepository(
         )
     }
 
+    fun getMovieDetailsBySlug(slug: String): MovieDetailsResponse {
+        val movieId =
+            (
+                entityManager
+                    .createNativeQuery(
+                        """
+                        SELECT m.id
+                        FROM movies m
+                        WHERE m.slug = :slug
+                        LIMIT 1
+                        """.trimIndent(),
+                    ).setParameter("slug", slug.trim())
+                    .resultList
+                    .firstOrNull() as Number?
+                    ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Movie not found")
+            ).toLong()
+
+        return getMovieDetails(movieId)
+    }
+
     fun search(
         q: String,
         limit: Int,
@@ -186,6 +206,7 @@ class MovieQueryRepository(
                     FROM movies m
                     LEFT JOIN movie_titles mt ON mt.movie_id = m.id
                     WHERE LOWER(m.original_title) LIKE :q
+                       OR LOWER(COALESCE(m.slug, '')) LIKE :q
                        OR LOWER(COALESCE(mt.title, '')) LIKE :q
                     ORDER BY watched_at DESC NULLS LAST, m.original_title ASC
                     LIMIT :n

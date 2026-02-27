@@ -21,6 +21,8 @@ data class Movie(
     val description: String? = null,
     @Column(name = "cover_url")
     val coverUrl: String? = null,
+    @Column(name = "slug")
+    val slug: String? = null,
     @Column(nullable = false, unique = true)
     val fingerprint: String,
     @Column(name = "created_at")

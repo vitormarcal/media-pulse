@@ -79,6 +79,7 @@ class PlexMovieWatchServiceTest {
             assertEquals(MovieWatchSource.PLEX, result.source)
             assertEquals(Instant.ofEpochSecond(1772082419), result.watchedAt)
 
+            verify(exactly = 1) { movieRepository.save(match { it.slug == "3828" }) }
             verify(exactly = 1) { movieWatchCrudRepository.insertIgnore(42, MovieWatchSource.PLEX.name, Instant.ofEpochSecond(1772082419)) }
             coVerify(exactly = 1) { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) }
             verify(exactly = 1) {
@@ -151,6 +152,7 @@ class PlexMovieWatchServiceTest {
             event = event,
             metadata =
                 PlexWebhookPayload.PlexMetadata(
+                    ratingKey = "3828",
                     type = type,
                     title = "De Olhos Bem Fechados",
                     originalTitle = "Eyes Wide Shut",

@@ -14,6 +14,7 @@ It also supports full movie library import during pipeline startup.
 Plex payload -> Media Pulse domain:
 
 - `Metadata.originalTitle` (fallback: `Metadata.title`) -> `movies.original_title`
+- `Metadata.ratingKey` (fallback: `Metadata.key`) -> `movies.slug`
 - `Metadata.year` -> `movies.year`
 - `Metadata.summary` -> `movies.description`
 - `Metadata.title` -> `movie_titles.title` (localized/alternate title)
@@ -35,7 +36,7 @@ Movie identity uses fingerprint by `original_title + year`.
 - `movie_watches`
 - `movie_images`
 
-Migrations: `V7__create_movies_schema.sql`, `V8__add_movie_images.sql`.
+Migrations: `V7__create_movies_schema.sql`, `V8__add_movie_images.sql`, `V9__add_slug_to_movies.sql`.
 
 ## Movie images
 

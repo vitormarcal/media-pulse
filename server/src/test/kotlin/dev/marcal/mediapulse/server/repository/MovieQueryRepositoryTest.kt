@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test
 import java.sql.Timestamp
 import java.time.Instant
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class MovieQueryRepositoryTest {
     private val em = mockk<EntityManager>()
@@ -75,5 +76,42 @@ class MovieQueryRepositoryTest {
         assertEquals(end, summary.range.end)
         verify(exactly = 2) { query.setParameter("s", start) }
         verify(exactly = 2) { query.setParameter("e", end) }
+    }
+
+    @Test
+    fun `search should include slug filter`() {
+        every { query.resultList } returns emptyList<Any>()
+
+        repository.search("3828", 10)
+
+        val searchSql = sqls.last()
+        assertTrue(searchSql.contains("LOWER(COALESCE(m.slug, '')) LIKE :q"))
+        verify(exactly = 1) { query.setParameter("q", "%3828%") }
+        verify(exactly = 1) { query.setParameter("n", 10) }
+    }
+
+    @Test
+    fun `details by slug should resolve id and delegate to details query`() {
+        every { query.resultList } returnsMany
+            listOf(
+                listOf(10L),
+                listOf(
+                    arrayOf(
+                        10L,
+                        "De Olhos Bem Fechados",
+                        "Eyes Wide Shut",
+                        1999,
+                        "desc",
+                        "/covers/plex/movies/10/poster.jpg",
+                    ),
+                ),
+                emptyList<Any>(),
+                emptyList<Any>(),
+            )
+
+        val response = repository.getMovieDetailsBySlug("3828")
+
+        assertEquals(10L, response.movieId)
+        verify(exactly = 1) { query.setParameter("slug", "3828") }
     }
 }

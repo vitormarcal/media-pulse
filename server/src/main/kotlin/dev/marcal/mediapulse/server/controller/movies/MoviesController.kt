@@ -28,6 +28,11 @@ class MoviesController(
         @PathVariable movieId: Long,
     ): MovieDetailsResponse = repository.getMovieDetails(movieId)
 
+    @GetMapping("/slug/{slug}")
+    fun detailsBySlug(
+        @PathVariable slug: String,
+    ): MovieDetailsResponse = repository.getMovieDetailsBySlug(slug)
+
     @GetMapping("/search")
     fun search(
         @RequestParam q: String,

@@ -96,7 +96,7 @@ class PlexMovieImportServiceTest {
             coVerify(exactly = 1) { plexApiClient.listMovieSections() }
             coVerify(exactly = 1) { plexApiClient.listMoviesPaged("1", 0, 200) }
             coVerify(exactly = 1) { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) }
-            verify(exactly = 1) { movieRepository.save(any()) }
+            verify(exactly = 1) { movieRepository.save(match { it.slug == "3828" }) }
             verify(exactly = 2) {
                 externalIdentifierRepository.save(
                     match {
@@ -136,7 +136,7 @@ class PlexMovieImportServiceTest {
             assertEquals(1, stats.moviesSeen)
             assertEquals(1, stats.moviesUpserted)
             coVerify(exactly = 1) { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) }
-            verify(exactly = 1) { movieRepository.save(match { it.description == "updated" }) }
+            verify(exactly = 1) { movieRepository.save(match { it.description == "updated" && it.slug == "3828" }) }
             verify(exactly = 0) { externalIdentifierRepository.save(any()) }
         }
 }

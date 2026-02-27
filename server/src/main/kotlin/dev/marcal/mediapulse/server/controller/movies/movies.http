@@ -12,6 +12,10 @@ Accept: application/json
 GET {{baseUrl}}/{{movieId}}
 Accept: application/json
 
+### Detalhes do filme por slug
+GET {{baseUrl}}/slug/3828
+Accept: application/json
+
 ### Busca de filmes
 GET {{baseUrl}}/search?q=matrix&limit=10
 Accept: application/json

@@ -62,6 +62,7 @@ data class PlexImageAsset(
 
 data class PlexMovie(
     val ratingKey: String,
+    val key: String? = null,
     val title: String,
     val originalTitle: String? = null,
     val year: Int? = null,

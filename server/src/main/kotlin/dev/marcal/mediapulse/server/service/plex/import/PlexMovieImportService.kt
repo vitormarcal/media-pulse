@@ -70,6 +70,7 @@ class PlexMovieImportService(
                             originalTitle = m.originalTitle,
                             year = m.year,
                             summary = m.summary,
+                            slug = resolveSlug(m.ratingKey, m.key),
                             guids = m.guids.orEmpty(),
                         )
                     plexMovieArtworkService.ensureMovieImagesFromPlex(
@@ -105,11 +106,13 @@ class PlexMovieImportService(
         originalTitle: String?,
         year: Int?,
         summary: String?,
+        slug: String?,
         guids: List<PlexGuid>,
     ): Movie {
         val normalizedOriginal = originalTitle?.trim()?.ifBlank { null } ?: title
         val normalizedTitle = title.trim()
         val normalizedSummary = summary?.trim()?.ifBlank { null }
+        val normalizedSlug = slug?.trim()?.ifBlank { null }
 
         val fingerprint = FingerprintUtil.movieFp(normalizedOriginal, year)
         val existing = movieRepository.findByFingerprint(fingerprint)
@@ -121,6 +124,7 @@ class PlexMovieImportService(
                         originalTitle = normalizedOriginal,
                         year = year,
                         description = normalizedSummary,
+                        slug = normalizedSlug,
                         fingerprint = fingerprint,
                     ),
                 )
@@ -130,6 +134,7 @@ class PlexMovieImportService(
                         existing = existing,
                         incomingYear = year,
                         incomingDescription = normalizedSummary,
+                        incomingSlug = normalizedSlug,
                     )
                 if (merged != existing) movieRepository.save(merged) else existing
             }
@@ -160,21 +165,36 @@ class PlexMovieImportService(
         existing: Movie,
         incomingYear: Int?,
         incomingDescription: String?,
+        incomingSlug: String?,
     ): Movie {
         val updatedYear = existing.year ?: incomingYear
         val updatedDescription = incomingDescription ?: existing.description
+        val updatedSlug = incomingSlug ?: existing.slug
 
-        val changed = updatedYear != existing.year || updatedDescription != existing.description
+        val changed = updatedYear != existing.year || updatedDescription != existing.description || updatedSlug != existing.slug
 
         return if (changed) {
             existing.copy(
                 year = updatedYear,
                 description = updatedDescription,
+                slug = updatedSlug,
                 updatedAt = Instant.now(),
             )
         } else {
             existing
         }
+    }
+
+    private fun resolveSlug(
+        ratingKey: String?,
+        key: String?,
+    ): String? {
+        val normalizedRatingKey = ratingKey?.trim()?.ifBlank { null }
+        if (normalizedRatingKey != null) return normalizedRatingKey
+
+        val normalizedKey = key?.trim()?.ifBlank { null } ?: return null
+        val extracted = normalizedKey.substringAfterLast("/").trim()
+        return extracted.ifBlank { normalizedKey }
     }
 
     private fun persistExternalIds(
