@@ -1,6 +1,6 @@
 # Movies API
 
-A Movies API fornece uma visão read-only dos filmes assistidos e do histórico de watches importados do Plex.
+A Movies API fornece endpoints read-only para consulta e um endpoint de ingestão manual idempotente de watches.
 
 ## Escopo e origem dos dados
 
@@ -19,6 +19,7 @@ A Movies API fornece uma visão read-only dos filmes assistidos e do histórico 
 | `GET /api/movies/summary` | `range=month\|year\|custom`, `start?`, `end?` | `MoviesSummaryResponse` |
 | `GET /api/movies/year/{year}` | `year` (path), `limitWatched=200` (máx. `1000`), `limitUnwatched=200` (máx. `1000`) | `MoviesByYearResponse` |
 | `GET /api/movies/stats` | - | `MoviesStatsResponse` |
+| `POST /api/movies/watches` | body com `watchedAt`, `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieWatchCreateResponse` |
 
 ## Contratos
 
@@ -194,6 +195,31 @@ A deduplicação ocorre por `(source, movie_id, watched_at)`.
 
 - Mesmo filme + mesma source + mesmo `watchedAt`: conflito e insert ignorado.
 - Mesmo filme em horários diferentes: ambos persistem.
+
+## Ingestão manual (`POST /api/movies/watches`)
+
+O endpoint processa um único watch por requisição.
+
+Regras de resolução do filme por item (ordem):
+
+1. `tmdbId`: busca em `external_identifiers` (`provider=TMDB`, `entity_type=MOVIE`).
+2. `imdbId`: busca em `external_identifiers` (`provider=IMDB`, `entity_type=MOVIE`).
+3. Fingerprint por `title + year`.
+4. Se não encontrar, cria `movies` + `movie_titles` (`source=MANUAL`, `is_primary=true`) e vincula ids externos quando informados.
+5. Quando `tmdbId` estiver presente, preenche metadados faltantes de `movies` (`description`, `slug`, `year`) com dados do TMDb.
+
+Regras de idempotência:
+
+- `movie_watches` usa `ON CONFLICT DO NOTHING` e UNIQUE `(source, movie_id, watched_at)`.
+- `movie_titles`, `movie_images` e `external_identifiers` também usam inserção idempotente com `insertIgnore`/verificação prévia.
+
+Enriquecimento simples de capa:
+
+- Se o item tiver `tmdbId` e o filme ainda não tiver imagem primária, busca `poster_path` em TMDb (`/movie/{id}`).
+- Baixa a imagem `${TMDB_IMAGE_BASE_URL}/t/p/w780{poster_path}` e salva em disco (padrão `/covers/tmdb/movies/{movieId}/...`).
+- Também tenta baixar `backdrop_path` como imagem adicional (não primária) quando disponível.
+- Salva o caminho local em `movie_images` (`is_primary=true`) e preenche `movies.cover_url` apenas se estiver `null`.
+- As chamadas TMDb aplicam throttle local (`TMDB_RATE_LIMIT_PER_SECOND`) e retry para `429` respeitando `Retry-After` quando enviado.
 
 ## Erros esperados
 

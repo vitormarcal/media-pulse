@@ -111,3 +111,29 @@ data class RangeDto(
     val start: Instant,
     val end: Instant,
 )
+
+data class ManualMovieWatchCreateRequest(
+    val watchedAt: Instant,
+    val title: String,
+    val year: Int? = null,
+    val tmdbId: String? = null,
+    val imdbId: String? = null,
+)
+
+data class ManualMovieWatchCreateResponse(
+    val movieId: Long,
+    val title: String,
+    val year: Int?,
+    val coverUrl: String?,
+    val watchedAt: Instant,
+    val source: String,
+    val createdMovie: Boolean,
+    val watchInserted: Boolean,
+    val coverAssigned: Boolean,
+    val externalIds: List<ManualMovieExternalIdView>,
+)
+
+data class ManualMovieExternalIdView(
+    val provider: String,
+    val externalId: String,
+)

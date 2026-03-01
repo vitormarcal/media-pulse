@@ -96,6 +96,15 @@ media-pulse:
       enabled: ${HARDCOVER_POLL_ENABLED:true}
       cron: ${HARDCOVER_POLL_CRON:0 */15 * * * *}
       page-size: ${HARDCOVER_POLL_PAGE_SIZE:100}
+  tmdb:
+    enabled: ${TMDB_ENABLED:true}
+    api-base-url: ${TMDB_API_BASE_URL:https://api.themoviedb.org/3}
+    image-base-url: ${TMDB_IMAGE_BASE_URL:https://image.tmdb.org}
+    token: ${TMDB_TOKEN:}
+    api-key: ${TMDB_API_KEY:}
+    rate-limit-per-second: ${TMDB_RATE_LIMIT_PER_SECOND:10}
+    max-429-retries: ${TMDB_MAX_429_RETRIES:2}
+    retry-backoff-ms: ${TMDB_RETRY_BACKOFF_MS:1000}
   storage:
     covers-path: "/data/covers"
     imports-path: "/data/imports"
