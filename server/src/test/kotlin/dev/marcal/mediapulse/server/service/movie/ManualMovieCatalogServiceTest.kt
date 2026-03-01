@@ -48,6 +48,7 @@ class ManualMovieCatalogServiceTest {
         tmdbApiClient = mockk(relaxed = true)
         tmdbImageClient = mockk(relaxed = true)
         imageStorageService = mockk(relaxed = true)
+        every { movieRepository.save(any()) } answers { invocation.args[0] as Movie }
 
         service =
             ManualMovieCatalogService(
@@ -64,7 +65,7 @@ class ManualMovieCatalogServiceTest {
 
     @Test
     fun `nao duplica movie para fingerprint repetido`() {
-        val movie = Movie(id = 11, originalTitle = "Dune", year = 2021, fingerprint = "fp")
+        val movie = Movie(id = 11, originalTitle = "Dune", year = 2021, slug = "dune", fingerprint = "fp")
         val request = ManualMovieWatchCreateRequest(Instant.parse("2026-03-01T10:00:00Z"), "Dune", 2021)
 
         every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
@@ -97,6 +98,7 @@ class ManualMovieCatalogServiceTest {
         every {
             externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(EntityType.MOVIE, Provider.TMDB, "999")
         } returns ExternalIdentifier(entityType = EntityType.MOVIE, entityId = 77, provider = Provider.TMDB, externalId = "999")
+        every { tmdbApiClient.fetchMovieDetails("999") } returns null
         every { movieRepository.findById(any()) } returns Optional.of(existingMovie)
         every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
         every { movieImageCrudRepository.existsByMovieIdAndIsPrimaryTrue(77) } returns true
@@ -121,26 +123,38 @@ class ManualMovieCatalogServiceTest {
 
         assertEquals(77, result.movie.id)
         verify(exactly = 0) { movieRepository.findByFingerprint(any()) }
-        verify(exactly = 0) { movieRepository.save(any()) }
     }
 
     @Test
     fun `insere capa tmdb apenas quando nao existe imagem primaria`() {
-        val movie = Movie(id = 51, originalTitle = "Dune", year = 2021, coverUrl = null, fingerprint = "fp")
+        val movie = Movie(id = 51, originalTitle = "Dune", year = 2021, slug = "dune", coverUrl = null, fingerprint = "fp")
 
         every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
         every { movieRepository.findByFingerprint(any()) } returns movie
-        every { movieRepository.findById(51) } returns Optional.of(movie.copy(coverUrl = "/covers/tmdb/movies/51/51_dune_hash.jpg"))
+        every { movieRepository.findById(51) } returns Optional.of(movie.copy(coverUrl = "/covers/tmdb/movies/51/51_dune_poster.jpg"))
         every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
         every { movieImageCrudRepository.existsByMovieIdAndIsPrimaryTrue(51) } returns false
-        every { tmdbApiClient.fetchPosterPath("222") } returns "/poster.jpg"
+        every { tmdbApiClient.fetchMovieDetails("222") } returns
+            TmdbApiClient.TmdbMovieDetails(
+                title = "Dune",
+                originalTitle = "Dune",
+                overview = "desc",
+                releaseYear = 2021,
+                posterPath = "/poster.jpg",
+                backdropPath = "/backdrop.jpg",
+            )
         every { tmdbImageClient.downloadImage("https://image.tmdb.org/t/p/w780/poster.jpg") } returns
             ImageContent(bytes = byteArrayOf(1, 2, 3), contentType = MediaType.IMAGE_JPEG)
-        every { imageStorageService.saveImageForMovie(any(), "TMDB", 51, any()) } returns "/covers/tmdb/movies/51/51_dune_hash.jpg"
+        every { tmdbImageClient.downloadImage("https://image.tmdb.org/t/p/w780/backdrop.jpg") } returns
+            ImageContent(bytes = byteArrayOf(4, 5, 6), contentType = MediaType.IMAGE_JPEG)
+        every { imageStorageService.saveImageForMovie(any(), "TMDB", 51, any()) } returnsMany
+            listOf(
+                "/covers/tmdb/movies/51/51_dune_poster.jpg",
+                "/covers/tmdb/movies/51/51_dune_backdrop.jpg",
+            )
         every { movieImageCrudRepository.insertIgnore(any(), any(), any()) } just runs
-        every {
-            movieRepository.save(match { it.id == 51L && it.coverUrl == "/covers/tmdb/movies/51/51_dune_hash.jpg" })
-        } returns movie.copy(coverUrl = "/covers/tmdb/movies/51/51_dune_hash.jpg")
+        every { movieRepository.save(match { it.id == 51L && it.coverUrl == "/covers/tmdb/movies/51/51_dune_poster.jpg" }) } returns
+            movie.copy(coverUrl = "/covers/tmdb/movies/51/51_dune_poster.jpg")
         every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
         every { externalIdentifierRepository.save(any()) } returns mockk()
 
@@ -158,10 +172,61 @@ class ManualMovieCatalogServiceTest {
         verify(exactly = 1) {
             movieImageCrudRepository.insertIgnore(
                 51,
-                "/covers/tmdb/movies/51/51_dune_hash.jpg",
+                "/covers/tmdb/movies/51/51_dune_poster.jpg",
                 true,
             )
         }
         verify(exactly = 1) { movieRepository.save(match { it.id == 51L && it.coverUrl != null }) }
+    }
+
+    @Test
+    fun `preenche description e slug a partir do tmdb ao criar filme`() {
+        val savedMovie =
+            Movie(
+                id = 90,
+                originalTitle = "Dune: Part Two",
+                year = 2024,
+                description = "Paul Atreides unites with Chani.",
+                slug = "dune-part-two",
+                coverUrl = null,
+                fingerprint = "fp",
+            )
+
+        every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
+        every { tmdbApiClient.fetchMovieDetails("693134") } returns
+            TmdbApiClient.TmdbMovieDetails(
+                title = "Dune: Part Two",
+                originalTitle = "Dune: Part Two",
+                overview = "Paul Atreides unites with Chani.",
+                releaseYear = 2024,
+                posterPath = null,
+                backdropPath = null,
+            )
+        every { movieRepository.findByFingerprint(any()) } returns null
+        every { movieRepository.save(any()) } returns savedMovie
+        every { movieRepository.findById(90) } returns Optional.of(savedMovie)
+        every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
+        every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
+        every { externalIdentifierRepository.save(any()) } returns mockk()
+
+        service.resolveOrCreate(
+            ManualMovieWatchCreateRequest(
+                watchedAt = Instant.parse("2026-03-01T10:00:00Z"),
+                title = "Duna: Parte Dois",
+                year = null,
+                tmdbId = "693134",
+            ),
+        )
+
+        verify(exactly = 1) {
+            movieRepository.save(
+                match {
+                    it.originalTitle == "Dune: Part Two" &&
+                        it.year == 2024 &&
+                        it.description == "Paul Atreides unites with Chani." &&
+                        it.slug == "dune-part-two"
+                },
+            )
+        }
     }
 }

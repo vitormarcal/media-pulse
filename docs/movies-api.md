@@ -206,6 +206,7 @@ Regras de resolução do filme por item (ordem):
 2. `imdbId`: busca em `external_identifiers` (`provider=IMDB`, `entity_type=MOVIE`).
 3. Fingerprint por `title + year`.
 4. Se não encontrar, cria `movies` + `movie_titles` (`source=MANUAL`, `is_primary=true`) e vincula ids externos quando informados.
+5. Quando `tmdbId` estiver presente, preenche metadados faltantes de `movies` (`description`, `slug`, `year`) com dados do TMDb.
 
 Regras de idempotência:
 
@@ -216,6 +217,7 @@ Enriquecimento simples de capa:
 
 - Se o item tiver `tmdbId` e o filme ainda não tiver imagem primária, busca `poster_path` em TMDb (`/movie/{id}`).
 - Baixa a imagem `${TMDB_IMAGE_BASE_URL}/t/p/w780{poster_path}` e salva em disco (padrão `/covers/tmdb/movies/{movieId}/...`).
+- Também tenta baixar `backdrop_path` como imagem adicional (não primária) quando disponível.
 - Salva o caminho local em `movie_images` (`is_primary=true`) e preenche `movies.cover_url` apenas se estiver `null`.
 - As chamadas TMDb aplicam throttle local (`TMDB_RATE_LIMIT_PER_SECOND`) e retry para `429` respeitando `Retry-After` quando enviado.
 
