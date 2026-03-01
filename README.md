@@ -33,6 +33,9 @@ Media Pulse centraliza dados pessoais de consumo (music, books e movies) com ing
 - `TMDB_IMAGE_BASE_URL` (default `https://image.tmdb.org`)
 - `TMDB_TOKEN` (Bearer token; quando ausente usa `TMDB_API_KEY`)
 - `TMDB_API_KEY` (fallback para autenticação em query param)
+- `TMDB_RATE_LIMIT_PER_SECOND` (default `10`, conservador para evitar burst)
+- `TMDB_MAX_429_RETRIES` (default `2`)
+- `TMDB_RETRY_BACKOFF_MS` (default `1000`)
 
 ## Docs
 

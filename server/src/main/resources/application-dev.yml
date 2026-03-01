@@ -21,6 +21,9 @@ media-pulse:
     user-id: 0
   tmdb:
     enabled: true
+    rate-limit-per-second: 10
+    max-429-retries: 2
+    retry-backoff-ms: 1000
   storage:
     covers-path: "."
     imports-path: "."

@@ -9,4 +9,7 @@ data class TmdbProperties(
     val imageBaseUrl: String = "https://image.tmdb.org",
     val token: String = "",
     val apiKey: String = "",
+    val rateLimitPerSecond: Int = 10,
+    val max429Retries: Int = 2,
+    val retryBackoffMs: Long = 1000,
 )
