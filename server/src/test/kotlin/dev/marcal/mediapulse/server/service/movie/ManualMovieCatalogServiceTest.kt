@@ -3,15 +3,18 @@ package dev.marcal.mediapulse.server.service.movie
 import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateRequest
 import dev.marcal.mediapulse.server.config.TmdbProperties
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
+import dev.marcal.mediapulse.server.integration.tmdb.TmdbImageClient
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
+import dev.marcal.mediapulse.server.model.image.ImageContent
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieTitleSource
 import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTitleCrudRepository
+import dev.marcal.mediapulse.server.service.image.ImageStorageService
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -19,6 +22,7 @@ import io.mockk.runs
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.http.MediaType
 import java.time.Instant
 import java.util.Optional
 import kotlin.test.assertEquals
@@ -31,6 +35,8 @@ class ManualMovieCatalogServiceTest {
     private lateinit var movieImageCrudRepository: MovieImageCrudRepository
     private lateinit var externalIdentifierRepository: ExternalIdentifierRepository
     private lateinit var tmdbApiClient: TmdbApiClient
+    private lateinit var tmdbImageClient: TmdbImageClient
+    private lateinit var imageStorageService: ImageStorageService
     private lateinit var service: ManualMovieCatalogService
 
     @BeforeEach
@@ -40,6 +46,8 @@ class ManualMovieCatalogServiceTest {
         movieImageCrudRepository = mockk(relaxed = true)
         externalIdentifierRepository = mockk(relaxed = true)
         tmdbApiClient = mockk(relaxed = true)
+        tmdbImageClient = mockk(relaxed = true)
+        imageStorageService = mockk(relaxed = true)
 
         service =
             ManualMovieCatalogService(
@@ -48,6 +56,8 @@ class ManualMovieCatalogServiceTest {
                 movieImageCrudRepository = movieImageCrudRepository,
                 externalIdentifierRepository = externalIdentifierRepository,
                 tmdbApiClient = tmdbApiClient,
+                tmdbImageClient = tmdbImageClient,
+                imageStorageService = imageStorageService,
                 tmdbProperties = TmdbProperties(imageBaseUrl = "https://image.tmdb.org"),
             )
     }
@@ -120,14 +130,17 @@ class ManualMovieCatalogServiceTest {
 
         every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
         every { movieRepository.findByFingerprint(any()) } returns movie
-        every { movieRepository.findById(51) } returns Optional.of(movie.copy(coverUrl = "https://image.tmdb.org/t/p/w780/poster.jpg"))
+        every { movieRepository.findById(51) } returns Optional.of(movie.copy(coverUrl = "/covers/tmdb/movies/51/51_dune_hash.jpg"))
         every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
         every { movieImageCrudRepository.existsByMovieIdAndIsPrimaryTrue(51) } returns false
         every { tmdbApiClient.fetchPosterPath("222") } returns "/poster.jpg"
+        every { tmdbImageClient.downloadImage("https://image.tmdb.org/t/p/w780/poster.jpg") } returns
+            ImageContent(bytes = byteArrayOf(1, 2, 3), contentType = MediaType.IMAGE_JPEG)
+        every { imageStorageService.saveImageForMovie(any(), "TMDB", 51, any()) } returns "/covers/tmdb/movies/51/51_dune_hash.jpg"
         every { movieImageCrudRepository.insertIgnore(any(), any(), any()) } just runs
         every {
-            movieRepository.save(match { it.id == 51L && it.coverUrl == "https://image.tmdb.org/t/p/w780/poster.jpg" })
-        } returns movie.copy(coverUrl = "https://image.tmdb.org/t/p/w780/poster.jpg")
+            movieRepository.save(match { it.id == 51L && it.coverUrl == "/covers/tmdb/movies/51/51_dune_hash.jpg" })
+        } returns movie.copy(coverUrl = "/covers/tmdb/movies/51/51_dune_hash.jpg")
         every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
         every { externalIdentifierRepository.save(any()) } returns mockk()
 
@@ -145,7 +158,7 @@ class ManualMovieCatalogServiceTest {
         verify(exactly = 1) {
             movieImageCrudRepository.insertIgnore(
                 51,
-                "https://image.tmdb.org/t/p/w780/poster.jpg",
+                "/covers/tmdb/movies/51/51_dune_hash.jpg",
                 true,
             )
         }

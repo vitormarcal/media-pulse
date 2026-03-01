@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.service.movie
 import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateRequest
 import dev.marcal.mediapulse.server.config.TmdbProperties
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
+import dev.marcal.mediapulse.server.integration.tmdb.TmdbImageClient
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
@@ -12,7 +13,9 @@ import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTitleCrudRepository
+import dev.marcal.mediapulse.server.service.image.ImageStorageService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
+import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.stereotype.Service
 import java.time.Instant
 
@@ -23,6 +26,8 @@ class ManualMovieCatalogService(
     private val movieImageCrudRepository: MovieImageCrudRepository,
     private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val tmdbApiClient: TmdbApiClient,
+    private val tmdbImageClient: TmdbImageClient,
+    private val imageStorageService: ImageStorageService,
     private val tmdbProperties: TmdbProperties,
 ) {
     data class MovieCatalogResult(
@@ -123,17 +128,28 @@ class ManualMovieCatalogService(
 
         val posterPath = tmdbApiClient.fetchPosterPath(tmdbId) ?: return false
         val fullPosterUrl = buildTmdbImageUrl(posterPath)
+        val localPosterPath =
+            runCatching {
+                val image = tmdbImageClient.downloadImage(fullPosterUrl)
+                val fileHint = "${movie.originalTitle}_${DigestUtils.sha1Hex(fullPosterUrl).take(12)}"
+                imageStorageService.saveImageForMovie(
+                    image = image,
+                    provider = "TMDB",
+                    movieId = movie.id,
+                    fileNameHint = fileHint,
+                )
+            }.getOrNull() ?: return false
 
         movieImageCrudRepository.insertIgnore(
             movieId = movie.id,
-            url = fullPosterUrl,
+            url = localPosterPath,
             isPrimary = true,
         )
 
         if (movie.coverUrl == null) {
             movieRepository.save(
                 movie.copy(
-                    coverUrl = fullPosterUrl,
+                    coverUrl = localPosterPath,
                     updatedAt = Instant.now(),
                 ),
             )
