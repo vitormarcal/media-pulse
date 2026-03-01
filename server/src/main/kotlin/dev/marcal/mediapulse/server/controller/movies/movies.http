@@ -40,3 +40,16 @@ Accept: application/json
 ### Filmes por ano
 GET {{baseUrl}}/year/{{year}}?limitWatched=200&limitUnwatched=200
 Accept: application/json
+
+### Registrar watch manual (item unico)
+POST {{baseUrl}}/watches
+Content-Type: application/json
+Accept: application/json
+
+{
+  "watchedAt": "2026-03-01T10:00:00Z",
+  "title": "Dune",
+  "year": 2021,
+  "tmdbId": "438631",
+  "imdbId": "tt1160419"
+}
