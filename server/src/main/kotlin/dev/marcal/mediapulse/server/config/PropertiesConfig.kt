@@ -11,5 +11,6 @@ import org.springframework.context.annotation.Configuration
     SpotifyProperties::class,
     HardcoverProperties::class,
     HttpClientsProperties::class,
+    TmdbProperties::class,
 )
 class PropertiesConfig

@@ -7,6 +7,8 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.transaction.annotation.Transactional
 
 interface MovieImageCrudRepository : CrudRepository<MovieImage, Long> {
+    fun existsByMovieIdAndIsPrimaryTrue(movieId: Long): Boolean
+
     @Modifying
     @Transactional
     @Query(

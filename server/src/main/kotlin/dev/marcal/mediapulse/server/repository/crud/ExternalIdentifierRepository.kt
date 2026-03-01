@@ -6,6 +6,12 @@ import dev.marcal.mediapulse.server.model.Provider
 import org.springframework.data.repository.CrudRepository
 
 interface ExternalIdentifierRepository : CrudRepository<ExternalIdentifier, Long> {
+    fun findByEntityTypeAndProviderAndExternalId(
+        entityType: EntityType,
+        provider: Provider,
+        externalId: String,
+    ): ExternalIdentifier?
+
     fun findByProviderAndExternalId(
         provider: Provider,
         externalId: String,

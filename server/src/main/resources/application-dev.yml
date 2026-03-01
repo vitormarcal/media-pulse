@@ -19,6 +19,8 @@ media-pulse:
   hardcover:
     enabled: false
     user-id: 0
+  tmdb:
+    enabled: true
   storage:
     covers-path: "."
     imports-path: "."

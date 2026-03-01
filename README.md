@@ -13,6 +13,7 @@ Media Pulse centraliza dados pessoais de consumo (music, books e movies) com ing
 - `V7__create_movies_schema.sql`
 - `V8__add_movie_images.sql`
 - `V9__add_slug_to_movies.sql` (adiciona `movies.slug` para persistir o slug do Plex)
+- `V10__allow_manual_movie_sources.sql` (habilita `MANUAL` em `movie_titles`/`movie_watches` e índice para lookup em `external_identifiers`)
 
 ## Movies endpoints
 
@@ -23,6 +24,15 @@ Media Pulse centraliza dados pessoais de consumo (music, books e movies) com ing
 - `GET /api/movies/summary`
 - `GET /api/movies/stats`
 - `GET /api/movies/year/{year}` (stats anuais, filmes assistidos no ano e filmes nunca assistidos)
+- `POST /api/movies/watches` (ingestão manual idempotente de watches com resolução por TMDB/IMDB/fingerprint)
+
+## Configuração TMDb
+
+- `TMDB_ENABLED` (default `true`)
+- `TMDB_API_BASE_URL` (default `https://api.themoviedb.org/3`)
+- `TMDB_IMAGE_BASE_URL` (default `https://image.tmdb.org`)
+- `TMDB_TOKEN` (Bearer token; quando ausente usa `TMDB_API_KEY`)
+- `TMDB_API_KEY` (fallback para autenticação em query param)
 
 ## Docs
 
