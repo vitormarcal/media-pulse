@@ -1,9 +1,6 @@
 package dev.marcal.mediapulse.server.service.movie
 
-import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchIngestItemRequest
-import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchIngestItemResult
-import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchIngestRequest
-import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchIngestResponse
+import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateRequest
 import dev.marcal.mediapulse.server.config.TmdbProperties
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.model.EntityType
@@ -11,46 +8,40 @@ import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieTitleSource
-import dev.marcal.mediapulse.server.model.movie.MovieWatchSource
 import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTitleCrudRepository
-import dev.marcal.mediapulse.server.repository.crud.MovieWatchCrudRepository
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
 @Service
-class ManualMovieWatchIngestionService(
+class ManualMovieCatalogService(
     private val movieRepository: MovieRepository,
     private val movieTitleCrudRepository: MovieTitleCrudRepository,
-    private val movieWatchCrudRepository: MovieWatchCrudRepository,
     private val movieImageCrudRepository: MovieImageCrudRepository,
     private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val tmdbApiClient: TmdbApiClient,
     private val tmdbProperties: TmdbProperties,
 ) {
-    fun ingest(request: ManualMovieWatchIngestRequest): ManualMovieWatchIngestResponse {
-        val results = request.items.map { processItem(it) }
-        return ManualMovieWatchIngestResponse(items = results)
-    }
+    data class MovieCatalogResult(
+        val movie: Movie,
+        val created: Boolean,
+        val coverAssigned: Boolean,
+    )
 
-    @Transactional
-    fun processItem(item: ManualMovieWatchIngestItemRequest): ManualMovieWatchIngestItemResult {
-        val normalizedTitle = item.title.trim().ifBlank { throw IllegalArgumentException("title deve ser preenchido") }
-        val normalizedTmdbId = item.tmdbId?.trim()?.ifBlank { null }
-        val normalizedImdbId = item.imdbId?.trim()?.ifBlank { null }
+    fun resolveOrCreate(request: ManualMovieWatchCreateRequest): MovieCatalogResult {
+        val normalizedTitle = request.title.trim().ifBlank { throw IllegalArgumentException("title deve ser preenchido") }
+        val normalizedTmdbId = request.tmdbId?.trim()?.ifBlank { null }
+        val normalizedImdbId = request.imdbId?.trim()?.ifBlank { null }
 
         val existingByTmdb = normalizedTmdbId?.let { findMovieByExternalId(Provider.TMDB, it) }
         val existingByImdb = if (existingByTmdb == null) normalizedImdbId?.let { findMovieByExternalId(Provider.IMDB, it) } else null
 
-        val fingerprint = FingerprintUtil.movieFp(originalTitle = normalizedTitle, year = item.year)
+        val fingerprint = FingerprintUtil.movieFp(originalTitle = normalizedTitle, year = request.year)
         val existingByFingerprint =
-            if (existingByTmdb == null &&
-                existingByImdb == null
-            ) {
+            if (existingByTmdb == null && existingByImdb == null) {
                 movieRepository.findByFingerprint(fingerprint)
             } else {
                 null
@@ -64,7 +55,7 @@ class ManualMovieWatchIngestionService(
                 ?: movieRepository.save(
                     Movie(
                         originalTitle = normalizedTitle,
-                        year = item.year,
+                        year = request.year,
                         fingerprint = fingerprint,
                     ),
                 )
@@ -80,25 +71,12 @@ class ManualMovieWatchIngestionService(
         normalizedTmdbId?.let { safeLink(movie.id, Provider.TMDB, it) }
         normalizedImdbId?.let { safeLink(movie.id, Provider.IMDB, it) }
 
-        val watchAlreadyExists =
-            movieWatchCrudRepository.existsByMovieIdAndSourceAndWatchedAt(
-                movieId = movie.id,
-                source = MovieWatchSource.MANUAL,
-                watchedAt = item.watchedAt,
-            )
-
-        movieWatchCrudRepository.insertIgnore(
-            movieId = movie.id,
-            source = MovieWatchSource.MANUAL.name,
-            watchedAt = item.watchedAt,
-        )
-
         val coverAssigned = maybeAssignTmdbCover(movie = movie, tmdbId = normalizedTmdbId)
+        val refreshedMovie = movieRepository.findById(movie.id).orElse(movie)
 
-        return ManualMovieWatchIngestItemResult(
-            movieId = movie.id,
+        return MovieCatalogResult(
+            movie = refreshedMovie,
             created = created,
-            watchInserted = !watchAlreadyExists,
             coverAssigned = coverAssigned,
         )
     }

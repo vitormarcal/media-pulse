@@ -19,7 +19,7 @@ A Movies API fornece endpoints read-only para consulta e um endpoint de ingestã
 | `GET /api/movies/summary` | `range=month\|year\|custom`, `start?`, `end?` | `MoviesSummaryResponse` |
 | `GET /api/movies/year/{year}` | `year` (path), `limitWatched=200` (máx. `1000`), `limitUnwatched=200` (máx. `1000`) | `MoviesByYearResponse` |
 | `GET /api/movies/stats` | - | `MoviesStatsResponse` |
-| `POST /api/movies/watches` | body com `items[]` (`watchedAt`, `title`, `year?`, `tmdbId?`, `imdbId?`) | `ManualMovieWatchIngestResponse` |
+| `POST /api/movies/watches` | body com `watchedAt`, `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieWatchCreateResponse` |
 
 ## Contratos
 
@@ -197,6 +197,8 @@ A deduplicação ocorre por `(source, movie_id, watched_at)`.
 - Mesmo filme em horários diferentes: ambos persistem.
 
 ## Ingestão manual (`POST /api/movies/watches`)
+
+O endpoint processa um único watch por requisição.
 
 Regras de resolução do filme por item (ordem):
 
