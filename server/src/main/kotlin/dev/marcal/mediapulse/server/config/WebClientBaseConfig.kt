@@ -53,7 +53,7 @@ class WebClientBaseConfig(
 
         return WebClient
             .builder()
-            .clientConnector(ReactorClientHttpConnector(localHttpClient))
+            .clientConnector(ReactorClientHttpConnector(localHttpClient.followRedirect(true)))
             .exchangeStrategies(strategies)
     }
 
