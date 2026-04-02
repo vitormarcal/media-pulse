@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.controller.webhook.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.Instant
+import java.time.LocalDate
 
 data class PlexWebhookPayload(
     val event: String,
@@ -19,6 +20,7 @@ data class PlexWebhookPayload(
         val originalTitle: String? = null,
         val grandparentTitle: String? = null, // artista
         val parentTitle: String? = null, // álbum
+        val grandparentSlug: String? = null,
         val parentGuid: String? = null,
         val guid: String? = null,
         val grandparentGuid: String? = null,
@@ -30,6 +32,8 @@ data class PlexWebhookPayload(
         val year: Int? = null,
         // cuidado: no seu fixture vem como string ISO-8601; deixe opcional.
         val lastViewedAt: Instant? = null,
+        val duration: Int? = null,
+        val originallyAvailableAt: LocalDate? = null,
         val summary: String? = null,
         val viewCount: Int? = null,
         @JsonProperty("Image")

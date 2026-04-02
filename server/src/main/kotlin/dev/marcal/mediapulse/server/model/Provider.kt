@@ -8,4 +8,5 @@ enum class Provider {
     ISBN_13,
     TMDB,
     IMDB,
+    TVDB,
 }
