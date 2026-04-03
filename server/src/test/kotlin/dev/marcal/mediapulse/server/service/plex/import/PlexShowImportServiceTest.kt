@@ -13,6 +13,7 @@ import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowTitleCrudRepository
+import dev.marcal.mediapulse.server.service.plex.PlexShowArtworkService
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -33,6 +34,7 @@ class PlexShowImportServiceTest {
     private lateinit var tvShowTitleCrudRepository: TvShowTitleCrudRepository
     private lateinit var tvEpisodeRepository: TvEpisodeRepository
     private lateinit var externalIdentifierRepository: ExternalIdentifierRepository
+    private lateinit var plexShowArtworkService: PlexShowArtworkService
     private lateinit var service: PlexShowImportService
 
     @BeforeEach
@@ -43,6 +45,7 @@ class PlexShowImportServiceTest {
         tvShowTitleCrudRepository = mockk(relaxed = true)
         tvEpisodeRepository = mockk(relaxed = true)
         externalIdentifierRepository = mockk(relaxed = true)
+        plexShowArtworkService = mockk(relaxed = true)
 
         service =
             PlexShowImportService(
@@ -51,6 +54,7 @@ class PlexShowImportServiceTest {
                 tvShowTitleCrudRepository = tvShowTitleCrudRepository,
                 tvEpisodeRepository = tvEpisodeRepository,
                 externalIdentifierRepository = externalIdentifierRepository,
+                plexShowArtworkService = plexShowArtworkService,
             )
     }
 
@@ -67,6 +71,7 @@ class PlexShowImportServiceTest {
                     year = 2022,
                     summary = "show-desc",
                     guid = "plex://show/abc123",
+                    thumb = "/library/metadata/200/thumb/1",
                     guids = listOf(PlexGuid("tvdb://371980"), PlexGuid("tmdb://95396")),
                 )
             val episode =
@@ -97,6 +102,7 @@ class PlexShowImportServiceTest {
                 tvShowRepository.save(match { it.originalTitle == "Severance" && it.slug == "severance" })
             } returns TvShow(id = 10, originalTitle = "Severance", description = "show-desc", slug = "severance", fingerprint = "show-fp")
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
+            coEvery { plexShowArtworkService.ensureShowImagesFromPlex(any(), any(), any()) } returns Unit
 
             every { tvEpisodeRepository.findByFingerprint(any()) } returns null
             every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(10, 1, 1) } returns null
@@ -135,6 +141,13 @@ class PlexShowImportServiceTest {
             coVerify(exactly = 1) { plexApiClient.listShowsPaged("2", 0, 200) }
             coVerify(exactly = 1) { plexApiClient.listEpisodesByShowPaged("2", "show-1", 0, 200) }
             verify(exactly = 1) { tvShowRepository.save(match { it.slug == "severance" }) }
+            coVerify(exactly = 1) {
+                plexShowArtworkService.ensureShowImagesFromPlex(
+                    match { it.id == 10L },
+                    any(),
+                    "/library/metadata/200/thumb/1",
+                )
+            }
             verify(exactly = 1) { tvEpisodeRepository.save(match { it.showId == 10L && it.episodeNumber == 1 }) }
             verify(exactly = 6) {
                 externalIdentifierRepository.save(

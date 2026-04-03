@@ -171,6 +171,49 @@ class ImageStorageService(
         return "/covers/${provider.lowercase()}/movies/$movieId/$fileName"
     }
 
+    fun saveImageForTvShow(
+        image: ImageContent,
+        provider: String, // "PLEX"
+        showId: Long,
+        fileNameHint: String? = null,
+    ): String {
+        val extension = extensionFromContentType(image.contentType)
+
+        val providerDir = baseDir.resolve(provider.lowercase())
+        val showsDir = providerDir.resolve("tv-shows")
+        val showDir = showsDir.resolve(showId.toString())
+        logger.debug("Saving tv show image. providerDir={}, showDir={}", providerDir, showDir)
+
+        Files.createDirectories(showDir)
+
+        val safeHint = fileNameHint?.let { SlugTextUtil.normalize(it) }
+        val baseName = if (!safeHint.isNullOrBlank()) "${showId}_$safeHint" else showId.toString()
+        val fileName = "$baseName$extension"
+        val target = showDir.resolve(fileName)
+
+        if (!Files.exists(target)) {
+            try {
+                Files.write(
+                    target,
+                    image.bytes,
+                    StandardOpenOption.CREATE_NEW,
+                )
+            } catch (_: FileAlreadyExistsException) {
+                logger.debug("File already exists, skipping write. target={}", target)
+            } catch (e: Exception) {
+                logger.error(
+                    "Failed to write tv show image to disk. target=$target, baseDir=$baseDir, providerDir=$providerDir, showDir=$showDir",
+                    e,
+                )
+                throw e
+            }
+        } else {
+            logger.debug("File already exists, nothing to do. target={}", target)
+        }
+
+        return "/covers/${provider.lowercase()}/tv-shows/$showId/$fileName"
+    }
+
     private fun extensionFromContentType(contentType: MediaType?): String =
         when {
             contentType == null -> ".jpg"

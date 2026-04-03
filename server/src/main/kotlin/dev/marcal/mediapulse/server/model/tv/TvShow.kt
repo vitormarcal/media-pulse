@@ -17,6 +17,8 @@ data class TvShow(
     val originalTitle: String,
     @Column(columnDefinition = "TEXT")
     val description: String? = null,
+    @Column(name = "cover_url")
+    val coverUrl: String? = null,
     @Column(name = "slug")
     val slug: String? = null,
     @Column(nullable = false, unique = true)

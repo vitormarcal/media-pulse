@@ -15,6 +15,7 @@ import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowTitleCrudRepository
+import dev.marcal.mediapulse.server.service.plex.PlexShowArtworkService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -28,6 +29,7 @@ class PlexShowImportService(
     private val tvShowTitleCrudRepository: TvShowTitleCrudRepository,
     private val tvEpisodeRepository: TvEpisodeRepository,
     private val externalIdentifierRepository: ExternalIdentifierRepository,
+    private val plexShowArtworkService: PlexShowArtworkService,
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
@@ -70,6 +72,17 @@ class PlexShowImportService(
                 for (show in shows) {
                     stats.showsSeen++
                     val persistedShow = upsertShow(show)
+                    plexShowArtworkService.ensureShowImagesFromPlex(
+                        show = persistedShow,
+                        images =
+                            show.image.map { img ->
+                                PlexShowArtworkService.PlexShowImageCandidate(
+                                    url = img.url,
+                                    isPoster = img.type.equals("coverPoster", ignoreCase = true),
+                                )
+                            },
+                        fallbackThumbPath = show.thumb,
+                    )
                     stats.showsUpserted++
 
                     importEpisodesForShow(
@@ -140,6 +153,7 @@ class PlexShowImportService(
                     TvShow(
                         originalTitle = normalizedOriginal,
                         description = normalizedSummary,
+                        coverUrl = null,
                         slug = normalizedSlug,
                         fingerprint = fingerprint,
                     ),

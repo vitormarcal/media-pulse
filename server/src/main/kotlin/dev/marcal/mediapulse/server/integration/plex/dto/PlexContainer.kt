@@ -84,6 +84,7 @@ data class PlexShow(
     val summary: String? = null,
     val guid: String? = null,
     val thumb: String? = null,
+    @JsonProperty("Image") val image: List<PlexImageAsset> = emptyList(),
     @JsonProperty("Guid") val guids: List<PlexGuid>? = emptyList(),
 )
 
