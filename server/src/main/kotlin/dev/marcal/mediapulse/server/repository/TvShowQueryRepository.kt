@@ -5,6 +5,8 @@ import dev.marcal.mediapulse.server.api.shows.ShowCardDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowExternalIdDto
 import dev.marcal.mediapulse.server.api.shows.ShowImageDto
+import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
+import dev.marcal.mediapulse.server.api.shows.ShowSeasonDto
 import dev.marcal.mediapulse.server.api.shows.ShowWatchDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearWatchedDto
@@ -122,6 +124,7 @@ class TvShowQueryRepository(
                       te.id,
                       te.title,
                       te.season_number,
+                      te.season_title,
                       te.episode_number,
                       tew.watched_at,
                       tew.source
@@ -140,9 +143,42 @@ class TvShowQueryRepository(
                         episodeId = (fields[1] as Number).toLong(),
                         episodeTitle = fields[2] as String,
                         seasonNumber = (fields[3] as Number?)?.toInt(),
-                        episodeNumber = (fields[4] as Number?)?.toInt(),
-                        watchedAt = asInstant(fields[5])!!,
-                        source = fields[6] as String,
+                        seasonTitle = fields[4] as String?,
+                        episodeNumber = (fields[5] as Number?)?.toInt(),
+                        watchedAt = asInstant(fields[6])!!,
+                        source = fields[7] as String,
+                    )
+                }
+
+        val seasons =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      te.season_number,
+                      MAX(te.season_title) AS season_title,
+                      COUNT(*) AS episodes_count,
+                      COUNT(DISTINCT CASE WHEN tew.id IS NOT NULL THEN te.id END) AS watched_episodes_count,
+                      MAX(tew.watched_at) AS last_watched_at
+                    FROM tv_episodes te
+                    LEFT JOIN tv_episode_watches tew ON tew.episode_id = te.id
+                    WHERE te.show_id = :showId
+                    GROUP BY te.season_number
+                    ORDER BY te.season_number NULLS FIRST
+                    """.trimIndent(),
+                ).setParameter("showId", showId)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    val episodesCount = (fields[2] as Number).toLong()
+                    val watchedEpisodesCount = (fields[3] as Number).toLong()
+                    ShowSeasonDto(
+                        seasonNumber = (fields[0] as Number?)?.toInt(),
+                        seasonTitle = fields[1] as String?,
+                        episodesCount = episodesCount,
+                        watchedEpisodesCount = watchedEpisodesCount,
+                        completed = episodesCount > 0 && watchedEpisodesCount == episodesCount,
+                        lastWatchedAt = asInstant(fields[4]),
                     )
                 }
 
@@ -166,6 +202,31 @@ class TvShowQueryRepository(
                     )
                 }
 
+        val progress =
+            if (seasons.isEmpty()) {
+                ShowProgressDto(
+                    episodesCount = 0,
+                    watchedEpisodesCount = 0,
+                    seasonsCount = 0,
+                    completedSeasonsCount = 0,
+                    completed = false,
+                    inProgress = false,
+                )
+            } else {
+                val episodesCount = seasons.sumOf { it.episodesCount }
+                val watchedEpisodesCount = seasons.sumOf { it.watchedEpisodesCount }
+                val seasonsCount = seasons.size.toLong()
+                val completedSeasonsCount = seasons.count { it.completed }.toLong()
+                ShowProgressDto(
+                    episodesCount = episodesCount,
+                    watchedEpisodesCount = watchedEpisodesCount,
+                    seasonsCount = seasonsCount,
+                    completedSeasonsCount = completedSeasonsCount,
+                    completed = episodesCount > 0 && watchedEpisodesCount == episodesCount,
+                    inProgress = watchedEpisodesCount > 0 && watchedEpisodesCount < episodesCount,
+                )
+            }
+
         return ShowDetailsResponse(
             showId = (base[0] as Number).toLong(),
             title = base[1] as String,
@@ -175,6 +236,8 @@ class TvShowQueryRepository(
             description = base[5] as String?,
             coverUrl = base[6] as String?,
             images = images,
+            seasons = seasons,
+            progress = progress,
             watches = watches,
             externalIds = externalIds,
         )

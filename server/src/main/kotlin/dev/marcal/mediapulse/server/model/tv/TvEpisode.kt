@@ -20,6 +20,8 @@ data class TvEpisode(
     val title: String,
     @Column(name = "season_number")
     val seasonNumber: Int? = null,
+    @Column(name = "season_title")
+    val seasonTitle: String? = null,
     @Column(name = "episode_number")
     val episodeNumber: Int? = null,
     @Column(columnDefinition = "TEXT")

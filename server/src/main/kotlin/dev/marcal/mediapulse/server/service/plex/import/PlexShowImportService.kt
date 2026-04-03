@@ -216,6 +216,7 @@ class PlexShowImportService(
         episode: PlexEpisode,
     ): TvEpisode {
         val title = episode.title.trim()
+        val seasonTitle = episode.parentTitle?.trim()?.ifBlank { null }
         val fingerprint =
             FingerprintUtil.tvEpisodeFp(
                 showId = show.id,
@@ -236,6 +237,7 @@ class PlexShowImportService(
                         showId = show.id,
                         title = title,
                         seasonNumber = episode.parentIndex,
+                        seasonTitle = seasonTitle,
                         episodeNumber = episode.index,
                         summary = episode.summary?.trim()?.ifBlank { null },
                         durationMs = episode.duration,
@@ -244,7 +246,7 @@ class PlexShowImportService(
                     ),
                 )
             } else {
-                val merged = mergeEpisode(existingEpisode, episode, title, fingerprint)
+                val merged = mergeEpisode(existingEpisode, episode, title, fingerprint, seasonTitle)
                 if (merged != existingEpisode) tvEpisodeRepository.save(merged) else existingEpisode
             }
 
@@ -287,9 +289,11 @@ class PlexShowImportService(
         incoming: PlexEpisode,
         title: String,
         fingerprint: String,
+        seasonTitle: String?,
     ): TvEpisode {
         val updatedTitle = if (existing.title.isBlank()) title else existing.title
         val updatedSeasonNumber = existing.seasonNumber ?: incoming.parentIndex
+        val updatedSeasonTitle = existing.seasonTitle ?: seasonTitle
         val updatedEpisodeNumber = existing.episodeNumber ?: incoming.index
         val updatedSummary = incoming.summary?.trim()?.ifBlank { null } ?: existing.summary
         val updatedDurationMs = incoming.duration ?: existing.durationMs
@@ -299,6 +303,7 @@ class PlexShowImportService(
         val changed =
             updatedTitle != existing.title ||
                 updatedSeasonNumber != existing.seasonNumber ||
+                updatedSeasonTitle != existing.seasonTitle ||
                 updatedEpisodeNumber != existing.episodeNumber ||
                 updatedSummary != existing.summary ||
                 updatedDurationMs != existing.durationMs ||
@@ -309,6 +314,7 @@ class PlexShowImportService(
             existing.copy(
                 title = updatedTitle,
                 seasonNumber = updatedSeasonNumber,
+                seasonTitle = updatedSeasonTitle,
                 episodeNumber = updatedEpisodeNumber,
                 summary = updatedSummary,
                 durationMs = updatedDurationMs,

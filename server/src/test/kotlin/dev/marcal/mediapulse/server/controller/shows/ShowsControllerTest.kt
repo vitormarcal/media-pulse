@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.controller.shows
 import dev.marcal.mediapulse.server.api.shows.RangeDto
 import dev.marcal.mediapulse.server.api.shows.ShowCardDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearWatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearResponse
@@ -46,6 +47,15 @@ class ShowsControllerTest {
                 description = null,
                 coverUrl = null,
                 images = emptyList(),
+                progress =
+                    ShowProgressDto(
+                        episodesCount = 0,
+                        watchedEpisodesCount = 0,
+                        seasonsCount = 0,
+                        completedSeasonsCount = 0,
+                        completed = false,
+                        inProgress = false,
+                    ),
                 watches = emptyList(),
                 externalIds = emptyList(),
             )
