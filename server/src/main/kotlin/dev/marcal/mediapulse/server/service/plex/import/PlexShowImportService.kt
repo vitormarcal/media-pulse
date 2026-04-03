@@ -143,7 +143,14 @@ class PlexShowImportService(
         val normalizedYear = show.year
         val showExternalIds = extractShowExternalIds(show.guids.orEmpty())
         val existingByTmdb = showExternalIds.firstOrNull { it.first == Provider.TMDB }?.let { findShowByExternalId(it.first, it.second) }
-        val existingByTvdb = if (existingByTmdb == null) showExternalIds.firstOrNull { it.first == Provider.TVDB }?.let { findShowByExternalId(it.first, it.second) } else null
+        val existingByTvdb =
+            if (existingByTmdb ==
+                null
+            ) {
+                showExternalIds.firstOrNull { it.first == Provider.TVDB }?.let { findShowByExternalId(it.first, it.second) }
+            } else {
+                null
+            }
         val fingerprint = FingerprintUtil.tvShowFp(normalizedOriginal, show.year)
 
         val existing =
