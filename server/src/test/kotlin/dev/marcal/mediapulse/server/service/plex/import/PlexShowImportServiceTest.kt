@@ -100,7 +100,15 @@ class PlexShowImportServiceTest {
             every { tvShowRepository.findById(any()) } returns java.util.Optional.empty()
             every {
                 tvShowRepository.save(match { it.originalTitle == "Severance" && it.slug == "severance" && it.year == 2022 })
-            } returns TvShow(id = 10, originalTitle = "Severance", description = "show-desc", year = 2022, slug = "severance", fingerprint = "show-fp")
+            } returns
+                TvShow(
+                    id = 10,
+                    originalTitle = "Severance",
+                    description = "show-desc",
+                    year = 2022,
+                    slug = "severance",
+                    fingerprint = "show-fp",
+                )
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             coEvery { plexShowArtworkService.ensureShowImagesFromPlex(any(), any(), any()) } returns Unit
 
@@ -190,7 +198,8 @@ class PlexShowImportServiceTest {
                     guids = listOf(PlexGuid("tvdb://8956111")),
                 )
 
-            val existingShow = TvShow(id = 10, originalTitle = "Severance", description = null, year = null, slug = null, fingerprint = "show-fp")
+            val existingShow =
+                TvShow(id = 10, originalTitle = "Severance", description = null, year = null, slug = null, fingerprint = "show-fp")
             val existingEpisode =
                 TvEpisode(
                     id = 20,
@@ -231,7 +240,15 @@ class PlexShowImportServiceTest {
             assertEquals("severance", persistedShow.slug)
             assertEquals("updated-episode", persistedEpisode.summary)
 
-            verify(exactly = 1) { tvShowRepository.save(match { it.description == "updated-show" && it.slug == "severance" && it.year == 2022 }) }
+            verify(exactly = 1) {
+                tvShowRepository.save(
+                    match {
+                        it.description == "updated-show" &&
+                            it.slug == "severance" &&
+                            it.year == 2022
+                    },
+                )
+            }
             verify(exactly = 1) { tvEpisodeRepository.save(match { it.summary == "updated-episode" }) }
             verify(exactly = 0) { externalIdentifierRepository.save(any()) }
         }

@@ -40,7 +40,8 @@ class ManualShowWatchCreateFlowServiceTest {
             )
 
         val show = TvShow(id = 42, originalTitle = "Severance", year = 2022, coverUrl = "/img.jpg", fingerprint = "fp")
-        val episode = TvEpisode(id = 99, showId = 42, title = "Good News About Hell", seasonNumber = 1, episodeNumber = 1, fingerprint = "ep-fp")
+        val episode =
+            TvEpisode(id = 99, showId = 42, title = "Good News About Hell", seasonNumber = 1, episodeNumber = 1, fingerprint = "ep-fp")
 
         every { manualShowCatalogService.resolveOrCreate(request) } returns
             ManualShowCatalogService.ShowCatalogResult(

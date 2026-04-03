@@ -179,7 +179,8 @@ class ManualShowCatalogServiceTest {
 
         every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
         every { tvShowRepository.findByFingerprint(any()) } returns show
-        every { tvShowRepository.findById(51) } returns Optional.of(show.copy(coverUrl = "/covers/tmdb/tv-shows/51/51_severance_poster.jpg"))
+        every { tvShowRepository.findById(51) } returns
+            Optional.of(show.copy(coverUrl = "/covers/tmdb/tv-shows/51/51_severance_poster.jpg"))
         every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
         every { tvEpisodeRepository.findByFingerprint(any()) } returns episode
         every { tvShowImageCrudRepository.existsByShowIdAndIsPrimaryTrue(51) } returns false

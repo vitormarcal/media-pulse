@@ -44,7 +44,12 @@ class ManualShowCatalogService(
 
     fun resolveOrCreate(request: ManualShowWatchCreateRequest): ShowCatalogResult {
         val normalizedShowTitle = request.showTitle.trim().ifBlank { throw IllegalArgumentException("showTitle deve ser preenchido") }
-        val normalizedEpisodeTitle = request.episodeTitle.trim().ifBlank { throw IllegalArgumentException("episodeTitle deve ser preenchido") }
+        val normalizedEpisodeTitle =
+            request.episodeTitle.trim().ifBlank {
+                throw IllegalArgumentException(
+                    "episodeTitle deve ser preenchido",
+                )
+            }
         val normalizedTmdbId = request.tmdbId?.trim()?.ifBlank { null }
         val normalizedTvdbId = request.tvdbId?.trim()?.ifBlank { null }
         val tmdbDetails = normalizedTmdbId?.let { tmdbApiClient.fetchShowDetails(it) }
