@@ -99,8 +99,8 @@ class PlexShowImportServiceTest {
             every { tvShowRepository.findByShowTitle(any()) } returns null
             every { tvShowRepository.findById(any()) } returns java.util.Optional.empty()
             every {
-                tvShowRepository.save(match { it.originalTitle == "Severance" && it.slug == "severance" })
-            } returns TvShow(id = 10, originalTitle = "Severance", description = "show-desc", slug = "severance", fingerprint = "show-fp")
+                tvShowRepository.save(match { it.originalTitle == "Severance" && it.slug == "severance" && it.year == 2022 })
+            } returns TvShow(id = 10, originalTitle = "Severance", description = "show-desc", year = 2022, slug = "severance", fingerprint = "show-fp")
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             coEvery { plexShowArtworkService.ensureShowImagesFromPlex(any(), any(), any()) } returns Unit
 
@@ -140,7 +140,7 @@ class PlexShowImportServiceTest {
             coVerify(exactly = 1) { plexApiClient.listShowSections() }
             coVerify(exactly = 1) { plexApiClient.listShowsPaged("2", 0, 200) }
             coVerify(exactly = 1) { plexApiClient.listEpisodesByShowPaged("2", "show-1", 0, 200) }
-            verify(exactly = 1) { tvShowRepository.save(match { it.slug == "severance" }) }
+            verify(exactly = 1) { tvShowRepository.save(match { it.slug == "severance" && it.year == 2022 }) }
             coVerify(exactly = 1) {
                 plexShowArtworkService.ensureShowImagesFromPlex(
                     match { it.id == 10L },
@@ -190,7 +190,7 @@ class PlexShowImportServiceTest {
                     guids = listOf(PlexGuid("tvdb://8956111")),
                 )
 
-            val existingShow = TvShow(id = 10, originalTitle = "Severance", description = null, slug = null, fingerprint = "show-fp")
+            val existingShow = TvShow(id = 10, originalTitle = "Severance", description = null, year = null, slug = null, fingerprint = "show-fp")
             val existingEpisode =
                 TvEpisode(
                     id = 20,
@@ -219,7 +219,7 @@ class PlexShowImportServiceTest {
             every { externalIdentifierRepository.findByProviderAndExternalId(Provider.TVDB, "8956111") } returns mockk()
             every { tvShowRepository.findByFingerprint(any()) } returns existingShow
             every { tvEpisodeRepository.findByFingerprint(any()) } returns existingEpisode
-            every { tvShowRepository.save(any()) } returns existingShow.copy(description = "updated-show", slug = "severance")
+            every { tvShowRepository.save(any()) } returns existingShow.copy(description = "updated-show", year = 2022, slug = "severance")
             every { tvEpisodeRepository.save(any()) } returns existingEpisode.copy(summary = "updated-episode")
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
 
@@ -227,10 +227,11 @@ class PlexShowImportServiceTest {
             val persistedEpisode = service.upsertEpisode(persistedShow, episode)
 
             assertEquals("updated-show", persistedShow.description)
+            assertEquals(2022, persistedShow.year)
             assertEquals("severance", persistedShow.slug)
             assertEquals("updated-episode", persistedEpisode.summary)
 
-            verify(exactly = 1) { tvShowRepository.save(match { it.description == "updated-show" && it.slug == "severance" }) }
+            verify(exactly = 1) { tvShowRepository.save(match { it.description == "updated-show" && it.slug == "severance" && it.year == 2022 }) }
             verify(exactly = 1) { tvEpisodeRepository.save(match { it.summary == "updated-episode" }) }
             verify(exactly = 0) { externalIdentifierRepository.save(any()) }
         }

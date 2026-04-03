@@ -42,9 +42,10 @@ class PlexEpisodeWatchService(
                 ?: return null
         val showLocalizedTitle = meta.grandparentTitle?.trim()?.ifBlank { null }
         val showDescription = null
+        val showYear = meta.parentYear ?: meta.year
         val showSlug = resolveSlug(meta.grandparentSlug)
         val showPlexGuid = meta.grandparentGuid?.trim()?.ifBlank { null }
-        val showFingerprint = FingerprintUtil.tvShowFp(originalTitle = showOriginalTitle, year = meta.year)
+        val showFingerprint = FingerprintUtil.tvShowFp(originalTitle = showOriginalTitle, year = showYear)
 
         val show =
             findExistingShow(showPlexGuid)
@@ -54,13 +55,20 @@ class PlexEpisodeWatchService(
                     TvShow(
                         originalTitle = showOriginalTitle,
                         description = showDescription,
+                        year = showYear,
                         slug = showSlug,
                         fingerprint = showFingerprint,
                     ),
                 )
 
-        if (show.slug != showSlug && showSlug != null) {
-            tvShowRepository.save(show.copy(slug = showSlug, updatedAt = Instant.now()))
+        if ((show.slug != showSlug && showSlug != null) || (show.year == null && showYear != null)) {
+            tvShowRepository.save(
+                show.copy(
+                    slug = showSlug ?: show.slug,
+                    year = show.year ?: showYear,
+                    updatedAt = Instant.now(),
+                ),
+            )
         }
 
         tvShowTitleCrudRepository.insertIgnore(

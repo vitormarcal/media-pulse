@@ -140,6 +140,7 @@ class PlexShowImportService(
         val normalizedSummary = show.summary?.trim()?.ifBlank { null }
         val normalizedSlug = resolveSlug(show.slug)
         val normalizedGuid = show.guid?.trim()?.ifBlank { null }
+        val normalizedYear = show.year
         val fingerprint = FingerprintUtil.tvShowFp(normalizedOriginal, show.year)
 
         val existing =
@@ -153,6 +154,7 @@ class PlexShowImportService(
                     TvShow(
                         originalTitle = normalizedOriginal,
                         description = normalizedSummary,
+                        year = normalizedYear,
                         coverUrl = null,
                         slug = normalizedSlug,
                         fingerprint = fingerprint,
@@ -162,6 +164,7 @@ class PlexShowImportService(
                 val merged =
                     mergeShow(
                         existing = existing,
+                        incomingYear = normalizedYear,
                         incomingDescription = normalizedSummary,
                         incomingSlug = normalizedSlug,
                     )
@@ -248,15 +251,18 @@ class PlexShowImportService(
 
     private fun mergeShow(
         existing: TvShow,
+        incomingYear: Int?,
         incomingDescription: String?,
         incomingSlug: String?,
     ): TvShow {
+        val updatedYear = existing.year ?: incomingYear
         val updatedDescription = incomingDescription ?: existing.description
         val updatedSlug = incomingSlug ?: existing.slug
-        val changed = updatedDescription != existing.description || updatedSlug != existing.slug
+        val changed = updatedYear != existing.year || updatedDescription != existing.description || updatedSlug != existing.slug
 
         return if (changed) {
             existing.copy(
+                year = updatedYear,
                 description = updatedDescription,
                 slug = updatedSlug,
                 updatedAt = Instant.now(),

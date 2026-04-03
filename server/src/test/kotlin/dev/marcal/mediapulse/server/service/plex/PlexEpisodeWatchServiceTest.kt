@@ -64,6 +64,7 @@ class PlexEpisodeWatchServiceTest {
                 TvShow(
                     id = 2283,
                     originalTitle = "The Big Bang Theory",
+                    year = 2009,
                     slug = "the-big-bang-theory",
                     fingerprint = "show-fp",
                 )
@@ -104,6 +105,7 @@ class PlexEpisodeWatchServiceTest {
             assertEquals(TvEpisodeWatchSource.PLEX, result.source)
             assertEquals(Instant.ofEpochSecond(1775146349), result.watchedAt)
             assertEquals("The Big Bang Theory", savedShow.captured.originalTitle)
+            assertEquals(2009, savedShow.captured.year)
             assertEquals("the-big-bang-theory", savedShow.captured.slug)
             assertEquals(2, savedEpisode.captured.seasonNumber)
             assertEquals(23, savedEpisode.captured.episodeNumber)
@@ -158,6 +160,7 @@ class PlexEpisodeWatchServiceTest {
                 TvShow(
                     id = 10,
                     originalTitle = "The Big Bang Theory",
+                    year = null,
                     slug = null,
                     fingerprint = "show-fp",
                 )
@@ -191,7 +194,7 @@ class PlexEpisodeWatchServiceTest {
 
             assertNotNull(result)
             assertEquals(20, result.episodeId)
-            verify(exactly = 1) { tvShowRepository.save(match { it.id == 10L && it.slug == "the-big-bang-theory" }) }
+            verify(exactly = 1) { tvShowRepository.save(match { it.id == 10L && it.slug == "the-big-bang-theory" && it.year == 2009 }) }
             verify(exactly = 1) { tvEpisodeRepository.save(any()) }
             verify(exactly = 0) { tvShowRepository.findByFingerprint(any()) }
             verify(exactly = 0) { tvEpisodeRepository.findByFingerprint(any()) }
