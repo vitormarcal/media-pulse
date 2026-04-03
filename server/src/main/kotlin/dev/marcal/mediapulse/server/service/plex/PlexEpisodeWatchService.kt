@@ -48,9 +48,7 @@ class PlexEpisodeWatchService(
         val showFingerprint = FingerprintUtil.tvShowFp(originalTitle = showOriginalTitle, year = showYear)
 
         val show =
-            findExistingShow(showPlexGuid)
-                ?: tvShowRepository.findByFingerprint(showFingerprint)
-                ?: findExistingShowByKnownTitles(listOfNotNull(showOriginalTitle, showLocalizedTitle))
+            tvShowRepository.findByFingerprint(showFingerprint)
                 ?: tvShowRepository.save(
                     TvShow(
                         originalTitle = showOriginalTitle,
@@ -106,8 +104,7 @@ class PlexEpisodeWatchService(
             )
 
         val existingEpisode =
-            findExistingEpisode(meta.guid, show.id)
-                ?: tvEpisodeRepository.findByFingerprint(episodeFingerprint)
+            tvEpisodeRepository.findByFingerprint(episodeFingerprint)
                 ?: tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(show.id, meta.parentIndex, meta.index)
 
         val episode =
@@ -189,47 +186,6 @@ class PlexEpisodeWatchService(
         } else {
             existing
         }
-    }
-
-    private fun findExistingShow(plexGuid: String?): TvShow? {
-        val guid = plexGuid?.trim()?.ifBlank { null } ?: return null
-        val identifier =
-            externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
-                entityType = EntityType.SHOW,
-                provider = Provider.PLEX,
-                externalId = guid,
-            ) ?: return null
-        return tvShowRepository.findById(identifier.entityId).orElse(null)
-    }
-
-    private fun findExistingShowByKnownTitles(candidates: List<String>): TvShow? {
-        val uniqueCandidates =
-            candidates
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .distinctBy { it.lowercase() }
-
-        for (candidate in uniqueCandidates) {
-            val byTitle = tvShowRepository.findByShowTitle(candidate)
-            if (byTitle != null) return byTitle
-        }
-
-        return null
-    }
-
-    private fun findExistingEpisode(
-        plexGuid: String?,
-        showId: Long,
-    ): TvEpisode? {
-        val guid = plexGuid?.trim()?.ifBlank { null } ?: return null
-        val identifier =
-            externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
-                entityType = EntityType.EPISODE,
-                provider = Provider.PLEX,
-                externalId = guid,
-            ) ?: return null
-        val episode = tvEpisodeRepository.findById(identifier.entityId).orElse(null) ?: return null
-        return episode.takeIf { it.showId == showId }
     }
 
     private fun persistEpisodeExternalIds(

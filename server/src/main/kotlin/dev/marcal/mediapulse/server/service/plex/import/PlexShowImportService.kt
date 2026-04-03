@@ -141,12 +141,15 @@ class PlexShowImportService(
         val normalizedSlug = resolveSlug(show.slug)
         val normalizedGuid = show.guid?.trim()?.ifBlank { null }
         val normalizedYear = show.year
+        val showExternalIds = extractShowExternalIds(show.guids.orEmpty())
+        val existingByTmdb = showExternalIds.firstOrNull { it.first == Provider.TMDB }?.let { findShowByExternalId(it.first, it.second) }
+        val existingByTvdb = if (existingByTmdb == null) showExternalIds.firstOrNull { it.first == Provider.TVDB }?.let { findShowByExternalId(it.first, it.second) } else null
         val fingerprint = FingerprintUtil.tvShowFp(normalizedOriginal, show.year)
 
         val existing =
-            findExistingShow(normalizedGuid)
+            existingByTmdb
+                ?: existingByTvdb
                 ?: tvShowRepository.findByFingerprint(fingerprint)
-                ?: findExistingShowByKnownTitles(listOf(normalizedOriginal, normalizedTitle))
 
         val persistedShow =
             if (existing == null) {
@@ -195,7 +198,7 @@ class PlexShowImportService(
             provider = Provider.PLEX,
             externalId = normalizedGuid,
         )
-        persistShowExternalIds(persistedShow.id, show.guids.orEmpty())
+        persistShowExternalIds(persistedShow.id, showExternalIds)
 
         return persistedShow
     }
@@ -311,30 +314,17 @@ class PlexShowImportService(
         }
     }
 
-    private fun findExistingShow(plexGuid: String?): TvShow? {
-        val guid = plexGuid?.trim()?.ifBlank { null } ?: return null
+    private fun findShowByExternalId(
+        provider: Provider,
+        externalId: String,
+    ): TvShow? {
         val identifier =
             externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
                 entityType = EntityType.SHOW,
-                provider = Provider.PLEX,
-                externalId = guid,
+                provider = provider,
+                externalId = externalId,
             ) ?: return null
         return tvShowRepository.findById(identifier.entityId).orElse(null)
-    }
-
-    private fun findExistingShowByKnownTitles(candidates: List<String>): TvShow? {
-        val uniqueCandidates =
-            candidates
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .distinctBy { it.lowercase() }
-
-        for (candidate in uniqueCandidates) {
-            val byTitle = tvShowRepository.findByShowTitle(candidate)
-            if (byTitle != null) return byTitle
-        }
-
-        return null
     }
 
     private fun findExistingEpisode(
@@ -354,29 +344,16 @@ class PlexShowImportService(
 
     private fun persistShowExternalIds(
         showId: Long,
-        guids: List<PlexGuid>,
+        externalIds: List<Pair<Provider, String>>,
     ) {
-        guids
-            .asSequence()
-            .mapNotNull { guid ->
-                val raw = guid.id.trim()
-                when {
-                    raw.startsWith("tmdb://", ignoreCase = true) -> Provider.TMDB to raw.substringAfter("tmdb://")
-                    raw.startsWith("imdb://", ignoreCase = true) -> Provider.IMDB to raw.substringAfter("imdb://")
-                    raw.startsWith("tvdb://", ignoreCase = true) -> Provider.TVDB to raw.substringAfter("tvdb://")
-                    else -> null
-                }
-            }.map { (provider, externalId) -> provider to externalId.trim() }
-            .filter { (_, externalId) -> externalId.isNotBlank() }
-            .distinct()
-            .forEach { (provider, externalId) ->
-                safeLink(
-                    entityType = EntityType.SHOW,
-                    entityId = showId,
-                    provider = provider,
-                    externalId = externalId,
-                )
-            }
+        externalIds.forEach { (provider, externalId) ->
+            safeLink(
+                entityType = EntityType.SHOW,
+                entityId = showId,
+                provider = provider,
+                externalId = externalId,
+            )
+        }
     }
 
     private fun persistEpisodeExternalIds(
@@ -424,6 +401,22 @@ class PlexShowImportService(
             ),
         )
     }
+
+    private fun extractShowExternalIds(guids: List<PlexGuid>): List<Pair<Provider, String>> =
+        guids
+            .asSequence()
+            .mapNotNull { guid ->
+                val raw = guid.id.trim()
+                when {
+                    raw.startsWith("tmdb://", ignoreCase = true) -> Provider.TMDB to raw.substringAfter("tmdb://")
+                    raw.startsWith("imdb://", ignoreCase = true) -> Provider.IMDB to raw.substringAfter("imdb://")
+                    raw.startsWith("tvdb://", ignoreCase = true) -> Provider.TVDB to raw.substringAfter("tvdb://")
+                    else -> null
+                }
+            }.map { (provider, externalId) -> provider to externalId.trim() }
+            .filter { (_, externalId) -> externalId.isNotBlank() }
+            .distinct()
+            .toList()
 
     private fun resolveSlug(slug: String?): String? = slug?.trim()?.ifBlank { null }
 }
