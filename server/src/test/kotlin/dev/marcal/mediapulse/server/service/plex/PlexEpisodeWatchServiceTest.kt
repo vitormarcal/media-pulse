@@ -95,7 +95,7 @@ class PlexEpisodeWatchServiceTest {
             assertEquals(3963, result.episodeId)
             assertEquals(TvEpisodeWatchSource.PLEX, result.source)
             assertEquals(Instant.ofEpochSecond(1775146349), result.watchedAt)
-            assertEquals("The Big Bang Theory", savedShow.captured.originalTitle)
+            assertEquals("Big Bang: A Teoria", savedShow.captured.originalTitle)
             assertEquals(2009, savedShow.captured.year)
             assertEquals("the-big-bang-theory", savedShow.captured.slug)
             assertEquals(2, savedEpisode.captured.seasonNumber)
@@ -134,7 +134,7 @@ class PlexEpisodeWatchServiceTest {
             val existingShow =
                 TvShow(
                     id = 10,
-                    originalTitle = "The Big Bang Theory",
+                    originalTitle = "Big Bang: A Teoria",
                     year = null,
                     slug = null,
                     fingerprint = "show-fp",
@@ -185,9 +185,57 @@ class PlexEpisodeWatchServiceTest {
             assertNull(result)
         }
 
+    @Test
+    fun `deve usar grandparentTitle como titulo da serie quando originalTitle e do episodio`() =
+        runBlocking {
+            val payload =
+                episodePayload(
+                    grandparentTitle = "Classroom of the Elite",
+                    originalTitle = "悪とは何か――弱さから 生ずるすべてのものだ。",
+                    year = 2017,
+                    grandparentSlug = "classroom-of-the-elite",
+                )
+            val savedShow = slot<TvShow>()
+            val persistedShow =
+                TvShow(
+                    id = 10,
+                    originalTitle = "Classroom of the Elite",
+                    year = 2017,
+                    slug = "classroom-of-the-elite",
+                    fingerprint = "show-fp",
+                )
+            val persistedEpisode =
+                TvEpisode(
+                    id = 20,
+                    showId = 10,
+                    title = "A Expedicao Monopolar",
+                    seasonNumber = 2,
+                    episodeNumber = 23,
+                    fingerprint = "episode-fp",
+                )
+
+            every { tvShowRepository.findByFingerprint(any()) } returns null
+            every { tvShowRepository.save(capture(savedShow)) } returns persistedShow
+            every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
+            every { tvEpisodeRepository.findByFingerprint(any()) } returns null
+            every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(any(), any(), any()) } returns null
+            every { tvEpisodeRepository.save(any()) } returns persistedEpisode
+            every { tvEpisodeWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
+            every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
+            every { externalIdentifierRepository.save(any()) } answers { firstArg() }
+
+            service.processScrobble(payload)
+
+            assertEquals("Classroom of the Elite", savedShow.captured.originalTitle)
+        }
+
     private fun episodePayload(
         event: String = "media.scrobble",
         type: String = "episode",
+        grandparentTitle: String = "Big Bang: A Teoria",
+        originalTitle: String = "The Big Bang Theory",
+        year: Int? = 2009,
+        grandparentSlug: String? = "the-big-bang-theory",
     ): PlexWebhookPayload =
         PlexWebhookPayload(
             event = event,
@@ -199,10 +247,10 @@ class PlexEpisodeWatchServiceTest {
                     type = type,
                     title = "A Expedicao Monopolar",
                     titleSort = "Expedicao Monopolar",
-                    grandparentTitle = "Big Bang: A Teoria",
+                    grandparentTitle = grandparentTitle,
                     parentTitle = "Temporada 2",
-                    originalTitle = "The Big Bang Theory",
-                    grandparentSlug = "the-big-bang-theory",
+                    originalTitle = originalTitle,
+                    grandparentSlug = grandparentSlug,
                     guid = "plex://episode/5d9c12796c3e37001ecfed0d",
                     parentGuid = "plex://season/602e67aa91bd55002cf855c8",
                     grandparentGuid = "plex://show/5d9c086c02391c001f5891b3",
@@ -210,7 +258,7 @@ class PlexEpisodeWatchServiceTest {
                     parentThumb = "/library/metadata/3940/thumb/1774197845",
                     parentIndex = 2,
                     index = 23,
-                    year = 2009,
+                    year = year,
                     lastViewedAt = Instant.ofEpochSecond(1775146349),
                     duration = 1260000,
                     originallyAvailableAt = LocalDate.parse("2009-05-11"),

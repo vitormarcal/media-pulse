@@ -36,11 +36,7 @@ class PlexEpisodeWatchService(
         val eventType = requireNotNull(PlexEventType.fromType(payload.event)) { "event type is not supported: ${payload.event}" }
         if (eventType != PlexEventType.SCROBBLE) return null
 
-        val showOriginalTitle =
-            meta.originalTitle?.trim()?.ifBlank { null }
-                ?: meta.grandparentTitle?.trim()?.ifBlank { null }
-                ?: return null
-        val showLocalizedTitle = meta.grandparentTitle?.trim()?.ifBlank { null }
+        val showOriginalTitle = meta.grandparentTitle?.trim()?.ifBlank { null } ?: return null
         val showDescription = null
         val showYear = meta.parentYear ?: meta.year
         val showSlug = resolveSlug(meta.grandparentSlug)
@@ -76,16 +72,6 @@ class PlexEpisodeWatchService(
             source = TvShowTitleSource.PLEX.name,
             isPrimary = true,
         )
-
-        if (showLocalizedTitle != null && showLocalizedTitle != show.originalTitle) {
-            tvShowTitleCrudRepository.insertIgnore(
-                showId = show.id,
-                title = showLocalizedTitle,
-                locale = null,
-                source = TvShowTitleSource.PLEX.name,
-                isPrimary = false,
-            )
-        }
 
         safeLink(
             entityType = EntityType.SHOW,
