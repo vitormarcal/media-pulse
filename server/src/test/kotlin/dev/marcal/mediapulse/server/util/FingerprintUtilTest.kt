@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.util
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
 
 class FingerprintUtilTest {
@@ -10,6 +11,20 @@ class FingerprintUtilTest {
         val input = "  The   Name! (Test) "
         val normalized = FingerprintUtil.normalize(input)
         assertEquals("the name (test)", normalized)
+    }
+
+    @Test
+    fun `normalize should preserve unicode letters`() {
+        val input = " 【推しの子】 "
+        val normalized = FingerprintUtil.normalize(input)
+        assertEquals("推しの子", normalized)
+    }
+
+    @Test
+    fun `tvShowFp should differ for distinct japanese titles in same year`() {
+        val first = FingerprintUtil.tvShowFp("【推しの子】", 2023)
+        val second = FingerprintUtil.tvShowFp("葬送のフリーレン", 2023)
+        assertNotEquals(first, second)
     }
 
     @Test
