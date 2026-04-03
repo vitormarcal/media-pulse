@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.integration.plex.dto.PlexGuid
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexShow
 import dev.marcal.mediapulse.server.model.EntityType
+import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvShow
@@ -96,7 +97,6 @@ class PlexShowImportServiceTest {
             } returns null
             every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
             every { tvShowRepository.findByFingerprint(any()) } returns null
-            every { tvShowRepository.findByShowTitle(any()) } returns null
             every { tvShowRepository.findById(any()) } returns java.util.Optional.empty()
             every {
                 tvShowRepository.save(match { it.originalTitle == "Severance" && it.slug == "severance" && it.year == 2022 })
@@ -174,7 +174,7 @@ class PlexShowImportServiceTest {
         }
 
     @Test
-    fun `should merge existing show and episode without duplicating ext ids`() =
+    fun `should merge existing show and episode using canonical ids without duplicating ext ids`() =
         runBlocking {
             val show =
                 PlexShow(
@@ -213,8 +213,8 @@ class PlexShowImportServiceTest {
                 )
 
             every {
-                externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(EntityType.SHOW, Provider.PLEX, "plex://show/abc123")
-            } returns null
+                externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(EntityType.SHOW, Provider.TVDB, "371980")
+            } returns ExternalIdentifier(entityType = EntityType.SHOW, entityId = 10, provider = Provider.TVDB, externalId = "371980")
             every {
                 externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
                     EntityType.EPISODE,
@@ -222,11 +222,12 @@ class PlexShowImportServiceTest {
                     "plex://episode/ep1",
                 )
             } returns null
+            every { tvShowRepository.findById(10) } returns java.util.Optional.of(existingShow)
             every { externalIdentifierRepository.findByProviderAndExternalId(Provider.PLEX, "plex://show/abc123") } returns mockk()
             every { externalIdentifierRepository.findByProviderAndExternalId(Provider.TVDB, "371980") } returns mockk()
             every { externalIdentifierRepository.findByProviderAndExternalId(Provider.PLEX, "plex://episode/ep1") } returns mockk()
             every { externalIdentifierRepository.findByProviderAndExternalId(Provider.TVDB, "8956111") } returns mockk()
-            every { tvShowRepository.findByFingerprint(any()) } returns existingShow
+            every { tvShowRepository.findByFingerprint(any()) } returns null
             every { tvEpisodeRepository.findByFingerprint(any()) } returns existingEpisode
             every { tvShowRepository.save(any()) } returns existingShow.copy(description = "updated-show", year = 2022, slug = "severance")
             every { tvEpisodeRepository.save(any()) } returns existingEpisode.copy(summary = "updated-episode")

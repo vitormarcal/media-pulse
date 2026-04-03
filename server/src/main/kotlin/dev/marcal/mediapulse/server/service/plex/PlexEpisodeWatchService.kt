@@ -36,28 +36,22 @@ class PlexEpisodeWatchService(
         val eventType = requireNotNull(PlexEventType.fromType(payload.event)) { "event type is not supported: ${payload.event}" }
         if (eventType != PlexEventType.SCROBBLE) return null
 
-        val showOriginalTitle =
-            meta.originalTitle?.trim()?.ifBlank { null }
-                ?: meta.grandparentTitle?.trim()?.ifBlank { null }
-                ?: return null
-        val showLocalizedTitle = meta.grandparentTitle?.trim()?.ifBlank { null }
+        val showOriginalTitle = meta.grandparentTitle?.trim()?.ifBlank { null } ?: return null
         val showDescription = null
         val showYear = meta.parentYear ?: meta.year
         val showSlug = resolveSlug(meta.grandparentSlug)
         val showPlexGuid = meta.grandparentGuid?.trim()?.ifBlank { null }
-        val showFingerprint = FingerprintUtil.tvShowFp(originalTitle = showOriginalTitle, year = showYear)
 
         val show =
-            findExistingShow(showPlexGuid)
-                ?: tvShowRepository.findByFingerprint(showFingerprint)
-                ?: findExistingShowByKnownTitles(listOfNotNull(showOriginalTitle, showLocalizedTitle))
+            showSlug?.let { tvShowRepository.findBySlug(it) }
+                ?: findExistingShowByKnownTitles(listOf(showOriginalTitle))
                 ?: tvShowRepository.save(
                     TvShow(
                         originalTitle = showOriginalTitle,
                         description = showDescription,
                         year = showYear,
                         slug = showSlug,
-                        fingerprint = showFingerprint,
+                        fingerprint = FingerprintUtil.tvShowFp(originalTitle = showOriginalTitle, year = null),
                     ),
                 )
 
@@ -79,16 +73,6 @@ class PlexEpisodeWatchService(
             isPrimary = true,
         )
 
-        if (showLocalizedTitle != null && showLocalizedTitle != show.originalTitle) {
-            tvShowTitleCrudRepository.insertIgnore(
-                showId = show.id,
-                title = showLocalizedTitle,
-                locale = null,
-                source = TvShowTitleSource.PLEX.name,
-                isPrimary = false,
-            )
-        }
-
         safeLink(
             entityType = EntityType.SHOW,
             entityId = show.id,
@@ -106,8 +90,7 @@ class PlexEpisodeWatchService(
             )
 
         val existingEpisode =
-            findExistingEpisode(meta.guid, show.id)
-                ?: tvEpisodeRepository.findByFingerprint(episodeFingerprint)
+            tvEpisodeRepository.findByFingerprint(episodeFingerprint)
                 ?: tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(show.id, meta.parentIndex, meta.index)
 
         val episode =
@@ -150,6 +133,21 @@ class PlexEpisodeWatchService(
         )
     }
 
+    private fun findExistingShowByKnownTitles(candidates: List<String>): TvShow? {
+        val uniqueCandidates =
+            candidates
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .distinctBy { it.lowercase() }
+
+        for (candidate in uniqueCandidates) {
+            val byTitle = tvShowRepository.findByShowTitle(candidate)
+            if (byTitle != null) return byTitle
+        }
+
+        return null
+    }
+
     private fun mergeEpisode(
         existing: TvEpisode,
         meta: PlexWebhookPayload.PlexMetadata,
@@ -189,47 +187,6 @@ class PlexEpisodeWatchService(
         } else {
             existing
         }
-    }
-
-    private fun findExistingShow(plexGuid: String?): TvShow? {
-        val guid = plexGuid?.trim()?.ifBlank { null } ?: return null
-        val identifier =
-            externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
-                entityType = EntityType.SHOW,
-                provider = Provider.PLEX,
-                externalId = guid,
-            ) ?: return null
-        return tvShowRepository.findById(identifier.entityId).orElse(null)
-    }
-
-    private fun findExistingShowByKnownTitles(candidates: List<String>): TvShow? {
-        val uniqueCandidates =
-            candidates
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .distinctBy { it.lowercase() }
-
-        for (candidate in uniqueCandidates) {
-            val byTitle = tvShowRepository.findByShowTitle(candidate)
-            if (byTitle != null) return byTitle
-        }
-
-        return null
-    }
-
-    private fun findExistingEpisode(
-        plexGuid: String?,
-        showId: Long,
-    ): TvEpisode? {
-        val guid = plexGuid?.trim()?.ifBlank { null } ?: return null
-        val identifier =
-            externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
-                entityType = EntityType.EPISODE,
-                provider = Provider.PLEX,
-                externalId = guid,
-            ) ?: return null
-        val episode = tvEpisodeRepository.findById(identifier.entityId).orElse(null) ?: return null
-        return episode.takeIf { it.showId == showId }
     }
 
     private fun persistEpisodeExternalIds(

@@ -1,6 +1,8 @@
 package dev.marcal.mediapulse.server.util
 
 import org.apache.commons.codec.digest.DigestUtils
+import java.text.Normalizer
+import java.util.Locale
 
 object FingerprintUtil {
     fun normalizeIsbn(value: String?): String? {
@@ -11,9 +13,11 @@ object FingerprintUtil {
 
     fun normalize(input: String?): String =
         input
-            ?.lowercase()
+            ?.let { Normalizer.normalize(it, Normalizer.Form.NFKD) }
+            ?.replace("\\p{M}+".toRegex(), "")
+            ?.lowercase(Locale.ROOT)
             ?.replace("""\s+""".toRegex(), " ")
-            ?.replace("[^a-z0-9 ()\\-]".toRegex(), "")
+            ?.replace("[^\\p{L}\\p{N} ()\\-]".toRegex(), "")
             ?.trim()
             ?: ""
 
