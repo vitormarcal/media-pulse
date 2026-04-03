@@ -157,7 +157,7 @@ class TvShowQueryRepository(
                     SELECT
                       te.season_number,
                       MAX(te.season_title) AS season_title,
-                      COUNT(*) AS episodes_count,
+                      COUNT(DISTINCT te.id) AS episodes_count,
                       COUNT(DISTINCT CASE WHEN tew.id IS NOT NULL THEN te.id END) AS watched_episodes_count,
                       MAX(tew.watched_at) AS last_watched_at
                     FROM tv_episodes te

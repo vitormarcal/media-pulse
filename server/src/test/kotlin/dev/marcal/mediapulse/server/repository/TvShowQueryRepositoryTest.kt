@@ -123,6 +123,39 @@ class TvShowQueryRepositoryTest {
     }
 
     @Test
+    fun `details should count unique episodes in progress when there are rewatches`() {
+        every { query.resultList } returnsMany
+            listOf(
+                listOf(
+                    arrayOf(
+                        29L,
+                        "O Cavaleiro dos Sete Reinos",
+                        "A Knight of the Seven Kingdoms",
+                        "a-knight-of-the-seven-kingdoms",
+                        2026,
+                        "desc",
+                        "/covers/plex/tv-shows/29/poster.jpg",
+                    ),
+                ),
+                emptyList<Any>(),
+                emptyList<Any>(),
+                listOf(
+                    arrayOf(1, "Temporada 1", 6L, 6L, Timestamp.from(Instant.parse("2026-04-03T23:14:52Z"))),
+                ),
+                emptyList<Any>(),
+            )
+
+        val response = repository.getShowDetails(29L)
+
+        assertEquals(6L, response.progress?.episodesCount)
+        assertEquals(6L, response.progress?.watchedEpisodesCount)
+        assertEquals(true, response.progress?.completed)
+        assertEquals(1, response.seasons.size)
+        assertEquals(6L, response.seasons.first().episodesCount)
+        assertEquals(6L, response.seasons.first().watchedEpisodesCount)
+    }
+
+    @Test
     fun `by year should map stats watched and unwatched`() {
         every { query.singleResult } returns arrayOf(8L, 3L)
         every { query.resultList } returnsMany
