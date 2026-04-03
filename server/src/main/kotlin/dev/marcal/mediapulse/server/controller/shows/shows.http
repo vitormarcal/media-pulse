@@ -1,0 +1,58 @@
+### Variables
+@baseUrl = {{host}}/api/shows
+@showId = 1
+@year = 2026
+@start = 2026-01-01T00:00:00Z
+@end = 2026-12-31T23:59:59Z
+
+### Series recentes
+GET {{baseUrl}}/recent?limit=20
+Accept: application/json
+
+### Detalhes da serie
+GET {{baseUrl}}/{{showId}}
+Accept: application/json
+
+### Detalhes da serie por slug
+GET {{baseUrl}}/slug/severance
+Accept: application/json
+
+### Busca de series
+GET {{baseUrl}}/search?q=dark&limit=10
+Accept: application/json
+
+### Resumo mensal
+GET {{baseUrl}}/summary?range=month
+Accept: application/json
+
+### Resumo anual
+GET {{baseUrl}}/summary?range=year
+Accept: application/json
+
+### Resumo personalizado
+GET {{baseUrl}}/summary?range=custom&start={{start}}&end={{end}}
+Accept: application/json
+
+### Stats globais
+GET {{baseUrl}}/stats
+Accept: application/json
+
+### Series por ano
+GET {{baseUrl}}/year/{{year}}?limitWatched=200&limitUnwatched=200
+Accept: application/json
+
+### Registrar watch manual (item unico)
+POST {{baseUrl}}/watches
+Content-Type: application/json
+Accept: application/json
+
+{
+  "watchedAt": "2026-03-01T10:00:00Z",
+  "showTitle": "Severance",
+  "episodeTitle": "Good News About Hell",
+  "year": 2022,
+  "seasonNumber": 1,
+  "episodeNumber": 1,
+  "tmdbId": "95396",
+  "tvdbId": "371980"
+}
