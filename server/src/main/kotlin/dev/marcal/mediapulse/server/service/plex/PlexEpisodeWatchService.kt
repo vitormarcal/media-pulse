@@ -41,17 +41,17 @@ class PlexEpisodeWatchService(
         val showYear = meta.parentYear ?: meta.year
         val showSlug = resolveSlug(meta.grandparentSlug)
         val showPlexGuid = meta.grandparentGuid?.trim()?.ifBlank { null }
-        val showFingerprint = FingerprintUtil.tvShowFp(originalTitle = showOriginalTitle, year = showYear)
 
         val show =
-            tvShowRepository.findByFingerprint(showFingerprint)
+            showSlug?.let { tvShowRepository.findBySlug(it) }
+                ?: findExistingShowByKnownTitles(listOf(showOriginalTitle))
                 ?: tvShowRepository.save(
                     TvShow(
                         originalTitle = showOriginalTitle,
                         description = showDescription,
                         year = showYear,
                         slug = showSlug,
-                        fingerprint = showFingerprint,
+                        fingerprint = FingerprintUtil.tvShowFp(originalTitle = showOriginalTitle, year = null),
                     ),
                 )
 
@@ -131,6 +131,21 @@ class PlexEpisodeWatchService(
             source = TvEpisodeWatchSource.PLEX,
             watchedAt = watchedAt,
         )
+    }
+
+    private fun findExistingShowByKnownTitles(candidates: List<String>): TvShow? {
+        val uniqueCandidates =
+            candidates
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .distinctBy { it.lowercase() }
+
+        for (candidate in uniqueCandidates) {
+            val byTitle = tvShowRepository.findByShowTitle(candidate)
+            if (byTitle != null) return byTitle
+        }
+
+        return null
     }
 
     private fun mergeEpisode(

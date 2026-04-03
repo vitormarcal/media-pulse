@@ -7,6 +7,8 @@ import org.springframework.data.repository.CrudRepository
 interface TvShowRepository : CrudRepository<TvShow, Long> {
     fun findByFingerprint(fingerprint: String): TvShow?
 
+    fun findBySlug(slug: String): TvShow?
+
     @Query(
         nativeQuery = true,
         value = """
