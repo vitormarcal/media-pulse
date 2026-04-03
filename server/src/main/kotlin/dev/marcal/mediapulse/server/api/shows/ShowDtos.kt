@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.api.shows
 
 import java.time.Instant
+import java.time.LocalDate
 
 data class ShowCardDto(
     val showId: Long,
@@ -114,4 +115,39 @@ data class ShowYearUnwatchedDto(
 data class RangeDto(
     val start: Instant,
     val end: Instant,
+)
+
+data class ManualShowWatchCreateRequest(
+    val watchedAt: Instant,
+    val showTitle: String,
+    val episodeTitle: String,
+    val year: Int? = null,
+    val seasonNumber: Int? = null,
+    val episodeNumber: Int? = null,
+    val tmdbId: String? = null,
+    val tvdbId: String? = null,
+    val originallyAvailableAt: LocalDate? = null,
+)
+
+data class ManualShowWatchCreateResponse(
+    val showId: Long,
+    val title: String,
+    val year: Int?,
+    val coverUrl: String?,
+    val episodeId: Long,
+    val episodeTitle: String,
+    val seasonNumber: Int?,
+    val episodeNumber: Int?,
+    val watchedAt: Instant,
+    val source: String,
+    val createdShow: Boolean,
+    val createdEpisode: Boolean,
+    val watchInserted: Boolean,
+    val coverAssigned: Boolean,
+    val externalIds: List<ManualShowExternalIdView>,
+)
+
+data class ManualShowExternalIdView(
+    val provider: String,
+    val externalId: String,
 )

@@ -7,6 +7,8 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.transaction.annotation.Transactional
 
 interface TvShowImageCrudRepository : CrudRepository<TvShowImage, Long> {
+    fun existsByShowIdAndIsPrimaryTrue(showId: Long): Boolean
+
     @Modifying
     @Transactional
     @Query(

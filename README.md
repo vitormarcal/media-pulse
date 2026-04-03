@@ -40,6 +40,7 @@ Media Pulse centraliza dados pessoais de consumo (music, books, movies e TV show
 - `GET /api/shows/summary`
 - `GET /api/shows/stats`
 - `GET /api/shows/year/{year}` (stats anuais, séries assistidas no ano e séries nunca assistidas)
+- `POST /api/shows/watches` (ingestão manual idempotente de episode watches com resolução por TMDB/TVDB/fingerprint)
 
 ## Configuração TMDb
 
@@ -55,6 +56,7 @@ Media Pulse centraliza dados pessoais de consumo (music, books, movies e TV show
 ## Docs
 
 - `docs/plex-movie-ingestion.md`
+- `docs/plex-show-ingestion.md`
 - `docs/books-api.md`
 - `docs/movies-api.md`
 - `docs/shows-api.md`

@@ -1,6 +1,6 @@
 # Shows API
 
-A Shows API fornece endpoints read-only para consulta de séries e episódios assistidos via Plex.
+A Shows API fornece endpoints read-only para consulta de séries e um endpoint de ingestão manual idempotente de episode watches.
 
 ## Escopo e origem dos dados
 
@@ -20,6 +20,7 @@ A Shows API fornece endpoints read-only para consulta de séries e episódios as
 | `GET /api/shows/summary` | `range=month\|year\|custom`, `start?`, `end?` | `ShowsSummaryResponse` |
 | `GET /api/shows/year/{year}` | `year` (path), `limitWatched=200` (máx. `1000`), `limitUnwatched=200` (máx. `1000`) | `ShowsByYearResponse` |
 | `GET /api/shows/stats` | - | `ShowsStatsResponse` |
+| `POST /api/shows/watches` | body com `watchedAt`, `showTitle`, `episodeTitle`, `seasonNumber?`, `episodeNumber?`, `year?`, `tmdbId?`, `tvdbId?` | `ManualShowWatchCreateResponse` |
 
 ## Contratos
 
@@ -178,6 +179,37 @@ A Shows API fornece endpoints read-only para consulta de séries e episódios as
 }
 ```
 
+### ManualShowWatchCreateResponse
+
+```json
+{
+  "showId": 42,
+  "title": "Severance",
+  "year": 2022,
+  "coverUrl": "/covers/tmdb/tv-shows/42/poster.jpg",
+  "episodeId": 999,
+  "episodeTitle": "Good News About Hell",
+  "seasonNumber": 1,
+  "episodeNumber": 1,
+  "watchedAt": "2026-02-27T19:40:19Z",
+  "source": "MANUAL",
+  "createdShow": false,
+  "createdEpisode": false,
+  "watchInserted": true,
+  "coverAssigned": false,
+  "externalIds": [
+    {
+      "provider": "TMDB",
+      "externalId": "95396"
+    },
+    {
+      "provider": "TVDB",
+      "externalId": "371980"
+    }
+  ]
+}
+```
+
 ## Regras de range (`/summary`)
 
 - `range=month`: últimos 30 dias a partir de `now`.
@@ -199,6 +231,36 @@ A deduplicação ocorre por `(source, episode_id, watched_at)`.
 
 - Mesmo episódio + mesma source + mesmo `watchedAt`: conflito e insert ignorado.
 - Mesmo episódio em horários diferentes: ambos persistem.
+
+## Ingestão manual (`POST /api/shows/watches`)
+
+O endpoint processa um único watch manual de episódio por requisição.
+
+Regras de resolução da série:
+
+1. `tmdbId`: busca em `external_identifiers` (`provider=TMDB`, `entity_type=SHOW`).
+2. `tvdbId`: busca em `external_identifiers` (`provider=TVDB`, `entity_type=SHOW`).
+3. Fingerprint por `showTitle + year`.
+4. Se não encontrar, cria `tv_shows` + `tv_show_titles` (`source=MANUAL`, `is_primary=true`) e vincula ids externos quando informados.
+5. Quando `tmdbId` estiver presente, preenche metadados faltantes de `tv_shows` (`description`, `slug`, `year`) com dados do TMDb.
+
+Regras de resolução do episódio:
+
+1. Fingerprint por `show_id + seasonNumber + episodeNumber + episodeTitle`.
+2. Fallback para `(show_id, season_number, episode_number)`.
+3. Se não encontrar, cria `tv_episodes`.
+
+Regras de idempotência:
+
+- `tv_episode_watches` usa `ON CONFLICT DO NOTHING` e UNIQUE `(source, episode_id, watched_at)`.
+- `tv_show_titles`, `tv_show_images` e `external_identifiers` também usam inserção idempotente com `insertIgnore`/verificação prévia.
+
+Enriquecimento simples de capa:
+
+- Se o item tiver `tmdbId` e a série ainda não tiver imagem primária, busca `poster_path` em TMDb (`/tv/{id}`).
+- Baixa a imagem `${TMDB_IMAGE_BASE_URL}/t/p/w780{poster_path}` e salva em disco (padrão `/covers/tmdb/tv-shows/{showId}/...`).
+- Também tenta baixar `backdrop_path` como imagem adicional quando disponível.
+- Salva o caminho local em `tv_show_images` e preenche `tv_shows.cover_url` apenas se estiver `null`.
 
 ## Erros esperados
 
@@ -256,4 +318,19 @@ curl "{{host}}/api/shows/year/2026?limitWatched=200&limitUnwatched=200"
 
 ```bash
 curl "{{host}}/api/shows/stats"
+```
+
+### Ingestão manual
+
+```bash
+curl -X POST "{{host}}/api/shows/watches" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "watchedAt": "2026-02-27T19:40:19Z",
+    "showTitle": "Severance",
+    "episodeTitle": "Good News About Hell",
+    "seasonNumber": 1,
+    "episodeNumber": 1,
+    "tmdbId": "95396"
+  }'
 ```
