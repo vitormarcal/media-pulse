@@ -1,27 +1,9 @@
-# Etapa 1: Build da aplicação
-FROM gradle:8.14.3-jdk21-alpine AS builder
-
-WORKDIR /app/server
-
-# Copie apenas os arquivos do Gradle (sem wrapper)
-COPY ./server/gradle ./gradle
-COPY ./server/settings.gradle.kts ./settings.gradle.kts
-COPY ./server/build.gradle.kts ./build.gradle.kts
-
-RUN gradle --no-daemon build -x test || true
-
-# Copie o código
-COPY ./server/src ./src
-
-RUN gradle --no-daemon clean build -PskipIntegrationTests=true
-
-# Etapa 2: Imagem final com Corretto (sem toolchain de build)
 FROM amazoncorretto:21-alpine
 
 WORKDIR /app
 
-# Copie só o jar final
-COPY --from=builder /app/server/build/libs/*.jar server.jar
+# Copie o jar já construído localmente
+COPY ./server/build/libs/*.jar server.jar
 
 # Configurações da aplicação
 VOLUME /config

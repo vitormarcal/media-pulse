@@ -66,6 +66,8 @@ help:
 # ---------- Targets ----------
 .PHONY: build
 build:
+	@echo "Building application jar with Gradle"
+	./server/gradlew -p ./server build
 	@echo "Building Docker image: $(IMAGE_NAME):$(VERSION)"
 	docker build -f $(DOCKERFILE) -t $(IMAGE_NAME):$(VERSION) $(CONTEXT)
 	@for t in $(EXTRA_TAGS); do \

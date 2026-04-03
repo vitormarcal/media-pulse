@@ -1,5 +1,8 @@
 .gradle
 **/build
+!server/build/
+!server/build/libs/
+!server/build/libs/*.jar
 **/.env
 .env
 http-client-env
