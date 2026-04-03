@@ -1,6 +1,6 @@
 # Media Pulse
 
-Media Pulse centraliza dados pessoais de consumo (music, books e movies) com ingestão de provedores externos e APIs read-only para consulta.
+Media Pulse centraliza dados pessoais de consumo (music, books, movies e TV shows) com ingestão de provedores externos e APIs read-only para consulta.
 
 ## Server
 
@@ -15,6 +15,11 @@ Media Pulse centraliza dados pessoais de consumo (music, books e movies) com ing
 - `V9__add_slug_to_movies.sql` (adiciona `movies.slug` para persistir o slug do Plex)
 - `V10__allow_manual_movie_sources.sql` (habilita `MANUAL` em `movie_titles`/`movie_watches` e índice para lookup em `external_identifiers`)
 
+## TV migrations
+
+- `V11__create_tv_schema.sql` (cria `tv_shows`, `tv_show_titles`, `tv_episodes`, `tv_episode_watches` e índices iniciais)
+- `V12__add_tv_show_images.sql` (adiciona `cover_url` e `tv_show_images`)
+
 ## Movies endpoints
 
 - `GET /api/movies/recent`
@@ -25,6 +30,16 @@ Media Pulse centraliza dados pessoais de consumo (music, books e movies) com ing
 - `GET /api/movies/stats`
 - `GET /api/movies/year/{year}` (stats anuais, filmes assistidos no ano e filmes nunca assistidos)
 - `POST /api/movies/watches` (ingestão manual idempotente de watches com resolução por TMDB/IMDB/fingerprint)
+
+## Shows endpoints
+
+- `GET /api/shows/recent`
+- `GET /api/shows/{showId}`
+- `GET /api/shows/slug/{slug}`
+- `GET /api/shows/search` (busca por título e slug)
+- `GET /api/shows/summary`
+- `GET /api/shows/stats`
+- `GET /api/shows/year/{year}` (stats anuais, séries assistidas no ano e séries nunca assistidas)
 
 ## Configuração TMDb
 
@@ -42,3 +57,4 @@ Media Pulse centraliza dados pessoais de consumo (music, books e movies) com ing
 - `docs/plex-movie-ingestion.md`
 - `docs/books-api.md`
 - `docs/movies-api.md`
+- `docs/shows-api.md`
