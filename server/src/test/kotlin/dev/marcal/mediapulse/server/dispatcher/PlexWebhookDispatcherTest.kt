@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import dev.marcal.mediapulse.server.config.JacksonConfig
 import dev.marcal.mediapulse.server.fixture.PlexEventsFixture
 import dev.marcal.mediapulse.server.service.dispatch.DispatchResult
+import dev.marcal.mediapulse.server.service.plex.PlexEpisodeWatchService
 import dev.marcal.mediapulse.server.service.plex.PlexMovieWatchService
 import dev.marcal.mediapulse.server.service.plex.PlexMusicPlaybackService
 import dev.marcal.mediapulse.server.service.plex.PlexWebhookDispatcher
@@ -22,11 +23,13 @@ class PlexWebhookDispatcherTest {
     private val objectMapper = JacksonConfig().objectMapper()
     private val plexMusicPlaybackService: PlexMusicPlaybackService = mockk()
     private val plexMovieWatchService: PlexMovieWatchService = mockk()
+    private val plexEpisodeWatchService: PlexEpisodeWatchService = mockk()
     private val dispatcher: PlexWebhookDispatcher =
         PlexWebhookDispatcher(
             objectMapper = objectMapper,
             plexMusicPlaybackService = plexMusicPlaybackService,
             plexMovieWatchService = plexMovieWatchService,
+            plexEpisodeWatchService = plexEpisodeWatchService,
         )
 
     @BeforeEach
@@ -140,5 +143,52 @@ class PlexWebhookDispatcherTest {
             coEvery { plexMovieWatchService.processScrobble(any()) } returns null
             val exception = assertThrows<RuntimeException> { dispatcher.dispatch(movieScrobblePayload, eventId = null) }
             assertTrue(exception.message!!.contains("Movie watch not found for: "))
+        }
+
+    @Test
+    fun `test dispatch with valid episode scrobble event`() =
+        runBlocking {
+            val episodeScrobblePayload =
+                """
+                {
+                  "event": "media.scrobble",
+                  "Metadata": {
+                    "type": "episode",
+                    "title": "A Expedição Monopolar",
+                    "grandparentTitle": "Big Bang: A Teoria",
+                    "originalTitle": "The Big Bang Theory",
+                    "grandparentGuid": "plex://show/5d9c086c02391c001f5891b3",
+                    "guid": "plex://episode/5d9c12796c3e37001ecfed0d",
+                    "parentIndex": 2,
+                    "index": 23,
+                    "lastViewedAt": 1775146349
+                  }
+                }
+                """.trimIndent()
+
+            coEvery { plexEpisodeWatchService.processScrobble(any()) } returns mockk()
+
+            val result = dispatcher.dispatch(episodeScrobblePayload, eventId = 123L)
+            assertEquals(DispatchResult.SUCCESS, result)
+        }
+
+    @Test
+    fun `test dispatch with valid episode scrobble event but episode service returns null`() =
+        runBlocking {
+            val episodeScrobblePayload =
+                """
+                {
+                  "event": "media.scrobble",
+                  "Metadata": {
+                    "type": "episode",
+                    "title": "A Expedição Monopolar"
+                  }
+                }
+                """.trimIndent()
+
+            coEvery { plexEpisodeWatchService.processScrobble(any()) } returns null
+
+            val exception = assertThrows<RuntimeException> { dispatcher.dispatch(episodeScrobblePayload, eventId = null) }
+            assertTrue(exception.message!!.contains("Episode watch not found for: "))
         }
 }

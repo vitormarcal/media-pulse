@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.integration.plex.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import java.time.LocalDate
 
 data class PlexContainer<T>(
     @JsonProperty("MediaContainer") val mc: MediaContainer<T>,
@@ -70,5 +71,33 @@ data class PlexMovie(
     val summary: String? = null,
     val thumb: String? = null,
     @JsonProperty("Image") val image: List<PlexImageAsset> = emptyList(),
+    @JsonProperty("Guid") val guids: List<PlexGuid>? = emptyList(),
+)
+
+data class PlexShow(
+    val ratingKey: String,
+    val key: String? = null,
+    val slug: String? = null,
+    val title: String,
+    val originalTitle: String? = null,
+    val year: Int? = null,
+    val summary: String? = null,
+    val guid: String? = null,
+    val thumb: String? = null,
+    @JsonProperty("Image") val image: List<PlexImageAsset> = emptyList(),
+    @JsonProperty("Guid") val guids: List<PlexGuid>? = emptyList(),
+)
+
+data class PlexEpisode(
+    val ratingKey: String,
+    val key: String? = null,
+    val title: String,
+    val guid: String? = null,
+    val parentIndex: Int? = null,
+    val index: Int? = null,
+    val year: Int? = null,
+    val summary: String? = null,
+    val duration: Int? = null,
+    val originallyAvailableAt: LocalDate? = null,
     @JsonProperty("Guid") val guids: List<PlexGuid>? = emptyList(),
 )

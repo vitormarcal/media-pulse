@@ -9,6 +9,7 @@ import dev.marcal.mediapulse.server.service.hardcover.HardcoverImportService
 import dev.marcal.mediapulse.server.service.musicbrainz.MusicBrainzAlbumGenreEnrichmentService
 import dev.marcal.mediapulse.server.service.plex.import.PlexMovieImportService
 import dev.marcal.mediapulse.server.service.plex.import.PlexMusicImportService
+import dev.marcal.mediapulse.server.service.plex.import.PlexShowImportService
 import dev.marcal.mediapulse.server.service.spotify.SpotifyImportService
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
@@ -35,6 +36,8 @@ class ImportPipelineRunnerTest {
 
     @MockK lateinit var plexMovieImportService: PlexMovieImportService
 
+    @MockK lateinit var plexShowImportService: PlexShowImportService
+
     @MockK lateinit var mbService: MusicBrainzAlbumGenreEnrichmentService
 
     @MockK lateinit var spotifyImportService: SpotifyImportService
@@ -52,6 +55,7 @@ class ImportPipelineRunnerTest {
                 spotifyProps = spotifyProps,
                 plexMusicImportService = plexMusicImportService,
                 plexMovieImportService = plexMovieImportService,
+                plexShowImportService = plexShowImportService,
                 mbService = mbService,
                 spotifyImportService = spotifyImportService,
                 hardcoverProperties = hardcoverProperties,
@@ -67,6 +71,7 @@ class ImportPipelineRunnerTest {
             runner.run("test")
             coVerify(exactly = 0) { plexMusicImportService.importAllMusicLibrary(any()) }
             coVerify(exactly = 0) { plexMovieImportService.importAllMovies(any()) }
+            coVerify(exactly = 0) { plexShowImportService.importAllShows(any()) }
             coVerify(exactly = 0) { spotifyImportService.importRecentlyPlayed() }
             coVerify(exactly = 0) { mbService.enrichBatch(any()) }
             coVerify(exactly = 0) { hardcoverImportService.importUserBooks() }
@@ -78,6 +83,7 @@ class ImportPipelineRunnerTest {
             coEvery { pipelineProps.enabled } returns true
             coEvery { plexProps.import.enabled } returns true
             coEvery { plexProps.import.moviesEnabled } returns true
+            coEvery { plexProps.import.showsEnabled } returns true
             coEvery { plexProps.import.pageSize } returns 200
             coEvery { spotifyProps.enabled } returns true
             coEvery { spotifyProps.import.enabled } returns true
@@ -96,6 +102,7 @@ class ImportPipelineRunnerTest {
                 )
             coEvery { spotifyImportService.importRecentlyPlayed() } returns 100
             coEvery { plexMovieImportService.importAllMovies(pageSize = 200) } returns PlexMovieImportService.ImportStats(10, 10)
+            coEvery { plexShowImportService.importAllShows(pageSize = 200) } returns PlexShowImportService.ImportStats(4, 4, 20, 20)
             coEvery { mbService.enrichBatch(100) } returns 50
             coEvery { hardcoverImportService.importUserBooks() } returns 5
 
@@ -103,6 +110,7 @@ class ImportPipelineRunnerTest {
 
             coVerify(exactly = 1) { plexMusicImportService.importAllMusicLibrary(pageSize = 200) }
             coVerify(exactly = 1) { plexMovieImportService.importAllMovies(pageSize = 200) }
+            coVerify(exactly = 1) { plexShowImportService.importAllShows(pageSize = 200) }
             coVerify(exactly = 1) { spotifyImportService.importRecentlyPlayed() }
             coVerify(exactly = 1) { mbService.enrichBatch(100) }
             coVerify(exactly = 1) { hardcoverImportService.importUserBooks() }
@@ -114,6 +122,7 @@ class ImportPipelineRunnerTest {
             coEvery { pipelineProps.enabled } returns true
             coEvery { plexProps.import.enabled } returns false
             coEvery { plexProps.import.moviesEnabled } returns false
+            coEvery { plexProps.import.showsEnabled } returns false
             coEvery { spotifyProps.enabled } returns true
             coEvery { spotifyProps.import.enabled } returns true
             coEvery { mbProps.enabled } returns false
@@ -124,6 +133,7 @@ class ImportPipelineRunnerTest {
 
             coVerify(exactly = 0) { plexMusicImportService.importAllMusicLibrary(any()) }
             coVerify(exactly = 0) { plexMovieImportService.importAllMovies(any()) }
+            coVerify(exactly = 0) { plexShowImportService.importAllShows(any()) }
             coVerify(exactly = 1) { spotifyImportService.importRecentlyPlayed() }
             coVerify(exactly = 0) { mbService.enrichBatch(any()) }
             coVerify(exactly = 0) { hardcoverImportService.importUserBooks() }

@@ -9,6 +9,7 @@ import dev.marcal.mediapulse.server.service.hardcover.HardcoverImportService
 import dev.marcal.mediapulse.server.service.musicbrainz.MusicBrainzAlbumGenreEnrichmentService
 import dev.marcal.mediapulse.server.service.plex.import.PlexMovieImportService
 import dev.marcal.mediapulse.server.service.plex.import.PlexMusicImportService
+import dev.marcal.mediapulse.server.service.plex.import.PlexShowImportService
 import dev.marcal.mediapulse.server.service.spotify.SpotifyImportService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -23,6 +24,7 @@ class ImportPipelineRunner(
     private val hardcoverProperties: HardcoverProperties,
     private val plexMusicImportService: PlexMusicImportService,
     private val plexMovieImportService: PlexMovieImportService,
+    private val plexShowImportService: PlexShowImportService,
     private val mbService: MusicBrainzAlbumGenreEnrichmentService,
     private val spotifyImportService: SpotifyImportService,
     private val hardcoverImportService: HardcoverImportService,
@@ -62,6 +64,19 @@ class ImportPipelineRunner(
                 )
             } else {
                 logger.info("Pipeline Plex movies skipped | reason=disabled")
+            }
+
+            if (plexProps.import.showsEnabled) {
+                val stats = plexShowImportService.importAllShows(pageSize = plexProps.import.pageSize)
+                logger.info(
+                    "Pipeline Plex shows done | showsSeen={} showsUpserted={} episodesSeen={} episodesUpserted={}",
+                    stats.showsSeen,
+                    stats.showsUpserted,
+                    stats.episodesSeen,
+                    stats.episodesUpserted,
+                )
+            } else {
+                logger.info("Pipeline Plex shows skipped | reason=disabled")
             }
 
             if (spotifyProps.enabled && spotifyProps.import.enabled) {

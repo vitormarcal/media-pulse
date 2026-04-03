@@ -11,6 +11,7 @@ data class PlexProperties(
     data class ImportProperties(
         val enabled: Boolean = true,
         val moviesEnabled: Boolean = true,
+        val showsEnabled: Boolean = true,
         val pageSize: Int = 200,
     )
 }

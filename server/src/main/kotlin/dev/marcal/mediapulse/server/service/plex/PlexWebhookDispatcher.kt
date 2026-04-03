@@ -12,6 +12,7 @@ class PlexWebhookDispatcher(
     private val objectMapper: ObjectMapper,
     private val plexMusicPlaybackService: PlexMusicPlaybackService,
     private val plexMovieWatchService: PlexMovieWatchService,
+    private val plexEpisodeWatchService: PlexEpisodeWatchService,
 ) : EventDispatcher {
     override val provider: String = "plex"
 
@@ -72,8 +73,12 @@ class PlexWebhookDispatcher(
                 }
             }
             "episode" -> {
-                logger.debug("Ignored Plex scrobble type: episode")
-                DispatchResult.IGNORED
+                val processed = plexEpisodeWatchService.processScrobble(webhookPayload)
+                if (processed != null) {
+                    DispatchResult.SUCCESS
+                } else {
+                    throw IllegalStateException("Episode watch not found for: ${webhookPayload.metadata.title}")
+                }
             }
 
             else -> {
