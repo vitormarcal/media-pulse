@@ -93,6 +93,7 @@ data class PlexEpisode(
     val key: String? = null,
     val title: String,
     val guid: String? = null,
+    val parentTitle: String? = null,
     val parentIndex: Int? = null,
     val index: Int? = null,
     val year: Int? = null,

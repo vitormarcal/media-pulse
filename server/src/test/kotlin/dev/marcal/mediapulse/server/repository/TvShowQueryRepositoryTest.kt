@@ -112,11 +112,13 @@ class TvShowQueryRepositoryTest {
                 emptyList<Any>(),
                 emptyList<Any>(),
                 emptyList<Any>(),
+                emptyList<Any>(),
             )
 
         val response = repository.getShowDetailsBySlug("severance")
 
         assertEquals(10L, response.showId)
+        assertEquals(0L, response.progress?.episodesCount)
         verify(exactly = 1) { query.setParameter("slug", "severance") }
     }
 

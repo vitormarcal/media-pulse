@@ -41,6 +41,7 @@ class PlexEpisodeWatchService(
         val showYear = meta.parentYear ?: meta.year
         val showSlug = resolveSlug(meta.grandparentSlug)
         val showPlexGuid = meta.grandparentGuid?.trim()?.ifBlank { null }
+        val seasonTitle = meta.parentTitle?.trim()?.ifBlank { null }
 
         val show =
             showSlug?.let { tvShowRepository.findBySlug(it) }
@@ -100,6 +101,7 @@ class PlexEpisodeWatchService(
                         showId = show.id,
                         title = episodeTitle,
                         seasonNumber = meta.parentIndex,
+                        seasonTitle = seasonTitle,
                         episodeNumber = meta.index,
                         summary = meta.summary?.trim()?.ifBlank { null },
                         durationMs = meta.duration,
@@ -108,7 +110,7 @@ class PlexEpisodeWatchService(
                     ),
                 )
             } else {
-                mergeEpisode(existingEpisode, meta, episodeTitle, episodeFingerprint)
+                mergeEpisode(existingEpisode, meta, episodeTitle, episodeFingerprint, seasonTitle)
             }
 
         safeLink(
@@ -153,9 +155,11 @@ class PlexEpisodeWatchService(
         meta: PlexWebhookPayload.PlexMetadata,
         title: String,
         fingerprint: String,
+        seasonTitle: String?,
     ): TvEpisode {
         val updatedTitle = if (existing.title.isBlank()) title else existing.title
         val updatedSeasonNumber = existing.seasonNumber ?: meta.parentIndex
+        val updatedSeasonTitle = existing.seasonTitle ?: seasonTitle
         val updatedEpisodeNumber = existing.episodeNumber ?: meta.index
         val updatedSummary = meta.summary?.trim()?.ifBlank { null } ?: existing.summary
         val updatedDurationMs = meta.duration ?: existing.durationMs
@@ -165,6 +169,7 @@ class PlexEpisodeWatchService(
         val changed =
             updatedTitle != existing.title ||
                 updatedSeasonNumber != existing.seasonNumber ||
+                updatedSeasonTitle != existing.seasonTitle ||
                 updatedEpisodeNumber != existing.episodeNumber ||
                 updatedSummary != existing.summary ||
                 updatedDurationMs != existing.durationMs ||
@@ -176,6 +181,7 @@ class PlexEpisodeWatchService(
                 existing.copy(
                     title = updatedTitle,
                     seasonNumber = updatedSeasonNumber,
+                    seasonTitle = updatedSeasonTitle,
                     episodeNumber = updatedEpisodeNumber,
                     summary = updatedSummary,
                     durationMs = updatedDurationMs,

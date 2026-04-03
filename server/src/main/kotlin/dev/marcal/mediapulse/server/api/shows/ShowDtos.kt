@@ -24,9 +24,28 @@ data class ShowWatchDto(
     val episodeId: Long,
     val episodeTitle: String,
     val seasonNumber: Int?,
+    val seasonTitle: String? = null,
     val episodeNumber: Int?,
     val watchedAt: Instant,
     val source: String,
+)
+
+data class ShowSeasonDto(
+    val seasonNumber: Int?,
+    val seasonTitle: String? = null,
+    val episodesCount: Long,
+    val watchedEpisodesCount: Long,
+    val completed: Boolean,
+    val lastWatchedAt: Instant? = null,
+)
+
+data class ShowProgressDto(
+    val episodesCount: Long,
+    val watchedEpisodesCount: Long,
+    val seasonsCount: Long,
+    val completedSeasonsCount: Long,
+    val completed: Boolean,
+    val inProgress: Boolean,
 )
 
 data class ShowExternalIdDto(
@@ -43,6 +62,8 @@ data class ShowDetailsResponse(
     val description: String?,
     val coverUrl: String?,
     val images: List<ShowImageDto>,
+    val seasons: List<ShowSeasonDto> = emptyList(),
+    val progress: ShowProgressDto? = null,
     val watches: List<ShowWatchDto>,
     val externalIds: List<ShowExternalIdDto>,
 )
