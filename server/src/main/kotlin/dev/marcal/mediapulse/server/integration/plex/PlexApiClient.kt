@@ -4,8 +4,10 @@ import dev.marcal.mediapulse.server.config.PlexProperties
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexAlbum
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexArtist
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexContainer
+import dev.marcal.mediapulse.server.integration.plex.dto.PlexEpisode
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexMovie
+import dev.marcal.mediapulse.server.integration.plex.dto.PlexShow
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexTrack
 import dev.marcal.mediapulse.server.model.image.ImageContent
 import kotlinx.coroutines.reactor.awaitSingle
@@ -51,6 +53,18 @@ class PlexApiClient(
                 it.mc.Directory
                     .orEmpty()
                     .filter { s -> s.type == "movie" }
+            }.awaitSingle()
+
+    suspend fun listShowSections(): List<PlexLibrarySection> =
+        plexWebClient
+            .get()
+            .uri(uri(auth, "/library/sections"))
+            .retrieve()
+            .bodyToMono(object : org.springframework.core.ParameterizedTypeReference<PlexContainer<PlexLibrarySection>>() {})
+            .map {
+                it.mc.Directory
+                    .orEmpty()
+                    .filter { s -> s.type == "show" }
             }.awaitSingle()
 
     suspend fun listArtistsPaged(
@@ -151,6 +165,61 @@ class PlexApiClient(
                 .uri(uri(auth, path))
                 .retrieve()
                 .toEntity(object : org.springframework.core.ParameterizedTypeReference<PlexContainer<PlexMovie>>() {})
+                .awaitSingle()
+
+        val body = resp.body!!.mc
+        val total =
+            resp.headers
+                .getFirst("X-Plex-Container-Total-Size")
+                ?.toInt()
+                ?: body.totalSize ?: body.size ?: 0
+
+        val items = (body.Directory ?: body.Metadata).orEmpty()
+        return items to total
+    }
+
+    suspend fun listShowsPaged(
+        sectionKey: String,
+        start: Int,
+        size: Int,
+    ): Pair<List<PlexShow>, Int> {
+        val path =
+            "/library/sections/$sectionKey/all?type=2&includeGuids=1" +
+                "&X-Plex-Container-Start=$start&X-Plex-Container-Size=$size"
+        val resp =
+            plexWebClient
+                .get()
+                .uri(uri(auth, path))
+                .retrieve()
+                .toEntity(object : org.springframework.core.ParameterizedTypeReference<PlexContainer<PlexShow>>() {})
+                .awaitSingle()
+
+        val body = resp.body!!.mc
+        val total =
+            resp.headers
+                .getFirst("X-Plex-Container-Total-Size")
+                ?.toInt()
+                ?: body.totalSize ?: body.size ?: 0
+
+        val items = (body.Directory ?: body.Metadata).orEmpty()
+        return items to total
+    }
+
+    suspend fun listEpisodesByShowPaged(
+        sectionKey: String,
+        showRatingKey: String,
+        start: Int,
+        size: Int,
+    ): Pair<List<PlexEpisode>, Int> {
+        val path =
+            "/library/sections/$sectionKey/all?type=4&show.id=$showRatingKey&includeGuids=1" +
+                "&X-Plex-Container-Start=$start&X-Plex-Container-Size=$size"
+        val resp =
+            plexWebClient
+                .get()
+                .uri(uri(auth, path))
+                .retrieve()
+                .toEntity(object : org.springframework.core.ParameterizedTypeReference<PlexContainer<PlexEpisode>>() {})
                 .awaitSingle()
 
         val body = resp.body!!.mc
