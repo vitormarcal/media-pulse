@@ -72,6 +72,17 @@ data class ShowsSearchResponse(
     val shows: List<ShowCardDto>,
 )
 
+data class CurrentlyWatchingShowDto(
+    val showId: Long,
+    val title: String,
+    val originalTitle: String,
+    val slug: String? = null,
+    val year: Int?,
+    val coverUrl: String?,
+    val lastWatchedAt: Instant,
+    val progress: ShowProgressDto,
+)
+
 data class ShowsSummaryResponse(
     val range: RangeDto,
     val watchesCount: Long,

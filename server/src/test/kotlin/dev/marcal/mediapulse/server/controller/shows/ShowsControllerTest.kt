@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.controller.shows
 
+import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.RangeDto
 import dev.marcal.mediapulse.server.api.shows.ShowCardDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
@@ -18,6 +19,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.springframework.web.server.ResponseStatusException
+import java.time.Duration
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -34,6 +36,52 @@ class ShowsControllerTest {
 
         assertEquals(0, result.size)
         verify(exactly = 1) { repository.recent(15) }
+    }
+
+    @Test
+    fun `currently watching should delegate with computed cutoff`() {
+        val expected =
+            listOf(
+                CurrentlyWatchingShowDto(
+                    showId = 29,
+                    title = "O Cavaleiro dos Sete Reinos",
+                    originalTitle = "A Knight of the Seven Kingdoms",
+                    slug = "a-knight-of-the-seven-kingdoms",
+                    year = 2026,
+                    coverUrl = "/covers/plex/tv-shows/29/poster.jpg",
+                    lastWatchedAt = Instant.parse("2026-04-03T23:02:53Z"),
+                    progress =
+                        ShowProgressDto(
+                            episodesCount = 6,
+                            watchedEpisodesCount = 4,
+                            seasonsCount = 1,
+                            completedSeasonsCount = 0,
+                            completed = false,
+                            inProgress = true,
+                        ),
+                ),
+            )
+        every {
+            repository.currentlyWatching(20, match { cutoff -> Duration.between(cutoff, Instant.now()).toDays() in 89..91 })
+        } returns expected
+
+        val response = controller.currentlyWatching(limit = 20, activeWithinDays = 90)
+
+        assertEquals(1, response.size)
+        assertEquals(29L, response.first().showId)
+        verify(exactly = 1) {
+            repository.currentlyWatching(20, match { cutoff -> Duration.between(cutoff, Instant.now()).toDays() in 89..91 })
+        }
+    }
+
+    @Test
+    fun `currently watching should reject invalid params`() {
+        assertFailsWith<ResponseStatusException> {
+            controller.currentlyWatching(limit = 0, activeWithinDays = 90)
+        }
+        assertFailsWith<ResponseStatusException> {
+            controller.currentlyWatching(limit = 20, activeWithinDays = 0)
+        }
     }
 
     @Test

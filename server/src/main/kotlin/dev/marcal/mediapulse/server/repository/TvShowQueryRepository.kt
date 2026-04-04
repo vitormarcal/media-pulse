@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.repository
 
+import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.RangeDto
 import dev.marcal.mediapulse.server.api.shows.ShowCardDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
@@ -65,6 +66,88 @@ class TvShowQueryRepository(
                     year = (fields[4] as Number?)?.toInt(),
                     coverUrl = fields[5] as String?,
                     watchedAt = asInstant(fields[6]),
+                )
+            }
+
+    fun currentlyWatching(
+        limit: Int,
+        activeSince: Instant,
+    ): List<CurrentlyWatchingShowDto> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT
+                  s.id,
+                  COALESCE((
+                    SELECT st.title
+                    FROM tv_show_titles st
+                    WHERE st.show_id = s.id
+                    ORDER BY st.is_primary ASC, st.id ASC
+                    LIMIT 1
+                  ), s.original_title) AS title,
+                  s.original_title,
+                  s.slug,
+                  s.year,
+                  s.cover_url,
+                  progress_stats.episodes_count,
+                  progress_stats.watched_episodes_count,
+                  progress_stats.seasons_count,
+                  progress_stats.completed_seasons_count,
+                  progress_stats.last_watched_at
+                FROM tv_shows s
+                JOIN (
+                  SELECT
+                    season_rollup.show_id,
+                    SUM(season_rollup.episodes_count) AS episodes_count,
+                    SUM(season_rollup.watched_episodes_count) AS watched_episodes_count,
+                    COUNT(*) AS seasons_count,
+                    COUNT(*) FILTER (WHERE season_rollup.watched_episodes_count = season_rollup.episodes_count) AS completed_seasons_count,
+                    MAX(season_rollup.last_watched_at) AS last_watched_at
+                  FROM (
+                    SELECT
+                      te.show_id,
+                      te.season_number,
+                      COUNT(DISTINCT te.id) AS episodes_count,
+                      COUNT(DISTINCT CASE WHEN tew.id IS NOT NULL THEN te.id END) AS watched_episodes_count,
+                      MAX(tew.watched_at) AS last_watched_at
+                    FROM tv_episodes te
+                    LEFT JOIN tv_episode_watches tew ON tew.episode_id = te.id
+                    GROUP BY te.show_id, te.season_number
+                  ) season_rollup
+                  GROUP BY season_rollup.show_id
+                ) progress_stats ON progress_stats.show_id = s.id
+                WHERE progress_stats.watched_episodes_count > 0
+                  AND progress_stats.watched_episodes_count < progress_stats.episodes_count
+                  AND progress_stats.last_watched_at >= :activeSince
+                ORDER BY progress_stats.last_watched_at DESC, title ASC
+                LIMIT :limit
+                """.trimIndent(),
+            ).setParameter("activeSince", activeSince)
+            .setParameter("limit", limit)
+            .resultList
+            .map { row ->
+                val fields = row as Array<*>
+                val episodesCount = (fields[6] as Number).toLong()
+                val watchedEpisodesCount = (fields[7] as Number).toLong()
+                val seasonsCount = (fields[8] as Number).toLong()
+                val completedSeasonsCount = (fields[9] as Number).toLong()
+                CurrentlyWatchingShowDto(
+                    showId = (fields[0] as Number).toLong(),
+                    title = fields[1] as String,
+                    originalTitle = fields[2] as String,
+                    slug = fields[3] as String?,
+                    year = (fields[4] as Number?)?.toInt(),
+                    coverUrl = fields[5] as String?,
+                    lastWatchedAt = asInstant(fields[10])!!,
+                    progress =
+                        ShowProgressDto(
+                            episodesCount = episodesCount,
+                            watchedEpisodesCount = watchedEpisodesCount,
+                            seasonsCount = seasonsCount,
+                            completedSeasonsCount = completedSeasonsCount,
+                            completed = episodesCount > 0 && watchedEpisodesCount == episodesCount,
+                            inProgress = watchedEpisodesCount > 0 && watchedEpisodesCount < episodesCount,
+                        ),
                 )
             }
 

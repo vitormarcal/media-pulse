@@ -9,6 +9,10 @@
 GET {{baseUrl}}/recent?limit=20
 Accept: application/json
 
+### Currently watching
+GET {{baseUrl}}/currently-watching?limit=20&activeWithinDays=90
+Accept: application/json
+
 ### Detalhes da serie
 GET {{baseUrl}}/{{showId}}
 Accept: application/json

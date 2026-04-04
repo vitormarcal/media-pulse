@@ -14,6 +14,7 @@ A Shows API fornece endpoints read-only para consulta de séries e um endpoint d
 | Path | Params | Retorna |
 | --- | --- | --- |
 | `GET /api/shows/recent` | `limit=20` | `ShowCardDto[]` |
+| `GET /api/shows/currently-watching` | `limit=20`, `activeWithinDays=90` | `CurrentlyWatchingShowDto[]` |
 | `GET /api/shows/{showId}` | `showId` (path) | `ShowDetailsResponse` |
 | `GET /api/shows/slug/{slug}` | `slug` (path) | `ShowDetailsResponse` |
 | `GET /api/shows/search` | `q` (busca em `originalTitle`, `tv_show_titles.title` e `slug`), `limit=10` | `ShowsSearchResponse` |
@@ -35,6 +36,28 @@ A Shows API fornece endpoints read-only para consulta de séries e um endpoint d
   "year": 2022,
   "coverUrl": "/covers/plex/tv-shows/42/poster.jpg",
   "watchedAt": "2026-02-27T19:40:19Z"
+}
+```
+
+### CurrentlyWatchingShowDto
+
+```json
+{
+  "showId": 29,
+  "title": "O Cavaleiro dos Sete Reinos",
+  "originalTitle": "A Knight of the Seven Kingdoms",
+  "slug": "a-knight-of-the-seven-kingdoms",
+  "year": 2026,
+  "coverUrl": "/covers/plex/tv-shows/29/29_a_knight_of_the_seven_kingdoms_e896257a0.jpg",
+  "lastWatchedAt": "2026-04-03T23:02:53Z",
+  "progress": {
+    "episodesCount": 6,
+    "watchedEpisodesCount": 4,
+    "seasonsCount": 1,
+    "completedSeasonsCount": 0,
+    "completed": false,
+    "inProgress": true
+  }
 }
 ```
 
@@ -222,6 +245,7 @@ A Shows API fornece endpoints read-only para consulta de séries e um endpoint d
 - `uniqueShowsCount`: conta `DISTINCT tv_episodes.show_id` no range.
 - Se episódios da mesma série forem assistidos múltiplas vezes em horários diferentes, cada watch conta em `watchesCount`, mas a série conta uma vez em `uniqueShowsCount`.
 - Em `GET /api/shows/year/{year}`, `rewatchesCount = watchesCount - uniqueShowsCount`.
+- Em `GET /api/shows/currently-watching`, entram apenas séries incompletas globalmente, com pelo menos 1 episódio assistido e `lastWatchedAt` dentro da janela definida por `activeWithinDays`.
 - `watched` inclui séries com pelo menos 1 watch de episódio no range do ano solicitado.
 - `unwatched` inclui apenas séries sem qualquer linha em `tv_episode_watches`.
 
@@ -276,6 +300,12 @@ Enriquecimento simples de capa:
 
 ```bash
 curl "{{host}}/api/shows/recent?limit=20"
+```
+
+### Currently Watching
+
+```bash
+curl "{{host}}/api/shows/currently-watching?limit=20&activeWithinDays=90"
 ```
 
 ### Detalhes

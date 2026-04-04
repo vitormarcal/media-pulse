@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.controller.shows
 
+import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.ShowCardDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearResponse
@@ -29,6 +30,17 @@ class ShowsController(
     fun recent(
         @RequestParam(defaultValue = "20") limit: Int,
     ): List<ShowCardDto> = repository.recent(limit)
+
+    @GetMapping("/currently-watching")
+    fun currentlyWatching(
+        @RequestParam(defaultValue = "20") limit: Int,
+        @RequestParam(defaultValue = "90") activeWithinDays: Int,
+    ): List<CurrentlyWatchingShowDto> {
+        val resolvedLimit = normalizeLimit("limit", limit)
+        val resolvedActiveWithinDays = normalizePositive("activeWithinDays", activeWithinDays)
+        val activeSince = Instant.now().minus(Duration.ofDays(resolvedActiveWithinDays.toLong()))
+        return repository.currentlyWatching(resolvedLimit, activeSince)
+    }
 
     @GetMapping("/{showId}")
     fun details(
@@ -119,6 +131,16 @@ class ShowsController(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "$name deve ser >= 1")
         }
         return min(value, 1000)
+    }
+
+    private fun normalizePositive(
+        name: String,
+        value: Int,
+    ): Int {
+        if (value < 1) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "$name deve ser >= 1")
+        }
+        return value
     }
 
     private fun yearRange(year: Int): Pair<Instant, Instant> {

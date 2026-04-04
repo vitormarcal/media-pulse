@@ -61,6 +61,39 @@ class TvShowQueryRepositoryTest {
     }
 
     @Test
+    fun `currently watching should map rows`() {
+        every { query.resultList } returns
+            listOf(
+                arrayOf(
+                    29L,
+                    "O Cavaleiro dos Sete Reinos",
+                    "A Knight of the Seven Kingdoms",
+                    "a-knight-of-the-seven-kingdoms",
+                    2026,
+                    "/covers/plex/tv-shows/29/poster.jpg",
+                    6L,
+                    4L,
+                    1L,
+                    0L,
+                    Timestamp.from(Instant.parse("2026-04-03T23:02:53Z")),
+                ),
+            )
+
+        val activeSince = Instant.parse("2026-01-04T00:00:00Z")
+        val result = repository.currentlyWatching(limit = 10, activeSince = activeSince)
+
+        assertEquals(1, result.size)
+        assertEquals(29L, result[0].showId)
+        assertEquals(6L, result[0].progress.episodesCount)
+        assertEquals(4L, result[0].progress.watchedEpisodesCount)
+        assertEquals(true, result[0].progress.inProgress)
+        verify { query.setParameter("activeSince", activeSince) }
+        verify { query.setParameter("limit", 10) }
+        assertTrue(sqls.any { it.contains("progress_stats.watched_episodes_count < progress_stats.episodes_count") })
+        assertTrue(sqls.any { it.contains("progress_stats.last_watched_at >= :activeSince") })
+    }
+
+    @Test
     fun `summary should map counters`() {
         var singleCall = 0
         every { query.singleResult } answers {
