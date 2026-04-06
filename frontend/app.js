@@ -33,7 +33,7 @@ const summaryConfigs = {
 
 const recentConfigs = {
   movies: {
-    endpoint: "/api/movies/recent?limit=8",
+    endpoint: "/api/movies/recent?limit=12",
     normalize: (items) =>
       items.map((item) => ({
         href: buildDetailUrl("movie", { slug: item.slug, id: item.movieId }),
@@ -45,7 +45,7 @@ const recentConfigs = {
       })),
   },
   music: {
-    endpoint: "/api/music/recent-albums?limit=8",
+    endpoint: "/api/music/recent-albums?limit=12",
     normalize: (items) =>
       items.map((item) => ({
         href: buildDetailUrl("music-album", { id: item.albumId }),
@@ -57,7 +57,7 @@ const recentConfigs = {
       })),
   },
   books: {
-    endpoint: "/api/books/list?limit=8",
+    endpoint: "/api/books/list?status=read&limit=12",
     normalize: (payload) =>
       (payload.items || []).map((item) => ({
         href: buildDetailUrl("book", { slug: item.book?.slug, id: item.book?.bookId }),
@@ -74,7 +74,7 @@ const recentConfigs = {
       })),
   },
   shows: {
-    endpoint: "/api/shows/recent?limit=8",
+    endpoint: "/api/shows/recent?limit=12",
     normalize: (items) =>
       items.map((item) => ({
         href: buildDetailUrl("show", { slug: item.slug, id: item.showId }),
@@ -104,7 +104,7 @@ const searchConfigs = {
     title: "Music",
     extract: (payload) => [
       ...(payload.artists || []).map((item) => ({
-        href: buildDetailUrl("music-artist", { q: item.name, label: item.name, id: item.id }),
+        href: buildDetailUrl("music-artist", { id: item.id, label: item.name }),
         tag: "Artist",
         title: item.name,
         meta: "resultado em artistas",
@@ -116,7 +116,7 @@ const searchConfigs = {
         meta: [item.artistName, item.year].filter(Boolean).join(" • "),
       })),
       ...(payload.tracks || []).map((item) => ({
-        href: buildDetailUrl("music-track", { q: item.title, label: item.title, id: item.id }),
+        href: buildDetailUrl("music-track", { id: item.id, label: item.title }),
         tag: "Track",
         title: item.title,
         meta: [item.artistName, item.albumTitle].filter(Boolean).join(" • "),
@@ -134,7 +134,7 @@ const searchConfigs = {
         meta: item.authors?.map((author) => author.name).join(", ") || "sem autor",
       })),
       ...(payload.authors || []).map((item) => ({
-        href: buildDetailUrl("book-author", { q: item.name, label: item.name, id: item.id }),
+        href: buildDetailUrl("book-author", { id: item.id, label: item.name }),
         tag: "Author",
         title: item.name,
         meta: "resultado em autores",
@@ -158,7 +158,8 @@ const state = {
   apiBaseUrl: DEFAULT_API_BASE_URL.replace(/\/$/, ""),
 };
 
-const template = document.querySelector("#pin-card-template");
+const pinTemplate = document.querySelector("#pin-card-template");
+const featureTemplate = document.querySelector("#feature-card-template");
 const searchForm = document.querySelector("#search-form");
 const searchInput = document.querySelector("#search-input");
 const searchStatus = document.querySelector("#search-status");
@@ -176,8 +177,11 @@ function initialize() {
   clearSearchButton.addEventListener("click", clearSearch);
   searchInput.addEventListener("input", handleSearchInput);
 
-  loadSummaries();
-  loadRecentCollections();
+  loadHome();
+}
+
+async function loadHome() {
+  await Promise.all([loadSummaries(), loadEditorialHome(), loadMosaicCollections()]);
 }
 
 async function loadSummaries() {
@@ -197,7 +201,77 @@ async function loadSummaries() {
   );
 }
 
-async function loadRecentCollections() {
+async function loadEditorialHome() {
+  const now = new Date();
+  const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const weekEnd = now.toISOString();
+
+  const [currentlyWatching, readingNow, topArtists, recentAlbums, recentMovies] = await Promise.all([
+    fetchSafe("/api/shows/currently-watching?limit=6&activeWithinDays=90", []),
+    fetchSafe("/api/books/list?status=currently_reading&limit=6", { items: [] }),
+    fetchSafe(`/api/music/tops/artists?start=${encodeURIComponent(weekStart)}&end=${encodeURIComponent(weekEnd)}&limit=6`, []),
+    fetchSafe("/api/music/recent-albums?limit=6", []),
+    fetchSafe("/api/movies/recent?limit=6", []),
+  ]);
+
+  renderSpotlights({
+    currentlyWatching,
+    readingNow: readingNow.items || [],
+    topArtists,
+    recentAlbums,
+    recentMovies,
+  });
+
+  renderFeatureRail(
+    "#continue-watching-rail",
+    currentlyWatching.map((item) => ({
+      href: buildDetailUrl("show", { slug: item.slug, id: item.showId }),
+      image: item.coverUrl,
+      badge: item.progress?.completed ? "Done" : `${computePercent(item.progress?.watchedEpisodesCount, item.progress?.episodesCount)}%`,
+      kicker: "Show",
+      title: item.title,
+      meta: [item.originalTitle, item.year].filter(Boolean).join(" • "),
+      progressCurrent: item.progress?.watchedEpisodesCount ?? 0,
+      progressTotal: item.progress?.episodesCount ?? 0,
+      progressLabel: `${item.progress?.watchedEpisodesCount ?? 0}/${item.progress?.episodesCount ?? 0} episódios`,
+    })),
+    "Nenhuma série em andamento.",
+  );
+
+  renderFeatureRail(
+    "#reading-now-rail",
+    (readingNow.items || []).map((item) => ({
+      href: buildDetailUrl("book", { slug: item.book?.slug, id: item.book?.bookId }),
+      image: item.book?.coverUrl || item.edition?.coverUrl,
+      badge: translateBookStatus(item.status),
+      kicker: "Book",
+      title: item.book?.title || "Livro",
+      meta: item.book?.authors?.map((author) => author.name).join(", ") || "sem autor",
+      progressCurrent: Math.round(item.progressPct ?? 0),
+      progressTotal: 100,
+      progressLabel: item.progressPages ? `${item.progressPages} páginas` : `${Math.round(item.progressPct ?? 0)}%`,
+    })),
+    "Nenhuma leitura em andamento.",
+  );
+
+  renderFeatureRail(
+    "#heavy-rotation-rail",
+    topArtists.map((item, index) => ({
+      href: buildDetailUrl("music-artist", { id: item.artistId, label: item.artistName }),
+      image: recentAlbums[index]?.coverUrl || null,
+      badge: `${item.playCount} plays`,
+      kicker: "Artist",
+      title: item.artistName,
+      meta: recentAlbums[index] ? `ecoando com ${recentAlbums[index].albumTitle}` : "artista em alta na semana",
+      progressCurrent: item.playCount,
+      progressTotal: topArtists[0]?.playCount || item.playCount || 1,
+      progressLabel: "na ultima semana",
+    })),
+    "Sem rotação pesada no período.",
+  );
+}
+
+async function loadMosaicCollections() {
   await Promise.all(
     Object.entries(recentConfigs).map(async ([key, config]) => {
       const grid = document.querySelector(`#${key}-grid`);
@@ -214,16 +288,129 @@ async function loadRecentCollections() {
   );
 }
 
+function renderSpotlights({ currentlyWatching, readingNow, topArtists, recentAlbums, recentMovies }) {
+  const main = document.querySelector("#spotlight-feature");
+  const side = document.querySelector("#spotlight-secondary");
+
+  const primaryShow = currentlyWatching[0];
+  if (primaryShow) {
+    main.innerHTML = `
+      <a class="spotlight-link" href="${escapeAttribute(buildDetailUrl("show", { slug: primaryShow.slug, id: primaryShow.showId }))}">
+        <div class="spotlight-media">
+          <img class="spotlight-image" src="${escapeAttribute(resolveAssetUrl(primaryShow.coverUrl))}" alt="${escapeAttribute(primaryShow.title)}" />
+        </div>
+        <div class="spotlight-copy">
+          <p class="eyebrow">Continue watching</p>
+          <h3>${escapeHtml(primaryShow.title)}</h3>
+          <p class="spotlight-meta">${escapeHtml([primaryShow.originalTitle, primaryShow.year].filter(Boolean).join(" • "))}</p>
+          <div class="spotlight-progress">
+            <div class="feature-progress-bar">
+              <span class="feature-progress-fill" style="width:${computePercent(primaryShow.progress?.watchedEpisodesCount, primaryShow.progress?.episodesCount)}%"></span>
+            </div>
+            <p>${escapeHtml(`${primaryShow.progress?.watchedEpisodesCount ?? 0}/${primaryShow.progress?.episodesCount ?? 0} episódios`)}</p>
+          </div>
+        </div>
+      </a>
+    `;
+  } else {
+    main.replaceChildren(buildMessageCard("Nenhuma série em andamento."));
+  }
+
+  const reading = readingNow[0];
+  const artist = topArtists[0];
+  const movie = recentMovies[0];
+  side.innerHTML = `
+    ${reading ? renderMiniSpotlight({
+      href: buildDetailUrl("book", { slug: reading.book?.slug, id: reading.book?.bookId }),
+      kicker: "Reading now",
+      title: reading.book?.title || "Livro",
+      meta: reading.book?.authors?.map((author) => author.name).join(", ") || "sem autor",
+      badge: `${Math.round(reading.progressPct ?? 0)}%`,
+    }) : ""}
+    ${artist ? renderMiniSpotlight({
+      href: buildDetailUrl("music-artist", { id: artist.artistId, label: artist.artistName }),
+      kicker: "Heavy rotation",
+      title: artist.artistName,
+      meta: `${artist.playCount} plays na semana`,
+      badge: "Artist",
+    }) : ""}
+    ${movie ? renderMiniSpotlight({
+      href: buildDetailUrl("movie", { slug: movie.slug, id: movie.movieId }),
+      kicker: "Recent watch",
+      title: movie.title,
+      meta: formatDate(movie.watchedAt, "visto"),
+      badge: movie.year || "Movie",
+    }) : ""}
+    ${recentAlbums[0] ? renderMiniSpotlight({
+      href: buildDetailUrl("music-album", { id: recentAlbums[0].albumId }),
+      kicker: "Fresh album",
+      title: recentAlbums[0].albumTitle,
+      meta: recentAlbums[0].artistName,
+      badge: `${recentAlbums[0].playCount} plays`,
+    }) : ""}
+  `;
+}
+
+function renderMiniSpotlight(item) {
+  return `
+    <a class="mini-spotlight" href="${escapeAttribute(item.href)}">
+      <p class="mini-spotlight-kicker">${escapeHtml(item.kicker)}</p>
+      <h4>${escapeHtml(item.title)}</h4>
+      <p class="mini-spotlight-meta">${escapeHtml(item.meta)}</p>
+      <span class="mini-spotlight-badge">${escapeHtml(String(item.badge))}</span>
+    </a>
+  `;
+}
+
+function renderFeatureRail(selector, items, emptyMessage) {
+  const rail = document.querySelector(selector);
+  rail.replaceChildren();
+
+  if (!items.length) {
+    rail.append(buildMessageCard(emptyMessage));
+    return;
+  }
+
+  items.forEach((item) => {
+    const node = featureTemplate.content.firstElementChild.cloneNode(true);
+    const image = node.querySelector(".feature-card-image");
+    const badge = node.querySelector(".feature-card-badge");
+    const kicker = node.querySelector(".feature-card-kicker");
+    const title = node.querySelector(".feature-card-title");
+    const meta = node.querySelector(".feature-card-meta");
+    const progress = node.querySelector(".feature-card-progress");
+    const fill = node.querySelector(".feature-progress-fill");
+    const progressLabel = node.querySelector(".feature-progress-label");
+
+    node.href = item.href || "#";
+    image.src = resolveAssetUrl(item.image);
+    image.alt = item.title;
+    image.onerror = () => {
+      image.src = createPlaceholderDataUrl(item.title);
+    };
+    badge.textContent = item.badge || "";
+    kicker.textContent = item.kicker || "";
+    title.textContent = item.title || "";
+    meta.textContent = item.meta || "";
+
+    if (item.progressTotal && item.progressCurrent !== undefined) {
+      progress.classList.remove("hidden");
+      fill.style.width = `${computePercent(item.progressCurrent, item.progressTotal)}%`;
+      progressLabel.textContent = item.progressLabel || "";
+    }
+
+    rail.append(node);
+  });
+}
+
 let searchDebounce = null;
 
 function handleSearchInput(event) {
   const query = event.currentTarget.value.trim();
-
   if (!query) {
     clearSearch();
     return;
   }
-
   window.clearTimeout(searchDebounce);
   searchDebounce = window.setTimeout(() => runSearch(query), 260);
 }
@@ -231,12 +418,10 @@ function handleSearchInput(event) {
 function handleSearchSubmit(event) {
   event.preventDefault();
   const query = searchInput.value.trim();
-
   if (!query) {
     clearSearch();
     return;
   }
-
   runSearch(query);
 }
 
@@ -246,29 +431,18 @@ async function runSearch(query) {
   searchStatus.textContent = `Buscando por "${query}"`;
 
   const groups = await Promise.all(
-    Object.entries(searchConfigs).map(async ([key, config]) => {
+    Object.entries(searchConfigs).map(async ([, config]) => {
       try {
         const payload = await fetchJson(config.endpoint(query));
-        return {
-          key,
-          title: config.title,
-          items: config.extract(payload),
-        };
+        return { title: config.title, items: config.extract(payload) };
       } catch (error) {
-        return {
-          key,
-          title: config.title,
-          items: [],
-          error: error.message,
-        };
+        return { title: config.title, items: [], error: error.message };
       }
     }),
   );
 
   searchResults.replaceChildren();
-  const fragments = groups.map(buildResultGroup);
-  searchResults.append(...fragments);
-
+  searchResults.append(...groups.map(buildResultGroup));
   const total = groups.reduce((sum, group) => sum + group.items.length, 0);
   searchStatus.textContent =
     total > 0 ? `${total} resultados agregados para "${query}"` : `Nenhum resultado para "${query}"`;
@@ -277,7 +451,6 @@ async function runSearch(query) {
 function buildResultGroup(group) {
   const article = document.createElement("article");
   article.className = "result-group";
-
   const title = document.createElement("h4");
   title.textContent = group.title;
   article.append(title);
@@ -287,20 +460,17 @@ function buildResultGroup(group) {
     return article;
   }
 
-  if (group.items.length === 0) {
+  if (!group.items.length) {
     article.append(buildMessageCard("Sem resultados nesta coleção."));
     return article;
   }
 
   const list = document.createElement("div");
   list.className = "result-list";
-
   group.items.forEach((item) => {
     const entry = item.href ? document.createElement("a") : document.createElement("article");
     entry.className = "result-item";
-    if (item.href) {
-      entry.href = item.href;
-    }
+    if (item.href) entry.href = item.href;
     entry.innerHTML = `
       <span class="result-item-tag">${escapeHtml(item.tag)}</span>
       <h5>${escapeHtml(item.title)}</h5>
@@ -322,16 +492,14 @@ function renderPinGrid(container, items) {
   }
 
   items.forEach((item) => {
-    const node = template.content.firstElementChild.cloneNode(true);
-    const link = node;
+    const node = pinTemplate.content.firstElementChild.cloneNode(true);
     const image = node.querySelector(".pin-image");
     const kicker = node.querySelector(".pin-kicker");
     const title = node.querySelector(".pin-title");
     const meta = node.querySelector(".pin-meta");
     const date = node.querySelector(".pin-date");
 
-    link.href = item.href || "#";
-
+    node.href = item.href || "#";
     image.src = resolveAssetUrl(item.image);
     image.alt = item.title;
     image.onerror = () => {
@@ -342,7 +510,6 @@ function renderPinGrid(container, items) {
     title.textContent = item.title;
     meta.textContent = item.meta || "Sem metadados";
     date.textContent = item.date || "Sem data";
-
     container.append(node);
   });
 }
@@ -367,42 +534,34 @@ function clearSearch() {
 
 async function fetchJson(path) {
   const response = await fetch(`${state.apiBaseUrl}${path}`, {
-    headers: {
-      Accept: "application/json",
-    },
+    headers: { Accept: "application/json" },
   });
-
-  if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText}`);
-  }
-
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
   return response.json();
 }
 
+async function fetchSafe(path, fallback) {
+  try {
+    return await fetchJson(path);
+  } catch {
+    return fallback;
+  }
+}
+
 function resolveAssetUrl(value) {
-  if (!value) {
-    return createPlaceholderDataUrl("Media Pulse");
-  }
-
-  if (/^https?:\/\//.test(value) || value.startsWith("data:")) {
-    return value;
-  }
-
+  if (!value) return createPlaceholderDataUrl("Media Pulse");
+  if (/^https?:\/\//.test(value) || value.startsWith("data:")) return value;
   return `${state.apiBaseUrl}${value.startsWith("/") ? value : `/${value}`}`;
 }
 
 function handleApiBaseChange() {
   const nextValue = window.prompt("Informe a base da API", state.apiBaseUrl);
-  if (!nextValue) {
-    return;
-  }
-
+  if (!nextValue) return;
   state.apiBaseUrl = nextValue.replace(/\/$/, "");
   localStorage.setItem("media-pulse-api-base", state.apiBaseUrl);
   apiBaseButton.textContent = compactApiLabel(state.apiBaseUrl);
   searchStatus.textContent = `API atual: ${state.apiBaseUrl}`;
-  loadSummaries();
-  loadRecentCollections();
+  loadHome();
 }
 
 function compactApiLabel(url) {
@@ -412,29 +571,16 @@ function compactApiLabel(url) {
 function buildDetailUrl(kind, identifiers = {}) {
   const search = new URLSearchParams({ kind });
   Object.entries(identifiers).forEach(([key, value]) => {
-    if (value !== null && value !== undefined && value !== "") {
-      search.set(key, value);
-    }
+    if (value !== null && value !== undefined && value !== "") search.set(key, value);
   });
   return `./detail.html?${search.toString()}`;
 }
 
 function formatDate(value, prefix) {
-  if (!value) {
-    return "";
-  }
-
+  if (!value) return "";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  const formatter = new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
+  if (Number.isNaN(date.getTime())) return "";
+  const formatter = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
   return `${prefix} ${formatter.format(date)}`;
 }
 
@@ -442,13 +588,18 @@ function translateBookStatus(status) {
   const map = {
     READ: "lido",
     READING: "lendo",
+    CURRENTLY_READING: "lendo",
     WANT_TO_READ: "quero ler",
     PAUSED: "pausado",
     DID_NOT_FINISH: "abandonei",
     UNKNOWN: "desconhecido",
   };
-
   return map[status] || status || "";
+}
+
+function computePercent(value, total) {
+  if (!total || total <= 0) return 0;
+  return Math.max(0, Math.min(100, Math.round((value / total) * 100)));
 }
 
 function createPlaceholderDataUrl(label) {
@@ -468,15 +619,11 @@ function createPlaceholderDataUrl(label) {
       <text x="54" y="744" font-family="Arial, sans-serif" font-size="18" fill="#62625b">media pulse</text>
     </svg>
   `;
-
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
 function escapeSvg(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function escapeHtml(value) {
@@ -486,4 +633,8 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value);
 }

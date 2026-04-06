@@ -31,11 +31,11 @@
         <section class="hero">
           <div class="hero-copy">
             <p class="eyebrow">Discover quietly</p>
-            <h2>Busque filmes, livros, discos e séries num layout quente e denso.</h2>
+            <h2>Seu mural vivo de filmes, séries, livros e música.</h2>
             <p class="hero-text">
-              A home combina busca unificada com os últimos itens vistos, lidos e
-              ouvidos. O visual segue a direção do `DESIGN.md`: superfícies quentes,
-              destaque em vermelho e cards dominados por capa.
+              A home agora prioriza estados de consumo, não só listas por entidade:
+              o que você está vendo, lendo, repetindo e concluindo. A busca continua
+              central, mas o feed ficou mais editorial e mais próximo do `DESIGN.md`.
             </p>
             <form class="search-panel" id="search-form">
               <label class="search-label" for="search-input">Buscar em todas as coleções</label>
@@ -79,6 +79,11 @@
           </aside>
         </section>
 
+        <section class="spotlight-section">
+          <article class="spotlight-card spotlight-card-main" id="spotlight-feature"></article>
+          <article class="spotlight-card spotlight-card-side" id="spotlight-secondary"></article>
+        </section>
+
         <section class="results-section hidden" id="search-results-section">
           <div class="section-heading">
             <div>
@@ -95,39 +100,77 @@
         <section class="feed-section">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Recentes</p>
-              <h3>Últimos consumos por coleção</h3>
+              <p class="eyebrow">Agora</p>
+              <h3>Estados recentes do seu catálogo</h3>
             </div>
           </div>
+        </section>
 
-          <div class="recent-columns">
+        <section class="state-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Continue</p>
+              <h3>Continue watching</h3>
+            </div>
+          </div>
+          <div class="feature-rail" id="continue-watching-rail"></div>
+        </section>
+
+        <section class="state-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Reading</p>
+              <h3>Reading now</h3>
+            </div>
+          </div>
+          <div class="feature-rail" id="reading-now-rail"></div>
+        </section>
+
+        <section class="state-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Repeat</p>
+              <h3>Heavy rotation</h3>
+            </div>
+          </div>
+          <div class="feature-rail feature-rail-tight" id="heavy-rotation-rail"></div>
+        </section>
+
+        <section class="mosaic-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Mural</p>
+              <h3>Fresh watches, reads and listens</h3>
+            </div>
+          </div>
+          <div class="mosaic-grid">
             <section class="collection-column">
               <div class="collection-header">
-                <h4>Filmes</h4>
-                <span>Assistidos por último</span>
+                <h4>Filmes recentes</h4>
+                <span>Últimos watches no catálogo</span>
               </div>
               <div class="masonry-grid" id="movies-grid"></div>
             </section>
 
             <section class="collection-column">
               <div class="collection-header">
-                <h4>Música</h4>
-                <span>Álbuns mais recentes</span>
+                <h4>Álbuns recentes</h4>
+                <span>Últimos álbuns ouvidos</span>
               </div>
               <div class="masonry-grid" id="music-grid"></div>
             </section>
 
             <section class="collection-column">
               <div class="collection-header">
-                <h4>Livros</h4>
-                <span>Últimas leituras</span>
+                <h4>Leituras concluídas</h4>
+                <span>Livros e jornadas recentes</span>
               </div>
               <div class="masonry-grid" id="books-grid"></div>
             </section>
 
             <section class="collection-column">
               <div class="collection-header">
-                <h4>Séries</h4>
+                <h4>Séries recentes</h4>
                 <span>Episódios vistos por último</span>
               </div>
               <div class="masonry-grid" id="shows-grid"></div>
@@ -151,6 +194,26 @@
             <span class="pin-cta">Abrir detalhe</span>
           </div>
         </article>
+      </a>
+    </template>
+
+    <template id="feature-card-template">
+      <a class="feature-card" href="#">
+        <div class="feature-card-media">
+          <img class="feature-card-image" alt="" loading="lazy" />
+          <span class="feature-card-badge"></span>
+        </div>
+        <div class="feature-card-body">
+          <p class="feature-card-kicker"></p>
+          <h5 class="feature-card-title"></h5>
+          <p class="feature-card-meta"></p>
+          <div class="feature-card-progress hidden">
+            <div class="feature-progress-bar">
+              <span class="feature-progress-fill"></span>
+            </div>
+            <p class="feature-progress-label"></p>
+          </div>
+        </div>
       </a>
     </template>
 
