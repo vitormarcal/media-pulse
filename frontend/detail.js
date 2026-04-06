@@ -3,6 +3,7 @@ const kind = params.get("kind");
 
 const pageTitle = document.querySelector("#detail-page-title");
 const detailRoot = document.querySelector("#detail-root");
+let galleryState = null;
 
 initialize();
 
@@ -624,6 +625,7 @@ function renderPage({ title, html }) {
   pageTitle.textContent = title;
   detailRoot.innerHTML = html;
   bindResolvedImages(detailRoot);
+  bindGalleryLightbox(detailRoot);
 }
 
 function renderHero({ eyebrow, title, subtitle, description, image, chips = [], metrics = "", extra = "" }) {
@@ -845,13 +847,20 @@ function buildImageGalleryCard(title, items, emptyMessage) {
           items.length
             ? items
                 .map(
-                  (item) => `
-                    <article class="gallery-tile">
+                  (item, index) => `
+                    <button
+                      class="gallery-tile"
+                      type="button"
+                      data-gallery-index="${index}"
+                      data-gallery-src="${escapeAttribute(item.src || "")}"
+                      data-gallery-alt="${escapeAttribute(item.alt || title)}"
+                      aria-label="Abrir imagem ${index + 1} em destaque"
+                    >
                       <div class="gallery-tile-image-wrap">
                         <img class="gallery-tile-image js-resolve-image" data-src="${escapeAttribute(item.src || "")}" alt="${escapeAttribute(item.alt || title)}" />
                         <span class="gallery-tile-badge">${escapeHtml(item.badge || "Image")}</span>
                       </div>
-                    </article>
+                    </button>
                   `,
                 )
                 .join("")
@@ -908,6 +917,141 @@ function bindResolvedImages(root) {
       image.src = createPlaceholderDataUrl(image.alt || "Media Pulse");
     };
   });
+}
+
+function bindGalleryLightbox(root) {
+  const galleryButtons = [...root.querySelectorAll("[data-gallery-index]")];
+  if (!galleryButtons.length) {
+    galleryState = null;
+    return;
+  }
+
+  galleryState = {
+    items: galleryButtons.map((button) => ({
+      src: button.dataset.gallerySrc || "",
+      alt: button.dataset.galleryAlt || "Imagem",
+    })),
+    activeIndex: 0,
+    trigger: null,
+  };
+
+  galleryButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      galleryState.trigger = button;
+      openGalleryLightbox(Number(button.dataset.galleryIndex || 0));
+    });
+  });
+}
+
+function openGalleryLightbox(index) {
+  if (!galleryState?.items?.length) {
+    return;
+  }
+
+  galleryState.activeIndex = normalizeGalleryIndex(index);
+  document.body.classList.add("lightbox-open");
+  document.body.appendChild(buildGalleryLightbox());
+  syncGalleryLightbox();
+  document.addEventListener("keydown", onGalleryKeydown);
+}
+
+function closeGalleryLightbox() {
+  const lightbox = document.querySelector(".gallery-lightbox");
+  if (!lightbox) {
+    return;
+  }
+
+  lightbox.remove();
+  document.body.classList.remove("lightbox-open");
+  document.removeEventListener("keydown", onGalleryKeydown);
+  galleryState?.trigger?.focus();
+}
+
+function buildGalleryLightbox() {
+  const wrapper = document.createElement("div");
+  wrapper.className = "gallery-lightbox";
+  wrapper.innerHTML = `
+    <div class="gallery-lightbox-backdrop" data-lightbox-close="true"></div>
+    <div class="gallery-lightbox-dialog" role="dialog" aria-modal="true" aria-label="Galeria de imagens">
+      <button class="gallery-lightbox-close" type="button" aria-label="Fechar galeria">&times;</button>
+      <div class="gallery-lightbox-frame">
+        <button class="gallery-lightbox-nav" type="button" data-gallery-move="-1" aria-label="Imagem anterior">Anterior</button>
+        <figure class="gallery-lightbox-figure">
+          <img class="gallery-lightbox-image" alt="" />
+          <figcaption class="gallery-lightbox-caption"></figcaption>
+        </figure>
+        <button class="gallery-lightbox-nav" type="button" data-gallery-move="1" aria-label="Próxima imagem">Próxima</button>
+      </div>
+      <div class="gallery-lightbox-footer">
+        <p class="gallery-lightbox-count"></p>
+      </div>
+    </div>
+  `;
+
+  wrapper.querySelector("[data-lightbox-close]").addEventListener("click", closeGalleryLightbox);
+  wrapper.querySelector(".gallery-lightbox-close").addEventListener("click", closeGalleryLightbox);
+  wrapper.querySelectorAll("[data-gallery-move]").forEach((button) => {
+    button.addEventListener("click", () => {
+      moveGalleryLightbox(Number(button.dataset.galleryMove || 0));
+    });
+  });
+
+  return wrapper;
+}
+
+function syncGalleryLightbox() {
+  const lightbox = document.querySelector(".gallery-lightbox");
+  if (!lightbox || !galleryState?.items?.length) {
+    return;
+  }
+
+  const item = galleryState.items[galleryState.activeIndex];
+  const image = lightbox.querySelector(".gallery-lightbox-image");
+  const caption = lightbox.querySelector(".gallery-lightbox-caption");
+  const count = lightbox.querySelector(".gallery-lightbox-count");
+
+  image.src = resolveAssetUrl(item.src);
+  image.alt = item.alt;
+  image.onerror = () => {
+    image.src = createPlaceholderDataUrl(item.alt || "Media Pulse");
+  };
+  caption.textContent = item.alt;
+  count.textContent = `${galleryState.activeIndex + 1} de ${galleryState.items.length}`;
+}
+
+function moveGalleryLightbox(step) {
+  if (!galleryState?.items?.length) {
+    return;
+  }
+
+  galleryState.activeIndex = normalizeGalleryIndex(galleryState.activeIndex + step);
+  syncGalleryLightbox();
+}
+
+function normalizeGalleryIndex(index) {
+  const total = galleryState?.items?.length || 0;
+  if (!total) {
+    return 0;
+  }
+
+  return (index + total) % total;
+}
+
+function onGalleryKeydown(event) {
+  if (event.key === "Escape") {
+    closeGalleryLightbox();
+    return;
+  }
+
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    moveGalleryLightbox(-1);
+  }
+
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
+    moveGalleryLightbox(1);
+  }
 }
 
 function resolveEndpoint(basePath, slug, id) {
