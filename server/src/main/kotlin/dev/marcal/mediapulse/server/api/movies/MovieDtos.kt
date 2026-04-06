@@ -46,6 +46,11 @@ data class MoviesSearchResponse(
     val movies: List<MovieCardDto>,
 )
 
+data class MoviesRecentResponse(
+    val items: List<MovieCardDto>,
+    val nextCursor: String?,
+)
+
 data class MoviesSummaryResponse(
     val range: RangeDto,
     val watchesCount: Long,

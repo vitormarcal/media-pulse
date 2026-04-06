@@ -72,6 +72,11 @@ data class ShowsSearchResponse(
     val shows: List<ShowCardDto>,
 )
 
+data class ShowsRecentResponse(
+    val items: List<ShowCardDto>,
+    val nextCursor: String?,
+)
+
 data class CurrentlyWatchingShowDto(
     val showId: Long,
     val title: String,

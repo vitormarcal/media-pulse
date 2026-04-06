@@ -1,11 +1,11 @@
 package dev.marcal.mediapulse.server.controller.movies
 
-import dev.marcal.mediapulse.server.api.movies.MovieCardDto
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.movies.MovieYearWatchedDto
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearStatsDto
+import dev.marcal.mediapulse.server.api.movies.MoviesRecentResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesTotalStatsDto
@@ -27,12 +27,12 @@ class MoviesControllerTest {
 
     @Test
     fun `recent should delegate to repository`() {
-        every { repository.recent(15) } returns emptyList()
+        every { repository.recent(15, null) } returns MoviesRecentResponse(items = emptyList(), nextCursor = null)
 
-        val result: List<MovieCardDto> = controller.recent(15)
+        val result = controller.recent(15, null)
 
-        assertEquals(0, result.size)
-        verify(exactly = 1) { repository.recent(15) }
+        assertEquals(0, result.items.size)
+        verify(exactly = 1) { repository.recent(15, null) }
     }
 
     @Test

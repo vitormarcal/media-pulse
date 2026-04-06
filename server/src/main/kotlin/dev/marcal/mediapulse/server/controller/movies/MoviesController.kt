@@ -1,8 +1,8 @@
 package dev.marcal.mediapulse.server.controller.movies
 
-import dev.marcal.mediapulse.server.api.movies.MovieCardDto
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
+import dev.marcal.mediapulse.server.api.movies.MoviesRecentResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSearchResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
@@ -28,7 +28,8 @@ class MoviesController(
     @GetMapping("/recent")
     fun recent(
         @RequestParam(defaultValue = "20") limit: Int,
-    ): List<MovieCardDto> = repository.recent(limit)
+        @RequestParam(required = false) cursor: String?,
+    ): MoviesRecentResponse = repository.recent(limit, cursor)
 
     @GetMapping("/{movieId}")
     fun details(

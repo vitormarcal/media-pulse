@@ -13,6 +13,7 @@ import dev.marcal.mediapulse.server.api.music.MusicSummaryResponse
 import dev.marcal.mediapulse.server.api.music.PlaysByDayRow
 import dev.marcal.mediapulse.server.api.music.RangeDto
 import dev.marcal.mediapulse.server.api.music.RecentAlbumResponse
+import dev.marcal.mediapulse.server.api.music.RecentAlbumsPageResponse
 import dev.marcal.mediapulse.server.api.music.RecentGenreResponse
 import dev.marcal.mediapulse.server.api.music.SearchAlbumRow
 import dev.marcal.mediapulse.server.api.music.SearchResponse
@@ -32,6 +33,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
 import org.springframework.web.server.ResponseStatusException
 import java.sql.Date
+import java.sql.Timestamp
 import java.time.Instant
 
 @Repository
@@ -89,22 +91,74 @@ class MusicQueryRepository(
         return MusicSummaryResponse(RangeDto(start, end), artists, albums, tracks)
     }
 
-    fun getRecentAlbums(limit: Int): List<RecentAlbumResponse> =
-        entityManager
-            .createQuery(
-                """
-            SELECT new dev.marcal.mediapulse.server.api.music.RecentAlbumResponse(
-                al.id, al.title, a.id, a.name, al.year, al.coverUrl, MAX(tp.playedAt), COUNT(tp.id)
-            )
-            FROM TrackPlayback tp
-            JOIN Album al ON al.id = tp.albumId
-            JOIN Artist a ON a.id = al.artistId
-            GROUP BY al.id, al.title, a.id, a.name, al.year, al.coverUrl
-            ORDER BY MAX(tp.playedAt) DESC
-            """,
-                RecentAlbumResponse::class.java,
-            ).setMaxResults(limit)
-            .resultList
+    fun getRecentAlbums(
+        limit: Int,
+        cursor: String?,
+    ): RecentAlbumsPageResponse {
+        val resolvedLimit = limit.coerceAtLeast(1)
+        val (cursorLastPlayed, cursorAlbumId) = parseRecentAlbumCursor(cursor)
+        val rows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH recent_albums AS (
+                      SELECT
+                        al.id AS album_id,
+                        al.title AS album_title,
+                        a.id AS artist_id,
+                        a.name AS artist_name,
+                        al.year AS album_year,
+                        al.cover_url,
+                        MAX(tp.played_at) AS last_played,
+                        COUNT(tp.id) AS play_count
+                      FROM track_playbacks tp
+                      JOIN albums al ON al.id = tp.album_id
+                      JOIN artists a ON a.id = al.artist_id
+                      GROUP BY al.id, al.title, a.id, a.name, al.year, al.cover_url
+                    )
+                    SELECT
+                      album_id,
+                      album_title,
+                      artist_id,
+                      artist_name,
+                      album_year,
+                      cover_url,
+                      last_played,
+                      play_count
+                    FROM recent_albums
+                    WHERE (
+                      :cursorLastPlayed IS NULL
+                      OR last_played < :cursorLastPlayed
+                      OR (last_played = :cursorLastPlayed AND album_id < :cursorAlbumId)
+                    )
+                    ORDER BY last_played DESC, album_id DESC
+                    LIMIT :limitPlusOne
+                    """.trimIndent(),
+                ).setParameter("cursorLastPlayed", cursorLastPlayed)
+                .setParameter("cursorAlbumId", cursorAlbumId)
+                .setParameter("limitPlusOne", resolvedLimit + 1)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    RecentAlbumResponse(
+                        albumId = (fields[0] as Number).toLong(),
+                        albumTitle = fields[1] as String,
+                        artistId = (fields[2] as Number).toLong(),
+                        artistName = fields[3] as String,
+                        year = (fields[4] as Number?)?.toInt(),
+                        coverUrl = fields[5] as String?,
+                        lastPlayed = asInstant(fields[6])!!,
+                        playCount = (fields[7] as Number).toLong(),
+                    )
+                }
+        val hasMore = rows.size > resolvedLimit
+        val items = rows.take(resolvedLimit)
+        val nextCursor = items.lastOrNull()?.let { buildRecentAlbumCursor(it.lastPlayed, it.albumId) }
+        return RecentAlbumsPageResponse(
+            items = items,
+            nextCursor = if (hasMore) nextCursor else null,
+        )
+    }
 
     fun getTopArtists(
         start: Instant,
@@ -889,4 +943,27 @@ class MusicQueryRepository(
             .sortedBy { it.key }
             .map { (source, genres) -> TopGenreBySourceResponse(source = source, genres = genres) }
     }
+
+    private fun asInstant(value: Any?): Instant? =
+        when (value) {
+            null -> null
+            is Instant -> value
+            is Timestamp -> value.toInstant()
+            is java.util.Date -> value.toInstant()
+            else -> null
+        }
+
+    private fun parseRecentAlbumCursor(cursor: String?): Pair<Instant?, Long?> {
+        if (cursor.isNullOrBlank()) return null to null
+        val parts = cursor.split(":")
+        require(parts.size == 4 && parts[0] == "ts" && parts[2] == "id") { "Invalid cursor format." }
+        val lastPlayed = Instant.ofEpochMilli(parts[1].toLongOrNull() ?: error("Invalid cursor value."))
+        val albumId = parts[3].toLongOrNull() ?: error("Invalid cursor value.")
+        return lastPlayed to albumId
+    }
+
+    private fun buildRecentAlbumCursor(
+        lastPlayed: Instant,
+        albumId: Long,
+    ): String = "ts:${lastPlayed.toEpochMilli()}:id:$albumId"
 }

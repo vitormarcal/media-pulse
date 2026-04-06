@@ -536,6 +536,24 @@ button {
   line-height: 1.55;
 }
 
+.mosaic-load-state {
+  min-height: 22px;
+  margin-top: 6px;
+  color: var(--base-color-muted);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.mosaic-load-state[data-state="loading"] {
+  color: var(--base-color-brand);
+}
+
+.mosaic-sentinel {
+  width: 100%;
+  height: 1px;
+}
+
 .collection-header {
   margin-bottom: 14px;
 }

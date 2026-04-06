@@ -22,7 +22,7 @@ Media Pulse centraliza dados pessoais de consumo (music, books, movies e TV show
 
 ## Movies endpoints
 
-- `GET /api/movies/recent`
+- `GET /api/movies/recent` (`limit`, `cursor`)
 - `GET /api/movies/{movieId}`
 - `GET /api/movies/slug/{slug}`
 - `GET /api/movies/search` (busca por título e slug)
@@ -33,7 +33,7 @@ Media Pulse centraliza dados pessoais de consumo (music, books, movies e TV show
 
 ## Shows endpoints
 
-- `GET /api/shows/recent`
+- `GET /api/shows/recent` (`limit`, `cursor`)
 - `GET /api/shows/{showId}`
 - `GET /api/shows/slug/{slug}`
 - `GET /api/shows/search` (busca por título e slug)
@@ -48,14 +48,14 @@ Media Pulse centraliza dados pessoais de consumo (music, books, movies e TV show
 - `GET /api/books/{bookId}`
 - `GET /api/books/slug/{slug}`
 - `GET /api/books/authors/{authorId}` (detalhe agregado do autor com catálogo e leituras recentes)
-- `GET /api/books/list`
+- `GET /api/books/list` (`status`, `limit`, `cursor`)
 - `GET /api/books/search`
 - `GET /api/books/summary`
 
 ## Music endpoints
 
 - `GET /api/music/summary`
-- `GET /api/music/recent-albums`
+- `GET /api/music/recent-albums` (`limit`, `cursor`)
 - `GET /api/music/search`
 - `GET /api/music/albums/{albumId}`
 - `GET /api/music/artists/{artistId}` (detalhe agregado do artista com discografia ouvida e top faixas)

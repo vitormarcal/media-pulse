@@ -1,4 +1,8 @@
 const DEFAULT_API_BASE_URL = localStorage.getItem("media-pulse-api-base") || "/";
+const MIXED_SOURCE_PAGE_LIMIT = 12;
+const INITIAL_MIXED_BATCH_SIZE = 18;
+const NEXT_MIXED_BATCH_SIZE = 12;
+const MIXED_MIN_BUFFER_SIZE = 6;
 
 const summaryConfigs = {
   movies: {
@@ -33,9 +37,9 @@ const summaryConfigs = {
 
 const recentConfigs = {
   movies: {
-    endpoint: "/api/movies/recent?limit=12",
-    normalize: (items) =>
-      items.map((item) => ({
+    endpoint: ({ limit = MIXED_SOURCE_PAGE_LIMIT, cursor } = {}) => buildPagedPath("/api/movies/recent", { limit, cursor }),
+    normalizePage: (payload) => ({
+      items: (payload.items || []).map((item) => ({
         href: buildDetailUrl("movie", { slug: item.slug, id: item.movieId }),
         image: item.coverUrl,
         kicker: "Movie",
@@ -43,11 +47,15 @@ const recentConfigs = {
         meta: [item.originalTitle, item.year].filter(Boolean).join(" • "),
         date: formatDate(item.watchedAt, "Assistido"),
       })),
+      nextCursor: payload.nextCursor || null,
+    }),
+    emptyPage: { items: [], nextCursor: null },
   },
   music: {
-    endpoint: "/api/music/recent-albums?limit=12",
-    normalize: (items) =>
-      items.map((item) => ({
+    endpoint: ({ limit = MIXED_SOURCE_PAGE_LIMIT, cursor } = {}) =>
+      buildPagedPath("/api/music/recent-albums", { limit, cursor }),
+    normalizePage: (payload) => ({
+      items: (payload.items || []).map((item) => ({
         href: buildDetailUrl("music-album", { id: item.albumId }),
         image: item.coverUrl,
         kicker: "Album",
@@ -55,11 +63,15 @@ const recentConfigs = {
         meta: [item.artistName, item.year].filter(Boolean).join(" • "),
         date: formatDate(item.lastPlayed, `${item.playCount} plays`),
       })),
+      nextCursor: payload.nextCursor || null,
+    }),
+    emptyPage: { items: [], nextCursor: null },
   },
   books: {
-    endpoint: "/api/books/list?status=read&limit=12",
-    normalize: (payload) =>
-      (payload.items || []).map((item) => ({
+    endpoint: ({ limit = MIXED_SOURCE_PAGE_LIMIT, cursor } = {}) =>
+      buildPagedPath("/api/books/list", { status: "read", limit, cursor }),
+    normalizePage: (payload) => ({
+      items: (payload.items || []).map((item) => ({
         href: buildDetailUrl("book", { slug: item.book?.slug, id: item.book?.bookId }),
         image: item.book?.coverUrl || item.edition?.coverUrl,
         kicker: "Book",
@@ -72,11 +84,14 @@ const recentConfigs = {
           .join(" • "),
         date: formatDate(item.finishedAt || item.startedAt || item.book?.reviewedAt, "Atualizado"),
       })),
+      nextCursor: payload.nextCursor || null,
+    }),
+    emptyPage: { items: [], nextCursor: null },
   },
   shows: {
-    endpoint: "/api/shows/recent?limit=12",
-    normalize: (items) =>
-      items.map((item) => ({
+    endpoint: ({ limit = MIXED_SOURCE_PAGE_LIMIT, cursor } = {}) => buildPagedPath("/api/shows/recent", { limit, cursor }),
+    normalizePage: (payload) => ({
+      items: (payload.items || []).map((item) => ({
         href: buildDetailUrl("show", { slug: item.slug, id: item.showId }),
         image: item.coverUrl,
         kicker: "Show",
@@ -84,6 +99,9 @@ const recentConfigs = {
         meta: [item.originalTitle, item.year].filter(Boolean).join(" • "),
         date: formatDate(item.watchedAt, "Visto"),
       })),
+      nextCursor: payload.nextCursor || null,
+    }),
+    emptyPage: { items: [], nextCursor: null },
   },
 };
 
@@ -156,6 +174,7 @@ const searchConfigs = {
 
 const state = {
   apiBaseUrl: DEFAULT_API_BASE_URL.replace(/\/$/, ""),
+  mixedMosaic: createMixedMosaicState(),
 };
 
 const pinTemplate = document.querySelector("#pin-card-template");
@@ -167,6 +186,9 @@ const searchResultsSection = document.querySelector("#search-results-section");
 const searchResults = document.querySelector("#search-results");
 const clearSearchButton = document.querySelector("#clear-search-button");
 const apiBaseButton = document.querySelector("#api-base-button");
+const mixedGrid = document.querySelector("#mixed-grid");
+const mixedGridStatus = document.querySelector("#mixed-grid-status");
+const mixedGridSentinel = document.querySelector("#mixed-grid-sentinel");
 
 initialize();
 
@@ -178,6 +200,24 @@ function initialize() {
   searchInput.addEventListener("input", handleSearchInput);
 
   loadHome();
+}
+
+function createMixedSourceState() {
+  return {
+    items: [],
+    cursor: null,
+    hasMore: true,
+    loading: false,
+  };
+}
+
+function createMixedMosaicState() {
+  return {
+    loading: false,
+    renderedCount: 0,
+    observer: null,
+    sources: Object.fromEntries(Object.keys(recentConfigs).map((key) => [key, createMixedSourceState()])),
+  };
 }
 
 async function loadHome() {
@@ -206,13 +246,15 @@ async function loadEditorialHome() {
   const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const weekEnd = now.toISOString();
 
-  const [currentlyWatching, readingNow, topArtists, recentAlbums, recentMovies] = await Promise.all([
+  const [currentlyWatching, readingNow, topArtists, recentAlbumsPayload, recentMoviesPayload] = await Promise.all([
     fetchSafe("/api/shows/currently-watching?limit=6&activeWithinDays=90", []),
     fetchSafe("/api/books/list?status=currently_reading&limit=6", { items: [] }),
     fetchSafe(`/api/music/tops/artists?start=${encodeURIComponent(weekStart)}&end=${encodeURIComponent(weekEnd)}&limit=6`, []),
-    fetchSafe("/api/music/recent-albums?limit=6", []),
-    fetchSafe("/api/movies/recent?limit=6", []),
+    fetchSafe("/api/music/recent-albums?limit=6", { items: [] }),
+    fetchSafe("/api/movies/recent?limit=6", { items: [] }),
   ]);
+  const recentAlbums = recentAlbumsPayload.items || [];
+  const recentMovies = recentMoviesPayload.items || [];
 
   renderSpotlights({
     currentlyWatching,
@@ -272,25 +314,124 @@ async function loadEditorialHome() {
 }
 
 async function loadMixedMosaic() {
-  const mixedGrid = document.querySelector("#mixed-grid");
+  resetMixedMosaicState();
   mixedGrid.replaceChildren(buildLoadingCard());
+  setMixedLoadState("Carregando mural...", "loading");
+  await Promise.all(Object.keys(recentConfigs).map((key) => fillMixedSourceBuffer(key)));
+  mixedGrid.replaceChildren();
+  const appended = appendNextMixedBatch(INITIAL_MIXED_BATCH_SIZE);
+  if (!appended) {
+    mixedGrid.append(buildMessageCard("Nenhum item encontrado."));
+    setMixedLoadState("Sem itens recentes para exibir.", "done");
+    return;
+  }
+  setupMixedMosaicObserver();
+  refreshMixedLoadState();
+}
 
-  const [moviesPayload, musicPayload, booksPayload, showsPayload] = await Promise.all([
-    fetchSafe(recentConfigs.movies.endpoint, []),
-    fetchSafe(recentConfigs.music.endpoint, []),
-    fetchSafe(recentConfigs.books.endpoint, { items: [] }),
-    fetchSafe(recentConfigs.shows.endpoint, []),
-  ]);
+function resetMixedMosaicState() {
+  state.mixedMosaic.observer?.disconnect();
+  state.mixedMosaic = createMixedMosaicState();
+}
 
-  const pools = {
-    movies: recentConfigs.movies.normalize(moviesPayload).map((item) => ({ ...item, weight: 1, type: "movies" })),
-    music: recentConfigs.music.normalize(musicPayload).map((item) => ({ ...item, weight: 1, type: "music" })),
-    books: recentConfigs.books.normalize(booksPayload).map((item) => ({ ...item, weight: 1, type: "books" })),
-    shows: recentConfigs.shows.normalize(showsPayload).map((item) => ({ ...item, weight: 1, type: "shows" })),
-  };
+async function fillMixedSourceBuffer(key) {
+  const source = state.mixedMosaic.sources[key];
+  const config = recentConfigs[key];
+  if (!source || !config || source.loading || !source.hasMore || source.items.length >= MIXED_MIN_BUFFER_SIZE) return;
 
-  const mixedItems = applyFeaturedPins(buildBalancedFeed(pools, 18));
-  renderPinGrid(mixedGrid, mixedItems);
+  source.loading = true;
+  try {
+    while (source.hasMore && source.items.length < MIXED_MIN_BUFFER_SIZE) {
+      const payload = await fetchSafe(config.endpoint({ limit: MIXED_SOURCE_PAGE_LIMIT, cursor: source.cursor }), config.emptyPage);
+      const page = config.normalizePage(payload);
+      const pageItems = page.items.map((item) => ({ ...item, weight: 1, type: key }));
+      source.items.push(...pageItems);
+      source.cursor = page.nextCursor || null;
+      source.hasMore = Boolean(page.nextCursor);
+      if (!pageItems.length) break;
+    }
+  } finally {
+    source.loading = false;
+  }
+}
+
+function appendNextMixedBatch(limit) {
+  const pools = Object.fromEntries(Object.entries(state.mixedMosaic.sources).map(([key, source]) => [key, source.items]));
+  const batch = buildBalancedFeed(pools, limit);
+  if (!batch.length) return 0;
+
+  const decorated = decorateMixedItems(batch, state.mixedMosaic.renderedCount);
+  renderPinGrid(mixedGrid, decorated, { append: true });
+  state.mixedMosaic.renderedCount += decorated.length;
+  return decorated.length;
+}
+
+function decorateMixedItems(items, startIndex) {
+  return items.map((item, index) => ({
+    ...item,
+    featured: shouldFeaturePin(startIndex + index),
+  }));
+}
+
+function setupMixedMosaicObserver() {
+  if (!("IntersectionObserver" in window)) return;
+
+  state.mixedMosaic.observer?.disconnect();
+  state.mixedMosaic.observer = new IntersectionObserver(handleMixedMosaicIntersection, {
+    rootMargin: "1200px 0px",
+  });
+  state.mixedMosaic.observer.observe(mixedGridSentinel);
+}
+
+function handleMixedMosaicIntersection(entries) {
+  if (!entries.some((entry) => entry.isIntersecting)) return;
+  void loadMoreMixedMosaic();
+}
+
+async function loadMoreMixedMosaic() {
+  if (state.mixedMosaic.loading) return;
+  if (!hasMoreMixedContent()) {
+    refreshMixedLoadState();
+    return;
+  }
+
+  state.mixedMosaic.loading = true;
+  setMixedLoadState("Carregando mais do mural...", "loading");
+  try {
+    await Promise.all(Object.keys(recentConfigs).map((key) => fillMixedSourceBuffer(key)));
+    const appended = appendNextMixedBatch(NEXT_MIXED_BATCH_SIZE);
+    if (!appended && hasMoreMixedContent()) {
+      await Promise.all(Object.keys(recentConfigs).map((key) => fillMixedSourceBuffer(key)));
+      appendNextMixedBatch(NEXT_MIXED_BATCH_SIZE);
+    }
+  } finally {
+    state.mixedMosaic.loading = false;
+    refreshMixedLoadState();
+  }
+}
+
+function hasMoreMixedContent() {
+  return Object.values(state.mixedMosaic.sources).some((source) => source.hasMore || source.items.length > 0);
+}
+
+function refreshMixedLoadState() {
+  if (state.mixedMosaic.loading) {
+    setMixedLoadState("Carregando mais do mural...", "loading");
+    return;
+  }
+
+  if (Object.values(state.mixedMosaic.sources).every((source) => !source.hasMore && source.items.length === 0)) {
+    setMixedLoadState("Fim do mural.", "done");
+    state.mixedMosaic.observer?.disconnect();
+    return;
+  }
+
+  setMixedLoadState("Role para carregar mais.", "idle");
+}
+
+function setMixedLoadState(message, status) {
+  mixedGridStatus.textContent = message;
+  mixedGridStatus.dataset.state = status;
 }
 
 function renderSpotlights({ currentlyWatching, readingNow, topArtists, recentAlbums, recentMovies }) {
@@ -488,10 +629,12 @@ function buildResultGroup(group) {
   return article;
 }
 
-function renderPinGrid(container, items) {
-  container.replaceChildren();
+function renderPinGrid(container, items, { append = false } = {}) {
+  if (!append) {
+    container.replaceChildren();
+  }
 
-  if (!items.length) {
+  if (!items.length && !append) {
     container.append(buildMessageCard("Nenhum item encontrado."));
     return;
   }
@@ -539,23 +682,16 @@ function computePinVariant(index, type) {
   return pattern[index % pattern.length];
 }
 
-function applyFeaturedPins(items) {
-  return items.map((item, index) => ({
-    ...item,
-    featured: shouldFeaturePin(index, items.length),
-  }));
-}
-
-function shouldFeaturePin(index, total) {
-  if (total < 6) return index === 0;
-  return index === 0 || (index === 7 && total >= 12);
+function shouldFeaturePin(index) {
+  return index === 0 || (index >= 7 && (index - 7) % 12 === 0);
 }
 
 function buildBalancedFeed(pools, limit) {
   const entries = Object.entries(pools).map(([key, items]) => ({
     key,
-    items: [...items],
+    items,
     used: 0,
+    initialCount: items.length,
   }));
   const result = [];
 
@@ -564,8 +700,8 @@ function buildBalancedFeed(pools, limit) {
     if (!available.length) break;
 
     available.sort((left, right) => {
-      const leftRatio = left.used / Math.max(1, pools[left.key].length);
-      const rightRatio = right.used / Math.max(1, pools[right.key].length);
+      const leftRatio = left.used / Math.max(1, left.initialCount);
+      const rightRatio = right.used / Math.max(1, right.initialCount);
       if (leftRatio !== rightRatio) return leftRatio - rightRatio;
       if (left.used !== right.used) return left.used - right.used;
       return right.items.length - left.items.length;
@@ -632,6 +768,16 @@ function handleApiBaseChange() {
 
 function compactApiLabel(url) {
   return `API: ${url.replace(/^https?:\/\//, "")}`;
+}
+
+function buildPagedPath(path, params) {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== "") {
+      search.set(key, String(value));
+    }
+  });
+  return `${path}?${search.toString()}`;
 }
 
 function buildDetailUrl(kind, identifiers = {}) {

@@ -2,13 +2,13 @@ package dev.marcal.mediapulse.server.controller.shows
 
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.RangeDto
-import dev.marcal.mediapulse.server.api.shows.ShowCardDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearWatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearStatsDto
+import dev.marcal.mediapulse.server.api.shows.ShowsRecentResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsStatsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsTotalStatsDto
@@ -30,12 +30,12 @@ class ShowsControllerTest {
 
     @Test
     fun `recent should delegate to repository`() {
-        every { repository.recent(15) } returns emptyList()
+        every { repository.recent(15, null) } returns ShowsRecentResponse(items = emptyList(), nextCursor = null)
 
-        val result: List<ShowCardDto> = controller.recent(15)
+        val result = controller.recent(15, null)
 
-        assertEquals(0, result.size)
-        verify(exactly = 1) { repository.recent(15) }
+        assertEquals(0, result.items.size)
+        verify(exactly = 1) { repository.recent(15, null) }
     }
 
     @Test

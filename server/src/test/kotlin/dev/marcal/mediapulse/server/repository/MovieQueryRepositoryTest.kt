@@ -48,16 +48,16 @@ class MovieQueryRepositoryTest {
                 ),
             )
 
-        val result = repository.recent(5)
+        val result = repository.recent(limit = 5, cursor = null)
 
-        assertEquals(1, result.size)
-        assertEquals(10L, result[0].movieId)
-        assertEquals("De Olhos Bem Fechados", result[0].title)
-        assertEquals("Eyes Wide Shut", result[0].originalTitle)
-        assertEquals("eyes-wide-shut", result[0].slug)
-        assertEquals(1999, result[0].year)
-        assertEquals("/covers/plex/movies/10/poster.jpg", result[0].coverUrl)
-        verify { query.setParameter("n", 5) }
+        assertEquals(1, result.items.size)
+        assertEquals(10L, result.items[0].movieId)
+        assertEquals("De Olhos Bem Fechados", result.items[0].title)
+        assertEquals("Eyes Wide Shut", result.items[0].originalTitle)
+        assertEquals("eyes-wide-shut", result.items[0].slug)
+        assertEquals(1999, result.items[0].year)
+        assertEquals("/covers/plex/movies/10/poster.jpg", result.items[0].coverUrl)
+        verify { query.setParameter("limitPlusOne", 6) }
     }
 
     @Test

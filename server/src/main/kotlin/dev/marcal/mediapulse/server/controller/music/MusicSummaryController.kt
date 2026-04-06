@@ -3,7 +3,7 @@ package dev.marcal.mediapulse.server.controller.music
 import dev.marcal.mediapulse.server.api.music.AlbumPageResponse
 import dev.marcal.mediapulse.server.api.music.ArtistPageResponse
 import dev.marcal.mediapulse.server.api.music.MusicSummaryResponse
-import dev.marcal.mediapulse.server.api.music.RecentAlbumResponse
+import dev.marcal.mediapulse.server.api.music.RecentAlbumsPageResponse
 import dev.marcal.mediapulse.server.api.music.SearchResponse
 import dev.marcal.mediapulse.server.api.music.TrackPageResponse
 import dev.marcal.mediapulse.server.repository.MusicQueryRepository
@@ -33,7 +33,8 @@ class MusicSummaryController(
     @GetMapping("/recent-albums")
     fun recentAlbums(
         @RequestParam(defaultValue = "20") limit: Int,
-    ): List<RecentAlbumResponse> = repository.getRecentAlbums(limit)
+        @RequestParam(required = false) cursor: String?,
+    ): RecentAlbumsPageResponse = repository.getRecentAlbums(limit, cursor)
 
     @GetMapping("/tops/artists")
     fun topArtists(

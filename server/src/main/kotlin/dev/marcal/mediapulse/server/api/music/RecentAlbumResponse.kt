@@ -12,3 +12,8 @@ data class RecentAlbumResponse(
     val lastPlayed: Instant,
     val playCount: Long,
 )
+
+data class RecentAlbumsPageResponse(
+    val items: List<RecentAlbumResponse>,
+    val nextCursor: String?,
+)

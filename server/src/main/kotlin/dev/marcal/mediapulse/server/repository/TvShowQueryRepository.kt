@@ -13,6 +13,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearWatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearStatsDto
+import dev.marcal.mediapulse.server.api.shows.ShowsRecentResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSearchResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsStatsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
@@ -29,45 +30,77 @@ import java.time.Instant
 class TvShowQueryRepository(
     private val entityManager: EntityManager,
 ) {
-    fun recent(limit: Int): List<ShowCardDto> =
-        entityManager
-            .createNativeQuery(
-                """
-                SELECT
-                  s.id,
-                  COALESCE((
-                    SELECT st.title
-                    FROM tv_show_titles st
-                    WHERE st.show_id = s.id
-                    ORDER BY st.is_primary ASC, st.id ASC
-                    LIMIT 1
-                  ), s.original_title) AS title,
-                  s.original_title,
-                  s.slug,
-                  s.year,
-                  s.cover_url,
-                  MAX(tew.watched_at) AS watched_at
-                FROM tv_shows s
-                JOIN tv_episodes te ON te.show_id = s.id
-                JOIN tv_episode_watches tew ON tew.episode_id = te.id
-                GROUP BY s.id, s.original_title, s.slug, s.year, s.cover_url
-                ORDER BY MAX(tew.watched_at) DESC
-                LIMIT :n
-                """.trimIndent(),
-            ).setParameter("n", limit)
-            .resultList
-            .map { row ->
-                val fields = row as Array<*>
-                ShowCardDto(
-                    showId = (fields[0] as Number).toLong(),
-                    title = fields[1] as String,
-                    originalTitle = fields[2] as String,
-                    slug = fields[3] as String?,
-                    year = (fields[4] as Number?)?.toInt(),
-                    coverUrl = fields[5] as String?,
-                    watchedAt = asInstant(fields[6]),
-                )
-            }
+    fun recent(
+        limit: Int,
+        cursor: String?,
+    ): ShowsRecentResponse {
+        val resolvedLimit = limit.coerceAtLeast(1)
+        val (cursorWatchedAt, cursorShowId) = parseRecentCursor(cursor)
+        val rows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH recent_shows AS (
+                      SELECT
+                        s.id AS show_id,
+                        COALESCE((
+                          SELECT st.title
+                          FROM tv_show_titles st
+                          WHERE st.show_id = s.id
+                          ORDER BY st.is_primary ASC, st.id ASC
+                          LIMIT 1
+                        ), s.original_title) AS title,
+                        s.original_title,
+                        s.slug,
+                        s.year,
+                        s.cover_url,
+                        MAX(tew.watched_at) AS watched_at
+                      FROM tv_shows s
+                      JOIN tv_episodes te ON te.show_id = s.id
+                      JOIN tv_episode_watches tew ON tew.episode_id = te.id
+                      GROUP BY s.id, s.original_title, s.slug, s.year, s.cover_url
+                    )
+                    SELECT
+                      show_id,
+                      title,
+                      original_title,
+                      slug,
+                      year,
+                      cover_url,
+                      watched_at
+                    FROM recent_shows
+                    WHERE (
+                      :cursorWatchedAt IS NULL
+                      OR watched_at < :cursorWatchedAt
+                      OR (watched_at = :cursorWatchedAt AND show_id < :cursorShowId)
+                    )
+                    ORDER BY watched_at DESC, show_id DESC
+                    LIMIT :limitPlusOne
+                    """.trimIndent(),
+                ).setParameter("cursorWatchedAt", cursorWatchedAt)
+                .setParameter("cursorShowId", cursorShowId)
+                .setParameter("limitPlusOne", resolvedLimit + 1)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    ShowCardDto(
+                        showId = (fields[0] as Number).toLong(),
+                        title = fields[1] as String,
+                        originalTitle = fields[2] as String,
+                        slug = fields[3] as String?,
+                        year = (fields[4] as Number?)?.toInt(),
+                        coverUrl = fields[5] as String?,
+                        watchedAt = asInstant(fields[6]),
+                    )
+                }
+        val hasMore = rows.size > resolvedLimit
+        val items = rows.take(resolvedLimit)
+        val nextCursor = items.lastOrNull()?.let { buildRecentCursor(it.watchedAt, it.showId) }
+        return ShowsRecentResponse(
+            items = items,
+            nextCursor = if (hasMore) nextCursor else null,
+        )
+    }
 
     fun currentlyWatching(
         limit: Int,
@@ -657,4 +690,18 @@ class TvShowQueryRepository(
             is java.util.Date -> value.toInstant()
             else -> null
         }
+
+    private fun parseRecentCursor(cursor: String?): Pair<Instant?, Long?> {
+        if (cursor.isNullOrBlank()) return null to null
+        val parts = cursor.split(":")
+        require(parts.size == 4 && parts[0] == "ts" && parts[2] == "id") { "Invalid cursor format." }
+        val watchedAt = Instant.ofEpochMilli(parts[1].toLongOrNull() ?: error("Invalid cursor value."))
+        val showId = parts[3].toLongOrNull() ?: error("Invalid cursor value.")
+        return watchedAt to showId
+    }
+
+    private fun buildRecentCursor(
+        watchedAt: Instant?,
+        showId: Long,
+    ): String = "ts:${watchedAt?.toEpochMilli() ?: 0}:id:$showId"
 }

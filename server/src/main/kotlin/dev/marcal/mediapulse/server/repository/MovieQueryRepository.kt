@@ -9,6 +9,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.movies.MovieYearWatchedDto
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearStatsDto
+import dev.marcal.mediapulse.server.api.movies.MoviesRecentResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSearchResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
@@ -26,44 +27,76 @@ import java.time.Instant
 class MovieQueryRepository(
     private val entityManager: EntityManager,
 ) {
-    fun recent(limit: Int): List<MovieCardDto> =
-        entityManager
-            .createNativeQuery(
-                """
-                SELECT
-                  m.id,
-                  COALESCE((
-                    SELECT mt.title
-                    FROM movie_titles mt
-                    WHERE mt.movie_id = m.id
-                    ORDER BY mt.is_primary ASC, mt.id ASC
-                    LIMIT 1
-                  ), m.original_title) AS title,
-                  m.original_title,
-                  m.slug,
-                  m.year,
-                  m.cover_url,
-                  MAX(mw.watched_at) AS watched_at
-                FROM movies m
-                JOIN movie_watches mw ON mw.movie_id = m.id
-                GROUP BY m.id, m.original_title, m.slug, m.year, m.cover_url
-                ORDER BY MAX(mw.watched_at) DESC
-                LIMIT :n
-                """.trimIndent(),
-            ).setParameter("n", limit)
-            .resultList
-            .map { row ->
-                val fields = row as Array<*>
-                MovieCardDto(
-                    movieId = (fields[0] as Number).toLong(),
-                    title = fields[1] as String,
-                    originalTitle = fields[2] as String,
-                    slug = fields[3] as String?,
-                    year = (fields[4] as Number?)?.toInt(),
-                    coverUrl = fields[5] as String?,
-                    watchedAt = asInstant(fields[6]),
-                )
-            }
+    fun recent(
+        limit: Int,
+        cursor: String?,
+    ): MoviesRecentResponse {
+        val resolvedLimit = limit.coerceAtLeast(1)
+        val (cursorWatchedAt, cursorMovieId) = parseRecentCursor(cursor)
+        val rows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH recent_movies AS (
+                      SELECT
+                        m.id AS movie_id,
+                        COALESCE((
+                          SELECT mt.title
+                          FROM movie_titles mt
+                          WHERE mt.movie_id = m.id
+                          ORDER BY mt.is_primary ASC, mt.id ASC
+                          LIMIT 1
+                        ), m.original_title) AS title,
+                        m.original_title,
+                        m.slug,
+                        m.year,
+                        m.cover_url,
+                        MAX(mw.watched_at) AS watched_at
+                      FROM movies m
+                      JOIN movie_watches mw ON mw.movie_id = m.id
+                      GROUP BY m.id, m.original_title, m.slug, m.year, m.cover_url
+                    )
+                    SELECT
+                      movie_id,
+                      title,
+                      original_title,
+                      slug,
+                      year,
+                      cover_url,
+                      watched_at
+                    FROM recent_movies
+                    WHERE (
+                      :cursorWatchedAt IS NULL
+                      OR watched_at < :cursorWatchedAt
+                      OR (watched_at = :cursorWatchedAt AND movie_id < :cursorMovieId)
+                    )
+                    ORDER BY watched_at DESC, movie_id DESC
+                    LIMIT :limitPlusOne
+                    """.trimIndent(),
+                ).setParameter("cursorWatchedAt", cursorWatchedAt)
+                .setParameter("cursorMovieId", cursorMovieId)
+                .setParameter("limitPlusOne", resolvedLimit + 1)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    MovieCardDto(
+                        movieId = (fields[0] as Number).toLong(),
+                        title = fields[1] as String,
+                        originalTitle = fields[2] as String,
+                        slug = fields[3] as String?,
+                        year = (fields[4] as Number?)?.toInt(),
+                        coverUrl = fields[5] as String?,
+                        watchedAt = asInstant(fields[6]),
+                    )
+                }
+        val hasMore = rows.size > resolvedLimit
+        val items = rows.take(resolvedLimit)
+        val nextCursor = items.lastOrNull()?.let { buildRecentCursor(it.watchedAt, it.movieId) }
+        return MoviesRecentResponse(
+            items = items,
+            nextCursor = if (hasMore) nextCursor else null,
+        )
+    }
 
     fun getMovieDetails(movieId: Long): MovieDetailsResponse {
         val base =
@@ -490,4 +523,18 @@ class MovieQueryRepository(
             is java.util.Date -> value.toInstant()
             else -> null
         }
+
+    private fun parseRecentCursor(cursor: String?): Pair<Instant?, Long?> {
+        if (cursor.isNullOrBlank()) return null to null
+        val parts = cursor.split(":")
+        require(parts.size == 4 && parts[0] == "ts" && parts[2] == "id") { "Invalid cursor format." }
+        val watchedAt = Instant.ofEpochMilli(parts[1].toLongOrNull() ?: error("Invalid cursor value."))
+        val movieId = parts[3].toLongOrNull() ?: error("Invalid cursor value.")
+        return watchedAt to movieId
+    }
+
+    private fun buildRecentCursor(
+        watchedAt: Instant?,
+        movieId: Long,
+    ): String = "ts:${watchedAt?.toEpochMilli() ?: 0}:id:$movieId"
 }

@@ -48,16 +48,16 @@ class TvShowQueryRepositoryTest {
                 ),
             )
 
-        val result = repository.recent(5)
+        val result = repository.recent(limit = 5, cursor = null)
 
-        assertEquals(1, result.size)
-        assertEquals(10L, result[0].showId)
-        assertEquals("Ruptura", result[0].title)
-        assertEquals("Severance", result[0].originalTitle)
-        assertEquals("severance", result[0].slug)
-        assertEquals(2022, result[0].year)
-        assertEquals("/covers/plex/tv-shows/10/poster.jpg", result[0].coverUrl)
-        verify { query.setParameter("n", 5) }
+        assertEquals(1, result.items.size)
+        assertEquals(10L, result.items[0].showId)
+        assertEquals("Ruptura", result.items[0].title)
+        assertEquals("Severance", result.items[0].originalTitle)
+        assertEquals("severance", result.items[0].slug)
+        assertEquals(2022, result.items[0].year)
+        assertEquals("/covers/plex/tv-shows/10/poster.jpg", result.items[0].coverUrl)
+        verify { query.setParameter("limitPlusOne", 6) }
     }
 
     @Test

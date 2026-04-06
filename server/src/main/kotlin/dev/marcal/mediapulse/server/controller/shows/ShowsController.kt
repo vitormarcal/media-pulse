@@ -1,9 +1,9 @@
 package dev.marcal.mediapulse.server.controller.shows
 
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
-import dev.marcal.mediapulse.server.api.shows.ShowCardDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearResponse
+import dev.marcal.mediapulse.server.api.shows.ShowsRecentResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSearchResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsStatsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
@@ -29,7 +29,8 @@ class ShowsController(
     @GetMapping("/recent")
     fun recent(
         @RequestParam(defaultValue = "20") limit: Int,
-    ): List<ShowCardDto> = repository.recent(limit)
+        @RequestParam(required = false) cursor: String?,
+    ): ShowsRecentResponse = repository.recent(limit, cursor)
 
     @GetMapping("/currently-watching")
     fun currentlyWatching(
