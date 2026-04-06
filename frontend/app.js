@@ -496,7 +496,7 @@ function renderPinGrid(container, items) {
     return;
   }
 
-  items.forEach((item) => {
+  items.forEach((item, index) => {
     const node = pinTemplate.content.firstElementChild.cloneNode(true);
     const card = node.querySelector(".pin-card");
     const image = node.querySelector(".pin-image");
@@ -510,8 +510,9 @@ function renderPinGrid(container, items) {
       card.classList.add(`pin-card-${item.type}`);
     }
     if (item.featured) {
-      node.classList.add("pin-card-link-featured");
       card.classList.add("pin-card-featured");
+    } else {
+      card.classList.add(`pin-card-variant-${computePinVariant(index, item.type)}`);
     }
     image.src = resolveAssetUrl(item.image);
     image.alt = item.title;
@@ -525,6 +526,17 @@ function renderPinGrid(container, items) {
     date.textContent = item.date || "Sem data";
     container.append(node);
   });
+}
+
+function computePinVariant(index, type) {
+  const byType = {
+    books: ["tall", "standard", "tall"],
+    movies: ["standard", "portrait", "standard"],
+    music: ["square", "standard", "portrait"],
+    shows: ["portrait", "standard", "square"],
+  };
+  const pattern = byType[type] || ["standard", "portrait", "square"];
+  return pattern[index % pattern.length];
 }
 
 function applyFeaturedPins(items) {

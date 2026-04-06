@@ -515,24 +515,13 @@ button {
 
 .mosaic-grid-mixed {
   margin-top: 18px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
-  align-items: start;
-  grid-auto-flow: dense;
+  columns: 5;
+  column-gap: 18px;
 }
 
 .mosaic-grid-mixed .pin-card-link {
-  height: 100%;
-}
-
-.mosaic-grid-mixed .pin-card {
-  height: 100%;
-  margin-bottom: 0;
-}
-
-.mosaic-grid-mixed .pin-card-link-featured {
-  grid-column: span 2;
+  break-inside: avoid;
+  margin-bottom: 18px;
 }
 
 .mosaic-intro {
@@ -647,8 +636,20 @@ button {
   border-radius: 16px;
 }
 
+.pin-card-variant-square .pin-image {
+  aspect-ratio: 1 / 1;
+}
+
+.pin-card-variant-portrait .pin-image {
+  aspect-ratio: 3 / 4.4;
+}
+
+.pin-card-variant-tall .pin-image {
+  aspect-ratio: 3 / 5;
+}
+
 .pin-card-featured .pin-image {
-  aspect-ratio: 5 / 4.4;
+  aspect-ratio: 3 / 5.8;
   border-radius: 20px;
 }
 
@@ -1320,11 +1321,7 @@ a.detail-list-item:focus-visible {
   }
 
   .mosaic-grid-mixed {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .mosaic-grid-mixed .pin-card-link-featured {
-    grid-column: span 2;
+    columns: 3;
   }
 
   .results-grid {
@@ -1375,15 +1372,17 @@ a.detail-list-item:focus-visible {
   }
 
   .mosaic-grid-mixed {
-    grid-template-columns: 1fr;
-  }
-
-  .mosaic-grid-mixed .pin-card-link-featured {
-    grid-column: auto;
+    columns: 1;
   }
 
   .pin-card-featured .pin-image {
-    aspect-ratio: 5 / 4.8;
+    aspect-ratio: 3 / 5.2;
+  }
+
+  .pin-card-variant-square .pin-image,
+  .pin-card-variant-portrait .pin-image,
+  .pin-card-variant-tall .pin-image {
+    aspect-ratio: 3 / 4.2;
   }
 
   .hero h2 {
