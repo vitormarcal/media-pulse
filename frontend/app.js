@@ -1,4 +1,3 @@
-const DEFAULT_API_BASE_URL = localStorage.getItem("media-pulse-api-base") || "/";
 const MIXED_SOURCE_PAGE_LIMIT = 12;
 const INITIAL_MIXED_BATCH_SIZE = 18;
 const NEXT_MIXED_BATCH_SIZE = 12;
@@ -173,7 +172,6 @@ const searchConfigs = {
 };
 
 const state = {
-  apiBaseUrl: DEFAULT_API_BASE_URL.replace(/\/$/, ""),
   mixedMosaic: createMixedMosaicState(),
 };
 
@@ -185,7 +183,6 @@ const searchStatus = document.querySelector("#search-status");
 const searchResultsSection = document.querySelector("#search-results-section");
 const searchResults = document.querySelector("#search-results");
 const clearSearchButton = document.querySelector("#clear-search-button");
-const apiBaseButton = document.querySelector("#api-base-button");
 const mixedGrid = document.querySelector("#mixed-grid");
 const mixedGridStatus = document.querySelector("#mixed-grid-status");
 const mixedGridSentinel = document.querySelector("#mixed-grid-sentinel");
@@ -193,8 +190,6 @@ const mixedGridSentinel = document.querySelector("#mixed-grid-sentinel");
 initialize();
 
 function initialize() {
-  apiBaseButton.textContent = compactApiLabel(state.apiBaseUrl);
-  apiBaseButton.addEventListener("click", handleApiBaseChange);
   searchForm.addEventListener("submit", handleSearchSubmit);
   clearSearchButton.addEventListener("click", clearSearch);
   searchInput.addEventListener("input", handleSearchInput);
@@ -735,7 +730,7 @@ function clearSearch() {
 }
 
 async function fetchJson(path) {
-  const response = await fetch(`${state.apiBaseUrl}${path}`, {
+  const response = await fetch(path, {
     headers: { Accept: "application/json" },
   });
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
@@ -753,21 +748,7 @@ async function fetchSafe(path, fallback) {
 function resolveAssetUrl(value) {
   if (!value) return createPlaceholderDataUrl("Media Pulse");
   if (/^https?:\/\//.test(value) || value.startsWith("data:")) return value;
-  return `${state.apiBaseUrl}${value.startsWith("/") ? value : `/${value}`}`;
-}
-
-function handleApiBaseChange() {
-  const nextValue = window.prompt("Informe a base da API", state.apiBaseUrl);
-  if (!nextValue) return;
-  state.apiBaseUrl = nextValue.replace(/\/$/, "");
-  localStorage.setItem("media-pulse-api-base", state.apiBaseUrl);
-  apiBaseButton.textContent = compactApiLabel(state.apiBaseUrl);
-  searchStatus.textContent = `API atual: ${state.apiBaseUrl}`;
-  loadHome();
-}
-
-function compactApiLabel(url) {
-  return `API: ${url.replace(/^https?:\/\//, "")}`;
+  return value.startsWith("/") ? value : `/${value}`;
 }
 
 function buildPagedPath(path, params) {
