@@ -5,6 +5,9 @@ data class TopArtistResponse(
     val artistId: Long,
     val artistName: String,
     val playCount: Long,
+    val albumId: Long?,
+    val albumTitle: String?,
+    val coverUrl: String?,
 )
 
 data class TopAlbumResponse(

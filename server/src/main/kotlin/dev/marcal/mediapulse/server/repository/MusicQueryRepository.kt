@@ -176,23 +176,76 @@ class MusicQueryRepository(
         limit: Int,
     ): List<TopArtistResponse> =
         entityManager
-            .createQuery(
+            .createNativeQuery(
                 """
-            SELECT new dev.marcal.mediapulse.server.api.music.TopArtistResponse(
-                a.id, a.name, COUNT(tp.id)
-            )
-            FROM TrackPlayback tp
-            JOIN Album al ON al.id = tp.albumId
-            JOIN Artist a ON a.id = al.artistId
-            WHERE tp.playedAt BETWEEN :s AND :e
-            GROUP BY a.id, a.name
-            ORDER BY COUNT(tp.id) DESC
-            """,
-                TopArtistResponse::class.java,
+                WITH artist_album_rollup AS (
+                  SELECT
+                    a.id AS artist_id,
+                    a.name AS artist_name,
+                    al.id AS album_id,
+                    al.title AS album_title,
+                    al.cover_url AS cover_url,
+                    COUNT(tp.id) AS album_play_count,
+                    MAX(tp.played_at) AS last_played_at
+                  FROM track_playbacks tp
+                  JOIN albums al ON al.id = tp.album_id
+                  JOIN artists a ON a.id = al.artist_id
+                  WHERE tp.played_at BETWEEN :s AND :e
+                  GROUP BY a.id, a.name, al.id, al.title, al.cover_url
+                ),
+                ranked_artist_albums AS (
+                  SELECT
+                    artist_id,
+                    artist_name,
+                    album_id,
+                    album_title,
+                    cover_url,
+                    album_play_count,
+                    last_played_at,
+                    ROW_NUMBER() OVER (
+                      PARTITION BY artist_id
+                      ORDER BY album_play_count DESC, last_played_at DESC, album_id DESC
+                    ) AS album_rank
+                  FROM artist_album_rollup
+                ),
+                artist_totals AS (
+                  SELECT
+                    artist_id,
+                    artist_name,
+                    SUM(album_play_count) AS play_count,
+                    MAX(last_played_at) AS artist_last_played_at
+                  FROM ranked_artist_albums
+                  GROUP BY artist_id, artist_name
+                )
+                SELECT
+                  totals.artist_id,
+                  totals.artist_name,
+                  totals.play_count,
+                  ranked.album_id,
+                  ranked.album_title,
+                  ranked.cover_url
+                FROM artist_totals totals
+                JOIN ranked_artist_albums ranked
+                  ON ranked.artist_id = totals.artist_id
+                 AND ranked.album_rank = 1
+                ORDER BY totals.play_count DESC, totals.artist_last_played_at DESC, totals.artist_id DESC
+                LIMIT :limit
+                """.trimIndent(),
             ).setParameter("s", start)
             .setParameter("e", end)
-            .setMaxResults(limit)
+            .setParameter("limit", limit)
             .resultList
+            .map { row ->
+                val fields = row as Array<*>
+                TopArtistResponse(
+                    artistId = (fields[0] as Number).toLong(),
+                    artistName = fields[1] as String,
+                    playCount = (fields[2] as Number).toLong(),
+                    albumId = (fields[3] as Number?)?.toLong(),
+                    albumTitle = fields[4] as String?,
+                    coverUrl = fields[5] as String?,
+                )
+            }
 
     fun getTopAlbums(
         start: Instant,

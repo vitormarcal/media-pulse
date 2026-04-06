@@ -266,6 +266,7 @@ async function loadEditorialHome() {
     currentlyWatching.map((item) => ({
       href: buildDetailUrl("show", { slug: item.slug, id: item.showId }),
       image: item.coverUrl,
+      mediaKind: "show",
       badge: item.progress?.completed ? "Done" : `${computePercent(item.progress?.watchedEpisodesCount, item.progress?.episodesCount)}%`,
       kicker: "Show",
       title: item.title,
@@ -282,6 +283,7 @@ async function loadEditorialHome() {
     (readingNow.items || []).map((item) => ({
       href: buildDetailUrl("book", { slug: item.book?.slug, id: item.book?.bookId }),
       image: item.book?.coverUrl || item.edition?.coverUrl,
+      mediaKind: "book",
       badge: translateBookStatus(item.status),
       kicker: "Book",
       title: item.book?.title || "Livro",
@@ -295,13 +297,14 @@ async function loadEditorialHome() {
 
   renderFeatureRail(
     "#heavy-rotation-rail",
-    topArtists.map((item, index) => ({
+    topArtists.map((item) => ({
       href: buildDetailUrl("music-artist", { id: item.artistId, label: item.artistName }),
-      image: recentAlbums[index]?.coverUrl || null,
+      image: item.coverUrl || null,
+      mediaKind: "music",
       badge: `${item.playCount} plays`,
       kicker: "Artist",
       title: item.artistName,
-      meta: recentAlbums[index] ? `ecoando com ${recentAlbums[index].albumTitle}` : "artista em alta na semana",
+      meta: item.albumTitle ? `ecoando com ${item.albumTitle}` : "artista em alta na semana",
       progressCurrent: item.playCount,
       progressTotal: topArtists[0]?.playCount || item.playCount || 1,
       progressLabel: "na ultima semana",
@@ -524,8 +527,11 @@ function renderFeatureRail(selector, items, emptyMessage) {
     const progress = node.querySelector(".feature-card-progress");
     const fill = node.querySelector(".feature-progress-fill");
     const progressLabel = node.querySelector(".feature-progress-label");
+    const mediaKind = item.mediaKind || "default";
 
     node.href = item.href || "#";
+    node.classList.add(`feature-card-${mediaKind}`);
+    node.classList.add(`feature-card-variant-${computeFeatureVariant(mediaKind, rail.children.length)}`);
     image.src = resolveAssetUrl(item.image);
     image.alt = item.title;
     image.onerror = () => {
@@ -544,6 +550,22 @@ function renderFeatureRail(selector, items, emptyMessage) {
 
     rail.append(node);
   });
+}
+
+function computeFeatureVariant(mediaKind, index) {
+  if (mediaKind === "music") {
+    return index % 3 === 0 ? "square" : "portrait";
+  }
+
+  if (mediaKind === "show") {
+    return index % 2 === 0 ? "featured" : "portrait";
+  }
+
+  if (mediaKind === "book") {
+    return index % 3 === 0 ? "tall" : "portrait";
+  }
+
+  return index % 2 === 0 ? "portrait" : "square";
 }
 
 let searchDebounce = null;
