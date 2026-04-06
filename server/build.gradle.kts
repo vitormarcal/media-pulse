@@ -1,4 +1,10 @@
-import org.gradle.api.tasks.Sync
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
+import java.io.File
+import java.security.MessageDigest
 
 plugins {
     kotlin("jvm") version "1.9.25"
@@ -10,7 +16,7 @@ plugins {
 }
 
 group = "dev.marcal.mediapulse.server"
-version = "1.0.0-beta.24"
+version = "1.0.0-beta.25"
 
 java {
     toolchain {
@@ -79,16 +85,84 @@ tasks.jar {
     enabled = false
 }
 
-val syncFrontendStatic by tasks.registering(Sync::class) {
-    from(project.layout.projectDirectory.dir("../frontend")) {
-        exclude("README.md")
+abstract class FingerprintFrontendTask : DefaultTask() {
+    @get:InputDirectory
+    abstract val inputDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun fingerprint() {
+        val sourceDir = inputDir.get().asFile
+        val destinationDir = outputDir.get().asFile
+
+        project.delete(destinationDir)
+        destinationDir.mkdirs()
+
+        val assetMappings =
+            sourceDir
+                .walkTopDown()
+                .filter(File::isFile)
+                .map { it.relativeTo(sourceDir).invariantSeparatorsPath }
+                .filterNot { it == "README.md" || it.endsWith(".html") }
+                .associateWith { relativePath ->
+                    fingerprintedPath(relativePath, File(sourceDir, relativePath))
+                }
+
+        assetMappings.forEach { (sourceRelativePath, targetRelativePath) ->
+            val sourceFile = File(sourceDir, sourceRelativePath)
+            val targetFile = File(destinationDir, targetRelativePath)
+            targetFile.parentFile.mkdirs()
+            sourceFile.copyTo(targetFile, overwrite = true)
+        }
+
+        sourceDir
+            .walkTopDown()
+            .filter(File::isFile)
+            .map { it.relativeTo(sourceDir).invariantSeparatorsPath }
+            .filter { it.endsWith(".html") }
+            .forEach { relativePath ->
+                val htmlFile = File(sourceDir, relativePath)
+                val rewrittenHtml =
+                    assetMappings.entries.fold(htmlFile.readText()) { content, (sourceRelativePath, targetRelativePath) ->
+                        content.replace("./$sourceRelativePath", "./$targetRelativePath")
+                    }
+
+                val targetFile = File(destinationDir, relativePath)
+                targetFile.parentFile.mkdirs()
+                targetFile.writeText(rewrittenHtml)
+            }
     }
-    into(layout.buildDirectory.dir("generated/frontend-static"))
+
+    private fun fingerprintedPath(
+        relativePath: String,
+        file: File,
+    ): String {
+        val extensionIndex = relativePath.lastIndexOf('.')
+        val fingerprint = sha256(file.readBytes()).take(10)
+        return if (extensionIndex < 0) {
+            "$relativePath-$fingerprint"
+        } else {
+            "${relativePath.substring(0, extensionIndex)}-$fingerprint${relativePath.substring(extensionIndex)}"
+        }
+    }
+
+    private fun sha256(content: ByteArray): String =
+        MessageDigest
+            .getInstance("SHA-256")
+            .digest(content)
+            .joinToString("") { byte -> "%02x".format(byte) }
+}
+
+val fingerprintFrontendStatic by tasks.registering(FingerprintFrontendTask::class) {
+    inputDir.set(project.layout.projectDirectory.dir("../frontend"))
+    outputDir.set(layout.buildDirectory.dir("generated/frontend-static"))
 }
 
 tasks.processResources {
-    dependsOn(syncFrontendStatic)
-    from(syncFrontendStatic) {
+    dependsOn(fingerprintFrontendStatic)
+    from(fingerprintFrontendStatic) {
         into("static")
     }
 }
