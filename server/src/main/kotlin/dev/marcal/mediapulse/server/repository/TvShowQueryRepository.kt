@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowCardDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowExternalIdDto
 import dev.marcal.mediapulse.server.api.shows.ShowImageDto
+import dev.marcal.mediapulse.server.api.shows.ShowLibraryCardDto
 import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDto
 import dev.marcal.mediapulse.server.api.shows.ShowWatchDto
@@ -13,6 +14,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearWatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearStatsDto
+import dev.marcal.mediapulse.server.api.shows.ShowsLibraryResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsRecentResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSearchResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsStatsResponse
@@ -30,6 +32,99 @@ import java.time.Instant
 class TvShowQueryRepository(
     private val entityManager: EntityManager,
 ) {
+    fun library(
+        limit: Int,
+        cursor: String?,
+    ): ShowsLibraryResponse {
+        val resolvedLimit = limit.coerceAtLeast(1)
+        val (cursorWatchedAt, cursorShowId) = parseRecentCursor(cursor)
+        val whereClause =
+            if (cursorWatchedAt != null && cursorShowId != null) {
+                """
+                WHERE (
+                  COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') < :cursorWatchedAt
+                  OR (
+                    COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') = :cursorWatchedAt
+                    AND show_id < :cursorShowId
+                  )
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
+
+        val rows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH show_rollup AS (
+                      SELECT
+                        s.id AS show_id,
+                        COALESCE((
+                          SELECT st.title
+                          FROM tv_show_titles st
+                          WHERE st.show_id = s.id
+                          ORDER BY st.is_primary ASC, st.id ASC
+                          LIMIT 1
+                        ), s.original_title) AS title,
+                        s.original_title,
+                        s.slug,
+                        s.year,
+                        s.cover_url,
+                        COUNT(DISTINCT te.id) AS episodes_count,
+                        COUNT(DISTINCT CASE WHEN tew.id IS NOT NULL THEN te.id END) AS watched_episodes_count,
+                        MAX(tew.watched_at) AS last_watched_at
+                      FROM tv_shows s
+                      LEFT JOIN tv_episodes te ON te.show_id = s.id
+                      LEFT JOIN tv_episode_watches tew ON tew.episode_id = te.id
+                      GROUP BY s.id, s.original_title, s.slug, s.year, s.cover_url
+                    )
+                    SELECT
+                      show_id,
+                      title,
+                      original_title,
+                      slug,
+                      year,
+                      cover_url,
+                      watched_episodes_count,
+                      episodes_count,
+                      last_watched_at
+                    FROM show_rollup
+                    $whereClause
+                    ORDER BY COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') DESC, show_id DESC
+                    LIMIT :limitPlusOne
+                    """.trimIndent(),
+                ).apply {
+                    if (cursorWatchedAt != null && cursorShowId != null) {
+                        setParameter("cursorWatchedAt", Timestamp.from(cursorWatchedAt))
+                        setParameter("cursorShowId", cursorShowId)
+                    }
+                    setParameter("limitPlusOne", resolvedLimit + 1)
+                }.resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    ShowLibraryCardDto(
+                        showId = (fields[0] as Number).toLong(),
+                        title = fields[1] as String,
+                        originalTitle = fields[2] as String,
+                        slug = fields[3] as String?,
+                        year = (fields[4] as Number?)?.toInt(),
+                        coverUrl = fields[5] as String?,
+                        watchedEpisodesCount = (fields[6] as Number).toLong(),
+                        episodesCount = (fields[7] as Number).toLong(),
+                        lastWatchedAt = asInstant(fields[8]),
+                    )
+                }
+
+        val hasMore = rows.size > resolvedLimit
+        val items = rows.take(resolvedLimit)
+        val nextCursor = items.lastOrNull()?.let { buildRecentCursor(it.lastWatchedAt, it.showId) }
+        return ShowsLibraryResponse(
+            items = items,
+            nextCursor = if (hasMore) nextCursor else null,
+        )
+    }
+
     fun recent(
         limit: Int,
         cursor: String?,

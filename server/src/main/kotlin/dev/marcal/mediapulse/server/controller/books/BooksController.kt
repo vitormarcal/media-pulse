@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.controller.books
 import dev.marcal.mediapulse.server.api.books.AuthorDetailsResponse
 import dev.marcal.mediapulse.server.api.books.BookDetailsResponse
 import dev.marcal.mediapulse.server.api.books.BookReadStatus
+import dev.marcal.mediapulse.server.api.books.BooksLibraryResponse
 import dev.marcal.mediapulse.server.api.books.BooksListResponse
 import dev.marcal.mediapulse.server.api.books.BooksSearchResponse
 import dev.marcal.mediapulse.server.api.books.BooksSummaryResponse
@@ -20,6 +21,12 @@ import java.time.Instant
 class BooksController(
     private val repository: BookQueryRepository,
 ) {
+    @GetMapping("/library")
+    fun library(
+        @RequestParam(defaultValue = "20") limit: Int,
+        @RequestParam(required = false) cursor: String?,
+    ): BooksLibraryResponse = repository.library(limit, cursor)
+
     @GetMapping("/year/{year}")
     fun yearReads(
         @PathVariable year: Int,

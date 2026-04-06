@@ -4,11 +4,13 @@ import dev.marcal.mediapulse.server.api.movies.MovieCardDto
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieExternalIdDto
 import dev.marcal.mediapulse.server.api.movies.MovieImageDto
+import dev.marcal.mediapulse.server.api.movies.MovieLibraryCardDto
 import dev.marcal.mediapulse.server.api.movies.MovieWatchDto
 import dev.marcal.mediapulse.server.api.movies.MovieYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.movies.MovieYearWatchedDto
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearStatsDto
+import dev.marcal.mediapulse.server.api.movies.MoviesLibraryResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesRecentResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSearchResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
@@ -27,6 +29,95 @@ import java.time.Instant
 class MovieQueryRepository(
     private val entityManager: EntityManager,
 ) {
+    fun library(
+        limit: Int,
+        cursor: String?,
+    ): MoviesLibraryResponse {
+        val resolvedLimit = limit.coerceAtLeast(1)
+        val (cursorWatchedAt, cursorMovieId) = parseRecentCursor(cursor)
+        val whereClause =
+            if (cursorWatchedAt != null && cursorMovieId != null) {
+                """
+                WHERE (
+                  COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') < :cursorWatchedAt
+                  OR (
+                    COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') = :cursorWatchedAt
+                    AND movie_id < :cursorMovieId
+                  )
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
+
+        val rows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH movie_rollup AS (
+                      SELECT
+                        m.id AS movie_id,
+                        COALESCE((
+                          SELECT mt.title
+                          FROM movie_titles mt
+                          WHERE mt.movie_id = m.id
+                          ORDER BY mt.is_primary ASC, mt.id ASC
+                          LIMIT 1
+                        ), m.original_title) AS title,
+                        m.original_title,
+                        m.slug,
+                        m.year,
+                        m.cover_url,
+                        COUNT(mw.id) AS watch_count,
+                        MAX(mw.watched_at) AS last_watched_at
+                      FROM movies m
+                      LEFT JOIN movie_watches mw ON mw.movie_id = m.id
+                      GROUP BY m.id, m.original_title, m.slug, m.year, m.cover_url
+                    )
+                    SELECT
+                      movie_id,
+                      title,
+                      original_title,
+                      slug,
+                      year,
+                      cover_url,
+                      watch_count,
+                      last_watched_at
+                    FROM movie_rollup
+                    $whereClause
+                    ORDER BY COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') DESC, movie_id DESC
+                    LIMIT :limitPlusOne
+                    """.trimIndent(),
+                ).apply {
+                    if (cursorWatchedAt != null && cursorMovieId != null) {
+                        setParameter("cursorWatchedAt", Timestamp.from(cursorWatchedAt))
+                        setParameter("cursorMovieId", cursorMovieId)
+                    }
+                    setParameter("limitPlusOne", resolvedLimit + 1)
+                }.resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    MovieLibraryCardDto(
+                        movieId = (fields[0] as Number).toLong(),
+                        title = fields[1] as String,
+                        originalTitle = fields[2] as String,
+                        slug = fields[3] as String?,
+                        year = (fields[4] as Number?)?.toInt(),
+                        coverUrl = fields[5] as String?,
+                        watchCount = (fields[6] as Number).toLong(),
+                        lastWatchedAt = asInstant(fields[7]),
+                    )
+                }
+
+        val hasMore = rows.size > resolvedLimit
+        val items = rows.take(resolvedLimit)
+        val nextCursor = items.lastOrNull()?.let { buildRecentCursor(it.lastWatchedAt, it.movieId) }
+        return MoviesLibraryResponse(
+            items = items,
+            nextCursor = if (hasMore) nextCursor else null,
+        )
+    }
+
     fun recent(
         limit: Int,
         cursor: String?,

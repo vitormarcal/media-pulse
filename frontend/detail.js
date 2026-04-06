@@ -629,6 +629,7 @@ function renderPage({ title, html }) {
 }
 
 function renderHero({ eyebrow, title, subtitle, description, image, chips = [], metrics = "", extra = "" }) {
+  const actions = renderEntityHeroActions(eyebrow);
   return `
     <section class="detail-hero ${extra ? "detail-hero-rich" : ""}">
       <div class="detail-poster-wrap">
@@ -645,11 +646,36 @@ function renderHero({ eyebrow, title, subtitle, description, image, chips = [], 
         <p class="detail-subtitle">${escapeHtml(subtitle || "")}</p>
         <div class="detail-meta-chips">${chips.map((chip) => `<span class="detail-chip">${escapeHtml(chip)}</span>`).join("")}</div>
         <p class="detail-description">${escapeHtml(description || "")}</p>
+        ${actions}
         <div class="detail-metrics-grid">${metrics}</div>
       </div>
       ${extra}
     </section>
   `;
+}
+
+function renderEntityHeroActions(eyebrow) {
+  const entityKind = mapEyebrowToEntityKind(eyebrow);
+  if (!entityKind) return "";
+  return `
+    <div class="detail-hero-actions">
+      <a class="secondary-button" href="${escapeAttribute(buildEntityUrl(entityKind))}">Ver toda a coleção</a>
+      <a class="secondary-button" href="./index.html#search-form">Buscar relacionado</a>
+    </div>
+  `;
+}
+
+function mapEyebrowToEntityKind(eyebrow) {
+  const map = {
+    Movie: "movies",
+    Show: "shows",
+    Book: "books",
+    Author: "books",
+    Artist: "artists",
+    Album: "albums",
+    Track: "tracks",
+  };
+  return map[eyebrow] || null;
 }
 
 function renderSection(eyebrow, title, content) {
@@ -1074,6 +1100,10 @@ function buildDetailUrl(nextKind, identifiers = {}) {
     }
   });
   return `./detail.html?${search.toString()}`;
+}
+
+function buildEntityUrl(entityKind) {
+  return `./entity.html?kind=${encodeURIComponent(entityKind)}`;
 }
 
 async function fetchJson(path) {

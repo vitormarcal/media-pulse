@@ -1,10 +1,13 @@
 package dev.marcal.mediapulse.server.controller.music
 
+import dev.marcal.mediapulse.server.api.music.AlbumLibraryPageResponse
 import dev.marcal.mediapulse.server.api.music.AlbumPageResponse
+import dev.marcal.mediapulse.server.api.music.ArtistLibraryPageResponse
 import dev.marcal.mediapulse.server.api.music.ArtistPageResponse
 import dev.marcal.mediapulse.server.api.music.MusicSummaryResponse
 import dev.marcal.mediapulse.server.api.music.RecentAlbumsPageResponse
 import dev.marcal.mediapulse.server.api.music.SearchResponse
+import dev.marcal.mediapulse.server.api.music.TrackLibraryPageResponse
 import dev.marcal.mediapulse.server.api.music.TrackPageResponse
 import dev.marcal.mediapulse.server.repository.MusicQueryRepository
 import org.springframework.web.bind.annotation.GetMapping
@@ -35,6 +38,24 @@ class MusicSummaryController(
         @RequestParam(defaultValue = "20") limit: Int,
         @RequestParam(required = false) cursor: String?,
     ): RecentAlbumsPageResponse = repository.getRecentAlbums(limit, cursor)
+
+    @GetMapping("/library/artists")
+    fun artistLibrary(
+        @RequestParam(defaultValue = "20") limit: Int,
+        @RequestParam(required = false) cursor: String?,
+    ): ArtistLibraryPageResponse = repository.getArtistLibrary(limit, cursor)
+
+    @GetMapping("/library/albums")
+    fun albumLibrary(
+        @RequestParam(defaultValue = "20") limit: Int,
+        @RequestParam(required = false) cursor: String?,
+    ): AlbumLibraryPageResponse = repository.getAlbumLibrary(limit, cursor)
+
+    @GetMapping("/library/tracks")
+    fun trackLibrary(
+        @RequestParam(defaultValue = "20") limit: Int,
+        @RequestParam(required = false) cursor: String?,
+    ): TrackLibraryPageResponse = repository.getTrackLibrary(limit, cursor)
 
     @GetMapping("/tops/artists")
     fun topArtists(

@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.controller.movies
 
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
+import dev.marcal.mediapulse.server.api.movies.MoviesLibraryResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesRecentResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSearchResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
@@ -25,6 +26,12 @@ import kotlin.math.min
 class MoviesController(
     private val repository: MovieQueryRepository,
 ) {
+    @GetMapping("/library")
+    fun library(
+        @RequestParam(defaultValue = "20") limit: Int,
+        @RequestParam(required = false) cursor: String?,
+    ): MoviesLibraryResponse = repository.library(limit, cursor)
+
     @GetMapping("/recent")
     fun recent(
         @RequestParam(defaultValue = "20") limit: Int,

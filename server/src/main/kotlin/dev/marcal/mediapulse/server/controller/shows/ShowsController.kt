@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.controller.shows
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearResponse
+import dev.marcal.mediapulse.server.api.shows.ShowsLibraryResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsRecentResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSearchResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsStatsResponse
@@ -26,6 +27,12 @@ import kotlin.math.min
 class ShowsController(
     private val repository: TvShowQueryRepository,
 ) {
+    @GetMapping("/library")
+    fun library(
+        @RequestParam(defaultValue = "20") limit: Int,
+        @RequestParam(required = false) cursor: String?,
+    ): ShowsLibraryResponse = repository.library(limit, cursor)
+
     @GetMapping("/recent")
     fun recent(
         @RequestParam(defaultValue = "20") limit: Int,

@@ -2,10 +2,14 @@ package dev.marcal.mediapulse.server.repository
 
 import dev.marcal.mediapulse.server.api.music.AlbumCoverageResponse
 import dev.marcal.mediapulse.server.api.music.AlbumHeaderRow
+import dev.marcal.mediapulse.server.api.music.AlbumLibraryPageResponse
+import dev.marcal.mediapulse.server.api.music.AlbumLibraryRow
 import dev.marcal.mediapulse.server.api.music.AlbumPageResponse
 import dev.marcal.mediapulse.server.api.music.AlbumTrackRow
 import dev.marcal.mediapulse.server.api.music.ArtistAlbumRow
 import dev.marcal.mediapulse.server.api.music.ArtistCoverageResponse
+import dev.marcal.mediapulse.server.api.music.ArtistLibraryPageResponse
+import dev.marcal.mediapulse.server.api.music.ArtistLibraryRow
 import dev.marcal.mediapulse.server.api.music.ArtistPageResponse
 import dev.marcal.mediapulse.server.api.music.ArtistTrackRow
 import dev.marcal.mediapulse.server.api.music.IdName
@@ -24,6 +28,8 @@ import dev.marcal.mediapulse.server.api.music.TopGenreBySourceResponse
 import dev.marcal.mediapulse.server.api.music.TopGenreResponse
 import dev.marcal.mediapulse.server.api.music.TopTrackResponse
 import dev.marcal.mediapulse.server.api.music.TrackAlbumRow
+import dev.marcal.mediapulse.server.api.music.TrackLibraryPageResponse
+import dev.marcal.mediapulse.server.api.music.TrackLibraryRow
 import dev.marcal.mediapulse.server.api.music.TrackPageResponse
 import dev.marcal.mediapulse.server.api.music.TrackPlayRow
 import dev.marcal.mediapulse.server.api.music.TrendingGenreResponse
@@ -40,6 +46,292 @@ import java.time.Instant
 class MusicQueryRepository(
     private val entityManager: EntityManager,
 ) {
+    fun getArtistLibrary(
+        limit: Int,
+        cursor: String?,
+    ): ArtistLibraryPageResponse {
+        val resolvedLimit = limit.coerceAtLeast(1)
+        val (cursorLastPlayed, cursorArtistId) = parseRecentCursor(cursor)
+        val whereClause =
+            if (cursorLastPlayed != null && cursorArtistId != null) {
+                """
+                WHERE (
+                  COALESCE(last_played, TIMESTAMP '1970-01-01 00:00:00') < :cursorLastPlayed
+                  OR (
+                    COALESCE(last_played, TIMESTAMP '1970-01-01 00:00:00') = :cursorLastPlayed
+                    AND artist_id < :cursorArtistId
+                  )
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
+
+        val rows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH artist_rollup AS (
+                      SELECT
+                        a.id AS artist_id,
+                        a.name AS artist_name,
+                        (
+                          SELECT al2.cover_url
+                          FROM albums al2
+                          LEFT JOIN track_playbacks tp2 ON tp2.album_id = al2.id
+                          WHERE al2.artist_id = a.id
+                          GROUP BY al2.id, al2.cover_url
+                          ORDER BY MAX(tp2.played_at) DESC NULLS LAST, COUNT(tp2.id) DESC, al2.id DESC
+                          LIMIT 1
+                        ) AS cover_url,
+                        (
+                          SELECT COUNT(tp.id)
+                          FROM track_playbacks tp
+                          JOIN tracks t ON t.id = tp.track_id
+                          WHERE t.artist_id = a.id
+                        ) AS total_plays,
+                        (SELECT COUNT(*) FROM albums al WHERE al.artist_id = a.id) AS albums_count,
+                        (SELECT COUNT(*) FROM tracks t WHERE t.artist_id = a.id) AS tracks_count,
+                        (
+                          SELECT MAX(tp.played_at)
+                          FROM track_playbacks tp
+                          JOIN tracks t ON t.id = tp.track_id
+                          WHERE t.artist_id = a.id
+                        ) AS last_played
+                      FROM artists a
+                    )
+                    SELECT
+                      artist_id,
+                      artist_name,
+                      cover_url,
+                      total_plays,
+                      albums_count,
+                      tracks_count,
+                      last_played
+                    FROM artist_rollup
+                    $whereClause
+                    ORDER BY COALESCE(last_played, TIMESTAMP '1970-01-01 00:00:00') DESC, artist_id DESC
+                    LIMIT :limitPlusOne
+                    """.trimIndent(),
+                ).apply {
+                    if (cursorLastPlayed != null && cursorArtistId != null) {
+                        setParameter("cursorLastPlayed", Timestamp.from(cursorLastPlayed))
+                        setParameter("cursorArtistId", cursorArtistId)
+                    }
+                    setParameter("limitPlusOne", resolvedLimit + 1)
+                }.resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    ArtistLibraryRow(
+                        artistId = (fields[0] as Number).toLong(),
+                        artistName = fields[1] as String,
+                        coverUrl = fields[2] as String?,
+                        totalPlays = (fields[3] as Number).toLong(),
+                        albumsCount = (fields[4] as Number).toLong(),
+                        tracksCount = (fields[5] as Number).toLong(),
+                        lastPlayed = asInstant(fields[6]),
+                    )
+                }
+
+        val hasMore = rows.size > resolvedLimit
+        val items = rows.take(resolvedLimit)
+        val nextCursor = items.lastOrNull()?.let { buildRecentCursor(it.lastPlayed, it.artistId) }
+        return ArtistLibraryPageResponse(items = items, nextCursor = if (hasMore) nextCursor else null)
+    }
+
+    fun getAlbumLibrary(
+        limit: Int,
+        cursor: String?,
+    ): AlbumLibraryPageResponse {
+        val resolvedLimit = limit.coerceAtLeast(1)
+        val (cursorLastPlayed, cursorAlbumId) = parseRecentCursor(cursor)
+        val whereClause =
+            if (cursorLastPlayed != null && cursorAlbumId != null) {
+                """
+                WHERE (
+                  COALESCE(last_played, TIMESTAMP '1970-01-01 00:00:00') < :cursorLastPlayed
+                  OR (
+                    COALESCE(last_played, TIMESTAMP '1970-01-01 00:00:00') = :cursorLastPlayed
+                    AND album_id < :cursorAlbumId
+                  )
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
+
+        val rows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH album_rollup AS (
+                      SELECT
+                        al.id AS album_id,
+                        al.title AS album_title,
+                        a.id AS artist_id,
+                        a.name AS artist_name,
+                        al.cover_url,
+                        al.year,
+                        (SELECT COUNT(*) FROM album_tracks at WHERE at.album_id = al.id) AS total_tracks,
+                        (SELECT COUNT(DISTINCT tp.track_id) FROM track_playbacks tp WHERE tp.album_id = al.id) AS played_tracks,
+                        (SELECT COUNT(*) FROM track_playbacks tp WHERE tp.album_id = al.id) AS play_count,
+                        (SELECT MAX(tp.played_at) FROM track_playbacks tp WHERE tp.album_id = al.id) AS last_played
+                      FROM albums al
+                      JOIN artists a ON a.id = al.artist_id
+                    )
+                    SELECT
+                      album_id,
+                      album_title,
+                      artist_id,
+                      artist_name,
+                      cover_url,
+                      year,
+                      total_tracks,
+                      played_tracks,
+                      play_count,
+                      last_played
+                    FROM album_rollup
+                    $whereClause
+                    ORDER BY COALESCE(last_played, TIMESTAMP '1970-01-01 00:00:00') DESC, album_id DESC
+                    LIMIT :limitPlusOne
+                    """.trimIndent(),
+                ).apply {
+                    if (cursorLastPlayed != null && cursorAlbumId != null) {
+                        setParameter("cursorLastPlayed", Timestamp.from(cursorLastPlayed))
+                        setParameter("cursorAlbumId", cursorAlbumId)
+                    }
+                    setParameter("limitPlusOne", resolvedLimit + 1)
+                }.resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    AlbumLibraryRow(
+                        albumId = (fields[0] as Number).toLong(),
+                        albumTitle = fields[1] as String,
+                        artistId = (fields[2] as Number).toLong(),
+                        artistName = fields[3] as String,
+                        coverUrl = fields[4] as String?,
+                        year = (fields[5] as Number?)?.toInt(),
+                        totalTracks = (fields[6] as Number).toLong(),
+                        playedTracks = (fields[7] as Number).toLong(),
+                        playCount = (fields[8] as Number).toLong(),
+                        lastPlayed = asInstant(fields[9]),
+                    )
+                }
+
+        val hasMore = rows.size > resolvedLimit
+        val items = rows.take(resolvedLimit)
+        val nextCursor = items.lastOrNull()?.let { buildRecentCursor(it.lastPlayed, it.albumId) }
+        return AlbumLibraryPageResponse(items = items, nextCursor = if (hasMore) nextCursor else null)
+    }
+
+    fun getTrackLibrary(
+        limit: Int,
+        cursor: String?,
+    ): TrackLibraryPageResponse {
+        val resolvedLimit = limit.coerceAtLeast(1)
+        val (cursorLastPlayed, cursorTrackId) = parseRecentCursor(cursor)
+        val whereClause =
+            if (cursorLastPlayed != null && cursorTrackId != null) {
+                """
+                WHERE (
+                  COALESCE(last_played, TIMESTAMP '1970-01-01 00:00:00') < :cursorLastPlayed
+                  OR (
+                    COALESCE(last_played, TIMESTAMP '1970-01-01 00:00:00') = :cursorLastPlayed
+                    AND track_id < :cursorTrackId
+                  )
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
+
+        val rows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH track_rollup AS (
+                      SELECT
+                        t.id AS track_id,
+                        t.title,
+                        a.id AS artist_id,
+                        a.name AS artist_name,
+                        (
+                          SELECT al2.id
+                          FROM track_playbacks tp2
+                          JOIN albums al2 ON al2.id = tp2.album_id
+                          WHERE tp2.track_id = t.id
+                          GROUP BY al2.id
+                          ORDER BY COUNT(*) DESC, MAX(tp2.played_at) DESC, al2.id DESC
+                          LIMIT 1
+                        ) AS album_id,
+                        (
+                          SELECT al2.title
+                          FROM track_playbacks tp2
+                          JOIN albums al2 ON al2.id = tp2.album_id
+                          WHERE tp2.track_id = t.id
+                          GROUP BY al2.id, al2.title
+                          ORDER BY COUNT(*) DESC, MAX(tp2.played_at) DESC, al2.id DESC
+                          LIMIT 1
+                        ) AS album_title,
+                        (
+                          SELECT al2.cover_url
+                          FROM track_playbacks tp2
+                          JOIN albums al2 ON al2.id = tp2.album_id
+                          WHERE tp2.track_id = t.id
+                          GROUP BY al2.id, al2.cover_url
+                          ORDER BY COUNT(*) DESC, MAX(tp2.played_at) DESC, al2.id DESC
+                          LIMIT 1
+                        ) AS cover_url,
+                        COUNT(tp.id) AS total_plays,
+                        MAX(tp.played_at) AS last_played
+                      FROM tracks t
+                      JOIN artists a ON a.id = t.artist_id
+                      LEFT JOIN track_playbacks tp ON tp.track_id = t.id
+                      GROUP BY t.id, t.title, a.id, a.name
+                    )
+                    SELECT
+                      track_id,
+                      title,
+                      artist_id,
+                      artist_name,
+                      album_id,
+                      album_title,
+                      cover_url,
+                      total_plays,
+                      last_played
+                    FROM track_rollup
+                    $whereClause
+                    ORDER BY COALESCE(last_played, TIMESTAMP '1970-01-01 00:00:00') DESC, track_id DESC
+                    LIMIT :limitPlusOne
+                    """.trimIndent(),
+                ).apply {
+                    if (cursorLastPlayed != null && cursorTrackId != null) {
+                        setParameter("cursorLastPlayed", Timestamp.from(cursorLastPlayed))
+                        setParameter("cursorTrackId", cursorTrackId)
+                    }
+                    setParameter("limitPlusOne", resolvedLimit + 1)
+                }.resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    TrackLibraryRow(
+                        trackId = (fields[0] as Number).toLong(),
+                        title = fields[1] as String,
+                        artistId = (fields[2] as Number).toLong(),
+                        artistName = fields[3] as String,
+                        albumId = (fields[4] as Number?)?.toLong(),
+                        albumTitle = fields[5] as String?,
+                        coverUrl = fields[6] as String?,
+                        totalPlays = (fields[7] as Number).toLong(),
+                        lastPlayed = asInstant(fields[8]),
+                    )
+                }
+
+        val hasMore = rows.size > resolvedLimit
+        val items = rows.take(resolvedLimit)
+        val nextCursor = items.lastOrNull()?.let { buildRecentCursor(it.lastPlayed, it.trackId) }
+        return TrackLibraryPageResponse(items = items, nextCursor = if (hasMore) nextCursor else null)
+    }
+
     // Summary and tops
     fun getSummary(
         start: Instant,
@@ -1025,8 +1317,22 @@ class MusicQueryRepository(
         return lastPlayed to albumId
     }
 
+    private fun parseRecentCursor(cursor: String?): Pair<Instant?, Long?> {
+        if (cursor.isNullOrBlank()) return null to null
+        val parts = cursor.split(":")
+        require(parts.size == 4 && parts[0] == "ts" && parts[2] == "id") { "Invalid cursor format." }
+        val lastPlayed = Instant.ofEpochMilli(parts[1].toLongOrNull() ?: error("Invalid cursor value."))
+        val id = parts[3].toLongOrNull() ?: error("Invalid cursor value.")
+        return lastPlayed to id
+    }
+
     private fun buildRecentAlbumCursor(
         lastPlayed: Instant,
         albumId: Long,
     ): String = "ts:${lastPlayed.toEpochMilli()}:id:$albumId"
+
+    private fun buildRecentCursor(
+        lastPlayed: Instant?,
+        id: Long,
+    ): String = "ts:${lastPlayed?.toEpochMilli() ?: 0}:id:$id"
 }

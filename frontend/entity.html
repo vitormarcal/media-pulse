@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Media Pulse Collections</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell page-shell-entity">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <a class="brand-home-link" href="./index.html" aria-label="Voltar para a home">
+            <div class="brand-mark">M</div>
+          </a>
+          <div>
+            <p class="eyebrow">Media Pulse</p>
+            <h1 id="entity-page-title">Coleção</h1>
+          </div>
+        </div>
+        <div class="detail-topbar-actions">
+          <a class="secondary-button detail-top-link" href="./index.html">Home</a>
+          <a class="primary-button detail-top-link" id="entity-top-search-link" href="./index.html#search-form">Buscar</a>
+        </div>
+      </header>
+
+      <main id="entity-root"></main>
+    </div>
+
+    <template id="entity-card-template">
+      <a class="entity-card-link" href="#">
+        <article class="entity-card">
+          <div class="entity-card-media">
+            <img class="entity-card-image" alt="" loading="lazy" />
+            <span class="entity-card-badge"></span>
+          </div>
+          <div class="entity-card-body">
+            <p class="entity-card-kicker"></p>
+            <h3 class="entity-card-title"></h3>
+            <p class="entity-card-meta"></p>
+            <p class="entity-card-copy"></p>
+            <div class="entity-card-footer">
+              <span class="entity-card-pill"></span>
+              <span class="entity-card-date"></span>
+            </div>
+          </div>
+        </article>
+      </a>
+    </template>
+
+    <script type="module" src="./entity.js"></script>
+  </body>
+</html>

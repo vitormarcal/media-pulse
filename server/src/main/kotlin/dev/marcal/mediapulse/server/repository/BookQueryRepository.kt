@@ -4,7 +4,9 @@ import dev.marcal.mediapulse.server.api.books.AuthorDetailsResponse
 import dev.marcal.mediapulse.server.api.books.AuthorDto
 import dev.marcal.mediapulse.server.api.books.BookCardDto
 import dev.marcal.mediapulse.server.api.books.BookDetailsResponse
+import dev.marcal.mediapulse.server.api.books.BookLibraryCardDto
 import dev.marcal.mediapulse.server.api.books.BookReadStatus
+import dev.marcal.mediapulse.server.api.books.BooksLibraryResponse
 import dev.marcal.mediapulse.server.api.books.BooksListResponse
 import dev.marcal.mediapulse.server.api.books.BooksSearchResponse
 import dev.marcal.mediapulse.server.api.books.BooksSummaryResponse
@@ -30,6 +32,116 @@ import java.time.ZoneOffset
 class BookQueryRepository(
     private val entityManager: EntityManager,
 ) {
+    fun library(
+        limit: Int,
+        cursor: String?,
+    ): BooksLibraryResponse {
+        val resolvedLimit = limit.coerceAtLeast(1)
+        val (cursorLastActivityAt, cursorBookId) = parseActivityCursor(cursor)
+        val whereClause =
+            if (cursorLastActivityAt != null && cursorBookId != null) {
+                """
+                WHERE (
+                  COALESCE(last_activity_at, TIMESTAMP '1970-01-01 00:00:00') < :cursorLastActivityAt
+                  OR (
+                    COALESCE(last_activity_at, TIMESTAMP '1970-01-01 00:00:00') = :cursorLastActivityAt
+                    AND book_id < :cursorBookId
+                  )
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
+
+        val rows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH book_rollup AS (
+                      SELECT
+                        b.id AS book_id,
+                        b.slug,
+                        b.title,
+                        COALESCE(b.cover_url, (
+                          SELECT be.cover_url
+                          FROM book_editions be
+                          WHERE be.book_id = b.id
+                            AND be.cover_url IS NOT NULL
+                          ORDER BY be.id ASC
+                          LIMIT 1
+                        )) AS cover_url,
+                        COUNT(br.id) AS reads_count,
+                        COUNT(*) FILTER (WHERE br.status = 'READ') AS completed_count,
+                        MAX(CASE WHEN br.status = 'CURRENTLY_READING' THEN br.progress_pct END) AS active_progress_pct,
+                        COALESCE(
+                          MAX(br.finished_at),
+                          MAX(br.updated_at),
+                          MAX(br.started_at),
+                          b.reviewed_at
+                        ) AS last_activity_at,
+                        (
+                          SELECT br2.status
+                          FROM book_reads br2
+                          WHERE br2.book_id = b.id
+                          ORDER BY COALESCE(br2.finished_at, br2.updated_at, br2.started_at, br2.created_at) DESC, br2.id DESC
+                          LIMIT 1
+                        ) AS current_status
+                      FROM books b
+                      LEFT JOIN book_reads br ON br.book_id = b.id
+                      GROUP BY b.id, b.slug, b.title, b.cover_url, b.reviewed_at
+                    )
+                    SELECT
+                      book_id,
+                      slug,
+                      title,
+                      cover_url,
+                      reads_count,
+                      completed_count,
+                      current_status,
+                      active_progress_pct,
+                      last_activity_at
+                    FROM book_rollup
+                    $whereClause
+                    ORDER BY COALESCE(last_activity_at, TIMESTAMP '1970-01-01 00:00:00') DESC, book_id DESC
+                    LIMIT :limitPlusOne
+                    """.trimIndent(),
+                ).apply {
+                    if (cursorLastActivityAt != null && cursorBookId != null) {
+                        setParameter("cursorLastActivityAt", Timestamp.from(cursorLastActivityAt))
+                        setParameter("cursorBookId", cursorBookId)
+                    }
+                    setParameter("limitPlusOne", resolvedLimit + 1)
+                }.resultList
+
+        val limitedRows = rows.take(resolvedLimit)
+        val bookIds = limitedRows.map { ((it as Array<*>)[0] as Number).toLong() }
+        val authorsByBookId = fetchAuthorsByBookIds(bookIds.toSet())
+        val items =
+            limitedRows.map { row ->
+                val fields = row as Array<*>
+                val bookId = (fields[0] as Number).toLong()
+                BookLibraryCardDto(
+                    bookId = bookId,
+                    slug = fields[1] as String,
+                    title = fields[2] as String,
+                    coverUrl = fields[3] as String?,
+                    authors = authorsByBookId[bookId].orEmpty(),
+                    readsCount = (fields[4] as Number).toLong(),
+                    completedCount = (fields[5] as Number).toLong(),
+                    currentStatus = (fields[6] as String?)?.let(BookReadStatus::valueOf),
+                    activeProgressPct = asDouble(fields[7]),
+                    lastActivityAt = asInstant(fields[8]),
+                )
+            }
+
+        val hasMore = rows.size > resolvedLimit
+        val nextCursor = items.lastOrNull()?.let { buildActivityCursor(it.lastActivityAt, it.bookId) }
+        return BooksLibraryResponse(
+            items = items,
+            nextCursor = if (hasMore) nextCursor else null,
+        )
+    }
+
     fun getYearReads(year: Int): YearReadsResponse {
         val range = resolveYearRange(year)
 
@@ -789,7 +901,21 @@ class BookQueryRepository(
         return parts[1].toLongOrNull() ?: error("Invalid cursor value.")
     }
 
+    private fun parseActivityCursor(cursor: String?): Pair<Instant?, Long?> {
+        if (cursor.isNullOrBlank()) return null to null
+        val parts = cursor.split(":")
+        require(parts.size == 4 && parts[0] == "ts" && parts[2] == "id") { "Invalid cursor format." }
+        val lastActivityAt = Instant.ofEpochMilli(parts[1].toLongOrNull() ?: error("Invalid cursor value."))
+        val bookId = parts[3].toLongOrNull() ?: error("Invalid cursor value.")
+        return lastActivityAt to bookId
+    }
+
     private fun buildCursor(readId: Long): String = "id:$readId"
+
+    private fun buildActivityCursor(
+        lastActivityAt: Instant?,
+        bookId: Long,
+    ): String = "ts:${lastActivityAt?.toEpochMilli() ?: 0}:id:$bookId"
 
     private fun countReads(
         query: String,
