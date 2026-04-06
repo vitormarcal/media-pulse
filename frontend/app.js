@@ -181,7 +181,7 @@ function initialize() {
 }
 
 async function loadHome() {
-  await Promise.all([loadSummaries(), loadEditorialHome(), loadMosaicCollections()]);
+  await Promise.all([loadSummaries(), loadEditorialHome(), loadMixedMosaic()]);
 }
 
 async function loadSummaries() {
@@ -271,21 +271,26 @@ async function loadEditorialHome() {
   );
 }
 
-async function loadMosaicCollections() {
-  await Promise.all(
-    Object.entries(recentConfigs).map(async ([key, config]) => {
-      const grid = document.querySelector(`#${key}-grid`);
-      grid.replaceChildren(buildLoadingCard());
+async function loadMixedMosaic() {
+  const mixedGrid = document.querySelector("#mixed-grid");
+  mixedGrid.replaceChildren(buildLoadingCard());
 
-      try {
-        const payload = await fetchJson(config.endpoint);
-        const items = config.normalize(payload);
-        renderPinGrid(grid, items);
-      } catch (error) {
-        grid.replaceChildren(buildMessageCard(`Nao foi possivel carregar ${key}: ${error.message}`));
-      }
-    }),
-  );
+  const [moviesPayload, musicPayload, booksPayload, showsPayload] = await Promise.all([
+    fetchSafe(recentConfigs.movies.endpoint, []),
+    fetchSafe(recentConfigs.music.endpoint, []),
+    fetchSafe(recentConfigs.books.endpoint, { items: [] }),
+    fetchSafe(recentConfigs.shows.endpoint, []),
+  ]);
+
+  const pools = {
+    movies: recentConfigs.movies.normalize(moviesPayload).map((item) => ({ ...item, weight: 1, type: "movies" })),
+    music: recentConfigs.music.normalize(musicPayload).map((item) => ({ ...item, weight: 1, type: "music" })),
+    books: recentConfigs.books.normalize(booksPayload).map((item) => ({ ...item, weight: 1, type: "books" })),
+    shows: recentConfigs.shows.normalize(showsPayload).map((item) => ({ ...item, weight: 1, type: "shows" })),
+  };
+
+  const mixedItems = buildBalancedFeed(pools, 18);
+  renderPinGrid(mixedGrid, mixedItems);
 }
 
 function renderSpotlights({ currentlyWatching, readingNow, topArtists, recentAlbums, recentMovies }) {
@@ -493,6 +498,7 @@ function renderPinGrid(container, items) {
 
   items.forEach((item) => {
     const node = pinTemplate.content.firstElementChild.cloneNode(true);
+    const card = node.querySelector(".pin-card");
     const image = node.querySelector(".pin-image");
     const kicker = node.querySelector(".pin-kicker");
     const title = node.querySelector(".pin-title");
@@ -500,6 +506,9 @@ function renderPinGrid(container, items) {
     const date = node.querySelector(".pin-date");
 
     node.href = item.href || "#";
+    if (item.type) {
+      card.classList.add(`pin-card-${item.type}`);
+    }
     image.src = resolveAssetUrl(item.image);
     image.alt = item.title;
     image.onerror = () => {
@@ -512,6 +521,35 @@ function renderPinGrid(container, items) {
     date.textContent = item.date || "Sem data";
     container.append(node);
   });
+}
+
+function buildBalancedFeed(pools, limit) {
+  const entries = Object.entries(pools).map(([key, items]) => ({
+    key,
+    items: [...items],
+    used: 0,
+  }));
+  const result = [];
+
+  while (result.length < limit) {
+    const available = entries.filter((entry) => entry.items.length > 0);
+    if (!available.length) break;
+
+    available.sort((left, right) => {
+      const leftRatio = left.used / Math.max(1, pools[left.key].length);
+      const rightRatio = right.used / Math.max(1, pools[right.key].length);
+      if (leftRatio !== rightRatio) return leftRatio - rightRatio;
+      if (left.used !== right.used) return left.used - right.used;
+      return right.items.length - left.items.length;
+    });
+
+    const next = available[0];
+    const item = next.items.shift();
+    next.used += 1;
+    if (item) result.push(item);
+  }
+
+  return result;
 }
 
 function buildLoadingCard() {
