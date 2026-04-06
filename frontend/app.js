@@ -183,6 +183,7 @@ const searchStatus = document.querySelector("#search-status");
 const searchResultsSection = document.querySelector("#search-results-section");
 const searchResults = document.querySelector("#search-results");
 const clearSearchButton = document.querySelector("#clear-search-button");
+const searchShortcutButtons = document.querySelectorAll("[data-search-query]");
 const mixedGrid = document.querySelector("#mixed-grid");
 const mixedGridStatus = document.querySelector("#mixed-grid-status");
 const mixedGridSentinel = document.querySelector("#mixed-grid-sentinel");
@@ -193,6 +194,7 @@ function initialize() {
   searchForm.addEventListener("submit", handleSearchSubmit);
   clearSearchButton.addEventListener("click", clearSearch);
   searchInput.addEventListener("input", handleSearchInput);
+  searchShortcutButtons.forEach((button) => button.addEventListener("click", handleSearchShortcut));
 
   loadHome();
 }
@@ -563,6 +565,16 @@ function handleSearchSubmit(event) {
     clearSearch();
     return;
   }
+  runSearch(query);
+}
+
+function handleSearchShortcut(event) {
+  const query = event.currentTarget.dataset.searchQuery?.trim();
+  if (!query) {
+    return;
+  }
+
+  searchInput.value = query;
   runSearch(query);
 }
 

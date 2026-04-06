@@ -28,6 +28,11 @@
         <section class="hero">
           <div class="hero-copy">
             <p class="eyebrow">Discover quietly</p>
+            <div class="hero-badges" aria-label="Destaques da home">
+              <span class="hero-badge">Search-first</span>
+              <span class="hero-badge">Pinterest rhythm</span>
+              <span class="hero-badge">Cultural pulse</span>
+            </div>
             <h2>Seu mural vivo de filmes, séries, livros e música.</h2>
             <p class="hero-text">
               A home agora prioriza estados de consumo, não só listas por entidade:
@@ -35,7 +40,12 @@
               central, mas o feed ficou mais editorial e mais próximo do `DESIGN.md`.
             </p>
             <form class="search-panel" id="search-form">
-              <label class="search-label" for="search-input">Buscar em todas as coleções</label>
+              <div class="search-panel-head">
+                <label class="search-label" for="search-input">Buscar em todas as coleções</label>
+                <p class="search-panel-copy">
+                  Use a busca como entrada principal para atravessar o catálogo inteiro.
+                </p>
+              </div>
               <div class="search-row">
                 <input
                   id="search-input"
@@ -49,29 +59,44 @@
               <p class="search-hint" id="search-status">
                 Digite para consultar `movies`, `music`, `books` e `shows`.
               </p>
+              <div class="search-shortcuts" aria-label="Sugestões rápidas">
+                <button class="search-shortcut" type="button" data-search-query="Severance">Severance</button>
+                <button class="search-shortcut" type="button" data-search-query="Ursula Le Guin">Ursula Le Guin</button>
+                <button class="search-shortcut" type="button" data-search-query="The Cure">The Cure</button>
+                <button class="search-shortcut" type="button" data-search-query="Matrix">Matrix</button>
+              </div>
             </form>
           </div>
 
           <aside class="hero-summary">
-            <div class="summary-card" data-summary="movies">
-              <p class="summary-label">Movies</p>
-              <strong class="summary-value">...</strong>
-              <span class="summary-detail">carregando ultimos 30 dias</span>
+            <div class="hero-summary-head">
+              <p class="eyebrow">Pulse now</p>
+              <h3>Últimos 30 dias</h3>
+              <p>
+                Leitura rápida do ritmo do catálogo, deixando o foco principal para a busca e descoberta.
+              </p>
             </div>
-            <div class="summary-card" data-summary="music">
-              <p class="summary-label">Music</p>
-              <strong class="summary-value">...</strong>
-              <span class="summary-detail">carregando ultimos 30 dias</span>
-            </div>
-            <div class="summary-card" data-summary="books">
-              <p class="summary-label">Books</p>
-              <strong class="summary-value">...</strong>
-              <span class="summary-detail">carregando ultimos 30 dias</span>
-            </div>
-            <div class="summary-card" data-summary="shows">
-              <p class="summary-label">Shows</p>
-              <strong class="summary-value">...</strong>
-              <span class="summary-detail">carregando ultimos 30 dias</span>
+            <div class="hero-summary-grid">
+              <div class="summary-card" data-summary="movies">
+                <p class="summary-label">Movies</p>
+                <strong class="summary-value">...</strong>
+                <span class="summary-detail">carregando ultimos 30 dias</span>
+              </div>
+              <div class="summary-card" data-summary="music">
+                <p class="summary-label">Music</p>
+                <strong class="summary-value">...</strong>
+                <span class="summary-detail">carregando ultimos 30 dias</span>
+              </div>
+              <div class="summary-card" data-summary="books">
+                <p class="summary-label">Books</p>
+                <strong class="summary-value">...</strong>
+                <span class="summary-detail">carregando ultimos 30 dias</span>
+              </div>
+              <div class="summary-card" data-summary="shows">
+                <p class="summary-label">Shows</p>
+                <strong class="summary-value">...</strong>
+                <span class="summary-detail">carregando ultimos 30 dias</span>
+              </div>
             </div>
           </aside>
         </section>
