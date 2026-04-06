@@ -328,6 +328,7 @@ button {
   height: 100%;
   min-height: 250px;
   object-fit: cover;
+  object-position: center 20%;
 }
 
 .spotlight-copy {
@@ -445,6 +446,7 @@ button {
   width: 100%;
   aspect-ratio: 16 / 10;
   object-fit: cover;
+  object-position: center 24%;
   border-radius: 18px;
 }
 
@@ -633,24 +635,39 @@ button {
   width: 100%;
   aspect-ratio: 3 / 4;
   object-fit: cover;
+  object-position: center 24%;
   border-radius: 16px;
 }
 
 .pin-card-variant-square .pin-image {
   aspect-ratio: 1 / 1;
+  object-position: center 30%;
 }
 
 .pin-card-variant-portrait .pin-image {
-  aspect-ratio: 3 / 4.4;
+  aspect-ratio: 3 / 4.15;
 }
 
 .pin-card-variant-tall .pin-image {
-  aspect-ratio: 3 / 5;
+  aspect-ratio: 3 / 4.7;
 }
 
 .pin-card-featured .pin-image {
-  aspect-ratio: 3 / 5.8;
+  aspect-ratio: 3 / 5;
   border-radius: 20px;
+}
+
+.pin-card-books .pin-image,
+.pin-card-shows .pin-image {
+  object-position: center 18%;
+}
+
+.pin-card-movies .pin-image {
+  object-position: center 22%;
+}
+
+.pin-card-music .pin-image {
+  object-position: center 38%;
 }
 
 .pin-image-wrap::after {
@@ -825,6 +842,7 @@ a.result-item:focus-visible {
   width: 100%;
   aspect-ratio: 3 / 4;
   object-fit: cover;
+  object-position: center 20%;
 }
 
 .detail-copy h2 {
@@ -1093,6 +1111,7 @@ a.detail-list-item:focus-visible {
   width: 100%;
   aspect-ratio: 4 / 5;
   object-fit: cover;
+  object-position: center 22%;
 }
 
 .cover-tile-badge {
@@ -1376,13 +1395,13 @@ a.detail-list-item:focus-visible {
   }
 
   .pin-card-featured .pin-image {
-    aspect-ratio: 3 / 5.2;
+    aspect-ratio: 3 / 4.7;
   }
 
   .pin-card-variant-square .pin-image,
   .pin-card-variant-portrait .pin-image,
   .pin-card-variant-tall .pin-image {
-    aspect-ratio: 3 / 4.2;
+    aspect-ratio: 3 / 4;
   }
 
   .hero h2 {
