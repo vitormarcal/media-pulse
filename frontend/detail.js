@@ -544,10 +544,15 @@ function renderHero({ eyebrow, title, subtitle, description, image, chips = [], 
   return `
     <section class="detail-hero ${extra ? "detail-hero-rich" : ""}">
       <div class="detail-poster-wrap">
-        <img class="detail-poster js-resolve-image" data-src="${escapeAttribute(image || "")}" alt="${escapeAttribute(title)}" />
+        <div class="detail-poster-frame">
+          <img class="detail-poster js-resolve-image" data-src="${escapeAttribute(image || "")}" alt="${escapeAttribute(title)}" />
+        </div>
       </div>
       <div class="detail-copy">
-        <p class="eyebrow">${escapeHtml(eyebrow)}</p>
+        <div class="detail-copy-top">
+          <p class="eyebrow">${escapeHtml(eyebrow)}</p>
+          <p class="detail-kicker-note">Media Pulse detail</p>
+        </div>
         <h2>${escapeHtml(title)}</h2>
         <p class="detail-subtitle">${escapeHtml(subtitle || "")}</p>
         <div class="detail-meta-chips">${chips.map((chip) => `<span class="detail-chip">${escapeHtml(chip)}</span>`).join("")}</div>
@@ -604,9 +609,9 @@ function renderReadingProgress(read) {
 function metricCard(label, value, detail) {
   return `
     <article class="metric-card">
-      <p>${escapeHtml(label)}</p>
+      <p class="metric-card-label">${escapeHtml(label)}</p>
       <strong>${escapeHtml(value)}</strong>
-      <span>${escapeHtml(detail)}</span>
+      <span class="metric-card-detail">${escapeHtml(detail)}</span>
     </article>
   `;
 }
