@@ -82,6 +82,30 @@ async function renderMovieDetail() {
       })}
 
       ${renderSection(
+        "Visuals",
+        "Imagens e metadados",
+        `
+          <div class="detail-grid">
+            ${buildImageGalleryCard(
+              "Imagens",
+              galleryImages.map((image, index) => ({
+                src: image.url,
+                alt: `${payload.title} imagem ${index + 1}`,
+                badge: image.isPrimary ? "Primary" : "Still",
+              })),
+              "Sem imagens extras para este filme.",
+            )}
+            ${buildFactCard("Metadados", [
+              factRow("Slug", payload.slug || "sem slug"),
+              factRow("IDs externos", formatExternalIds(payload.externalIds || [])),
+              factRow("Primeiro watch", formatDateTime(firstWatch) || "sem watch"),
+              factRow("Última atividade", formatDateTime(lastWatch) || "sem watch"),
+            ])}
+          </div>
+        `,
+      )}
+
+      ${renderSection(
         "Pulse",
         "Intensidade de consumo",
         `<article class="detail-card detail-card-wide">
@@ -106,30 +130,6 @@ async function renderMovieDetail() {
               title: formatDateTime(watch.watchedAt) || "Watch",
               meta: `Fonte ${watch.source}`,
             })), "Sem histórico disponível.")}
-          </div>
-        `,
-      )}
-
-      ${renderSection(
-        "Visuals",
-        "Materiais e metadados",
-        `
-          <div class="detail-grid">
-            ${buildImageGalleryCard(
-              "Imagens",
-              galleryImages.map((image, index) => ({
-                src: image.url,
-                alt: `${payload.title} imagem ${index + 1}`,
-                badge: image.isPrimary ? "Primary" : "Still",
-              })),
-              "Sem imagens extras para este filme.",
-            )}
-            ${buildFactCard("Metadados", [
-              factRow("Slug", payload.slug || "sem slug"),
-              factRow("IDs externos", formatExternalIds(payload.externalIds || [])),
-              factRow("Primeiro watch", formatDateTime(firstWatch) || "sem watch"),
-              factRow("Última atividade", formatDateTime(lastWatch) || "sem watch"),
-            ])}
           </div>
         `,
       )}
@@ -166,6 +166,30 @@ async function renderShowDetail() {
         ].join(""),
         extra: renderProgressPanel(progress),
       })}
+
+      ${renderSection(
+        "Visuals",
+        "Galeria e identificadores",
+        `
+          <div class="detail-grid">
+            ${buildImageGalleryCard(
+              "Imagens",
+              galleryImages.map((image, index) => ({
+                src: image.url,
+                alt: `${payload.title} imagem ${index + 1}`,
+                badge: image.isPrimary ? "Primary" : "Still",
+              })),
+              "Sem imagens extras para esta série.",
+            )}
+            ${buildFactCard("Metadados", [
+              factRow("Slug", payload.slug || "sem slug"),
+              factRow("IDs externos", formatExternalIds(payload.externalIds || [])),
+              factRow("Temporadas", `${progress.seasonsCount} registradas`),
+              factRow("Último episódio", lastWatch ? `${safeSeasonEpisode(lastWatch)} • ${truncateText(lastWatch.episodeTitle, 28)}` : "sem episódio recente"),
+            ])}
+          </div>
+        `,
+      )}
 
       ${renderSection(
         "Seasons",
@@ -222,30 +246,6 @@ async function renderShowDetail() {
           </div>
         `,
       )}
-
-      ${renderSection(
-        "Visuals",
-        "Galeria e identificadores",
-        `
-          <div class="detail-grid">
-            ${buildImageGalleryCard(
-              "Imagens",
-              galleryImages.map((image, index) => ({
-                src: image.url,
-                alt: `${payload.title} imagem ${index + 1}`,
-                badge: image.isPrimary ? "Primary" : "Still",
-              })),
-              "Sem imagens extras para esta série.",
-            )}
-            ${buildFactCard("Metadados", [
-              factRow("Slug", payload.slug || "sem slug"),
-              factRow("IDs externos", formatExternalIds(payload.externalIds || [])),
-              factRow("Temporadas", `${progress.seasonsCount} registradas`),
-              factRow("Último episódio", lastWatch ? `${safeSeasonEpisode(lastWatch)} • ${truncateText(lastWatch.episodeTitle, 28)}` : "sem episódio recente"),
-            ])}
-          </div>
-        `,
-      )}
     `,
   });
 }
@@ -294,54 +294,8 @@ async function renderBookDetail() {
       })}
 
       ${renderSection(
-        "Reading",
-        "Jornadas de leitura",
-        `
-          <div class="detail-grid">
-            ${buildListCard(
-              "Timeline de leituras",
-              reads.map((read) => ({
-                title: `${translateBookStatus(read.status)}${read.progressPct ? ` • ${Math.round(read.progressPct)}%` : ""}`,
-                meta: [
-                  formatDateTime(read.startedAt),
-                  read.finishedAt ? `até ${formatDateTime(read.finishedAt)}` : null,
-                  read.progressPages ? `${read.progressPages} páginas` : null,
-                  `Fonte ${read.source}`,
-                ]
-                  .filter(Boolean)
-                  .join(" • "),
-              })),
-              "Nenhuma jornada registrada.",
-            )}
-            ${buildFactCard("Contexto editorial", [
-              factRow("Autores", payload.authors?.map((author) => author.name).join(", ") || "sem autor"),
-              factRow("Review", payload.reviewedAt ? formatDateTime(payload.reviewedAt) : "sem review"),
-              factRow("Lançamento", payload.releaseDate || "sem data"),
-              factRow("Nota", payload.rating ?? "sem nota"),
-              factRow("Edição principal", primaryEdition?.title || primaryEdition?.format || "sem edição destacada"),
-            ])}
-          </div>
-        `,
-      )}
-
-      ${payload.reviewRaw
-        ? renderSection(
-            "Review",
-            "Impressão editorial",
-            buildSingleGrid(
-              `<article class="detail-card detail-card-wide">
-                <h4>Review</h4>
-                <div class="review-block">
-                  <p>${escapeHtml(payload.reviewRaw)}</p>
-                </div>
-              </article>`,
-            ),
-          )
-        : ""}
-
-      ${renderSection(
         "Editions",
-        "Edições disponíveis",
+        "Capas e edições",
         `
           <div class="detail-grid">
             ${buildCoverShelfCard("Capas e edições", (payload.editions || []).map((edition) => ({
@@ -369,6 +323,52 @@ async function renderBookDetail() {
                   .join("")
               : renderEmptyInline("Sem edições detalhadas para este livro.")}
             </div>
+          </div>
+        `,
+      )}
+
+      ${payload.reviewRaw
+        ? renderSection(
+            "Review",
+            "Impressão editorial",
+            buildSingleGrid(
+              `<article class="detail-card detail-card-wide">
+                <h4>Review</h4>
+                <div class="review-block">
+                  <p>${escapeHtml(payload.reviewRaw)}</p>
+                </div>
+              </article>`,
+            ),
+          )
+        : ""}
+
+      ${renderSection(
+        "Reading",
+        "Jornadas de leitura",
+        `
+          <div class="detail-grid">
+            ${buildListCard(
+              "Timeline de leituras",
+              reads.map((read) => ({
+                title: `${translateBookStatus(read.status)}${read.progressPct ? ` • ${Math.round(read.progressPct)}%` : ""}`,
+                meta: [
+                  formatDateTime(read.startedAt),
+                  read.finishedAt ? `até ${formatDateTime(read.finishedAt)}` : null,
+                  read.progressPages ? `${read.progressPages} páginas` : null,
+                  `Fonte ${read.source}`,
+                ]
+                  .filter(Boolean)
+                  .join(" • "),
+              })),
+              "Nenhuma jornada registrada.",
+            )}
+            ${buildFactCard("Contexto editorial", [
+              factRow("Autores", payload.authors?.map((author) => author.name).join(", ") || "sem autor"),
+              factRow("Review", payload.reviewedAt ? formatDateTime(payload.reviewedAt) : "sem review"),
+              factRow("Lançamento", payload.releaseDate || "sem data"),
+              factRow("Nota", payload.rating ?? "sem nota"),
+              factRow("Edição principal", primaryEdition?.title || primaryEdition?.format || "sem edição destacada"),
+            ])}
           </div>
         `,
       )}
@@ -637,7 +637,7 @@ function renderHero({ eyebrow, title, subtitle, description, image, chips = [], 
       <div class="detail-copy">
         <div class="detail-copy-top">
           <p class="eyebrow">${escapeHtml(eyebrow)}</p>
-          <p class="detail-kicker-note">Media Pulse detail</p>
+          <p class="detail-kicker-note">Media Pulse collection</p>
         </div>
         <h2>${escapeHtml(title)}</h2>
         <p class="detail-subtitle">${escapeHtml(subtitle || "")}</p>
@@ -791,7 +791,7 @@ function buildCoverShelfCard(title, items, emptyMessage) {
             ? items
                 .map(
                   (item) => `
-                    <a class="cover-tile" href="${escapeAttribute(item.href || "#")}">
+                    <${item.href ? "a" : "article"} class="cover-tile" ${item.href ? `href="${escapeAttribute(item.href)}"` : ""}>
                       <div class="cover-tile-image-wrap">
                         <img class="cover-tile-image js-resolve-image" data-src="${escapeAttribute(item.image || "")}" alt="${escapeAttribute(item.title)}" />
                         <span class="cover-tile-badge">${escapeHtml(item.badge || "")}</span>
@@ -800,7 +800,7 @@ function buildCoverShelfCard(title, items, emptyMessage) {
                         <h5>${escapeHtml(item.title)}</h5>
                         <p>${escapeHtml(item.meta || "")}</p>
                       </div>
-                    </a>
+                    </${item.href ? "a" : "article"}>
                   `,
                 )
                 .join("")

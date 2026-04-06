@@ -11,13 +11,25 @@
   --base-color-border: #bcbcb3;
   --base-color-focus: #435ee5;
   --base-color-shadow: rgba(33, 25, 34, 0.08);
+  --sema-color-surface-default: #ffffff;
+  --sema-color-surface-subtle: #f6f6f3;
+  --sema-color-surface-warm: #f8f5ef;
+  --sema-color-border-default: #c8c8c1;
+  --sema-color-border-strong: #91918c;
+  --sema-color-border-focus-outer-default: rgba(67, 94, 229, 0.18);
+  --comp-button-color-background-primary: #e60023;
+  --comp-button-color-background-secondary: #e5e5e0;
+  --comp-button-color-text-primary: #000000;
+  --comp-button-color-text-secondary: #000000;
+  --comp-badge-color-background-wash-light: hsla(60, 20%, 98%, 0.5);
+  --comp-card-radius: 20px;
   --radius-sm: 12px;
   --radius-md: 16px;
   --radius-lg: 24px;
   --radius-xl: 40px;
   --max-width: 1480px;
-  --font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-family-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-family: -apple-system, system-ui, "Segoe UI", Roboto, Oxygen-Sans, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Helvetica, "Hiragino Kaku Gothic Pro W3", Meiryo, "MS PGothic", Arial, sans-serif;
+  --font-family-display: var(--font-family);
 }
 
 * {
@@ -75,7 +87,7 @@ button {
 .collection-column,
 .pin-card,
 .results-section {
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(6px);
 }
 
 .topbar {
@@ -134,32 +146,46 @@ button {
 .nav-chip,
 .secondary-button,
 .primary-button {
-  min-height: 44px;
-  padding: 10px 16px;
+  min-height: 40px;
+  padding: 6px 14px;
   border-radius: var(--radius-md);
   transition:
     transform 180ms ease,
     background-color 180ms ease,
-    color 180ms ease;
+    color 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .nav-chip,
 .secondary-button {
-  background: var(--base-color-surface-strong);
-  color: #000;
+  background: var(--comp-button-color-background-secondary);
+  color: var(--comp-button-color-text-secondary);
+  border: 1px solid transparent;
 }
 
 .primary-button {
-  background: var(--base-color-brand);
-  color: #000;
+  background: var(--comp-button-color-background-primary);
+  color: var(--comp-button-color-text-primary);
   border: 2px solid rgba(255, 255, 255, 0);
-  font-weight: 700;
 }
 
 .nav-chip:hover,
 .secondary-button:hover,
 .primary-button:hover {
   transform: translateY(-1px);
+}
+
+.nav-chip:focus-visible,
+.secondary-button:focus-visible,
+.primary-button:focus-visible,
+.detail-list-item:focus-visible,
+.cover-tile:focus-visible,
+.play-pill:focus-visible {
+  outline: 3px solid var(--sema-color-border-focus-outer-default);
+  outline-offset: 2px;
 }
 
 .hero {
@@ -945,48 +971,41 @@ a.result-item:focus-visible {
   margin-top: 24px;
   padding: 28px;
   border-radius: 32px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(249, 245, 238, 0.84));
-  border: 1px solid rgba(188, 188, 179, 0.42);
+  background: var(--sema-color-surface-default);
+  border: 1px solid rgba(145, 145, 140, 0.22);
 }
 
 .detail-hero {
   display: grid;
-  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+  gap: 28px;
   align-items: start;
   padding: 32px;
   background:
-    radial-gradient(circle at top left, rgba(230, 0, 35, 0.09), transparent 24%),
-    radial-gradient(circle at 92% 14%, rgba(229, 229, 224, 0.82), transparent 22%),
-    linear-gradient(180deg, rgba(255, 253, 248, 0.94), rgba(247, 242, 235, 0.88));
-  box-shadow: 0 16px 40px rgba(33, 25, 34, 0.05);
+    radial-gradient(circle at top left, rgba(230, 0, 35, 0.06), transparent 20%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 245, 239, 0.98));
 }
 
 .detail-hero-rich {
-  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr) minmax(250px, 320px);
+  grid-template-columns: minmax(280px, 420px) minmax(0, 1fr) minmax(220px, 280px);
 }
 
 .detail-poster-wrap {
-  border-radius: 28px;
-  padding: 10px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(229, 229, 224, 0.7));
-  box-shadow: 0 24px 44px rgba(33, 25, 34, 0.08);
+  align-self: stretch;
 }
 
 .detail-poster-frame {
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: 20px;
   border: 8px solid rgba(255, 255, 255, 0.98);
   background: linear-gradient(135deg, #e5e5e0, #f7f4ee);
 }
 
 .detail-poster {
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
   object-fit: cover;
-  object-position: center 20%;
+  object-position: center;
 }
 
 .detail-copy {
@@ -1012,9 +1031,11 @@ a.result-item:focus-visible {
 
 .detail-copy h2 {
   margin: 0;
-  font-size: clamp(2.5rem, 5.4vw, 4.35rem);
-  line-height: 0.92;
+  font-size: clamp(3.2rem, 6vw, 4.4rem);
+  font-weight: 600;
+  line-height: 0.95;
   letter-spacing: -0.04em;
+  max-width: 10ch;
 }
 
 .detail-subtitle,
@@ -1030,8 +1051,8 @@ a.result-item:focus-visible {
 
 .detail-description {
   margin: 20px 0 0;
-  max-width: 60ch;
-  line-height: 1.6;
+  max-width: 52ch;
+  line-height: 1.5;
 }
 
 .detail-meta-chips {
@@ -1046,12 +1067,12 @@ a.result-item:focus-visible {
   align-items: center;
   min-height: 34px;
   padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 252, 246, 0.9);
-  border: 1px solid rgba(188, 188, 179, 0.28);
+  border-radius: var(--radius-md);
+  background: var(--comp-badge-color-background-wash-light);
+  border: 1px solid rgba(145, 145, 140, 0.2);
   color: var(--base-color-text);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .detail-grid {
@@ -1066,10 +1087,9 @@ a.result-item:focus-visible {
 
 .detail-card {
   padding: 20px;
-  border-radius: 24px;
-  background:
-    linear-gradient(180deg, rgba(248, 246, 241, 0.98), rgba(243, 238, 231, 0.92));
-  border: 1px solid rgba(188, 188, 179, 0.24);
+  border-radius: var(--comp-card-radius);
+  background: var(--sema-color-surface-warm);
+  border: 1px solid rgba(145, 145, 140, 0.16);
 }
 
 .detail-card-shelf {
@@ -1092,9 +1112,9 @@ a.result-item:focus-visible {
 .detail-list-item {
   display: block;
   padding: 14px;
-  border-radius: 18px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(188, 188, 179, 0.18);
+  border: 1px solid rgba(145, 145, 140, 0.14);
 }
 
 .detail-kv-row {
@@ -1128,7 +1148,7 @@ a.detail-list-item {
 a.detail-list-item:hover,
 a.detail-list-item:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 16px 24px rgba(33, 25, 34, 0.08);
+  background: #fff;
 }
 
 .detail-metrics-grid {
@@ -1139,13 +1159,11 @@ a.detail-list-item:focus-visible {
 }
 
 .metric-card {
-  min-height: 118px;
-  padding: 18px;
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at top right, rgba(230, 0, 35, 0.05), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(235, 231, 224, 0.78));
-  border: 1px solid rgba(188, 188, 179, 0.4);
+  min-height: 108px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(145, 145, 140, 0.18);
 }
 
 .metric-card p,
@@ -1163,8 +1181,8 @@ a.detail-list-item:focus-visible {
 
 .metric-card strong {
   display: block;
-  margin: 14px 0 8px;
-  font-size: clamp(1.65rem, 4vw, 2.2rem);
+  margin: 12px 0 8px;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
   line-height: 1;
 }
 
@@ -1176,11 +1194,8 @@ a.detail-list-item:focus-visible {
 .detail-side-panel {
   padding: 22px;
   border-radius: 28px;
-  background:
-    radial-gradient(circle at top right, rgba(230, 0, 35, 0.12), transparent 28%),
-    linear-gradient(180deg, rgba(250, 247, 241, 0.98), rgba(232, 227, 219, 0.88));
-  border: 1px solid rgba(188, 188, 179, 0.42);
-  box-shadow: 0 14px 28px rgba(33, 25, 34, 0.05);
+  background: var(--sema-color-surface-warm);
+  border: 1px solid rgba(145, 145, 140, 0.18);
 }
 
 .detail-side-label {
@@ -1211,7 +1226,7 @@ a.detail-list-item:focus-visible {
   width: 100%;
   height: 10px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   background: rgba(188, 188, 179, 0.45);
 }
 
@@ -1219,7 +1234,7 @@ a.detail-list-item:focus-visible {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #e60023, #ff5e6d);
+  background: #e60023;
 }
 
 .dot-strip {
@@ -1259,9 +1274,9 @@ a.detail-list-item:focus-visible {
 
 .review-block {
   padding: 18px 20px;
-  border-radius: 22px;
+  border-radius: var(--comp-card-radius);
   background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(188, 188, 179, 0.18);
+  border: 1px solid rgba(145, 145, 140, 0.14);
 }
 
 .review-block p {
@@ -1273,22 +1288,21 @@ a.detail-list-item:focus-visible {
 
 .cover-shelf {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
 .image-gallery {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .gallery-tile {
   overflow: hidden;
-  border-radius: 22px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 243, 236, 0.92));
-  border: 1px solid rgba(188, 188, 179, 0.22);
+  border-radius: var(--comp-card-radius);
+  background: var(--sema-color-surface-default);
+  border: 1px solid rgba(145, 145, 140, 0.16);
 }
 
 .gallery-tile-image-wrap {
@@ -1299,10 +1313,10 @@ a.detail-list-item:focus-visible {
 
 .gallery-tile-image {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 4;
   object-fit: cover;
-  object-position: center 20%;
-  border-radius: 18px;
+  object-position: center;
+  border-radius: 16px;
 }
 
 .gallery-tile-badge {
@@ -1311,28 +1325,27 @@ a.detail-list-item:focus-visible {
   left: 10px;
   display: inline-flex;
   padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(255, 253, 248, 0.92);
+  border-radius: var(--radius-md);
+  background: rgba(255, 253, 248, 0.96);
   color: var(--base-color-brand);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .cover-tile {
   overflow: hidden;
-  border-radius: 22px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 243, 236, 0.92));
-  border: 1px solid rgba(188, 188, 179, 0.22);
+  border-radius: var(--comp-card-radius);
+  background: var(--sema-color-surface-default);
+  border: 1px solid rgba(145, 145, 140, 0.16);
   transition:
     transform 180ms ease,
-    box-shadow 180ms ease;
+    border-color 180ms ease;
 }
 
 .cover-tile:hover,
 .cover-tile:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 20px 30px rgba(33, 25, 34, 0.1);
+  border-color: rgba(230, 0, 35, 0.25);
 }
 
 .cover-tile-image-wrap {
@@ -1343,10 +1356,10 @@ a.detail-list-item:focus-visible {
 
 .cover-tile-image {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 4;
   object-fit: cover;
-  object-position: center 22%;
-  border-radius: 18px;
+  object-position: center;
+  border-radius: 16px;
 }
 
 .cover-tile-badge {
@@ -1355,11 +1368,11 @@ a.detail-list-item:focus-visible {
   left: 10px;
   display: inline-flex;
   padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(255, 253, 248, 0.92);
+  border-radius: var(--radius-md);
+  background: rgba(255, 253, 248, 0.96);
   color: var(--base-color-brand);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .cover-tile-copy {
@@ -1393,20 +1406,18 @@ a.detail-list-item:focus-visible {
   gap: 4px;
   min-width: 220px;
   padding: 15px 16px;
-  border-radius: 20px;
-  background:
-    radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(247, 243, 236, 0.92));
-  border: 1px solid rgba(188, 188, 179, 0.2);
+  border-radius: var(--comp-card-radius);
+  background: var(--sema-color-surface-default);
+  border: 1px solid rgba(145, 145, 140, 0.16);
   transition:
     transform 180ms ease,
-    box-shadow 180ms ease;
+    border-color 180ms ease;
 }
 
 .play-pill:hover,
 .play-pill:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 18px 28px rgba(33, 25, 34, 0.1);
+  border-color: rgba(230, 0, 35, 0.25);
 }
 
 .play-pill strong,
@@ -1431,10 +1442,9 @@ a.detail-list-item:focus-visible {
 .season-card,
 .edition-card {
   padding: 20px;
-  border-radius: 24px;
-  background:
-    linear-gradient(180deg, rgba(248, 246, 241, 0.98), rgba(241, 237, 229, 0.92));
-  border: 1px solid rgba(188, 188, 179, 0.2);
+  border-radius: var(--comp-card-radius);
+  background: var(--sema-color-surface-warm);
+  border: 1px solid rgba(145, 145, 140, 0.16);
 }
 
 .season-card-head {
@@ -1466,7 +1476,7 @@ a.detail-list-item:focus-visible {
 .season-state {
   display: inline-flex;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   font-size: 12px;
   font-weight: 700;
 }
@@ -1521,8 +1531,9 @@ a.detail-list-item:focus-visible {
   gap: 16px;
   align-items: center;
   padding: 16px 18px;
-  border-radius: 22px;
-  background: rgba(246, 246, 243, 0.95);
+  border-radius: var(--comp-card-radius);
+  background: var(--sema-color-surface-subtle);
+  border: 1px solid rgba(145, 145, 140, 0.14);
 }
 
 .track-row-copy p {
@@ -1548,13 +1559,13 @@ a.detail-list-item:focus-visible {
 .spark-bar {
   flex: 1;
   min-width: 8px;
-  border-radius: 999px 999px 6px 6px;
-  background: linear-gradient(180deg, rgba(230, 0, 35, 0.95), rgba(255, 94, 109, 0.48));
+  border-radius: 16px 16px 6px 6px;
+  background: linear-gradient(180deg, rgba(230, 0, 35, 0.95), rgba(230, 0, 35, 0.4));
 }
 
 .empty-inline {
   padding: 14px;
-  border-radius: 18px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.76);
 }
 
