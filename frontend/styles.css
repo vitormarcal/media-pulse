@@ -1257,10 +1257,65 @@ a.detail-list-item:focus-visible {
   line-height: 1.5;
 }
 
+.review-block {
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(188, 188, 179, 0.18);
+}
+
+.review-block p {
+  margin: 0;
+  color: var(--base-color-text);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
 .cover-shelf {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.gallery-tile {
+  overflow: hidden;
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 243, 236, 0.92));
+  border: 1px solid rgba(188, 188, 179, 0.22);
+}
+
+.gallery-tile-image-wrap {
+  position: relative;
+  padding: 8px;
+  background: linear-gradient(135deg, #e5e5e0, #f7f4ee);
+}
+
+.gallery-tile-image {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: center 20%;
+  border-radius: 18px;
+}
+
+.gallery-tile-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.92);
+  color: var(--base-color-brand);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .cover-tile {
@@ -1532,7 +1587,8 @@ a.detail-list-item:focus-visible {
 
   .season-grid,
   .edition-grid,
-  .cover-shelf {
+  .cover-shelf,
+  .image-gallery {
     grid-template-columns: 1fr;
   }
 }

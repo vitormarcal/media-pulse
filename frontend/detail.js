@@ -56,6 +56,7 @@ async function renderMovieDetail() {
   const lastWatch = watches[0]?.watchedAt || null;
   const rewatchCount = Math.max(watches.length - 1, 0);
   const intensity = buildIntensityPoints(watches.map((watch) => watch.watchedAt));
+  const galleryImages = (payload.images || []).filter((image) => image.url && image.url !== payload.coverUrl);
 
   renderPage({
     title: payload.title,
@@ -108,6 +109,30 @@ async function renderMovieDetail() {
           </div>
         `,
       )}
+
+      ${renderSection(
+        "Visuals",
+        "Materiais e metadados",
+        `
+          <div class="detail-grid">
+            ${buildImageGalleryCard(
+              "Imagens",
+              galleryImages.map((image, index) => ({
+                src: image.url,
+                alt: `${payload.title} imagem ${index + 1}`,
+                badge: image.isPrimary ? "Primary" : "Still",
+              })),
+              "Sem imagens extras para este filme.",
+            )}
+            ${buildFactCard("Metadados", [
+              factRow("Slug", payload.slug || "sem slug"),
+              factRow("IDs externos", formatExternalIds(payload.externalIds || [])),
+              factRow("Primeiro watch", formatDateTime(firstWatch) || "sem watch"),
+              factRow("Última atividade", formatDateTime(lastWatch) || "sem watch"),
+            ])}
+          </div>
+        `,
+      )}
     `,
   });
 }
@@ -117,6 +142,7 @@ async function renderShowDetail() {
   const progress = payload.progress || deriveFallbackShowProgress(payload.seasons || [], payload.watches || []);
   const seasons = payload.seasons || [];
   const lastWatch = payload.watches?.[0];
+  const galleryImages = (payload.images || []).filter((image) => image.url && image.url !== payload.coverUrl);
 
   renderPage({
     title: payload.title,
@@ -196,6 +222,30 @@ async function renderShowDetail() {
           </div>
         `,
       )}
+
+      ${renderSection(
+        "Visuals",
+        "Galeria e identificadores",
+        `
+          <div class="detail-grid">
+            ${buildImageGalleryCard(
+              "Imagens",
+              galleryImages.map((image, index) => ({
+                src: image.url,
+                alt: `${payload.title} imagem ${index + 1}`,
+                badge: image.isPrimary ? "Primary" : "Still",
+              })),
+              "Sem imagens extras para esta série.",
+            )}
+            ${buildFactCard("Metadados", [
+              factRow("Slug", payload.slug || "sem slug"),
+              factRow("IDs externos", formatExternalIds(payload.externalIds || [])),
+              factRow("Temporadas", `${progress.seasonsCount} registradas`),
+              factRow("Último episódio", lastWatch ? `${safeSeasonEpisode(lastWatch)} • ${truncateText(lastWatch.episodeTitle, 28)}` : "sem episódio recente"),
+            ])}
+          </div>
+        `,
+      )}
     `,
   });
 }
@@ -203,9 +253,12 @@ async function renderShowDetail() {
 async function renderBookDetail() {
   const payload = await fetchJson(resolveEndpoint("/api/books", params.get("slug"), params.get("id")));
   const reads = payload.reads || [];
-  const activeRead = reads.find((read) => read.status === "READING") || reads[0] || null;
+  const activeRead = reads.find((read) => read.status === "READING") || null;
+  const latestRead = reads[0] || null;
   const completedReads = reads.filter((read) => read.status === "READ");
+  const lastCompletedRead = completedReads[0] || null;
   const pagesRead = sum(reads.map((read) => read.progressPages || 0));
+  const primaryEdition = payload.editions?.find((edition) => edition.coverUrl) || payload.editions?.[0] || null;
 
   renderPage({
     title: payload.title,
@@ -220,15 +273,24 @@ async function renderBookDetail() {
           payload.slug ? `Slug ${payload.slug}` : null,
           payload.releaseDate ? `Lançado ${payload.releaseDate}` : null,
           payload.rating ? `Nota ${payload.rating}` : null,
+          payload.reviewedAt ? `Review ${formatDate(payload.reviewedAt)}` : null,
           `${reads.length} jornada${reads.length === 1 ? "" : "s"} de leitura`,
         ].filter(Boolean),
         metrics: [
-          metricCard("Status principal", activeRead ? translateBookStatus(activeRead.status) : "Sem leitura", activeRead?.progressPct ? `${Math.round(activeRead.progressPct)}% da jornada ativa` : "nenhuma jornada ativa"),
+          metricCard(
+            "Status principal",
+            activeRead ? translateBookStatus(activeRead.status) : lastCompletedRead ? "Concluído" : latestRead ? translateBookStatus(latestRead.status) : "Sem leitura",
+            activeRead
+              ? `${Math.round(activeRead.progressPct || 0)}% da jornada ativa`
+              : lastCompletedRead
+                ? `concluído em ${formatDate(lastCompletedRead.finishedAt) || "data n/d"}`
+                : "nenhuma jornada ativa",
+          ),
           metricCard("Concluído", String(completedReads.length), "leituras finalizadas"),
           metricCard("Páginas", `${pagesRead}`, "páginas registradas"),
           metricCard("Edições", `${payload.editions?.length ?? 0}`, "edições conhecidas"),
         ].join(""),
-        extra: activeRead ? renderReadingProgress(activeRead) : "",
+        extra: renderBookStatusPanel({ activeRead, lastCompletedRead, payload, primaryEdition }),
       })}
 
       ${renderSection(
@@ -256,16 +318,39 @@ async function renderBookDetail() {
               factRow("Review", payload.reviewedAt ? formatDateTime(payload.reviewedAt) : "sem review"),
               factRow("Lançamento", payload.releaseDate || "sem data"),
               factRow("Nota", payload.rating ?? "sem nota"),
+              factRow("Edição principal", primaryEdition?.title || primaryEdition?.format || "sem edição destacada"),
             ])}
           </div>
         `,
       )}
 
+      ${payload.reviewRaw
+        ? renderSection(
+            "Review",
+            "Impressão editorial",
+            buildSingleGrid(
+              `<article class="detail-card detail-card-wide">
+                <h4>Review</h4>
+                <div class="review-block">
+                  <p>${escapeHtml(payload.reviewRaw)}</p>
+                </div>
+              </article>`,
+            ),
+          )
+        : ""}
+
       ${renderSection(
         "Editions",
         "Edições disponíveis",
         `
-          <div class="edition-grid">
+          <div class="detail-grid">
+            ${buildCoverShelfCard("Capas e edições", (payload.editions || []).map((edition) => ({
+              title: edition.title || payload.title,
+              meta: [edition.publisher, edition.language, edition.pages ? `${edition.pages} páginas` : null].filter(Boolean).join(" • "),
+              image: edition.coverUrl || payload.coverUrl,
+              badge: edition.format || "Edition",
+            })), "Sem capas de edição disponíveis.")}
+            <div class="edition-grid">
             ${payload.editions?.length
               ? payload.editions
                   .map(
@@ -283,6 +368,7 @@ async function renderBookDetail() {
                   )
                   .join("")
               : renderEmptyInline("Sem edições detalhadas para este livro.")}
+            </div>
           </div>
         `,
       )}
@@ -606,6 +692,37 @@ function renderReadingProgress(read) {
   `;
 }
 
+function renderBookStatusPanel({ activeRead, lastCompletedRead, payload, primaryEdition }) {
+  if (activeRead) {
+    return renderReadingProgress(activeRead);
+  }
+
+  if (lastCompletedRead) {
+    return `
+      <article class="detail-side-panel">
+        <p class="detail-side-label">Finished</p>
+        <h3>${payload.rating ? `Nota ${payload.rating}` : "Leitura concluída"}</h3>
+        <div class="detail-side-pairs">
+          <span>${lastCompletedRead.finishedAt ? `Concluído em ${formatDate(lastCompletedRead.finishedAt)}` : "data de conclusão n/d"}</span>
+          <span>${primaryEdition?.pages ? `${primaryEdition.pages} páginas na edição` : "edição sem páginas"}</span>
+          <span>${payload.reviewedAt ? `Review em ${formatDate(payload.reviewedAt)}` : "sem review registrada"}</span>
+        </div>
+      </article>
+    `;
+  }
+
+  return `
+    <article class="detail-side-panel">
+      <p class="detail-side-label">Book status</p>
+      <h3>${payload.reviewRaw ? "Review disponível" : "Sem jornada ativa"}</h3>
+      <div class="detail-side-pairs">
+        <span>${payload.reviewedAt ? `Review em ${formatDate(payload.reviewedAt)}` : "sem review registrada"}</span>
+        <span>${primaryEdition?.format || "formato n/d"}</span>
+      </div>
+    </article>
+  `;
+}
+
 function metricCard(label, value, detail) {
   return `
     <article class="metric-card">
@@ -709,6 +826,32 @@ function buildPlayTimelineCard(title, plays, emptyMessage) {
                       <span>${escapeHtml(play.albumTitle)}</span>
                       <em>${escapeHtml(play.source)}</em>
                     </a>
+                  `,
+                )
+                .join("")
+            : `<div class="empty-state">${escapeHtml(emptyMessage)}</div>`
+        }
+      </div>
+    </article>
+  `;
+}
+
+function buildImageGalleryCard(title, items, emptyMessage) {
+  return `
+    <article class="detail-card detail-card-shelf">
+      <h4>${escapeHtml(title)}</h4>
+      <div class="image-gallery">
+        ${
+          items.length
+            ? items
+                .map(
+                  (item) => `
+                    <article class="gallery-tile">
+                      <div class="gallery-tile-image-wrap">
+                        <img class="gallery-tile-image js-resolve-image" data-src="${escapeAttribute(item.src || "")}" alt="${escapeAttribute(item.alt || title)}" />
+                        <span class="gallery-tile-badge">${escapeHtml(item.badge || "Image")}</span>
+                      </div>
+                    </article>
                   `,
                 )
                 .join("")
@@ -869,6 +1012,14 @@ function safeSeasonEpisode(watch) {
 function uniqueCountLabel(values, singular, plural) {
   const size = new Set(values.filter(Boolean)).size;
   return `${size} ${size === 1 ? singular : plural}`;
+}
+
+function formatExternalIds(items) {
+  if (!items.length) {
+    return "sem ids externos";
+  }
+
+  return items.map((item) => `${item.provider}: ${item.externalId}`).join(" • ");
 }
 
 function truncateText(value, max) {
