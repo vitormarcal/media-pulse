@@ -1,9 +1,11 @@
 package dev.marcal.mediapulse.server.controller.music
 
 import dev.marcal.mediapulse.server.api.music.AlbumPageResponse
+import dev.marcal.mediapulse.server.api.music.ArtistPageResponse
 import dev.marcal.mediapulse.server.api.music.MusicSummaryResponse
 import dev.marcal.mediapulse.server.api.music.RecentAlbumResponse
 import dev.marcal.mediapulse.server.api.music.SearchResponse
+import dev.marcal.mediapulse.server.api.music.TrackPageResponse
 import dev.marcal.mediapulse.server.repository.MusicQueryRepository
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -65,6 +67,16 @@ class MusicSummaryController(
     fun albumPage(
         @PathVariable albumId: Long,
     ): AlbumPageResponse = repository.getAlbumPage(albumId)
+
+    @GetMapping("/artists/{artistId}")
+    fun artistPage(
+        @PathVariable artistId: Long,
+    ): ArtistPageResponse = repository.getArtistPage(artistId)
+
+    @GetMapping("/tracks/{trackId}")
+    fun trackPage(
+        @PathVariable trackId: Long,
+    ): TrackPageResponse = repository.getTrackPage(trackId)
 
     @GetMapping("/albums/never-played")
     fun neverPlayedAlbums(

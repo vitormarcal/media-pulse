@@ -3,12 +3,6 @@ spring:
     multipart:
       max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:15MB}
       max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:15MB}
-  web:
-    resources:
-      static-locations:
-        - file:${media-pulse.storage.covers-path}
-  mvc:
-    static-path-pattern: /covers/**
   codec:
     max-in-memory-size: 200MB
   datasource:

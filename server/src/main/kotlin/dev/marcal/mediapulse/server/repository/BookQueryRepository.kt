@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.repository
 
+import dev.marcal.mediapulse.server.api.books.AuthorDetailsResponse
 import dev.marcal.mediapulse.server.api.books.AuthorDto
 import dev.marcal.mediapulse.server.api.books.BookCardDto
 import dev.marcal.mediapulse.server.api.books.BookDetailsResponse
@@ -186,6 +187,108 @@ class BookQueryRepository(
     fun getBookDetailsBySlug(slug: String): BookDetailsResponse {
         val book = fetchBookDetailsRowBySlug(slug)
         return getBookDetails(book.bookId)
+    }
+
+    fun getAuthorDetails(authorId: Long): AuthorDetailsResponse {
+        val author =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT a.id, a.name
+                    FROM authors a
+                    WHERE a.id = :authorId
+                    """.trimIndent(),
+                ).setParameter("authorId", authorId)
+                .resultList
+                .firstOrNull()
+                ?.let { row ->
+                    val fields = row as Array<*>
+                    AuthorDto(
+                        id = (fields[0] as Number).toLong(),
+                        name = fields[1] as String,
+                    )
+                }
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "autor não encontrado")
+
+        val bookRows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT DISTINCT b.id, b.slug, b.title, b.cover_url, b.release_date, b.rating, b.reviewed_at
+                    FROM books b
+                    JOIN book_authors ba ON ba.book_id = b.id
+                    WHERE ba.author_id = :authorId
+                    ORDER BY b.reviewed_at DESC NULLS LAST, b.release_date DESC NULLS LAST, b.title
+                    """.trimIndent(),
+                ).setParameter("authorId", authorId)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    BookRow(
+                        bookId = (fields[0] as Number).toLong(),
+                        slug = fields[1] as String,
+                        title = fields[2] as String,
+                        coverUrl = fields[3] as String?,
+                        releaseDate = asLocalDate(fields[4]),
+                        rating = asDouble(fields[5]),
+                        reviewedAt = asInstant(fields[6]),
+                    )
+                }
+
+        val authorsByBookId = fetchAuthorsByBookIds(bookRows.map { it.bookId }.toSet())
+
+        val books =
+            bookRows.map { row ->
+                BookCardDto(
+                    bookId = row.bookId,
+                    slug = row.slug,
+                    title = row.title,
+                    coverUrl = row.coverUrl,
+                    releaseDate = row.releaseDate,
+                    rating = row.rating,
+                    reviewedAt = row.reviewedAt,
+                    authors = authorsByBookId[row.bookId].orEmpty(),
+                )
+            }
+
+        val recentReadRows =
+            fetchReadRows(
+                where = "br.book_id IN (SELECT ba.book_id FROM book_authors ba WHERE ba.author_id = :authorId)",
+                orderBy = "COALESCE(br.finished_at, br.started_at, br.created_at) DESC",
+                params = mapOf("authorId" to authorId),
+                limit = 20,
+            )
+
+        val recentReads = recentReadRows.map { row -> row.toDto(authorsByBookId) }
+
+        val countsRow =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      COUNT(DISTINCT ba.book_id) AS books_count,
+                      COUNT(br.id) AS reads_count,
+                      COUNT(*) FILTER (WHERE br.status = 'READ') AS finished_count,
+                      COUNT(*) FILTER (WHERE br.status = 'CURRENTLY_READING') AS currently_reading_count,
+                      MAX(br.finished_at) FILTER (WHERE br.status = 'READ') AS last_finished_at
+                    FROM book_authors ba
+                    LEFT JOIN book_reads br ON br.book_id = ba.book_id
+                    WHERE ba.author_id = :authorId
+                    """.trimIndent(),
+                ).setParameter("authorId", authorId)
+                .singleResult as Array<*>
+
+        return AuthorDetailsResponse(
+            authorId = author.id,
+            name = author.name,
+            booksCount = (countsRow[0] as Number).toLong(),
+            readsCount = (countsRow[1] as Number).toLong(),
+            finishedCount = (countsRow[2] as Number).toLong(),
+            currentlyReadingCount = (countsRow[3] as Number).toLong(),
+            lastFinishedAt = asInstant(countsRow[4]),
+            books = books,
+            recentReads = recentReads,
+        )
     }
 
     fun listReads(

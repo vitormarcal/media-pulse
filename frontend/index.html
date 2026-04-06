@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Media Pulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <div class="brand-mark">M</div>
+          <div>
+            <p class="eyebrow">Media Pulse</p>
+            <h1>Seu mural pessoal de consumo cultural.</h1>
+          </div>
+        </div>
+        <button class="nav-chip" id="api-base-button" type="button">
+          API base
+        </button>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">Discover quietly</p>
+            <h2>Busque filmes, livros, discos e séries num layout quente e denso.</h2>
+            <p class="hero-text">
+              A home combina busca unificada com os últimos itens vistos, lidos e
+              ouvidos. O visual segue a direção do `DESIGN.md`: superfícies quentes,
+              destaque em vermelho e cards dominados por capa.
+            </p>
+            <form class="search-panel" id="search-form">
+              <label class="search-label" for="search-input">Buscar em todas as coleções</label>
+              <div class="search-row">
+                <input
+                  id="search-input"
+                  name="search"
+                  type="search"
+                  placeholder="Ex.: Severance, Ursula Le Guin, The Cure, Matrix"
+                  autocomplete="off"
+                />
+                <button class="primary-button" type="submit">Buscar</button>
+              </div>
+              <p class="search-hint" id="search-status">
+                Digite para consultar `movies`, `music`, `books` e `shows`.
+              </p>
+            </form>
+          </div>
+
+          <aside class="hero-summary">
+            <div class="summary-card" data-summary="movies">
+              <p class="summary-label">Movies</p>
+              <strong class="summary-value">...</strong>
+              <span class="summary-detail">carregando ultimos 30 dias</span>
+            </div>
+            <div class="summary-card" data-summary="music">
+              <p class="summary-label">Music</p>
+              <strong class="summary-value">...</strong>
+              <span class="summary-detail">carregando ultimos 30 dias</span>
+            </div>
+            <div class="summary-card" data-summary="books">
+              <p class="summary-label">Books</p>
+              <strong class="summary-value">...</strong>
+              <span class="summary-detail">carregando ultimos 30 dias</span>
+            </div>
+            <div class="summary-card" data-summary="shows">
+              <p class="summary-label">Shows</p>
+              <strong class="summary-value">...</strong>
+              <span class="summary-detail">carregando ultimos 30 dias</span>
+            </div>
+          </aside>
+        </section>
+
+        <section class="results-section hidden" id="search-results-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Busca unificada</p>
+              <h3>Resultados</h3>
+            </div>
+            <button class="secondary-button" id="clear-search-button" type="button">
+              Limpar
+            </button>
+          </div>
+          <div class="results-grid" id="search-results"></div>
+        </section>
+
+        <section class="feed-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Recentes</p>
+              <h3>Últimos consumos por coleção</h3>
+            </div>
+          </div>
+
+          <div class="recent-columns">
+            <section class="collection-column">
+              <div class="collection-header">
+                <h4>Filmes</h4>
+                <span>Assistidos por último</span>
+              </div>
+              <div class="masonry-grid" id="movies-grid"></div>
+            </section>
+
+            <section class="collection-column">
+              <div class="collection-header">
+                <h4>Música</h4>
+                <span>Álbuns mais recentes</span>
+              </div>
+              <div class="masonry-grid" id="music-grid"></div>
+            </section>
+
+            <section class="collection-column">
+              <div class="collection-header">
+                <h4>Livros</h4>
+                <span>Últimas leituras</span>
+              </div>
+              <div class="masonry-grid" id="books-grid"></div>
+            </section>
+
+            <section class="collection-column">
+              <div class="collection-header">
+                <h4>Séries</h4>
+                <span>Episódios vistos por último</span>
+              </div>
+              <div class="masonry-grid" id="shows-grid"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="pin-card-template">
+      <a class="pin-card-link" href="#">
+        <article class="pin-card">
+          <div class="pin-image-wrap">
+            <img class="pin-image" alt="" loading="lazy" />
+          </div>
+          <div class="pin-body">
+            <p class="pin-kicker"></p>
+            <h5 class="pin-title"></h5>
+            <p class="pin-meta"></p>
+            <p class="pin-date"></p>
+            <span class="pin-cta">Abrir detalhe</span>
+          </div>
+        </article>
+      </a>
+    </template>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

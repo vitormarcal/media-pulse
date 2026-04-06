@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.controller.books
 
+import dev.marcal.mediapulse.server.api.books.AuthorDetailsResponse
 import dev.marcal.mediapulse.server.api.books.BookDetailsResponse
 import dev.marcal.mediapulse.server.api.books.BookReadStatus
 import dev.marcal.mediapulse.server.api.books.BooksListResponse
@@ -33,6 +34,11 @@ class BooksController(
     fun bookDetailsBySlug(
         @PathVariable slug: String,
     ): BookDetailsResponse = repository.getBookDetailsBySlug(slug)
+
+    @GetMapping("/authors/{authorId}")
+    fun authorDetails(
+        @PathVariable authorId: Long,
+    ): AuthorDetailsResponse = repository.getAuthorDetails(authorId)
 
     @GetMapping("/list")
     fun listReads(

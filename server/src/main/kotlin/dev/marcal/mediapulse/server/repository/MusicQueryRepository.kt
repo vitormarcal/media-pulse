@@ -4,7 +4,10 @@ import dev.marcal.mediapulse.server.api.music.AlbumCoverageResponse
 import dev.marcal.mediapulse.server.api.music.AlbumHeaderRow
 import dev.marcal.mediapulse.server.api.music.AlbumPageResponse
 import dev.marcal.mediapulse.server.api.music.AlbumTrackRow
+import dev.marcal.mediapulse.server.api.music.ArtistAlbumRow
 import dev.marcal.mediapulse.server.api.music.ArtistCoverageResponse
+import dev.marcal.mediapulse.server.api.music.ArtistPageResponse
+import dev.marcal.mediapulse.server.api.music.ArtistTrackRow
 import dev.marcal.mediapulse.server.api.music.IdName
 import dev.marcal.mediapulse.server.api.music.MusicSummaryResponse
 import dev.marcal.mediapulse.server.api.music.PlaysByDayRow
@@ -19,10 +22,15 @@ import dev.marcal.mediapulse.server.api.music.TopArtistResponse
 import dev.marcal.mediapulse.server.api.music.TopGenreBySourceResponse
 import dev.marcal.mediapulse.server.api.music.TopGenreResponse
 import dev.marcal.mediapulse.server.api.music.TopTrackResponse
+import dev.marcal.mediapulse.server.api.music.TrackAlbumRow
+import dev.marcal.mediapulse.server.api.music.TrackPageResponse
+import dev.marcal.mediapulse.server.api.music.TrackPlayRow
 import dev.marcal.mediapulse.server.api.music.TrendingGenreResponse
 import dev.marcal.mediapulse.server.api.music.UnderplayedGenreResponse
 import jakarta.persistence.EntityManager
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
+import org.springframework.web.server.ResponseStatusException
 import java.sql.Date
 import java.time.Instant
 
@@ -395,6 +403,237 @@ class MusicQueryRepository(
             totalPlays = header.totalPlays,
             tracks = tracks,
             playsByDay = days,
+        )
+    }
+
+    fun getArtistPage(artistId: Long): ArtistPageResponse {
+        val summaryRow =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      a.id,
+                      a.name,
+                      (SELECT COUNT(*) FROM track_playbacks tp JOIN tracks t ON t.id = tp.track_id WHERE t.artist_id = a.id) AS total_plays,
+                      (SELECT COUNT(DISTINCT tp.track_id) FROM track_playbacks tp JOIN tracks t ON t.id = tp.track_id WHERE t.artist_id = a.id) AS unique_tracks_played,
+                      (SELECT COUNT(DISTINCT tp.album_id) FROM track_playbacks tp JOIN tracks t ON t.id = tp.track_id WHERE t.artist_id = a.id) AS unique_albums_played,
+                      (SELECT COUNT(*) FROM albums al WHERE al.artist_id = a.id) AS library_albums_count,
+                      (SELECT COUNT(*) FROM tracks t WHERE t.artist_id = a.id) AS library_tracks_count,
+                      (SELECT MAX(tp.played_at) FROM track_playbacks tp JOIN tracks t ON t.id = tp.track_id WHERE t.artist_id = a.id) AS last_played
+                    FROM artists a
+                    WHERE a.id = :artistId
+                    """.trimIndent(),
+                ).setParameter("artistId", artistId)
+                .resultList
+                .firstOrNull() as Array<*>?
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "artista não encontrado")
+
+        val albums =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      al.id,
+                      al.title,
+                      al.year,
+                      al.cover_url,
+                      COUNT(DISTINCT at.track_id) AS total_tracks,
+                      COUNT(DISTINCT CASE WHEN tp.id IS NOT NULL THEN at.track_id END) AS played_tracks,
+                      COUNT(tp.id) AS play_count,
+                      MAX(tp.played_at) AS last_played
+                    FROM albums al
+                    LEFT JOIN album_tracks at ON at.album_id = al.id
+                    LEFT JOIN track_playbacks tp ON tp.album_id = al.id
+                    WHERE al.artist_id = :artistId
+                    GROUP BY al.id, al.title, al.year, al.cover_url
+                    ORDER BY COUNT(tp.id) DESC, MAX(tp.played_at) DESC NULLS LAST, al.year DESC NULLS LAST, al.title
+                    """.trimIndent(),
+                ).setParameter("artistId", artistId)
+                .resultList
+                .map {
+                    val row = it as Array<*>
+                    ArtistAlbumRow(
+                        albumId = (row[0] as Number).toLong(),
+                        albumTitle = row[1] as String,
+                        year = row[2] as Int?,
+                        coverUrl = row[3] as String?,
+                        totalTracks = (row[4] as Number).toLong(),
+                        playedTracks = (row[5] as Number).toLong(),
+                        playCount = (row[6] as Number).toLong(),
+                        lastPlayed = row[7] as Instant?,
+                    )
+                }
+
+        val topTracks =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      t.id,
+                      t.title,
+                      top_album.album_id,
+                      top_album.album_title,
+                      COUNT(tp.id) AS play_count,
+                      MAX(tp.played_at) AS last_played
+                    FROM tracks t
+                    LEFT JOIN track_playbacks tp ON tp.track_id = t.id
+                    LEFT JOIN LATERAL (
+                      SELECT al2.id AS album_id, al2.title AS album_title
+                      FROM track_playbacks tp2
+                      JOIN albums al2 ON al2.id = tp2.album_id
+                      WHERE tp2.track_id = t.id
+                      GROUP BY al2.id, al2.title
+                      ORDER BY COUNT(*) DESC, MAX(tp2.played_at) DESC
+                      LIMIT 1
+                    ) top_album ON TRUE
+                    WHERE t.artist_id = :artistId
+                    GROUP BY t.id, t.title, top_album.album_id, top_album.album_title
+                    ORDER BY COUNT(tp.id) DESC, MAX(tp.played_at) DESC NULLS LAST, t.title
+                    LIMIT 12
+                    """.trimIndent(),
+                ).setParameter("artistId", artistId)
+                .resultList
+                .map {
+                    val row = it as Array<*>
+                    ArtistTrackRow(
+                        trackId = (row[0] as Number).toLong(),
+                        title = row[1] as String,
+                        albumId = (row[2] as Number?)?.toLong(),
+                        albumTitle = row[3] as String?,
+                        playCount = (row[4] as Number).toLong(),
+                        lastPlayed = row[5] as Instant?,
+                    )
+                }
+
+        val days =
+            entityManager
+                .createQuery(
+                    """
+                    SELECT FUNCTION('date', tp.playedAt) AS day, COUNT(tp.id) AS plays
+                    FROM TrackPlayback tp
+                    JOIN Track t ON t.id = tp.trackId
+                    WHERE t.artistId = :artistId
+                    GROUP BY FUNCTION('date', tp.playedAt)
+                    ORDER BY FUNCTION('date', tp.playedAt)
+                    """,
+                    Array<Any>::class.java,
+                ).setParameter("artistId", artistId)
+                .resultList
+                .map {
+                    PlaysByDayRow(
+                        day = (it[0] as Date).toLocalDate(),
+                        plays = (it[1] as Long),
+                    )
+                }
+
+        return ArtistPageResponse(
+            artistId = (summaryRow[0] as Number).toLong(),
+            artistName = summaryRow[1] as String,
+            totalPlays = (summaryRow[2] as Number).toLong(),
+            uniqueTracksPlayed = (summaryRow[3] as Number).toLong(),
+            uniqueAlbumsPlayed = (summaryRow[4] as Number).toLong(),
+            libraryAlbumsCount = (summaryRow[5] as Number).toLong(),
+            libraryTracksCount = (summaryRow[6] as Number).toLong(),
+            lastPlayed = summaryRow[7] as Instant?,
+            albums = albums,
+            topTracks = topTracks,
+            playsByDay = days,
+        )
+    }
+
+    fun getTrackPage(trackId: Long): TrackPageResponse {
+        val header =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      t.id,
+                      t.title,
+                      a.id,
+                      a.name,
+                      COUNT(tp.id) AS total_plays,
+                      MAX(tp.played_at) AS last_played
+                    FROM tracks t
+                    JOIN artists a ON a.id = t.artist_id
+                    LEFT JOIN track_playbacks tp ON tp.track_id = t.id
+                    WHERE t.id = :trackId
+                    GROUP BY t.id, t.title, a.id, a.name
+                    """.trimIndent(),
+                ).setParameter("trackId", trackId)
+                .resultList
+                .firstOrNull() as Array<*>?
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "faixa não encontrada")
+
+        val albums =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      al.id,
+                      al.title,
+                      al.year,
+                      al.cover_url,
+                      at.disc_number,
+                      at.track_number,
+                      COUNT(tp.id) AS play_count,
+                      MAX(tp.played_at) AS last_played
+                    FROM album_tracks at
+                    JOIN albums al ON al.id = at.album_id
+                    LEFT JOIN track_playbacks tp
+                      ON tp.track_id = at.track_id
+                     AND tp.album_id = at.album_id
+                    WHERE at.track_id = :trackId
+                    GROUP BY al.id, al.title, al.year, al.cover_url, at.disc_number, at.track_number
+                    ORDER BY COUNT(tp.id) DESC, MAX(tp.played_at) DESC NULLS LAST, al.year DESC NULLS LAST, al.title
+                    """.trimIndent(),
+                ).setParameter("trackId", trackId)
+                .resultList
+                .map {
+                    val row = it as Array<*>
+                    TrackAlbumRow(
+                        albumId = (row[0] as Number).toLong(),
+                        albumTitle = row[1] as String,
+                        year = row[2] as Int?,
+                        coverUrl = row[3] as String?,
+                        discNumber = row[4] as Int?,
+                        trackNumber = row[5] as Int?,
+                        playCount = (row[6] as Number).toLong(),
+                        lastPlayed = row[7] as Instant?,
+                    )
+                }
+
+        val recentPlays =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT tp.played_at, tp.source, al.id, al.title
+                    FROM track_playbacks tp
+                    JOIN albums al ON al.id = tp.album_id
+                    WHERE tp.track_id = :trackId
+                    ORDER BY tp.played_at DESC
+                    LIMIT 24
+                    """.trimIndent(),
+                ).setParameter("trackId", trackId)
+                .resultList
+                .map {
+                    val row = it as Array<*>
+                    TrackPlayRow(
+                        playedAt = row[0] as Instant,
+                        source = row[1] as String,
+                        albumId = (row[2] as Number).toLong(),
+                        albumTitle = row[3] as String,
+                    )
+                }
+
+        return TrackPageResponse(
+            trackId = (header[0] as Number).toLong(),
+            title = header[1] as String,
+            artistId = (header[2] as Number).toLong(),
+            artistName = header[3] as String,
+            totalPlays = (header[4] as Number).toLong(),
+            lastPlayed = header[5] as Instant?,
+            albums = albums,
+            recentPlays = recentPlays,
         )
     }
 

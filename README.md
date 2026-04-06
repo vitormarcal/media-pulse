@@ -42,6 +42,36 @@ Media Pulse centraliza dados pessoais de consumo (music, books, movies e TV show
 - `GET /api/shows/year/{year}` (stats anuais, séries assistidas no ano e séries nunca assistidas)
 - `POST /api/shows/watches` (ingestão manual idempotente de episode watches com resolução por TMDB/TVDB/fingerprint)
 
+## Books endpoints
+
+- `GET /api/books/year/{year}`
+- `GET /api/books/{bookId}`
+- `GET /api/books/slug/{slug}`
+- `GET /api/books/authors/{authorId}` (detalhe agregado do autor com catálogo e leituras recentes)
+- `GET /api/books/list`
+- `GET /api/books/search`
+- `GET /api/books/summary`
+
+## Music endpoints
+
+- `GET /api/music/summary`
+- `GET /api/music/recent-albums`
+- `GET /api/music/search`
+- `GET /api/music/albums/{albumId}`
+- `GET /api/music/artists/{artistId}` (detalhe agregado do artista com discografia ouvida e top faixas)
+- `GET /api/music/tracks/{trackId}` (detalhe agregado da faixa com álbuns e plays recentes)
+- `GET /api/music/tops/artists`
+- `GET /api/music/tops/albums`
+- `GET /api/music/tops/tracks`
+- `GET /api/music/tops/genres`
+- `GET /api/music/coverage/artists`
+- `GET /api/music/coverage/albums`
+- `GET /api/music/albums/never-played`
+- `GET /api/music/genres/trending`
+- `GET /api/music/genres/recent`
+- `GET /api/music/genres/underplayed`
+- `GET /api/music/genres/top-by-source`
+
 ## Configuração TMDb
 
 - `TMDB_ENABLED` (default `true`)
@@ -58,5 +88,6 @@ Media Pulse centraliza dados pessoais de consumo (music, books, movies e TV show
 - `docs/plex-movie-ingestion.md`
 - `docs/plex-show-ingestion.md`
 - `docs/books-api.md`
+- `docs/music-api.md`
 - `docs/movies-api.md`
 - `docs/shows-api.md`

@@ -17,6 +17,7 @@ As leituras são armazenadas como **sessões/jornadas consolidadas** (não como 
 | `GET /api/books/year/{year}` | `year` (path) | `YearReadsResponse` |
 | `GET /api/books/{bookId}` | `bookId` (path) | `BookDetailsResponse` |
 | `GET /api/books/slug/{slug}` | `slug` (path) | `BookDetailsResponse` |
+| `GET /api/books/authors/{authorId}` | `authorId` (path) | `AuthorDetailsResponse` |
 | `GET /api/books/list` | `status?`, `limit=20`, `cursor?` | `BooksListResponse` |
 | `GET /api/books/search` | `q`, `limit=10` | `BooksSearchResponse` |
 | `GET /api/books/summary` | `range=month|year|custom`, `start?`, `end?` | `BooksSummaryResponse` |
@@ -124,6 +125,58 @@ curl "{{host}}/api/books/slug/52_the_dispossessed"
   "authors": [{ "id": 9, "name": "Ursula K. Le Guin" }],
   "editions": [],
   "reads": []
+}
+```
+
+### Author details
+
+```bash
+curl "{{host}}/api/books/authors/9"
+```
+
+```json
+{
+  "authorId": 9,
+  "name": "Ursula K. Le Guin",
+  "booksCount": 4,
+  "readsCount": 3,
+  "finishedCount": 2,
+  "currentlyReadingCount": 1,
+  "lastFinishedAt": "2025-03-01T22:10:00Z",
+  "books": [
+    {
+      "bookId": 52,
+      "slug": "52_the_dispossessed",
+      "title": "The Dispossessed",
+      "coverUrl": "https://img.example/book/52.jpg",
+      "releaseDate": "1974-05-01",
+      "rating": 4.5,
+      "reviewedAt": "2025-03-02T12:00:00Z",
+      "authors": [{ "id": 9, "name": "Ursula K. Le Guin" }]
+    }
+  ],
+  "recentReads": [
+    {
+      "readId": 481,
+      "status": "READ",
+      "startedAt": "2025-02-10T20:00:00Z",
+      "finishedAt": "2025-03-01T22:10:00Z",
+      "progressPct": 100.0,
+      "progressPages": 384,
+      "source": "HARDCOVER",
+      "book": {
+        "bookId": 52,
+        "slug": "52_the_dispossessed",
+        "title": "The Dispossessed",
+        "coverUrl": "https://img.example/book/52.jpg",
+        "releaseDate": "1974-05-01",
+        "rating": 4.5,
+        "reviewedAt": "2025-03-02T12:00:00Z",
+        "authors": [{ "id": 9, "name": "Ursula K. Le Guin" }]
+      },
+      "edition": null
+    }
+  ]
 }
 ```
 

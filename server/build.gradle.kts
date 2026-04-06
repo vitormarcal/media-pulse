@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.Sync
+
 plugins {
     kotlin("jvm") version "1.9.25"
     kotlin("plugin.spring") version "1.9.25"
@@ -8,7 +10,7 @@ plugins {
 }
 
 group = "dev.marcal.mediapulse.server"
-version = "1.0.0-beta.16"
+version = "1.0.0-beta.17"
 
 java {
     toolchain {
@@ -75,4 +77,18 @@ tasks.withType<Test> {
 
 tasks.jar {
     enabled = false
+}
+
+val syncFrontendStatic by tasks.registering(Sync::class) {
+    from(project.layout.projectDirectory.dir("../frontend")) {
+        exclude("README.md")
+    }
+    into(layout.buildDirectory.dir("generated/frontend-static"))
+}
+
+tasks.processResources {
+    dependsOn(syncFrontendStatic)
+    from(syncFrontendStatic) {
+        into("static")
+    }
 }
