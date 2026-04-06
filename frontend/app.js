@@ -289,7 +289,7 @@ async function loadMixedMosaic() {
     shows: recentConfigs.shows.normalize(showsPayload).map((item) => ({ ...item, weight: 1, type: "shows" })),
   };
 
-  const mixedItems = buildBalancedFeed(pools, 18);
+  const mixedItems = applyFeaturedPins(buildBalancedFeed(pools, 18));
   renderPinGrid(mixedGrid, mixedItems);
 }
 
@@ -509,6 +509,10 @@ function renderPinGrid(container, items) {
     if (item.type) {
       card.classList.add(`pin-card-${item.type}`);
     }
+    if (item.featured) {
+      node.classList.add("pin-card-link-featured");
+      card.classList.add("pin-card-featured");
+    }
     image.src = resolveAssetUrl(item.image);
     image.alt = item.title;
     image.onerror = () => {
@@ -521,6 +525,18 @@ function renderPinGrid(container, items) {
     date.textContent = item.date || "Sem data";
     container.append(node);
   });
+}
+
+function applyFeaturedPins(items) {
+  return items.map((item, index) => ({
+    ...item,
+    featured: shouldFeaturePin(index, items.length),
+  }));
+}
+
+function shouldFeaturePin(index, total) {
+  if (total < 6) return index === 0;
+  return index === 0 || (index === 7 && total >= 12);
 }
 
 function buildBalancedFeed(pools, limit) {

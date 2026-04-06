@@ -515,6 +515,24 @@ button {
 
 .mosaic-grid-mixed {
   margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+  grid-auto-flow: dense;
+}
+
+.mosaic-grid-mixed .pin-card-link {
+  height: 100%;
+}
+
+.mosaic-grid-mixed .pin-card {
+  height: 100%;
+  margin-bottom: 0;
+}
+
+.mosaic-grid-mixed .pin-card-link-featured {
+  grid-column: span 2;
 }
 
 .mosaic-intro {
@@ -564,6 +582,11 @@ button {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(246, 243, 237, 0.98));
   border: 1px solid rgba(188, 188, 179, 0.24);
   transition: transform 180ms ease;
+}
+
+.pin-card-featured {
+  border-color: rgba(230, 0, 35, 0.22);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(249, 242, 238, 0.98));
 }
 
 .pin-card::before {
@@ -624,6 +647,11 @@ button {
   border-radius: 16px;
 }
 
+.pin-card-featured .pin-image {
+  aspect-ratio: 5 / 4.4;
+  border-radius: 20px;
+}
+
 .pin-image-wrap::after {
   content: "";
   position: absolute;
@@ -634,6 +662,10 @@ button {
 
 .pin-body {
   padding: 14px;
+}
+
+.pin-card-featured .pin-body {
+  padding: 18px 18px 20px;
 }
 
 .pin-kicker,
@@ -659,6 +691,18 @@ button {
   margin-bottom: 8px;
 }
 
+.pin-card-featured .pin-title {
+  font-size: 1.16rem;
+  line-height: 1.05;
+  margin-bottom: 10px;
+}
+
+.pin-card-featured .pin-kicker,
+.pin-card-featured .pin-meta,
+.pin-card-featured .pin-date {
+  font-size: 14px;
+}
+
 .pin-meta,
 .pin-date,
 .result-item-meta {
@@ -674,6 +718,12 @@ button {
   color: var(--base-color-brand);
   font-size: 12px;
   font-weight: 700;
+}
+
+.pin-card-featured .pin-cta {
+  background: rgba(230, 0, 35, 0.08);
+  margin-top: 14px;
+  padding: 6px 11px;
 }
 
 .result-group {
@@ -1269,6 +1319,14 @@ a.detail-list-item:focus-visible {
     columns: 2;
   }
 
+  .mosaic-grid-mixed {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mosaic-grid-mixed .pin-card-link-featured {
+    grid-column: span 2;
+  }
+
   .results-grid {
     columns: 2;
   }
@@ -1314,6 +1372,18 @@ a.detail-list-item:focus-visible {
 
   .mosaic-grid {
     columns: 1;
+  }
+
+  .mosaic-grid-mixed {
+    grid-template-columns: 1fr;
+  }
+
+  .mosaic-grid-mixed .pin-card-link-featured {
+    grid-column: auto;
+  }
+
+  .pin-card-featured .pin-image {
+    aspect-ratio: 5 / 4.8;
   }
 
   .hero h2 {
