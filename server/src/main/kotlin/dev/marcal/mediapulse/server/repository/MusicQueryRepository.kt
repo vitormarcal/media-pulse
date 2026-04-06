@@ -97,6 +97,17 @@ class MusicQueryRepository(
     ): RecentAlbumsPageResponse {
         val resolvedLimit = limit.coerceAtLeast(1)
         val (cursorLastPlayed, cursorAlbumId) = parseRecentAlbumCursor(cursor)
+        val whereClause =
+            if (cursorLastPlayed != null && cursorAlbumId != null) {
+                """
+                WHERE (
+                  last_played < :cursorLastPlayed
+                  OR (last_played = :cursorLastPlayed AND album_id < :cursorAlbumId)
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
         val rows =
             entityManager
                 .createNativeQuery(
@@ -126,18 +137,17 @@ class MusicQueryRepository(
                       last_played,
                       play_count
                     FROM recent_albums
-                    WHERE (
-                      :cursorLastPlayed IS NULL
-                      OR last_played < :cursorLastPlayed
-                      OR (last_played = :cursorLastPlayed AND album_id < :cursorAlbumId)
-                    )
+                    $whereClause
                     ORDER BY last_played DESC, album_id DESC
                     LIMIT :limitPlusOne
                     """.trimIndent(),
-                ).setParameter("cursorLastPlayed", cursorLastPlayed)
-                .setParameter("cursorAlbumId", cursorAlbumId)
-                .setParameter("limitPlusOne", resolvedLimit + 1)
-                .resultList
+                ).apply {
+                    if (cursorLastPlayed != null && cursorAlbumId != null) {
+                        setParameter("cursorLastPlayed", cursorLastPlayed)
+                        setParameter("cursorAlbumId", cursorAlbumId)
+                    }
+                    setParameter("limitPlusOne", resolvedLimit + 1)
+                }.resultList
                 .map { row ->
                     val fields = row as Array<*>
                     RecentAlbumResponse(

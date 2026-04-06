@@ -33,6 +33,17 @@ class MovieQueryRepository(
     ): MoviesRecentResponse {
         val resolvedLimit = limit.coerceAtLeast(1)
         val (cursorWatchedAt, cursorMovieId) = parseRecentCursor(cursor)
+        val whereClause =
+            if (cursorWatchedAt != null && cursorMovieId != null) {
+                """
+                WHERE (
+                  watched_at < :cursorWatchedAt
+                  OR (watched_at = :cursorWatchedAt AND movie_id < :cursorMovieId)
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
         val rows =
             entityManager
                 .createNativeQuery(
@@ -65,18 +76,17 @@ class MovieQueryRepository(
                       cover_url,
                       watched_at
                     FROM recent_movies
-                    WHERE (
-                      :cursorWatchedAt IS NULL
-                      OR watched_at < :cursorWatchedAt
-                      OR (watched_at = :cursorWatchedAt AND movie_id < :cursorMovieId)
-                    )
+                    $whereClause
                     ORDER BY watched_at DESC, movie_id DESC
                     LIMIT :limitPlusOne
                     """.trimIndent(),
-                ).setParameter("cursorWatchedAt", cursorWatchedAt)
-                .setParameter("cursorMovieId", cursorMovieId)
-                .setParameter("limitPlusOne", resolvedLimit + 1)
-                .resultList
+                ).apply {
+                    if (cursorWatchedAt != null && cursorMovieId != null) {
+                        setParameter("cursorWatchedAt", cursorWatchedAt)
+                        setParameter("cursorMovieId", cursorMovieId)
+                    }
+                    setParameter("limitPlusOne", resolvedLimit + 1)
+                }.resultList
                 .map { row ->
                     val fields = row as Array<*>
                     MovieCardDto(

@@ -36,6 +36,17 @@ class TvShowQueryRepository(
     ): ShowsRecentResponse {
         val resolvedLimit = limit.coerceAtLeast(1)
         val (cursorWatchedAt, cursorShowId) = parseRecentCursor(cursor)
+        val whereClause =
+            if (cursorWatchedAt != null && cursorShowId != null) {
+                """
+                WHERE (
+                  watched_at < :cursorWatchedAt
+                  OR (watched_at = :cursorWatchedAt AND show_id < :cursorShowId)
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
         val rows =
             entityManager
                 .createNativeQuery(
@@ -69,18 +80,17 @@ class TvShowQueryRepository(
                       cover_url,
                       watched_at
                     FROM recent_shows
-                    WHERE (
-                      :cursorWatchedAt IS NULL
-                      OR watched_at < :cursorWatchedAt
-                      OR (watched_at = :cursorWatchedAt AND show_id < :cursorShowId)
-                    )
+                    $whereClause
                     ORDER BY watched_at DESC, show_id DESC
                     LIMIT :limitPlusOne
                     """.trimIndent(),
-                ).setParameter("cursorWatchedAt", cursorWatchedAt)
-                .setParameter("cursorShowId", cursorShowId)
-                .setParameter("limitPlusOne", resolvedLimit + 1)
-                .resultList
+                ).apply {
+                    if (cursorWatchedAt != null && cursorShowId != null) {
+                        setParameter("cursorWatchedAt", cursorWatchedAt)
+                        setParameter("cursorShowId", cursorShowId)
+                    }
+                    setParameter("limitPlusOne", resolvedLimit + 1)
+                }.resultList
                 .map { row ->
                     val fields = row as Array<*>
                     ShowCardDto(
