@@ -1,16 +1,16 @@
 # Frontend
 
-Home estática em `./frontend` para consultar a API do Media Pulse.
+Frontend estático em `./frontend` para consumir a API do Media Pulse.
 
 ## Estrutura
 
 - `index.html`: shell da página
-- `styles.css`: tema visual inspirado no `DESIGN.md`
-- `app.js`: consumo das APIs `movies`, `music`, `books` e `shows`
+- `styles.css`: tema visual
+- `app.js`: consumo das APIs de livros, música, filmes e séries
 
-## Como abrir
+## Desenvolvimento local
 
-Sirva o diretório com um servidor estático simples, por exemplo:
+Você pode servir o diretório com qualquer servidor estático simples:
 
 ```bash
 cd frontend
@@ -22,5 +22,11 @@ Depois acesse `http://localhost:4173`.
 ## API base
 
 - Por padrão o frontend usa `http://localhost:8080`
-- O botão `API base` no topo permite trocar a origem da API e salva o valor em `localStorage`
-- O backend agora aceita por padrão `localhost:4173` e `localhost:5500` no CORS
+- O botão de configuração da API salva a origem escolhida em `localStorage`
+- Se o frontend rodar em origem separada, o backend precisa permitir essa origem em `media-pulse.allowed-origin`
+
+O `application.yml` versionado libera apenas `http://localhost:8080` por padrão. Para usar `4173`, `5500` ou outra porta no desenvolvimento, ajuste a configuração local do backend.
+
+## Empacotamento com o backend
+
+O build do backend fingerprinta os assets do frontend e os copia para recursos estáticos do Spring Boot. Isso permite servir o frontend pelo mesmo artefato do servidor quando necessário.

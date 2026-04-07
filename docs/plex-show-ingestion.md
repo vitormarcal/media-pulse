@@ -45,7 +45,7 @@ Show identity prefers canonical third-party ids when available.
 - `tv_episodes`
 - `tv_episode_watches`
 
-Migration: `V11__create_tv_schema.sql`, `V12__add_tv_show_images.sql`.
+Migrations: `V11__create_tv_schema.sql`, `V12__add_tv_show_images.sql`, `V13__add_tv_episode_season_title.sql`.
 
 ## Show images
 

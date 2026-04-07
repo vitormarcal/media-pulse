@@ -1,154 +1,53 @@
 # Music API
 
-A Music API fornece visão read-only da escuta recente, rankings, cobertura de biblioteca e páginas de detalhe para álbum, artista e faixa.
+A Music API expõe exploração read-only da biblioteca, escuta recente, rankings, cobertura e páginas de detalhe.
 
 ## Endpoints
 
 | Path | Params | Retorna |
 | --- | --- | --- |
 | `GET /api/music/summary` | `range=week|month|custom`, `start?`, `end?` | `MusicSummaryResponse` |
-| `GET /api/music/recent-albums` | `limit=20` | `RecentAlbumResponse[]` |
+| `GET /api/music/recent-albums` | `limit=20`, `cursor?` | `RecentAlbumsPageResponse` |
+| `GET /api/music/library/artists` | `limit=20`, `cursor?` | `ArtistLibraryPageResponse` |
+| `GET /api/music/library/albums` | `limit=20`, `cursor?` | `AlbumLibraryPageResponse` |
+| `GET /api/music/library/tracks` | `limit=20`, `cursor?` | `TrackLibraryPageResponse` |
 | `GET /api/music/search` | `q`, `limit=10` | `SearchResponse` |
-| `GET /api/music/albums/{albumId}` | `albumId` (path) | `AlbumPageResponse` |
-| `GET /api/music/artists/{artistId}` | `artistId` (path) | `ArtistPageResponse` |
-| `GET /api/music/tracks/{trackId}` | `trackId` (path) | `TrackPageResponse` |
-| `GET /api/music/tops/artists` | `start`, `end`, `limit=20` | `TopArtistResponse[]` |
-| `GET /api/music/tops/albums` | `start`, `end`, `limit=20` | `TopAlbumResponse[]` |
-| `GET /api/music/tops/tracks` | `start`, `end`, `limit=20` | `TopTrackResponse[]` |
-| `GET /api/music/tops/genres` | `start`, `end`, `limit=20` | `TopGenreResponse[]` |
-| `GET /api/music/coverage/artists` | `limit=50` | `ArtistCoverageResponse[]` |
-| `GET /api/music/coverage/albums` | `limit=50` | `AlbumCoverageResponse[]` |
-| `GET /api/music/albums/never-played` | `limit=50` | `TopAlbumResponse[]` |
-| `GET /api/music/genres/trending` | `start`, `end`, `compareStart`, `compareEnd`, `limit=20` | `TrendingGenreResponse[]` |
-| `GET /api/music/genres/recent` | `limit=50` | `RecentGenreResponse[]` |
-| `GET /api/music/genres/underplayed` | `start`, `end`, `minLibraryAlbums=3`, `limit=20` | `UnderplayedGenreResponse[]` |
-| `GET /api/music/genres/top-by-source` | `start`, `end`, `limit=10` | `TopGenreBySourceResponse[]` |
+| `GET /api/music/albums/{albumId}` | `albumId` | `AlbumPageResponse` |
+| `GET /api/music/artists/{artistId}` | `artistId` | `ArtistPageResponse` |
+| `GET /api/music/tracks/{trackId}` | `trackId` | `TrackPageResponse` |
+| `GET /api/music/tops/artists` | `start`, `end`, `limit=20` | lista de artistas |
+| `GET /api/music/tops/albums` | `start`, `end`, `limit=20` | lista de álbuns |
+| `GET /api/music/tops/tracks` | `start`, `end`, `limit=20` | lista de faixas |
+| `GET /api/music/tops/genres` | `start`, `end`, `limit=20` | lista de gêneros |
+| `GET /api/music/coverage/artists` | `limit=50` | cobertura por artista |
+| `GET /api/music/coverage/albums` | `limit=50` | cobertura por álbum |
+| `GET /api/music/albums/never-played` | `limit=50` | álbuns nunca tocados |
+| `GET /api/music/genres/trending` | `start`, `end`, `compareStart`, `compareEnd`, `limit=20` | gêneros em alta |
+| `GET /api/music/genres/recent` | `limit=50` | gêneros recentes |
+| `GET /api/music/genres/underplayed` | `start`, `end`, `minLibraryAlbums=3`, `limit=20` | gêneros subexplorados |
+| `GET /api/music/genres/top-by-source` | `start`, `end`, `limit=10` | top gêneros por source |
 
-## Contratos principais
+## Paginação
 
-### ArtistPageResponse
+Os endpoints abaixo usam paginação por cursor retornado no payload:
 
-```json
-{
-  "artistId": 12,
-  "artistName": "The Cure",
-  "totalPlays": 182,
-  "uniqueTracksPlayed": 47,
-  "uniqueAlbumsPlayed": 9,
-  "libraryAlbumsCount": 14,
-  "libraryTracksCount": 121,
-  "lastPlayed": "2026-04-05T22:11:00Z",
-  "albums": [
-    {
-      "albumId": 81,
-      "albumTitle": "Disintegration",
-      "year": 1989,
-      "coverUrl": "/covers/plex/music/albums/81/poster.jpg",
-      "totalTracks": 12,
-      "playedTracks": 10,
-      "playCount": 44,
-      "lastPlayed": "2026-04-05T22:11:00Z"
-    }
-  ],
-  "topTracks": [
-    {
-      "trackId": 301,
-      "title": "Pictures of You",
-      "albumId": 81,
-      "albumTitle": "Disintegration",
-      "playCount": 19,
-      "lastPlayed": "2026-04-05T22:11:00Z"
-    }
-  ],
-  "playsByDay": [
-    {
-      "day": "2026-04-01",
-      "plays": 7
-    }
-  ]
-}
-```
+- `GET /api/music/recent-albums`
+- `GET /api/music/library/artists`
+- `GET /api/music/library/albums`
+- `GET /api/music/library/tracks`
 
-### TrackPageResponse
+## Range temporal
 
-```json
-{
-  "trackId": 301,
-  "title": "Pictures of You",
-  "artistId": 12,
-  "artistName": "The Cure",
-  "totalPlays": 19,
-  "lastPlayed": "2026-04-05T22:11:00Z",
-  "albums": [
-    {
-      "albumId": 81,
-      "albumTitle": "Disintegration",
-      "year": 1989,
-      "coverUrl": "/covers/plex/music/albums/81/poster.jpg",
-      "discNumber": 1,
-      "trackNumber": 2,
-      "playCount": 19,
-      "lastPlayed": "2026-04-05T22:11:00Z"
-    }
-  ],
-  "recentPlays": [
-    {
-      "playedAt": "2026-04-05T22:11:00Z",
-      "source": "SPOTIFY",
-      "albumId": 81,
-      "albumTitle": "Disintegration"
-    }
-  ]
-}
-```
+`GET /api/music/summary` resolve o range assim:
 
-### AlbumPageResponse
+- `week`: últimos 7 dias a partir de `now`
+- `month`: últimos 30 dias a partir de `now`
+- `custom`: exige `start` e `end`
 
-```json
-{
-  "albumId": 81,
-  "albumTitle": "Disintegration",
-  "artistId": 12,
-  "artistName": "The Cure",
-  "year": 1989,
-  "coverUrl": "/covers/plex/music/albums/81/poster.jpg",
-  "lastPlayed": "2026-04-05T22:11:00Z",
-  "totalPlays": 44,
-  "tracks": [
-    {
-      "trackId": 301,
-      "title": "Pictures of You",
-      "discNumber": 1,
-      "trackNumber": 2,
-      "playCount": 19,
-      "lastPlayed": "2026-04-05T22:11:00Z"
-    }
-  ],
-  "playsByDay": [
-    {
-      "day": "2026-04-01",
-      "plays": 7
-    }
-  ]
-}
-```
+Os endpoints de ranking e análise por período exigem `start` e `end` explícitos em ISO-8601 UTC.
 
-## Exemplos
+## Observações de contrato
 
-### Artista
-
-```bash
-curl "{{host}}/api/music/artists/12"
-```
-
-### Faixa
-
-```bash
-curl "{{host}}/api/music/tracks/301"
-```
-
-### Álbum
-
-```bash
-curl "{{host}}/api/music/albums/81"
-```
+- páginas de artista, álbum e faixa retornam visão agregada do histórico, não eventos crus
+- endpoints de coverage comparam catálogo conhecido com o que já foi ouvido
+- `genres/recent` usa os últimos plays, não uma janela por data

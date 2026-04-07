@@ -1,99 +1,134 @@
-Before implementing any feature in MediaPulse, follow these mandatory rules.
+Antes de implementar ou alterar qualquer funcionalidade no Media Pulse, siga estas regras.
 
-Goal
-Keep the project simple, secure, consistent, and incremental. Do not add unnecessary complexity.
+# Objetivo
 
-Mandatory architecture
+Manter o projeto simples, incremental, seguro e coerente com a arquitetura já existente.
 
-1) Package structure (do not change):
-   dev.marcal.mailvault
-    - api        -> DTOs (request/response)
-    - controller -> REST Controllers
-    - integration -> Third party integrations
-    - service    -> business logic
-    - repository -> data access via JdbcTemplate
-    - model     -> internal models
-    - config     -> Spring configuration
-    - util       -> technical helpers
+# Arquitetura obrigatória
 
-2) Persistence
-- Flyway for all schema changes
-- No table created outside migrations
+## 1. Namespace e estrutura
 
-3) Code style
-- Idiomatic Kotlin
-- Data classes for DTOs and domain
-- No giant classes (>300 lines)
-- One service per clear responsibility
-- No heavy logic inside controllers
-- Controllers only orchestrate and return DTOs
+O backend vive em `dev.marcal.mediapulse.server`.
 
-4) Tests
-- Create at least:
-    - 1 context test (already exists)
-    - 1 repository test
-    - 1 main service test when relevant
-- Full coverage is not required, but critical parts must be tested
+Estrutura base esperada:
 
-5) README
-    Always update README when:
-- adding a migration
-- adding an endpoint
-- adding a new configuration
+- `api/` -> contratos HTTP (request/response DTOs)
+- `config/` -> configuração Spring e binding de properties
+- `controller/` -> endpoints HTTP
+- `integration/` -> clientes e integrações externas
+- `model/` -> modelos internos de domínio e integração
+- `repository/` -> acesso a dados
+- `repository/query/` e repositórios de leitura -> consultas read-only/relatórios
+- `repository/crud/` e repositórios específicos -> persistência e lookup operacional
+- `service/` -> regras de negócio, pipelines e orquestração
+- `util/` -> helpers técnicos
 
-6) Simplicity rule
-    If there are two solutions:
-- choose the simplest one that solves the problem
-- avoid additional frameworks
-- avoid premature abstractions
+Não introduza uma estrutura paralela sem necessidade clara.
 
-7) Incremental rule
-    Before implementing any large feature:
-- Write a short plan (checklist)
-- Then implement
+## 2. Persistência
 
-8) Forbidden
-- Add features outside the scope defined in subsequent prompts
+- Toda mudança de schema passa por Flyway em `server/src/main/resources/db/migration`
+- Não criar tabelas fora de migrations
+- Não depender de `ddl-auto` para evolução de schema
 
-9) General quality criteria
-    The code must:
-- Compile
-- Start with ./server/gradlew bootRun
-- Not generate critical warnings
-- Have clear separation of responsibilities
+## 3. Estilo de código
 
-10) Mandatory finalization step
-- After completing any code change, always run `./gradlew ktlintFormat`
-- If this step reveals issues, fix them automatically before finishing the task
-- Only finish when formatting is applied and related issues are resolved
+- Kotlin idiomático
+- DTOs e modelos simples com `data class` quando fizer sentido
+- Controllers finos
+- Regra de negócio em `service`
+- Repositórios responsáveis por acesso a dados, não por fluxo de negócio
+- Evitar classes gigantes e abstrações prematuras
 
-11) Documentation-first when appropriate
-- Before implementing or debugging, check existing project documentation when relevant (README, docs/, migration notes, runbooks)
-- Prefer reusing documented decisions/patterns over creating parallel approaches
-- If docs and code diverge, align code with the approved direction or update docs explicitly
+## 4. Testes
 
-12) Knowledge retention (mandatory)
-- When discovering non-obvious behavior, incident learnings, provider quirks, or operational decisions that can be lost, create or update a document under `docs/`
-- Write concise, reusable guidance (problem, symptoms, root cause or hypothesis, decision, and validation path)
-- If this new knowledge affects usage/configuration/operations, also add a reference in README
+Quando a mudança altera comportamento relevante, adicionar ou atualizar testes proporcionais ao risco:
 
-Now confirm understanding of these rules and wait for the next feature prompt.
+- teste de serviço para regra de negócio importante
+- teste de repositório para query/persistência crítica
+- teste de integração quando o contrato HTTP ou fluxo entre camadas for sensível
 
-Additional mandatory rule for any new MediaPulse feature:
+Cobertura total não é requisito, mas partes críticas não devem ficar sem validação.
 
-Before writing code, you MUST:
+## 5. Documentação
 
-1) Write a short checklist plan (maximum 12 items)
-2) Briefly explain which files will be created/changed
-3) Explain which migrations will be needed (if any)
-4) Confirm acceptance criteria
+Atualize a documentação sempre que houver mudança em:
 
-Only after presenting the plan, wait for confirmation before implementing.
+- migrations
+- endpoints HTTP
+- variáveis/configurações
+- comportamento operacional relevante
+- decisões não óbvias descobertas durante debugging ou integração
 
-Goal:
-- Avoid rushed implementation
-- Ensure coherent architecture
-- Reduce rework
-- Keep incremental delivery
+Arquivos a revisar conforme o caso:
 
-Never skip this step.
+- `README.md`
+- `docs/*.md`
+- `docs/openapi.yaml` quando o contrato publicado mudar
+- `frontend/README.md` se o fluxo de UI/local dev mudar
+
+## 6. Regra da simplicidade
+
+Se houver duas soluções viáveis:
+
+- escolha a mais simples
+- evite frameworks extras
+- evite abstrações antes da hora
+
+## 7. Regra incremental
+
+Para mudanças maiores:
+
+- escreva um checklist curto
+- explicite arquivos principais a alterar
+- cite migrations necessárias, se houver
+- confirme o critério de aceite antes de implementar
+
+## 8. Escopo
+
+- Não adicionar funcionalidades fora do escopo pedido
+- Não corrigir incidentalmente partes não relacionadas sem necessidade
+
+## 9. Critérios mínimos de qualidade
+
+O resultado final deve:
+
+- compilar
+- subir com `./server/gradlew bootRun` quando a configuração necessária estiver presente
+- preservar separação clara de responsabilidades
+- não deixar documentação contradizendo o comportamento real do código
+
+## 10. Finalização obrigatória
+
+Após mudanças de código no backend:
+
+- execute `./server/gradlew ktlintFormat`
+- corrija problemas revelados por formatação/checagens relacionadas
+- só finalize quando o estado estiver consistente
+
+Se a tarefa for apenas documentação e nenhum arquivo Kotlin for alterado, não é necessário rodar `ktlintFormat`.
+
+## 11. Documentation-first
+
+- Antes de implementar ou depurar, consulte `README.md`, `docs/` e notas de migração quando forem relevantes
+- Reutilize padrões já documentados em vez de criar caminhos paralelos
+- Se docs e código divergirem, alinhe explicitamente um dos lados
+
+## 12. Higiene operacional
+
+- Não documente segredos reais em arquivos versionados
+- Prefira variáveis de ambiente e exemplos neutros
+- Ao registrar comportamento de provedores externos, documente sintomas, hipótese/causa, decisão tomada e como validar
+- Nunca ler `server/src/main/resources/application-local.yml` para análise, documentação ou implementação
+- Trate `application-local.yml` como arquivo local do usuário para testes com dados reais, fora do escopo normal de inspeção
+
+# Regra para novas features
+
+Antes de escrever código em uma feature nova ou refactor amplo, você deve:
+
+1. escrever um checklist curto com no máximo 12 itens
+2. dizer quais arquivos principais serão criados/alterados
+3. informar se haverá migration
+4. confirmar o critério de aceite
+
+Só então implementar.
