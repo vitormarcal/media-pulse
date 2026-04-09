@@ -109,7 +109,10 @@ class HardcoverUserBookProcessor(
         val bookFingerprint = FingerprintUtil.bookFp(bookTitle)
         val bookReleaseDate = parseLocalDate(book?.releaseDate) ?: parseLocalDate(edition?.releaseDate)
         val bookDescription = book?.description
-        val bookCoverUrl = edition?.image?.url
+        val resolvedCoverUrl =
+            edition?.image?.url
+                ?: edition?.images?.firstOrNull()?.url
+                ?: book?.cachedImage?.url
         val rating = item.rating
         val reviewRaw = if (item.hasReview == true) item.reviewRaw else null
         val reviewedAt = parseInstant(item.reviewedAt)
@@ -203,10 +206,10 @@ class HardcoverUserBookProcessor(
             return CoverInfo(
                 bookId = bookId,
                 bookTitle = bookTitle,
-                bookCoverUrl = bookCoverUrl,
+                bookCoverUrl = resolvedCoverUrl,
                 editionId = editionId,
                 editionTitle = edition?.title,
-                editionCoverUrl = edition?.image?.url,
+                editionCoverUrl = resolvedCoverUrl,
             )
         }
 
@@ -245,10 +248,10 @@ class HardcoverUserBookProcessor(
         return CoverInfo(
             bookId = bookId,
             bookTitle = bookTitle,
-            bookCoverUrl = bookCoverUrl,
+            bookCoverUrl = resolvedCoverUrl,
             editionId = editionId,
             editionTitle = edition?.title,
-            editionCoverUrl = edition?.image?.url,
+            editionCoverUrl = resolvedCoverUrl,
         )
     }
 

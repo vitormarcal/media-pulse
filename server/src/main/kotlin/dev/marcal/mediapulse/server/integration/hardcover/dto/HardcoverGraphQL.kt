@@ -84,6 +84,7 @@ data class HardcoverEdition(
     val language: HardcoverLanguage? = null,
     val publisher: HardcoverPublisher? = null,
     val image: HardcoverImage? = null,
+    val images: List<HardcoverImage>? = null,
     val contributions: List<HardcoverContribution>? = null,
 )
 
@@ -94,6 +95,8 @@ data class HardcoverBook(
     val releaseDate: String? = null,
     val pages: Int? = null,
     val description: String? = null,
+    @JsonProperty("cached_image")
+    val cachedImage: HardcoverImage? = null,
 )
 
 data class HardcoverLanguage(
