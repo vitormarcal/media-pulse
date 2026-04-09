@@ -112,7 +112,6 @@ class HardcoverUserBookProcessor(
         val resolvedCoverUrl =
             edition?.image?.url
                 ?: edition?.images?.firstOrNull()?.url
-                ?: book?.cachedImage?.url
         val rating = item.rating
         val reviewRaw = if (item.hasReview == true) item.reviewRaw else null
         val reviewedAt = parseInstant(item.reviewedAt)

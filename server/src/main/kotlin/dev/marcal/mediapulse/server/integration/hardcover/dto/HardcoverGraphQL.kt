@@ -95,8 +95,6 @@ data class HardcoverBook(
     val releaseDate: String? = null,
     val pages: Int? = null,
     val description: String? = null,
-    @JsonProperty("cached_image")
-    val cachedImage: HardcoverImage? = null,
 )
 
 data class HardcoverLanguage(

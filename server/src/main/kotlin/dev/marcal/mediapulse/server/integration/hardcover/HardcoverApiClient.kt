@@ -63,7 +63,6 @@ class HardcoverApiClient(
                   release_date
                   pages
                   description
-                  cached_image { url }
                 }
               }
             }
