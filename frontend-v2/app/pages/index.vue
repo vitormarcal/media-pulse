@@ -25,6 +25,7 @@
       <EditorialRail
         v-for="section in data.sections"
         :key="section.id"
+        :id="section.id"
         :eyebrow="section.eyebrow"
         :title="section.title"
         :description="section.description"

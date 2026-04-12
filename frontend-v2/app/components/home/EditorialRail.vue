@@ -1,5 +1,5 @@
 <template>
-  <section class="rail">
+  <section :id="id" class="rail">
     <SectionHeading
       :eyebrow="eyebrow"
       :title="title"
@@ -24,6 +24,7 @@ import MediaPosterCard from '~/components/home/MediaPosterCard.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 
 defineProps<{
+  id?: string
   eyebrow: string
   title: string
   description: string
