@@ -63,7 +63,7 @@ function bookToShelfItem(read: ReadCardDto): EditorialShelfItem {
     title: read.book.title,
     subtitle: createBookSubtitle(read),
     imageUrl: read.book.coverUrl,
-    href: null,
+    href: `/books/${read.book.slug}`,
     meta: createBookMeta(read),
     detail: timestamp ? formatRelativeDate(timestamp) : 'Sem data registrada',
     timestamp,
