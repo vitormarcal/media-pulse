@@ -1,24 +1,27 @@
 <template>
-  <article class="strip-card" :class="`variant-${variant}`">
-    <div class="thumb">
-      <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy">
-      <div v-else class="thumb-fallback">{{ item.title.slice(0, 1) }}</div>
-    </div>
+  <component :is="wrapperTag" :to="item.href || undefined" class="strip-link">
+    <article class="strip-card" :class="`variant-${variant}`">
+      <div class="thumb">
+        <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy">
+        <div v-else class="thumb-fallback">{{ item.title.slice(0, 1) }}</div>
+      </div>
 
-    <div class="content">
-      <p class="eyebrow">{{ label }}</p>
-      <h3>{{ item.title }}</h3>
-      <p class="subtitle">{{ item.subtitle }}</p>
-    </div>
+      <div class="content">
+        <p class="eyebrow">{{ label }}</p>
+        <h3>{{ item.title }}</h3>
+        <p class="subtitle">{{ item.subtitle }}</p>
+      </div>
 
-    <div class="aside">
-      <span>{{ item.meta }}</span>
-      <strong>{{ item.detail }}</strong>
-    </div>
-  </article>
+      <div class="aside">
+        <span>{{ item.meta }}</span>
+        <strong>{{ item.detail }}</strong>
+      </div>
+    </article>
+  </component>
 </template>
 
 <script setup lang="ts">
+import { NuxtLink } from '#components'
 import type { EditorialShelfItem } from '~/types/home'
 
 const props = defineProps<{
@@ -28,6 +31,7 @@ const props = defineProps<{
 
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedImageUrl = computed(() => resolveMediaUrl(props.item.imageUrl))
+const wrapperTag = computed(() => props.item.href ? NuxtLink : 'div')
 
 const label = computed(() => {
   switch (props.item.type) {
@@ -44,6 +48,10 @@ const label = computed(() => {
 </script>
 
 <style scoped>
+.strip-link {
+  display: block;
+}
+
 .strip-card {
   display: grid;
   grid-template-columns: 84px minmax(0, 1fr) auto;

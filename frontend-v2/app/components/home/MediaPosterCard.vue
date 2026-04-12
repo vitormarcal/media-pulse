@@ -1,23 +1,26 @@
 <template>
-  <article class="poster-card" :class="[`type-${item.type}`, `variant-${variant}`]">
-    <div class="poster">
-      <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy">
-      <div v-else class="poster-fallback">{{ item.title.slice(0, 1) }}</div>
-    </div>
-
-    <div class="body">
-      <p class="kicker">{{ label }}</p>
-      <h3>{{ item.title }}</h3>
-      <p class="subtitle">{{ item.subtitle }}</p>
-      <div class="meta-row">
-        <span>{{ item.meta }}</span>
-        <span>{{ item.detail }}</span>
+  <component :is="wrapperTag" :to="item.href || undefined" class="poster-link">
+    <article class="poster-card" :class="[`type-${item.type}`, `variant-${variant}`]">
+      <div class="poster">
+        <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy">
+        <div v-else class="poster-fallback">{{ item.title.slice(0, 1) }}</div>
       </div>
-    </div>
-  </article>
+
+      <div class="body">
+        <p class="kicker">{{ label }}</p>
+        <h3>{{ item.title }}</h3>
+        <p class="subtitle">{{ item.subtitle }}</p>
+        <div class="meta-row">
+          <span>{{ item.meta }}</span>
+          <span>{{ item.detail }}</span>
+        </div>
+      </div>
+    </article>
+  </component>
 </template>
 
 <script setup lang="ts">
+import { NuxtLink } from '#components'
 import type { EditorialShelfItem } from '~/types/home'
 
 const props = defineProps<{
@@ -27,6 +30,7 @@ const props = defineProps<{
 
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedImageUrl = computed(() => resolveMediaUrl(props.item.imageUrl))
+const wrapperTag = computed(() => props.item.href ? NuxtLink : 'div')
 
 const label = computed(() => {
   switch (props.item.type) {
@@ -43,6 +47,10 @@ const label = computed(() => {
 </script>
 
 <style scoped>
+.poster-link {
+  display: block;
+}
+
 .poster-card {
   display: grid;
   gap: 13px;

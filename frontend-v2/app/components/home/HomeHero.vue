@@ -7,37 +7,48 @@
     </div>
 
     <div class="hero-grid">
-      <article v-if="lead" class="lead-card">
-        <div class="lead-image">
-          <img v-if="resolvedLeadImageUrl" :src="resolvedLeadImageUrl" :alt="lead.title">
-          <div v-else class="lead-fallback">{{ lead.title.slice(0, 1) }}</div>
-        </div>
-        <div class="lead-body">
-          <p class="lead-eyebrow">{{ lead.eyebrow }}</p>
-          <h3>{{ lead.title }}</h3>
-          <p class="lead-subtitle">{{ lead.subtitle }}</p>
-          <p class="lead-meta">{{ lead.meta }}</p>
-        </div>
-      </article>
-
-      <div class="supporting-list">
-        <article v-for="item in supporting" :key="item.id" class="supporting-card">
-          <div class="supporting-image">
-            <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title">
-            <div v-else class="supporting-fallback">{{ item.title.slice(0, 1) }}</div>
+      <component :is="leadTag" :to="lead?.href || undefined" class="lead-link">
+        <article v-if="lead" class="lead-card">
+          <div class="lead-image">
+            <img v-if="resolvedLeadImageUrl" :src="resolvedLeadImageUrl" :alt="lead.title">
+            <div v-else class="lead-fallback">{{ lead.title.slice(0, 1) }}</div>
           </div>
-          <div class="supporting-body">
-            <p>{{ item.eyebrow }}</p>
-            <h3>{{ item.title }}</h3>
-            <span>{{ item.meta }}</span>
+          <div class="lead-body">
+            <p class="lead-eyebrow">{{ lead.eyebrow }}</p>
+            <h3>{{ lead.title }}</h3>
+            <p class="lead-subtitle">{{ lead.subtitle }}</p>
+            <p class="lead-meta">{{ lead.meta }}</p>
           </div>
         </article>
+      </component>
+
+      <div class="supporting-list">
+        <component
+          :is="item.href ? resolveComponent('NuxtLink') : 'div'"
+          v-for="item in supporting"
+          :key="item.id"
+          :to="item.href || undefined"
+          class="supporting-link"
+        >
+          <article class="supporting-card">
+            <div class="supporting-image">
+              <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title">
+              <div v-else class="supporting-fallback">{{ item.title.slice(0, 1) }}</div>
+            </div>
+            <div class="supporting-body">
+              <p>{{ item.eyebrow }}</p>
+              <h3>{{ item.title }}</h3>
+              <span>{{ item.meta }}</span>
+            </div>
+          </article>
+        </component>
       </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
+import { NuxtLink } from '#components'
 import type { EditorialHighlight } from '~/types/home'
 
 const props = defineProps<{
@@ -49,9 +60,15 @@ const props = defineProps<{
 
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedLeadImageUrl = computed(() => resolveMediaUrl(props.lead?.imageUrl))
+const leadTag = computed(() => props.lead?.href ? NuxtLink : 'div')
 </script>
 
 <style scoped>
+.lead-link,
+.supporting-link {
+  display: block;
+}
+
 .hero {
   display: grid;
   gap: clamp(22px, 3vw, 34px);
