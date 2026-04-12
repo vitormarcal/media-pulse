@@ -15,11 +15,10 @@
           <span class="aside">{{ item.aside }}</span>
         </div>
 
-        <p class="progress-label">{{ item.progressLabel }}</p>
-        <div class="progress-bar">
-          <span class="progress-fill" :style="{ width: `${item.progressValue}%` }" />
+        <div class="meta-row">
+          <p class="progress-label">{{ item.progressLabel }}</p>
+          <p class="activity">{{ item.activityLabel }}</p>
         </div>
-        <p class="activity">{{ item.activityLabel }}</p>
       </div>
     </article>
   </component>
@@ -77,7 +76,7 @@ const wrapperTag = computed(() => props.item.href ? NuxtLink : 'div')
 
 .body {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .title-row {
@@ -95,9 +94,9 @@ h3,
 }
 
 h3 {
-  font-size: 1.12rem;
+  font-size: 1.18rem;
   line-height: 1.02;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
 }
 
 .subtitle,
@@ -111,35 +110,33 @@ h3 {
 
 .aside {
   padding: 6px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--base-color-surface-warm) 78%, white);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--base-color-surface-wash) 82%, white);
   font-size: 0.76rem;
+}
+
+.meta-row {
+  display: grid;
+  gap: 4px;
+  padding-top: 2px;
 }
 
 .progress-label,
 .activity {
+  margin: 0;
   font-size: 0.82rem;
+}
+
+.progress-label {
+  color: var(--base-color-text-primary);
+  font-weight: 700;
 }
 
 .activity {
   color: var(--base-color-text-muted);
 }
 
-.progress-bar {
-  height: 10px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--base-color-surface-warm) 74%, white);
-}
-
-.progress-fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #e60023, #f15f6e);
-}
-
-.library-card.dormant .progress-fill {
-  background: linear-gradient(90deg, #c8c8c1, #b9b8af);
+.library-card.dormant .aside {
+  background: color-mix(in srgb, var(--base-color-surface-warm) 88%, white);
 }
 </style>

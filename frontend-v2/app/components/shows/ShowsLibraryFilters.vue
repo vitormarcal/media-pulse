@@ -70,6 +70,11 @@ function submitSearch() {
 .library-filters {
   display: grid;
   gap: 18px;
+  padding: 20px;
+  border-radius: 32px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 243, 238, 0.98));
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 48%, white);
 }
 
 .search-form {
@@ -80,12 +85,14 @@ function submitSearch() {
 .search-label {
   color: var(--base-color-text-secondary);
   font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .search-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
+  align-items: center;
 }
 
 .search-input {
@@ -101,8 +108,8 @@ function submitSearch() {
   padding: 8px 16px;
   border: 0;
   border-radius: 16px;
-  background: var(--base-color-surface-warm);
-  color: var(--base-color-text-primary);
+  background: var(--base-color-brand-red);
+  color: #000;
   cursor: pointer;
 }
 
@@ -128,7 +135,8 @@ function submitSearch() {
 }
 
 .year-chip.active {
-  background: color-mix(in srgb, var(--base-color-brand-red) 14%, white);
+  background: color-mix(in srgb, var(--base-color-brand-red) 16%, white);
+  color: var(--base-color-text-primary);
 }
 
 @media (max-width: 720px) {

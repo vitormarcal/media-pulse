@@ -247,6 +247,23 @@ function buildStatsMetrics(stats: ShowsStatsResponse): ShowLibraryMetric[] {
   ]
 }
 
+function buildSpotlightFromCard(
+  card: ShowLibraryCardModel | undefined,
+  fallbackTitle: string,
+  fallbackNote: string,
+) {
+  if (!card) return null
+
+  return {
+    title: card.title,
+    subtitle: card.subtitle,
+    imageUrl: card.imageUrl,
+    href: card.href,
+    meta: card.progressLabel,
+    note: card.activityLabel || fallbackNote,
+  }
+}
+
 function buildContextMetrics(payload: {
   summary: ShowsSummaryResponse
   currentShows: CurrentlyWatchingShowDto[]
@@ -379,14 +396,22 @@ export function buildShowLibraryPageData(payload: {
     }))
 
   if (payload.selectedYear && payload.yearResults) {
+    const watchedItems = payload.yearResults.watched.map(buildWatchedYearCardModel)
+    const unwatchedItems = payload.yearResults.unwatched.map(buildUnwatchedYearCardModel)
+
     return {
       hero: {
         title: `A biblioteca de séries em ${payload.selectedYear}`,
         intro: 'Um corte do arquivo completo para ver o que realmente passou por esse ano e o que ficou apenas no catálogo.',
-        primaryLink: '/shows',
-        primaryLabel: 'Voltar ao recorte',
-        secondaryLink: '/shows/library',
-        secondaryLabel: 'Ver biblioteca inteira',
+        backLink: '/shows',
+        backLabel: 'Voltar ao recorte',
+        accentLink: '/shows/library',
+        accentLabel: 'Ver biblioteca inteira',
+        spotlight: buildSpotlightFromCard(
+          watchedItems[0] ?? unwatchedItems[0],
+          `A biblioteca de séries em ${payload.selectedYear}`,
+          'O primeiro ponto de entrada para esse recorte anual.',
+        ),
       },
       filters: {
         query: payload.query,
@@ -432,7 +457,7 @@ export function buildShowLibraryPageData(payload: {
           title: 'As que realmente passaram pelo ano',
           description: 'O miolo do recorte anual, em vez de uma lista seca.',
           summary: 'Aqui vale mais a lembrança de presença do que a ideia de completude.',
-          items: payload.yearResults.watched.map(buildWatchedYearCardModel),
+          items: watchedItems,
           emptyMessage: 'Nenhuma série foi marcada nesse ano.',
         },
         {
@@ -441,7 +466,7 @@ export function buildShowLibraryPageData(payload: {
           title: 'O que ficou de fora nesse período',
           description: 'Ainda parte da biblioteca, mas sem ter entrado no ritmo do ano.',
           summary: 'Esse bloco serve para situar ausência, não para cobrar retomada.',
-          items: payload.yearResults.unwatched.map(buildUnwatchedYearCardModel),
+          items: unwatchedItems,
           emptyMessage: 'Tudo entrou no recorte desse ano.',
         },
       ],
@@ -451,14 +476,21 @@ export function buildShowLibraryPageData(payload: {
   }
 
   if (payload.query && payload.searchResults) {
+    const searchItems = payload.searchResults.shows.map(buildSearchCardModel)
+
     return {
       hero: {
         title: 'A biblioteca de séries, puxada pela busca',
         intro: 'Quando você já sabe o que está tentando reencontrar, a página vira arquivo de consulta sem perder a mesma superfície editorial.',
-        primaryLink: '/shows',
-        primaryLabel: 'Voltar ao recorte',
-        secondaryLink: '/shows/library',
-        secondaryLabel: 'Limpar busca',
+        backLink: '/shows',
+        backLabel: 'Voltar ao recorte',
+        accentLink: '/shows/library',
+        accentLabel: 'Limpar busca',
+        spotlight: buildSpotlightFromCard(
+          searchItems[0],
+          'A biblioteca de séries, puxada pela busca',
+          'O primeiro resultado vira a porta de entrada visual deste recorte.',
+        ),
       },
       filters: {
         query: payload.query,
@@ -479,7 +511,7 @@ export function buildShowLibraryPageData(payload: {
           title: 'O que respondeu à busca',
           description: 'Uma prateleira curta para ir direto ao que interessa.',
           summary: 'Busca primeiro, contexto depois.',
-          items: payload.searchResults.shows.map(buildSearchCardModel),
+          items: searchItems,
           emptyMessage: 'Nada apareceu para essa busca.',
         },
       ],
@@ -496,10 +528,15 @@ export function buildShowLibraryPageData(payload: {
     hero: {
       title: 'A biblioteca inteira de séries',
       intro: 'O arquivo completo para quando a memória curta já não basta e você quer percorrer o acervo todo com mais calma.',
-      primaryLink: '/shows',
-      primaryLabel: 'Voltar ao recorte',
-      secondaryLink: '/shows/library?year=' + (years[0]?.year ?? new Date().getFullYear()),
-      secondaryLabel: 'Abrir um recorte por ano',
+      backLink: '/shows',
+      backLabel: 'Voltar ao recorte',
+      accentLink: '/shows/library?year=' + (years[0]?.year ?? new Date().getFullYear()),
+      accentLabel: 'Abrir um recorte por ano',
+      spotlight: buildSpotlightFromCard(
+        activeItems[0] ?? dormantItems[0],
+        'A biblioteca inteira de séries',
+        'Um ponto de entrada imagético para atravessar o arquivo.',
+      ),
     },
     filters: {
       query: payload.query,

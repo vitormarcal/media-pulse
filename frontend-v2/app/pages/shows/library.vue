@@ -13,10 +13,11 @@
       <ShowsLibraryHero
         :title="data.hero.title"
         :intro="data.hero.intro"
-        :primary-link="data.hero.primaryLink"
-        :primary-label="data.hero.primaryLabel"
-        :secondary-link="data.hero.secondaryLink"
-        :secondary-label="data.hero.secondaryLabel"
+        :back-link="data.hero.backLink"
+        :back-label="data.hero.backLabel"
+        :accent-link="data.hero.accentLink"
+        :accent-label="data.hero.accentLabel"
+        :spotlight="data.hero.spotlight"
       />
 
       <ShowsLibraryFilters

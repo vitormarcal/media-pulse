@@ -219,10 +219,18 @@ export interface ShowLibraryPageData {
   hero: {
     title: string
     intro: string
-    primaryLink: string
-    primaryLabel: string
-    secondaryLink: string
-    secondaryLabel: string
+    backLink: string
+    backLabel: string
+    accentLink: string
+    accentLabel: string
+    spotlight: {
+      title: string
+      subtitle: string
+      imageUrl: string | null
+      href: string | null
+      meta: string
+      note: string
+    } | null
   }
   filters: {
     query: string
