@@ -122,7 +122,7 @@ function recentAlbumToShelfItem(album: RecentAlbumsPageResponse['items'][number]
     title: album.albumTitle,
     subtitle: album.artistName,
     imageUrl: album.coverUrl,
-    href: null,
+    href: `/music/albums/${album.albumId}`,
     meta: `${formatShortNumber(album.playCount)} plays`,
     detail: formatRelativeDate(album.lastPlayed),
     timestamp: album.lastPlayed,
