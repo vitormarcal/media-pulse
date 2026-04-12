@@ -1,7 +1,7 @@
 <template>
   <section class="show-hero">
-    <NuxtLink class="back-link" to="/">
-      Voltar para a capa
+    <NuxtLink class="back-link" to="/shows">
+      Voltar para séries
     </NuxtLink>
 
     <div class="hero-grid">

@@ -1,4 +1,4 @@
-import type { ShowProgressDto } from '~/types/home'
+import type { EditorialHighlight, EditorialShelfItem, ShowProgressDto } from '~/types/home'
 
 export interface ShowImageDto {
   id: number
@@ -84,4 +84,30 @@ export interface ShowPageData {
   heroMeta: string[]
   seasons: ShowSeasonCardModel[]
   recentWatches: ShowWatchEntryModel[]
+}
+
+export interface ShowCollectionContextMetric {
+  id: string
+  label: string
+  value: string
+  note: string
+}
+
+export interface ShowCollectionData {
+  generatedAt: string
+  hero: {
+    title: string
+    intro: string
+    lead: EditorialHighlight | null
+    supporting: EditorialHighlight[]
+  }
+  inProgress: EditorialShelfItem[]
+  recentMoments: EditorialShelfItem[]
+  context: {
+    eyebrow: string
+    title: string
+    description: string
+    summary: string
+    metrics: ShowCollectionContextMetric[]
+  }
 }
