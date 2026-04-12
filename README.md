@@ -12,7 +12,7 @@ O backend agrega dados de provedores externos, persiste uma visão canônica loc
 ## Estrutura do repositório
 
 - `server/`: backend Kotlin + Spring Boot
-- `frontend/`: frontend estático
+- `frontend-v2/`: frontend Nuxt 4
 - `docs/`: contratos HTTP e notas operacionais
 - `http-client-env/`: exemplos de ambiente para clientes HTTP locais
 
@@ -24,7 +24,7 @@ O backend agrega dados de provedores externos, persiste uma visão canônica loc
 - Migrations: Flyway em `server/src/main/resources/db/migration`
 - Start local: `./server/gradlew bootRun`
 
-O build do backend fingerprinta os assets de `frontend/` e os publica em `server/build/generated/frontend-static`, que depois são empacotados como recursos estáticos do Spring Boot.
+O build do backend fingerprinta os assets de `frontend-v2/` e os publica em `server/build/generated/frontend-static`, que depois são empacotados como recursos estáticos do Spring Boot.
 
 ## Migrations atuais
 
@@ -195,9 +195,9 @@ O build do backend fingerprinta os assets de `frontend/` e os publica em `server
 
 ## Frontend
 
-O frontend em `frontend/` pode ser servido separadamente para desenvolvimento ou entregue pelo próprio backend quando empacotado junto do build do Spring Boot.
+O frontend em `frontend-v2/` pode ser servido separadamente para desenvolvimento ou entregue pelo próprio backend quando empacotado junto do build do Spring Boot.
 
-Se o frontend rodar em outra origem, ajuste `media-pulse.allowed-origin` para incluir essa origem no CORS. O `application.yml` versionado não libera `localhost:4173` ou `localhost:5500` por padrão.
+Para desenvolvimento local do Nuxt, use `NUXT_PUBLIC_API_BASE` se o backend estiver em outra origem. Se o frontend rodar em outra origem, ajuste `media-pulse.allowed-origin` para incluir essa origem no CORS.
 
 ## Documentação detalhada
 

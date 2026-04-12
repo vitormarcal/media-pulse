@@ -156,7 +156,7 @@ abstract class FingerprintFrontendTask : DefaultTask() {
 }
 
 val fingerprintFrontendStatic by tasks.registering(FingerprintFrontendTask::class) {
-    inputDir.set(project.layout.projectDirectory.dir("../frontend"))
+    inputDir.set(project.layout.projectDirectory.dir("../frontend-v2"))
     outputDir.set(layout.buildDirectory.dir("generated/frontend-static"))
 }
 
