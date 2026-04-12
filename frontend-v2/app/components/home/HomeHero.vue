@@ -9,7 +9,7 @@
     <div class="hero-grid">
       <article v-if="lead" class="lead-card">
         <div class="lead-image">
-          <img v-if="lead.imageUrl" :src="lead.imageUrl" :alt="lead.title">
+          <img v-if="resolvedLeadImageUrl" :src="resolvedLeadImageUrl" :alt="lead.title">
           <div v-else class="lead-fallback">{{ lead.title.slice(0, 1) }}</div>
         </div>
         <div class="lead-body">
@@ -34,12 +34,15 @@
 <script setup lang="ts">
 import type { EditorialHighlight } from '~/types/home'
 
-defineProps<{
+const props = defineProps<{
   title: string
   intro: string
   lead: EditorialHighlight | null
   supporting: EditorialHighlight[]
 }>()
+
+const { resolveMediaUrl } = useMediaUrl()
+const resolvedLeadImageUrl = computed(() => resolveMediaUrl(props.lead?.imageUrl))
 </script>
 
 <style scoped>

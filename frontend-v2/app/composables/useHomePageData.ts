@@ -36,8 +36,8 @@ export async function fetchHomePageData(): Promise<HomePageData> {
     $fetch<CurrentlyWatchingShowDto[]>('/api/shows/currently-watching', { baseURL: apiBase, query: { limit: 6, activeWithinDays: 90 } }),
     $fetch<ShowsRecentResponse>('/api/shows/recent', { baseURL: apiBase, query: { limit: 6 } }),
     $fetch<BooksSummaryResponse>('/api/books/summary', { baseURL: apiBase, query: { range: 'month' } }),
-    $fetch<BooksListResponse>('/api/books/list', { baseURL: apiBase, query: { status: 'READING', limit: 4 } }),
-    $fetch<BooksListResponse>('/api/books/list', { baseURL: apiBase, query: { status: 'FINISHED', limit: 4 } }),
+    $fetch<BooksListResponse>('/api/books/list', { baseURL: apiBase, query: { status: 'CURRENTLY_READING', limit: 4 } }),
+    $fetch<BooksListResponse>('/api/books/list', { baseURL: apiBase, query: { status: 'READ', limit: 4 } }),
   ])
 
   return buildHomePageData({

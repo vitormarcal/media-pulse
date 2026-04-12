@@ -1,7 +1,7 @@
 <template>
   <article class="strip-card">
     <div class="thumb">
-      <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.title" loading="lazy">
+      <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy">
       <div v-else class="thumb-fallback">{{ item.title.slice(0, 1) }}</div>
     </div>
 
@@ -24,6 +24,9 @@ import type { EditorialShelfItem } from '~/types/home'
 const props = defineProps<{
   item: EditorialShelfItem
 }>()
+
+const { resolveMediaUrl } = useMediaUrl()
+const resolvedImageUrl = computed(() => resolveMediaUrl(props.item.imageUrl))
 
 const label = computed(() => {
   switch (props.item.type) {

@@ -51,7 +51,7 @@ function createBookMeta(read: ReadCardDto) {
     return `${read.progressPages} páginas`
   }
 
-  return read.status === 'FINISHED' ? 'Concluído' : 'Leitura em curso'
+  return read.status === 'READ' ? 'Concluído' : 'Leitura em curso'
 }
 
 function bookToShelfItem(read: ReadCardDto): EditorialShelfItem {
