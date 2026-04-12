@@ -4,12 +4,12 @@
       <span class="brand-dot" />
       <div>
         <p class="eyebrow">Media Pulse</p>
-        <h1>Editorial home</h1>
+        <h1>Agora</h1>
       </div>
     </div>
 
     <p class="header-copy">
-      Um ponto de partida para bater o olho no que está rodando, avançando ou acabando.
+      Uma primeira passada de olho no que ficou aberto, voltou a aparecer e acabou de sair da frente.
     </p>
   </header>
 </template>
@@ -33,7 +33,7 @@
   height: 18px;
   border-radius: 50%;
   background: var(--base-color-brand-red);
-  box-shadow: 0 0 0 10px color-mix(in srgb, var(--base-color-brand-red) 8%, white);
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--base-color-brand-red) 8%, white);
 }
 
 .eyebrow {
@@ -46,7 +46,7 @@
 
 h1 {
   margin: 0;
-  font-size: clamp(2rem, 5vw, 4.8rem);
+  font-size: clamp(2.6rem, 6vw, 5.2rem);
   line-height: 0.95;
   letter-spacing: -0.05em;
 }

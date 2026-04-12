@@ -1,5 +1,5 @@
 <template>
-  <article class="poster-card" :class="`type-${item.type}`">
+  <article class="poster-card" :class="[`type-${item.type}`, `variant-${variant}`]">
     <div class="poster">
       <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy">
       <div v-else class="poster-fallback">{{ item.title.slice(0, 1) }}</div>
@@ -22,6 +22,7 @@ import type { EditorialShelfItem } from '~/types/home'
 
 const props = defineProps<{
   item: EditorialShelfItem
+  variant?: 'feature' | 'tall' | 'standard' | 'compact'
 }>()
 
 const { resolveMediaUrl } = useMediaUrl()
@@ -44,7 +45,9 @@ const label = computed(() => {
 <style scoped>
 .poster-card {
   display: grid;
-  gap: 14px;
+  gap: 12px;
+  break-inside: avoid;
+  margin-bottom: 18px;
 }
 
 .poster {
@@ -79,7 +82,7 @@ img,
 
 .kicker {
   margin: 0;
-  color: var(--base-color-brand-red);
+  color: var(--base-color-text-muted);
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -103,5 +106,25 @@ h3 {
   justify-content: space-between;
   gap: 12px;
   font-size: 0.8rem;
+}
+
+.variant-feature .poster {
+  aspect-ratio: 0.66;
+}
+
+.variant-feature h3 {
+  font-size: 1.28rem;
+}
+
+.variant-tall .poster {
+  aspect-ratio: 0.74;
+}
+
+.variant-standard .poster {
+  aspect-ratio: 0.86;
+}
+
+.variant-compact .poster {
+  aspect-ratio: 1.04;
 }
 </style>

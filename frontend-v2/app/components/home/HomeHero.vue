@@ -22,9 +22,15 @@
 
       <div class="supporting-list">
         <article v-for="item in supporting" :key="item.id" class="supporting-card">
-          <p>{{ item.eyebrow }}</p>
-          <h3>{{ item.title }}</h3>
-          <span>{{ item.meta }}</span>
+          <div class="supporting-image">
+            <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title">
+            <div v-else class="supporting-fallback">{{ item.title.slice(0, 1) }}</div>
+          </div>
+          <div class="supporting-body">
+            <p>{{ item.eyebrow }}</p>
+            <h3>{{ item.title }}</h3>
+            <span>{{ item.meta }}</span>
+          </div>
         </article>
       </div>
     </div>
@@ -52,14 +58,13 @@ const resolvedLeadImageUrl = computed(() => resolveMediaUrl(props.lead?.imageUrl
   padding: clamp(24px, 4vw, 40px);
   border-radius: 40px;
   background:
-    radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(246, 243, 238, 0.95));
-  box-shadow: var(--base-shadow-soft);
+    radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(246, 243, 238, 0.98));
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
 }
 
 .eyebrow,
-.lead-eyebrow,
-.supporting-card p {
+.lead-eyebrow {
   margin: 0;
   color: var(--base-color-brand-red);
   font-size: 0.78rem;
@@ -95,7 +100,7 @@ h2 {
   gap: 20px;
   padding: 18px;
   border-radius: 32px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .lead-image {
@@ -145,12 +150,49 @@ img,
 
 .supporting-card {
   display: grid;
-  gap: 8px;
-  align-content: end;
-  padding: 18px;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
   border-radius: 26px;
-  background: rgba(255, 255, 255, 0.78);
-  min-height: 10rem;
+  background: rgba(255, 255, 255, 0.68);
+  min-height: 8.5rem;
+}
+
+.supporting-image {
+  aspect-ratio: 0.9;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 6px solid #fff;
+  background: var(--base-color-surface-soft);
+}
+
+.supporting-image img,
+.supporting-fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.supporting-fallback {
+  display: grid;
+  place-items: center;
+  color: var(--base-color-text-secondary);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.supporting-body {
+  min-width: 0;
+}
+
+.supporting-card p {
+  margin: 0;
+  color: var(--base-color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 @media (max-width: 980px) {
@@ -161,6 +203,10 @@ img,
 
   .lead-image {
     min-height: 18rem;
+  }
+
+  .supporting-card {
+    grid-template-columns: 88px minmax(0, 1fr);
   }
 }
 </style>

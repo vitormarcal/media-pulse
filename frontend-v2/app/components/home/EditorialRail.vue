@@ -8,7 +8,12 @@
     />
 
     <div class="grid">
-      <MediaPosterCard v-for="item in items" :key="item.id" :item="item" />
+      <MediaPosterCard
+        v-for="(item, index) in items"
+        :key="item.id"
+        :item="item"
+        :variant="cardVariant(index)"
+      />
     </div>
   </section>
 </template>
@@ -25,6 +30,11 @@ defineProps<{
   summary: string
   items: EditorialShelfItem[]
 }>()
+
+function cardVariant(index: number) {
+  const pattern = ['feature', 'compact', 'tall', 'standard', 'compact', 'tall'] as const
+  return pattern[index % pattern.length]
+}
 </script>
 
 <style scoped>
@@ -34,26 +44,25 @@ defineProps<{
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 18px;
+  column-count: 4;
+  column-gap: 18px;
 }
 
 @media (max-width: 1280px) {
   .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-count: 3;
   }
 }
 
 @media (max-width: 720px) {
   .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-count: 2;
   }
 }
 
 @media (max-width: 520px) {
   .grid {
-    grid-template-columns: 1fr;
+    column-count: 1;
   }
 }
 </style>
