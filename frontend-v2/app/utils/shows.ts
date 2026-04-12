@@ -1,11 +1,19 @@
 import type {
   ShowCollectionData,
   ShowCollectionContextMetric,
+  ShowLibraryCardDto,
+  ShowLibraryCardModel,
+  ShowLibraryMetric,
+  ShowLibraryPageData,
   ShowDetailsResponse,
   ShowPageData,
   ShowSeasonCardModel,
   ShowWatchDto,
   ShowWatchEntryModel,
+  ShowsByYearResponse,
+  ShowsLibraryResponse,
+  ShowsSearchResponse,
+  ShowsStatsResponse,
 } from '~/types/shows'
 import type {
   CurrentlyWatchingShowDto,
@@ -127,6 +135,118 @@ function toHighlight(item: EditorialShelfItem): EditorialHighlight {
   }
 }
 
+function showHref(slug: string | null) {
+  return slug ? `/shows/${slug}` : null
+}
+
+function formatShowSubtitle(title: string, originalTitle: string, year: number | null) {
+  if (originalTitle && originalTitle !== title && year) {
+    return `${originalTitle} · ${year}`
+  }
+
+  if (originalTitle && originalTitle !== title) {
+    return originalTitle
+  }
+
+  return year ? String(year) : 'Série'
+}
+
+function buildLibraryCardModel(show: ShowLibraryCardDto): ShowLibraryCardModel {
+  const totalEpisodes = show.episodesCount || 0
+  const watchedEpisodes = show.watchedEpisodesCount || 0
+  const progressValue = totalEpisodes > 0 ? Math.round((watchedEpisodes / totalEpisodes) * 100) : 0
+  const complete = totalEpisodes > 0 && watchedEpisodes >= totalEpisodes
+
+  return {
+    id: `library-${show.showId}`,
+    title: show.title,
+    subtitle: formatShowSubtitle(show.title, show.originalTitle, show.year),
+    href: showHref(show.slug),
+    imageUrl: show.coverUrl,
+    progressLabel: totalEpisodes > 0 ? `${watchedEpisodes}/${totalEpisodes} episódios` : 'Sem total consolidado',
+    progressValue,
+    activityLabel: show.lastWatchedAt ? `Último avanço ${formatRelativeDate(show.lastWatchedAt)}` : 'Sem watch registrado ainda',
+    aside: complete ? 'Fechada' : progressValue > 0 ? 'Aberta' : 'Intocada',
+    isDormant: !show.lastWatchedAt,
+  }
+}
+
+export function buildShowLibraryCards(items: ShowLibraryCardDto[]): ShowLibraryCardModel[] {
+  return items.map(buildLibraryCardModel)
+}
+
+function buildSearchCardModel(show: ShowsSearchResponse['shows'][number]): ShowLibraryCardModel {
+  return {
+    id: `search-${show.showId}`,
+    title: show.title,
+    subtitle: formatShowSubtitle(show.title, show.originalTitle, show.year),
+    href: showHref(show.slug),
+    imageUrl: show.coverUrl,
+    progressLabel: show.watchedAt ? 'Encontrada pela busca' : 'Sem watch recente no índice',
+    progressValue: 0,
+    activityLabel: show.watchedAt ? `Último registro ${formatRelativeDate(show.watchedAt)}` : 'Sem registro recente',
+    aside: 'Busca',
+  }
+}
+
+function buildWatchedYearCardModel(show: ShowsByYearResponse['watched'][number]): ShowLibraryCardModel {
+  return {
+    id: `year-watched-${show.showId}`,
+    title: show.title,
+    subtitle: formatShowSubtitle(show.title, show.originalTitle, show.year),
+    href: showHref(show.slug),
+    imageUrl: show.coverUrl,
+    progressLabel: `${show.watchCountInYear} registros no ano`,
+    progressValue: 100,
+    activityLabel: `Último ${formatRelativeDate(show.lastWatchedAt)}`,
+    aside: 'Vista no ano',
+  }
+}
+
+function buildUnwatchedYearCardModel(show: ShowsByYearResponse['unwatched'][number]): ShowLibraryCardModel {
+  return {
+    id: `year-unwatched-${show.showId}`,
+    title: show.title,
+    subtitle: formatShowSubtitle(show.title, show.originalTitle, show.year),
+    href: showHref(show.slug),
+    imageUrl: show.coverUrl,
+    progressLabel: 'Sem registro nesse recorte',
+    progressValue: 0,
+    activityLabel: 'Ficou fora desse ano',
+    aside: 'Sem watch',
+    isDormant: true,
+  }
+}
+
+function buildStatsMetrics(stats: ShowsStatsResponse): ShowLibraryMetric[] {
+  return [
+    {
+      id: 'catalog',
+      label: 'Séries no arquivo',
+      value: formatShortNumber(stats.total.uniqueShowsCount),
+      note: 'o tamanho do acervo já reconhecido por aqui',
+    },
+    {
+      id: 'watches',
+      label: 'Registros acumulados',
+      value: formatShortNumber(stats.total.watchesCount),
+      note: 'quanto esse arquivo já foi percorrido ao longo do tempo',
+    },
+    {
+      id: 'unwatched',
+      label: 'Ainda sem watch',
+      value: formatShortNumber(stats.unwatchedCount),
+      note: 'o pedaço da biblioteca que ainda existe mais como catálogo do que como memória',
+    },
+    {
+      id: 'span',
+      label: 'Janela do histórico',
+      value: stats.firstWatchAt ? formatAbsoluteDate(stats.firstWatchAt) : 'Sem início',
+      note: stats.latestWatchAt ? `até ${formatAbsoluteDate(stats.latestWatchAt)}` : 'sem watch recente consolidado',
+    },
+  ]
+}
+
 function buildContextMetrics(payload: {
   summary: ShowsSummaryResponse
   currentShows: CurrentlyWatchingShowDto[]
@@ -237,5 +357,183 @@ export function buildShowCollectionData(payload: {
       summary: `${formatShortNumber(payload.summary.uniqueShowsCount)} séries passaram por aqui e ${formatShortNumber(payload.summary.watchesCount)} episódios foram marcados neste recorte.`,
       metrics: buildContextMetrics(payload),
     },
+  }
+}
+
+export function buildShowLibraryPageData(payload: {
+  stats: ShowsStatsResponse
+  library: ShowsLibraryResponse
+  query: string
+  selectedYear: number | null
+  searchResults: ShowsSearchResponse | null
+  yearResults: ShowsByYearResponse | null
+}): ShowLibraryPageData {
+  const years = payload.stats.years
+    .slice()
+    .sort((a, b) => b.year - a.year)
+    .slice(0, 12)
+    .map((year) => ({
+      year: year.year,
+      label: String(year.year),
+      watches: `${formatShortNumber(year.watchesCount)} registros`,
+    }))
+
+  if (payload.selectedYear && payload.yearResults) {
+    return {
+      hero: {
+        title: `A biblioteca de séries em ${payload.selectedYear}`,
+        intro: 'Um corte do arquivo completo para ver o que realmente passou por esse ano e o que ficou apenas no catálogo.',
+        primaryLink: '/shows',
+        primaryLabel: 'Voltar ao recorte',
+        secondaryLink: '/shows/library',
+        secondaryLabel: 'Ver biblioteca inteira',
+      },
+      filters: {
+        query: payload.query,
+        selectedYear: payload.selectedYear,
+        years,
+      },
+      context: {
+        eyebrow: 'Ano',
+        title: `O que ${payload.selectedYear} concentrou`,
+        description: 'Uma leitura do ano como memória de consumo, não como relatório.',
+        summary: `${formatShortNumber(payload.yearResults.stats.uniqueShowsCount)} séries e ${formatShortNumber(payload.yearResults.stats.watchesCount)} registros apareceram neste recorte.`,
+        metrics: [
+          {
+            id: 'year-shows',
+            label: 'Séries vistas no ano',
+            value: formatShortNumber(payload.yearResults.stats.uniqueShowsCount),
+            note: 'o quanto esse ano realmente teve presença',
+          },
+          {
+            id: 'year-watches',
+            label: 'Registros no ano',
+            value: formatShortNumber(payload.yearResults.stats.watchesCount),
+            note: 'a intensidade do retorno às séries naquele período',
+          },
+          {
+            id: 'year-rewatches',
+            label: 'Revisitas no ano',
+            value: formatShortNumber(payload.yearResults.stats.rewatchesCount),
+            note: 'quando o mesmo título voltou mais de uma vez',
+          },
+          {
+            id: 'year-unwatched',
+            label: 'Fora desse recorte',
+            value: formatShortNumber(payload.yearResults.unwatched.length),
+            note: 'parte do catálogo que não entrou em cena naquele ano',
+          },
+        ],
+      },
+      sections: [
+        {
+          id: 'watched',
+          eyebrow: 'Vistas',
+          title: 'As que realmente passaram pelo ano',
+          description: 'O miolo do recorte anual, em vez de uma lista seca.',
+          summary: 'Aqui vale mais a lembrança de presença do que a ideia de completude.',
+          items: payload.yearResults.watched.map(buildWatchedYearCardModel),
+          emptyMessage: 'Nenhuma série foi marcada nesse ano.',
+        },
+        {
+          id: 'unwatched',
+          eyebrow: 'Fora da rotação',
+          title: 'O que ficou de fora nesse período',
+          description: 'Ainda parte da biblioteca, mas sem ter entrado no ritmo do ano.',
+          summary: 'Esse bloco serve para situar ausência, não para cobrar retomada.',
+          items: payload.yearResults.unwatched.map(buildUnwatchedYearCardModel),
+          emptyMessage: 'Tudo entrou no recorte desse ano.',
+        },
+      ],
+      libraryCursor: null,
+      mode: 'year',
+    }
+  }
+
+  if (payload.query && payload.searchResults) {
+    return {
+      hero: {
+        title: 'A biblioteca de séries, puxada pela busca',
+        intro: 'Quando você já sabe o que está tentando reencontrar, a página vira arquivo de consulta sem perder a mesma superfície editorial.',
+        primaryLink: '/shows',
+        primaryLabel: 'Voltar ao recorte',
+        secondaryLink: '/shows/library',
+        secondaryLabel: 'Limpar busca',
+      },
+      filters: {
+        query: payload.query,
+        selectedYear: payload.selectedYear,
+        years,
+      },
+      context: {
+        eyebrow: 'Busca',
+        title: 'O arquivo inteiro, afunilado pelo nome',
+        description: 'Sem esconder o resto da biblioteca; só aproximando o que você quer achar agora.',
+        summary: `${formatShortNumber(payload.searchResults.shows.length)} séries encontradas para "${payload.query}".`,
+        metrics: buildStatsMetrics(payload.stats),
+      },
+      sections: [
+        {
+          id: 'search-results',
+          eyebrow: 'Resultados',
+          title: 'O que respondeu à busca',
+          description: 'Uma prateleira curta para ir direto ao que interessa.',
+          summary: 'Busca primeiro, contexto depois.',
+          items: payload.searchResults.shows.map(buildSearchCardModel),
+          emptyMessage: 'Nada apareceu para essa busca.',
+        },
+      ],
+      libraryCursor: null,
+      mode: 'search',
+    }
+  }
+
+  const libraryItems = payload.library.items.map(buildLibraryCardModel)
+  const activeItems = libraryItems.filter(item => !item.isDormant)
+  const dormantItems = libraryItems.filter(item => item.isDormant)
+
+  return {
+    hero: {
+      title: 'A biblioteca inteira de séries',
+      intro: 'O arquivo completo para quando a memória curta já não basta e você quer percorrer o acervo todo com mais calma.',
+      primaryLink: '/shows',
+      primaryLabel: 'Voltar ao recorte',
+      secondaryLink: '/shows/library?year=' + (years[0]?.year ?? new Date().getFullYear()),
+      secondaryLabel: 'Abrir um recorte por ano',
+    },
+    filters: {
+      query: payload.query,
+      selectedYear: payload.selectedYear,
+      years,
+    },
+    context: {
+      eyebrow: 'Arquivo',
+      title: 'O tamanho do catálogo e do hábito',
+      description: 'Uma visão larga do que já entrou nessa biblioteca, ainda sem perder a leitura pessoal do conjunto.',
+      summary: `${formatShortNumber(payload.stats.total.uniqueShowsCount)} séries no arquivo e ${formatShortNumber(payload.stats.total.watchesCount)} registros acumulados até aqui.`,
+      metrics: buildStatsMetrics(payload.stats),
+    },
+    sections: [
+      {
+        id: 'active-library',
+        eyebrow: 'Com rastro',
+        title: 'As séries que já deixaram marca',
+        description: 'As que já têm algum ponto de contato e por isso funcionam melhor como entrada para o catálogo.',
+        summary: 'É o arquivo inteiro, mas começando pelas que já têm memória associada.',
+        items: activeItems,
+        emptyMessage: 'Nenhuma série com watch consolidado apareceu nesta faixa.',
+      },
+      {
+        id: 'dormant-library',
+        eyebrow: 'Mais silenciosas',
+        title: 'O que ainda existe mais como estante',
+        description: 'Parte do catálogo que ainda não ganhou vida no histórico.',
+        summary: 'Isso continua sendo útil como mapa do que está disponível, não como pendência.',
+        items: dormantItems,
+        emptyMessage: 'Nenhuma série silenciosa nesta página.',
+      },
+    ],
+    libraryCursor: payload.library.nextCursor,
+    mode: 'library',
   }
 }

@@ -1,8 +1,14 @@
 <template>
   <section class="shows-collection-hero">
-    <NuxtLink class="back-link" to="/">
-      Voltar para a capa
-    </NuxtLink>
+    <div class="top-actions">
+      <NuxtLink class="back-link" to="/">
+        Voltar para a capa
+      </NuxtLink>
+
+      <NuxtLink class="library-link" to="/shows/library">
+        Abrir biblioteca inteira
+      </NuxtLink>
+    </div>
 
     <div class="hero-grid">
       <div class="copy">
@@ -87,12 +93,27 @@ const leadWrapper = computed(() => props.lead?.href ? NuxtLink : 'div')
   gap: 18px;
 }
 
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .back-link {
   width: fit-content;
   padding: 8px 14px;
   border-radius: 16px;
   background: var(--base-color-surface-warm);
   color: var(--base-color-text-primary);
+  font-size: 0.8rem;
+}
+
+.library-link {
+  width: fit-content;
+  padding: 8px 14px;
+  border-radius: 16px;
+  background: var(--base-color-brand-red);
+  color: #000;
   font-size: 0.8rem;
 }
 
