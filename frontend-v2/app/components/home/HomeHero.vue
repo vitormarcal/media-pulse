@@ -54,8 +54,8 @@ const resolvedLeadImageUrl = computed(() => resolveMediaUrl(props.lead?.imageUrl
 <style scoped>
 .hero {
   display: grid;
-  gap: 28px;
-  padding: clamp(24px, 4vw, 40px);
+  gap: clamp(22px, 3vw, 34px);
+  padding: clamp(26px, 4vw, 44px);
   border-radius: 40px;
   background:
     radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%),
@@ -76,35 +76,36 @@ const resolvedLeadImageUrl = computed(() => resolveMediaUrl(props.lead?.imageUrl
 h2 {
   max-width: 12ch;
   margin: 0;
-  font-size: clamp(2.6rem, 7vw, 5.6rem);
-  line-height: 0.95;
-  letter-spacing: -0.06em;
+  font-size: clamp(3.1rem, 7.5vw, 5.9rem);
+  line-height: 0.92;
+  letter-spacing: -0.07em;
 }
 
 .intro {
-  max-width: 42rem;
-  margin: 12px 0 0;
+  max-width: 38rem;
+  margin: 14px 0 0;
   color: var(--base-color-text-secondary);
-  font-size: 1.05rem;
+  font-size: 1.06rem;
+  line-height: 1.58;
 }
 
 .hero-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(18rem, 0.9fr);
-  gap: 18px;
+  gap: 20px;
 }
 
 .lead-card {
   display: grid;
   grid-template-columns: minmax(15rem, 0.95fr) minmax(0, 1.1fr);
-  gap: 20px;
-  padding: 18px;
+  gap: 22px;
+  padding: 20px;
   border-radius: 32px;
   background: rgba(255, 255, 255, 0.7);
 }
 
 .lead-image {
-  min-height: 22rem;
+  min-height: 24rem;
   overflow: hidden;
   border-radius: 28px;
   background: var(--base-color-surface-soft);
@@ -131,9 +132,10 @@ img,
 
 .lead-body h3,
 .supporting-card h3 {
-  margin: 8px 0;
-  font-size: 1.5rem;
-  line-height: 1;
+  margin: 8px 0 10px;
+  font-size: 1.54rem;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
 }
 
 .lead-subtitle,
@@ -143,17 +145,29 @@ img,
   color: var(--base-color-text-secondary);
 }
 
+.lead-subtitle {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.lead-meta {
+  margin-top: 8px;
+  font-size: 0.92rem;
+  color: var(--base-color-text-muted);
+}
+
 .supporting-list {
   display: grid;
-  gap: 14px;
+  gap: 16px;
+  align-content: start;
 }
 
 .supporting-card {
   display: grid;
   grid-template-columns: 104px minmax(0, 1fr);
-  gap: 14px;
+  gap: 16px;
   align-items: center;
-  padding: 14px;
+  padding: 16px;
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.68);
   min-height: 8.5rem;
@@ -202,7 +216,7 @@ img,
   }
 
   .lead-image {
-    min-height: 18rem;
+    min-height: 19rem;
   }
 
   .supporting-card {

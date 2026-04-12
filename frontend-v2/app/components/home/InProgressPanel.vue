@@ -27,7 +27,7 @@ defineProps<{
 .in-progress,
 .grid {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 
 .grid {

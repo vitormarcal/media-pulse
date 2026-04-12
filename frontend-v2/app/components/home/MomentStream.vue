@@ -27,7 +27,7 @@ defineProps<{
 .moment-stream,
 .list {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 
 .list {

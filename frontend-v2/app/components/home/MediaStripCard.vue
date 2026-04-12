@@ -47,9 +47,9 @@ const label = computed(() => {
 .strip-card {
   display: grid;
   grid-template-columns: 84px minmax(0, 1fr) auto;
-  gap: 16px;
+  gap: 18px;
   align-items: center;
-  padding: 14px;
+  padding: 16px;
   border-radius: 24px;
   background: color-mix(in srgb, var(--base-color-surface-strong) 82%, var(--base-color-surface-soft));
 }
@@ -96,21 +96,25 @@ img,
 }
 
 h3 {
-  margin: 4px 0;
-  font-size: 1rem;
+  margin: 5px 0 4px;
+  font-size: 1.02rem;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
 }
 
 .subtitle {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 0.92rem;
 }
 
 .aside {
   display: grid;
   justify-items: end;
   gap: 6px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  color: var(--base-color-text-muted);
 }
 
 .aside strong {
@@ -119,8 +123,8 @@ h3 {
 
 .variant-large {
   grid-template-columns: 132px minmax(0, 1fr) auto;
-  gap: 20px;
-  padding: 18px;
+  gap: 22px;
+  padding: 20px;
   border-radius: 28px;
 }
 
@@ -130,7 +134,7 @@ h3 {
 }
 
 .variant-large h3 {
-  font-size: 1.14rem;
+  font-size: 1.18rem;
 }
 
 .variant-large .subtitle,

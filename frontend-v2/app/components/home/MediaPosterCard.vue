@@ -45,9 +45,9 @@ const label = computed(() => {
 <style scoped>
 .poster-card {
   display: grid;
-  gap: 12px;
+  gap: 13px;
   break-inside: avoid;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .poster {
@@ -77,7 +77,7 @@ img,
 
 .body {
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .kicker {
@@ -91,8 +91,9 @@ img,
 
 h3 {
   margin: 0;
-  font-size: 1.1rem;
-  line-height: 1.05;
+  font-size: 1.08rem;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
 }
 
 .subtitle,
@@ -101,11 +102,16 @@ h3 {
   color: var(--base-color-text-secondary);
 }
 
+.subtitle {
+  line-height: 1.5;
+}
+
 .meta-row {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  color: var(--base-color-text-muted);
 }
 
 .variant-feature .poster {
@@ -113,7 +119,7 @@ h3 {
 }
 
 .variant-feature h3 {
-  font-size: 1.28rem;
+  font-size: 1.34rem;
 }
 
 .variant-tall .poster {

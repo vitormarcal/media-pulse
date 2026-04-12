@@ -19,23 +19,24 @@ defineProps<{
 <style scoped>
 .section-heading {
   display: grid;
-  gap: 12px;
-  max-width: 54rem;
+  gap: 10px;
+  max-width: 48rem;
 }
 
 .eyebrow {
   margin: 0;
   color: var(--base-color-brand-red);
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
 }
 
 h2 {
   margin: 0;
-  font-size: clamp(1.8rem, 3vw, 2.8rem);
-  letter-spacing: -0.05em;
+  font-size: clamp(1.95rem, 3.2vw, 3rem);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
 }
 
 .description,
@@ -44,8 +45,13 @@ h2 {
   color: var(--base-color-text-secondary);
 }
 
+.description {
+  line-height: 1.56;
+}
+
 .summary {
   color: var(--base-color-text-muted);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 </style>

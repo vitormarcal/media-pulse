@@ -59,10 +59,10 @@ const { data, error, status } = await useHomePageData()
 <style scoped>
 .home-page {
   display: grid;
-  gap: clamp(28px, 5vw, 52px);
+  gap: var(--sema-space-section);
   width: min(1480px, calc(100vw - 32px));
   margin: 0 auto;
-  padding: 24px 0 72px;
+  padding: 28px 0 84px;
 }
 
 .state-card {
@@ -79,5 +79,12 @@ const { data, error, status } = await useHomePageData()
 pre {
   margin: 12px 0 0;
   white-space: pre-wrap;
+}
+
+@media (max-width: 720px) {
+  .home-page {
+    width: min(100vw - 20px, 1480px);
+    padding: 20px 0 64px;
+  }
 }
 </style>

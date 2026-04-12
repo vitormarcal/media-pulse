@@ -11,11 +11,13 @@
   --base-color-border: #d8d4cb;
   --base-color-focus: #435ee5;
   --base-color-dark: #33332e;
-  --base-shadow-soft: 0 18px 45px rgba(33, 25, 34, 0.08);
+  --base-shadow-soft: 0 12px 28px rgba(33, 25, 34, 0.05);
   --comp-radius-card: 24px;
   --comp-radius-panel: 32px;
   --comp-radius-pill: 999px;
   --comp-radius-button: 16px;
+  --sema-space-section: clamp(36px, 5vw, 64px);
+  --sema-space-block: clamp(20px, 3vw, 32px);
   --sema-font-body:
     "Pin Sans",
     -apple-system,
@@ -46,6 +48,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  text-rendering: optimizeLegibility;
 }
 
 a {

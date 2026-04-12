@@ -18,13 +18,13 @@
 .app-header {
   display: flex;
   justify-content: space-between;
-  gap: 24px;
+  gap: 32px;
   align-items: end;
 }
 
 .brand-lockup {
   display: flex;
-  gap: 16px;
+  gap: 18px;
   align-items: center;
 }
 
@@ -37,9 +37,10 @@
 }
 
 .eyebrow {
-  margin: 0 0 4px;
+  margin: 0 0 6px;
   color: var(--base-color-text-secondary);
   font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -53,9 +54,10 @@ h1 {
 
 .header-copy {
   max-width: 26rem;
-  margin: 0;
+  margin: 0 0 6px;
   color: var(--base-color-text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.98rem;
+  line-height: 1.55;
 }
 
 @media (max-width: 820px) {

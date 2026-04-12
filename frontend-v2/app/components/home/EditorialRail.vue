@@ -40,12 +40,12 @@ function cardVariant(index: number) {
 <style scoped>
 .rail {
   display: grid;
-  gap: 22px;
+  gap: 24px;
 }
 
 .grid {
   column-count: 4;
-  column-gap: 18px;
+  column-gap: 20px;
 }
 
 @media (max-width: 1280px) {
