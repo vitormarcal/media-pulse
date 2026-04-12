@@ -16,7 +16,7 @@ plugins {
 }
 
 group = "dev.marcal.mediapulse.server"
-version = "1.0.0-beta.33"
+version = "1.0.0-beta.34"
 
 java {
     toolchain {
@@ -156,7 +156,7 @@ abstract class FingerprintFrontendTask : DefaultTask() {
 }
 
 val fingerprintFrontendStatic by tasks.registering(FingerprintFrontendTask::class) {
-    inputDir.set(project.layout.projectDirectory.dir("../frontend-v2"))
+    inputDir.set(project.layout.projectDirectory.dir("../frontend"))
     outputDir.set(layout.buildDirectory.dir("generated/frontend-static"))
 }
 

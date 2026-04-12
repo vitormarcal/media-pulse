@@ -65,7 +65,7 @@ Arquivos a revisar conforme o caso:
 - `README.md`
 - `docs/*.md`
 - `docs/openapi.yaml` quando o contrato publicado mudar
-- `frontend-v2/README.md` se o fluxo de UI/local dev mudar
+- `frontend/README.md` se o fluxo de UI/local dev mudar
 
 ## 6. Regra da simplicidade
 
