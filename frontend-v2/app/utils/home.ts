@@ -94,7 +94,7 @@ function recentMovieToShelfItem(movie: MoviesRecentResponse['items'][number]): E
     title: movie.title,
     subtitle: movie.year ? String(movie.year) : 'Filme',
     imageUrl: movie.coverUrl,
-    href: null,
+    href: movie.slug ? `/movies/${movie.slug}` : null,
     meta: mediaLabel('movie'),
     detail: formatRelativeDate(movie.watchedAt),
     timestamp: movie.watchedAt,
