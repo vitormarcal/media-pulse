@@ -30,7 +30,7 @@ const resolvedImageUrl = computed(() => resolveMediaUrl(props.item.imageUrl))
 const label = computed(() => {
   switch (props.item.type) {
     case 'music':
-      return 'Album'
+      return 'Álbum'
     case 'show':
       return 'Série'
     case 'movie':

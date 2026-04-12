@@ -3,7 +3,7 @@
     <AppHeader />
 
     <div v-if="status === 'pending'" class="state-card">
-      <p>Carregando a curadoria editorial da sua semana...</p>
+      <p>Montando a primeira página do momento...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">

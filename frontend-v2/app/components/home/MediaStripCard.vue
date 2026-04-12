@@ -1,5 +1,5 @@
 <template>
-  <article class="strip-card">
+  <article class="strip-card" :class="`variant-${variant}`">
     <div class="thumb">
       <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy">
       <div v-else class="thumb-fallback">{{ item.title.slice(0, 1) }}</div>
@@ -23,6 +23,7 @@ import type { EditorialShelfItem } from '~/types/home'
 
 const props = defineProps<{
   item: EditorialShelfItem
+  variant?: 'default' | 'large'
 }>()
 
 const { resolveMediaUrl } = useMediaUrl()
@@ -31,7 +32,7 @@ const resolvedImageUrl = computed(() => resolveMediaUrl(props.item.imageUrl))
 const label = computed(() => {
   switch (props.item.type) {
     case 'music':
-      return 'Album'
+      return 'Álbum'
     case 'show':
       return 'Série'
     case 'movie':
@@ -59,6 +60,7 @@ const label = computed(() => {
   overflow: hidden;
   border-radius: 18px;
   background: var(--base-color-surface-soft);
+  border: 6px solid #fff;
 }
 
 img,
@@ -115,9 +117,38 @@ h3 {
   color: var(--base-color-text-primary);
 }
 
+.variant-large {
+  grid-template-columns: 132px minmax(0, 1fr) auto;
+  gap: 20px;
+  padding: 18px;
+  border-radius: 28px;
+}
+
+.variant-large .thumb {
+  width: 132px;
+  border-radius: 22px;
+}
+
+.variant-large h3 {
+  font-size: 1.14rem;
+}
+
+.variant-large .subtitle,
+.variant-large .aside {
+  font-size: 0.9rem;
+}
+
 @media (max-width: 720px) {
   .strip-card {
     grid-template-columns: 72px 1fr;
+  }
+
+  .variant-large {
+    grid-template-columns: 96px 1fr;
+  }
+
+  .variant-large .thumb {
+    width: 96px;
   }
 
   .aside {

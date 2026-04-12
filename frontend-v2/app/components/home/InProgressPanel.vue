@@ -3,12 +3,12 @@
     <SectionHeading
       eyebrow="Em curso"
       title="O que ainda está aberto"
-      description="Séries em andamento e leituras correntes compartilham o mesmo espaço para reforçar continuidade."
-      summary="O foco aqui não é contagem e sim permanência: o que continua pedindo retorno."
+      description="O que ficou pela metade porque ainda merece retorno."
+      summary="Séries em andamento e leituras correntes, lado a lado, para lembrar onde vale retomar."
     />
 
     <div class="grid">
-      <MediaStripCard v-for="item in items" :key="item.id" :item="item" />
+      <MediaStripCard v-for="item in items" :key="item.id" :item="item" variant="large" />
     </div>
   </section>
 </template>
@@ -32,6 +32,7 @@ defineProps<{
 
 .grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
 }
 
 @media (max-width: 820px) {

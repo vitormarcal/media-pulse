@@ -19,7 +19,7 @@ import { formatRelativeDate, formatShortNumber } from '~/utils/formatting'
 function mediaLabel(type: EditorialMediaType) {
   switch (type) {
     case 'music':
-      return 'Album'
+      return 'Álbum'
     case 'show':
       return 'Série'
     case 'movie':
@@ -178,9 +178,9 @@ export function buildHomePageData(payload: {
   return {
     generatedAt: new Date().toISOString(),
     hero: {
-      title: 'Uma capa viva do que está passando por você agora',
+      title: 'O recorte do que está ocupando seu tempo agora',
       intro:
-        'Mais revista do que painel: uma leitura contínua do que entrou em rotação, foi concluído ou ainda está te acompanhando.',
+        'Uma primeira página para organizar o momento: o que entrou em rotação, o que foi concluído e o que ainda ficou chamando você de volta.',
       lead: heroLead,
       supporting: heroSupporting,
     },
@@ -190,33 +190,33 @@ export function buildHomePageData(payload: {
       {
         id: 'music',
         eyebrow: 'Som da semana',
-        title: 'Discos que mantiveram o ritmo aceso',
-        description: 'Os álbuns mais recentes puxam a temperatura da página e dão o tom do momento.',
-        summary: `${formatShortNumber(payload.musicSummary.albumsCount)} álbuns e ${formatShortNumber(payload.musicSummary.tracksCount)} faixas tocadas no recorte atual`,
+        title: 'Discos que ficaram rondando a cabeça',
+        description: 'Os álbuns que melhor resumem o clima recente sem precisar abrir a biblioteca inteira.',
+        summary: `${formatShortNumber(payload.musicSummary.albumsCount)} álbuns e ${formatShortNumber(payload.musicSummary.tracksCount)} faixas passaram por aqui neste recorte`,
         items: payload.recentAlbums.items.slice(0, 6).map(recentAlbumToShelfItem),
       },
       {
         id: 'shows',
         eyebrow: 'Sessão em curso',
         title: 'Séries que seguem abertas na mesa',
-        description: 'Quando a relação continua, o progresso vira parte da narrativa.',
-        summary: `${formatShortNumber(payload.showSummary.uniqueShowsCount)} séries vistas e ${formatShortNumber(payload.showSummary.watchesCount)} episódios/sessões registrados no período`,
+        description: 'As que ainda pedem próximo episódio e já viraram presença recorrente.',
+        summary: `${formatShortNumber(payload.showSummary.uniqueShowsCount)} séries vistas e ${formatShortNumber(payload.showSummary.watchesCount)} registros recentes para situar o andamento`,
         items: payload.currentShows.slice(0, 6).map(currentShowToShelfItem),
       },
       {
         id: 'movies',
         eyebrow: 'Tela recente',
-        title: 'Filmes que acabaram de deixar rastro',
-        description: 'Entradas recentes aparecem como uma faixa curta e visual, sem cara de dashboard.',
-        summary: `${formatShortNumber(payload.movieSummary.uniqueMoviesCount)} filmes únicos e ${formatShortNumber(payload.movieSummary.watchesCount)} plays no período`,
+        title: 'Filmes que ainda estão por perto',
+        description: 'Os últimos que passaram e ainda fazem sentido manter à vista.',
+        summary: `${formatShortNumber(payload.movieSummary.uniqueMoviesCount)} filmes únicos e ${formatShortNumber(payload.movieSummary.watchesCount)} registros recentes`,
         items: payload.recentMovies.items.slice(0, 6).map(recentMovieToShelfItem),
       },
       {
         id: 'books',
         eyebrow: 'Mesa de leitura',
-        title: 'Livros entre o agora e o recém-terminado',
-        description: 'Leituras em andamento e conclusões recentes dividem a mesma atmosfera editorial.',
-        summary: `${formatShortNumber(payload.booksSummary.counts.reading)} em leitura e ${formatShortNumber(payload.booksSummary.counts.finished)} concluídos no período`,
+        title: 'Livros entre o avanço e o fechamento',
+        description: 'O que segue aberto e o que acabou de sair da pilha mental.',
+        summary: `${formatShortNumber(payload.booksSummary.counts.reading)} em leitura e ${formatShortNumber(payload.booksSummary.counts.finished)} concluídos neste recorte`,
         items: [
           ...payload.readingBooks.items.slice(0, 3).map(bookToShelfItem),
           ...payload.finishedBooks.items.slice(0, 3).map(bookToShelfItem),

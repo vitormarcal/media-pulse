@@ -9,7 +9,7 @@
     </div>
 
     <p class="header-copy">
-      Um recorte quente do que você está ouvindo, vendo e lendo.
+      Um ponto de partida para bater o olho no que está rodando, avançando ou acabando.
     </p>
   </header>
 </template>
