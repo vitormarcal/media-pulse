@@ -28,7 +28,7 @@ const items = [
   { label: 'Início', href: '/' },
   { label: 'Música', href: '/#music' },
   { label: 'Séries', href: '/shows' },
-  { label: 'Filmes', href: '/#movies' },
+  { label: 'Filmes', href: '/movies' },
   { label: 'Livros', href: '/#books' },
 ]
 </script>
