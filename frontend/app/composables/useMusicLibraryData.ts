@@ -62,7 +62,7 @@ export async function fetchMusicLibraryPageData(query: MusicLibraryQuery = {}): 
 
   return buildMusicLibraryPageData({
     stats,
-    selectedKind: year ? 'albums' : selectedKind,
+    selectedKind,
     selectedYear: year,
     query: q,
     artists: selectedKind === 'artists' ? (libraryPage as ArtistLibraryPageResponse | null) : null,
