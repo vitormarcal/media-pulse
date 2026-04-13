@@ -2,9 +2,9 @@ import type {
   BookLibraryPageData,
   BooksLibraryResponse,
   BooksSearchResponse,
+  BooksStatsResponse,
   YearReadsResponse,
 } from '~/types/books'
-import type { BooksSummaryResponse } from '~/types/home'
 import { buildBookLibraryPageData } from '~/utils/books'
 
 export interface BooksLibraryQuery {
@@ -18,8 +18,8 @@ export async function fetchBooksLibraryPageData(query: BooksLibraryQuery = {}): 
   const q = query.q?.trim() || ''
   const year = query.year ?? null
 
-  const [summary, library, searchResults, yearResults] = await Promise.all([
-    $fetch<BooksSummaryResponse>('/api/books/summary', { baseURL: apiBase, query: { range: 'month' } }),
+  const [stats, library, searchResults, yearResults] = await Promise.all([
+    $fetch<BooksStatsResponse>('/api/books/stats', { baseURL: apiBase }),
     $fetch<BooksLibraryResponse>('/api/books/library', { baseURL: apiBase, query: { limit: 24 } }),
     q
       ? $fetch<BooksSearchResponse>('/api/books/search', { baseURL: apiBase, query: { q, limit: 40 } })
@@ -30,7 +30,7 @@ export async function fetchBooksLibraryPageData(query: BooksLibraryQuery = {}): 
   ])
 
   return buildBookLibraryPageData({
-    summary,
+    stats,
     library,
     query: q,
     selectedYear: year,

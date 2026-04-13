@@ -128,6 +128,7 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 ### Books
 
 - `GET /api/books/library`
+- `GET /api/books/stats`
 - `GET /api/books/year/{year}`
 - `GET /api/books/{bookId}`
 - `GET /api/books/slug/{slug}`

@@ -12,6 +12,7 @@ import type {
   BookReadEntryModel,
   BooksLibraryResponse,
   BooksSearchResponse,
+  BooksStatsResponse,
   ReadCardDto,
   YearReadsResponse,
 } from '~/types/books'
@@ -208,49 +209,45 @@ function buildYearCardModel(read: ReadCardDto, prefix: string): BookLibraryCardM
   }
 }
 
-function buildLibraryMetrics(summary: BooksSummaryResponse): BookLibraryMetric[] {
-  const topAuthor = summary.topAuthors[0]
-
+function buildLibraryMetrics(stats: BooksStatsResponse): BookLibraryMetric[] {
   return [
     {
-      id: 'reading',
-      label: 'Em leitura agora',
-      value: formatShortNumber(summary.counts.reading),
-      note: 'o que ainda pede retorno contínuo à mesa',
+      id: 'books',
+      label: 'Livros no arquivo',
+      value: formatShortNumber(stats.total.booksCount),
+      note: 'o tamanho bruto da estante já incorporada ao arquivo',
+    },
+    {
+      id: 'reads',
+      label: 'Registros acumulados',
+      value: formatShortNumber(stats.total.readsCount),
+      note: 'toda passagem de leitura já anotada, sem depender do recorte recente',
     },
     {
       id: 'finished',
-      label: 'Concluídos no recorte',
-      value: formatShortNumber(summary.counts.finished),
-      note: 'o que realmente saiu da pilha recente',
+      label: 'Concluídos acumulados',
+      value: formatShortNumber(stats.total.completedCount),
+      note: 'o que realmente fechou ao longo do arquivo inteiro',
     },
     {
-      id: 'want',
-      label: 'Quero ler',
-      value: formatShortNumber(summary.counts.want),
-      note: 'o pedaço da estante que já existe mais como intenção do que leitura',
-    },
-    {
-      id: 'author',
-      label: 'Autor mais presente',
-      value: topAuthor ? topAuthor.authorName : 'Sem destaque',
-      note: topAuthor ? `${formatShortNumber(topAuthor.finishedCount)} fechamentos recentes` : 'ainda sem recorrência suficiente para destacar alguém',
+      id: 'dormant',
+      label: 'Ainda quietos',
+      value: formatShortNumber(stats.unreadCount),
+      note: 'o pedaço da biblioteca que já existe, mas ainda não virou leitura',
     },
   ]
 }
 
-function buildYearChips(selectedYear: number | null): BookLibraryYearChip[] {
-  const currentYear = new Date().getFullYear()
-  const baseYear = selectedYear ?? currentYear
-
-  return Array.from({ length: 8 }, (_, index) => {
-    const year = baseYear - index
-    return {
-      year,
-      label: String(year),
-      detail: 'recorte',
-    }
-  })
+function buildYearChips(stats: BooksStatsResponse): BookLibraryYearChip[] {
+  return stats.years
+    .slice()
+    .sort((a, b) => b.year - a.year)
+    .slice(0, 12)
+    .map((year) => ({
+      year: year.year,
+      label: String(year.year),
+      detail: `${formatShortNumber(year.finishedCount)} concluídos`,
+    }))
 }
 
 function buildSpotlightFromCard(
@@ -349,14 +346,15 @@ export function buildBookLibraryCards(items: BookLibraryCardDto[]): BookLibraryC
 }
 
 export function buildBookLibraryPageData(payload: {
-  summary: BooksSummaryResponse
+  stats: BooksStatsResponse
   library: BooksLibraryResponse
   query: string
   selectedYear: number | null
   searchResults: BooksSearchResponse | null
   yearResults: YearReadsResponse | null
 }): BookLibraryPageData {
-  const years = buildYearChips(payload.selectedYear)
+  const years = buildYearChips(payload.stats)
+  const featuredYear = years[0]?.year ?? new Date().getFullYear()
 
   if (payload.selectedYear && payload.yearResults) {
     const currentItems = payload.yearResults.currentlyReading.map((read) => buildYearCardModel(read, 'current'))
@@ -486,7 +484,7 @@ export function buildBookLibraryPageData(payload: {
         title: 'A estante inteira, afunilada pelo título',
         description: 'Sem esconder o resto da biblioteca; só aproximando o que você quer achar agora.',
         summary: `${formatShortNumber(payload.searchResults.books.length)} livros encontrados para "${payload.query}".`,
-        metrics: buildLibraryMetrics(payload.summary),
+        metrics: buildLibraryMetrics(payload.stats),
       },
       sections: [
         {
@@ -514,7 +512,7 @@ export function buildBookLibraryPageData(payload: {
       intro: 'O arquivo completo para quando a mesa do momento já não basta e você quer atravessar a estante inteira com mais calma.',
       backLink: '/books',
       backLabel: 'Voltar ao recorte',
-      accentLink: '/books/library?year=' + years[0].year,
+      accentLink: `/books/library?year=${featuredYear}`,
       accentLabel: 'Abrir um recorte por ano',
       spotlight: buildSpotlightFromCard(
         activeItems[0] ?? dormantItems[0],
@@ -530,9 +528,9 @@ export function buildBookLibraryPageData(payload: {
     context: {
       eyebrow: 'Arquivo',
       title: 'A estante inteira vista pelo estado atual',
-      description: 'Uma visão larga da biblioteca, mas ancorada em como ela está se movendo agora.',
-      summary: `${formatShortNumber(payload.summary.counts.total)} registros recentes distribuídos entre leituras em curso, fechadas, pausadas e desejos de leitura.`,
-      metrics: buildLibraryMetrics(payload.summary),
+      description: 'Uma visão larga da biblioteca, agora ancorada no arquivo inteiro e não só no recorte recente.',
+      summary: `${formatShortNumber(payload.stats.total.booksCount)} livros no arquivo, ${formatShortNumber(payload.stats.total.readsCount)} registros acumulados e ${formatShortNumber(payload.stats.unreadCount)} ainda esperando a primeira leitura.`,
+      metrics: buildLibraryMetrics(payload.stats),
     },
     sections: [
       {

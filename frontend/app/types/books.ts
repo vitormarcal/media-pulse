@@ -134,6 +134,27 @@ export interface BooksLibraryResponse {
   nextCursor: string | null
 }
 
+export interface BooksStatsResponse {
+  total: {
+    booksCount: number
+    readsCount: number
+    completedCount: number
+  }
+  unreadCount: number
+  years: Array<{
+    year: number
+    readsCount: number
+    uniqueBooksCount: number
+    finishedCount: number
+    currentlyReadingCount: number
+    wantCount: number
+    pausedCount: number
+    didNotFinishCount: number
+  }>
+  latestActivityAt: string | null
+  firstActivityAt: string | null
+}
+
 export interface BooksSearchResponse {
   books: BookCardDto[]
   authors: AuthorDto[]

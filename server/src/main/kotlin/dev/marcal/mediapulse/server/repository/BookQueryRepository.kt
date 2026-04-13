@@ -9,7 +9,10 @@ import dev.marcal.mediapulse.server.api.books.BookReadStatus
 import dev.marcal.mediapulse.server.api.books.BooksLibraryResponse
 import dev.marcal.mediapulse.server.api.books.BooksListResponse
 import dev.marcal.mediapulse.server.api.books.BooksSearchResponse
+import dev.marcal.mediapulse.server.api.books.BooksStatsResponse
 import dev.marcal.mediapulse.server.api.books.BooksSummaryResponse
+import dev.marcal.mediapulse.server.api.books.BooksTotalStatsDto
+import dev.marcal.mediapulse.server.api.books.BooksYearStatsDto
 import dev.marcal.mediapulse.server.api.books.EditionDto
 import dev.marcal.mediapulse.server.api.books.RangeDto
 import dev.marcal.mediapulse.server.api.books.ReadCardDto
@@ -640,6 +643,125 @@ class BookQueryRepository(
             range = RangeDto(resolvedRange.start, resolvedRange.end),
             counts = counts,
             topAuthors = topAuthors,
+        )
+    }
+
+    fun stats(): BooksStatsResponse {
+        val totalRow =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      COUNT(DISTINCT b.id) AS books_count,
+                      COUNT(br.id) AS reads_count,
+                      COUNT(*) FILTER (WHERE br.status = 'READ') AS completed_count
+                    FROM books b
+                    LEFT JOIN book_reads br ON br.book_id = b.id
+                    """.trimIndent(),
+                ).singleResult as Array<*>
+
+        val unreadCount =
+            (
+                entityManager
+                    .createNativeQuery(
+                        """
+                        SELECT COUNT(*)
+                        FROM books b
+                        WHERE NOT EXISTS (
+                          SELECT 1
+                          FROM book_reads br
+                          WHERE br.book_id = b.id
+                            AND br.status <> 'WANT_TO_READ'
+                        )
+                        """.trimIndent(),
+                    ).singleResult as Number
+            ).toLong()
+
+        val years =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH read_activity AS (
+                      SELECT
+                        EXTRACT(
+                          YEAR FROM (
+                            COALESCE(
+                              CASE WHEN br.status = 'READ' THEN br.finished_at END,
+                              CASE WHEN br.status = 'CURRENTLY_READING' THEN COALESCE(br.updated_at, br.started_at, br.created_at) END,
+                              CASE WHEN br.status = 'WANT_TO_READ' THEN br.created_at END,
+                              COALESCE(br.updated_at, br.started_at, br.created_at)
+                            ) AT TIME ZONE 'UTC'
+                          )
+                        ) AS year,
+                        br.book_id,
+                        br.status
+                      FROM book_reads br
+                    )
+                    SELECT
+                      year,
+                      COUNT(*) AS reads_count,
+                      COUNT(DISTINCT book_id) AS unique_books_count,
+                      COUNT(*) FILTER (WHERE status = 'READ') AS finished_count,
+                      COUNT(*) FILTER (WHERE status = 'CURRENTLY_READING') AS currently_reading_count,
+                      COUNT(*) FILTER (WHERE status = 'WANT_TO_READ') AS want_count,
+                      COUNT(*) FILTER (WHERE status = 'PAUSED') AS paused_count,
+                      COUNT(*) FILTER (WHERE status = 'DID_NOT_FINISH') AS did_not_finish_count
+                    FROM read_activity
+                    WHERE year IS NOT NULL
+                    GROUP BY year
+                    ORDER BY year DESC
+                    """.trimIndent(),
+                ).resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    BooksYearStatsDto(
+                        year = (fields[0] as Number).toInt(),
+                        readsCount = (fields[1] as Number).toLong(),
+                        uniqueBooksCount = (fields[2] as Number).toLong(),
+                        finishedCount = (fields[3] as Number).toLong(),
+                        currentlyReadingCount = (fields[4] as Number).toLong(),
+                        wantCount = (fields[5] as Number).toLong(),
+                        pausedCount = (fields[6] as Number).toLong(),
+                        didNotFinishCount = (fields[7] as Number).toLong(),
+                    )
+                }
+
+        val boundsRow =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      MAX(
+                        COALESCE(
+                          CASE WHEN br.status = 'READ' THEN br.finished_at END,
+                          CASE WHEN br.status = 'CURRENTLY_READING' THEN COALESCE(br.updated_at, br.started_at, br.created_at) END,
+                          CASE WHEN br.status = 'WANT_TO_READ' THEN br.created_at END,
+                          COALESCE(br.updated_at, br.started_at, br.created_at)
+                        )
+                      ),
+                      MIN(
+                        COALESCE(
+                          CASE WHEN br.status = 'READ' THEN br.finished_at END,
+                          CASE WHEN br.status = 'CURRENTLY_READING' THEN COALESCE(br.updated_at, br.started_at, br.created_at) END,
+                          CASE WHEN br.status = 'WANT_TO_READ' THEN br.created_at END,
+                          COALESCE(br.updated_at, br.started_at, br.created_at)
+                        )
+                      )
+                    FROM book_reads br
+                    """.trimIndent(),
+                ).singleResult as Array<*>
+
+        return BooksStatsResponse(
+            total =
+                BooksTotalStatsDto(
+                    booksCount = (totalRow[0] as Number).toLong(),
+                    readsCount = (totalRow[1] as Number).toLong(),
+                    completedCount = (totalRow[2] as Number).toLong(),
+                ),
+            unreadCount = unreadCount,
+            years = years,
+            latestActivityAt = asInstant(boundsRow[0]),
+            firstActivityAt = asInstant(boundsRow[1]),
         )
     }
 
