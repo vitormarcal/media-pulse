@@ -1,3 +1,5 @@
+import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
+
 export interface MovieImageDto {
   id: number
   url: string
@@ -57,4 +59,46 @@ export interface MoviePageData {
     externalId: string
   }>
   recentWatches: MovieWatchEntryModel[]
+}
+
+export interface MoviesStatsResponse {
+  total: {
+    watchesCount: number
+    uniqueMoviesCount: number
+  }
+  unwatchedCount: number
+  years: Array<{
+    year: number
+    watchesCount: number
+    uniqueMoviesCount: number
+    rewatchesCount: number
+  }>
+  latestWatchAt: string | null
+  firstWatchAt: string | null
+}
+
+export interface MovieCollectionContextMetric {
+  id: string
+  label: string
+  value: string
+  note: string
+}
+
+export interface MovieCollectionData {
+  generatedAt: string
+  hero: {
+    title: string
+    intro: string
+    lead: EditorialHighlight | null
+    supporting: EditorialHighlight[]
+  }
+  featuredSessions: EditorialShelfItem[]
+  recentMoments: EditorialShelfItem[]
+  context: {
+    eyebrow: string
+    title: string
+    description: string
+    summary: string
+    metrics: MovieCollectionContextMetric[]
+  }
 }

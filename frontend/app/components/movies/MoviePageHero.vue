@@ -1,7 +1,7 @@
 <template>
   <section class="movie-hero">
-    <NuxtLink class="back-link" to="/">
-      Voltar para a capa
+    <NuxtLink class="back-link" to="/movies">
+      Voltar para filmes
     </NuxtLink>
 
     <div class="hero-grid">
