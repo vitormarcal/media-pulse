@@ -408,16 +408,32 @@ class BookQueryRepository(
         limit: Int,
         cursor: String?,
     ): BooksListResponse {
-        val cursorId = parseCursor(cursor)
+        val (cursorAnchorAt, cursorId) = parseActivityCursor(cursor)
         val params = mutableMapOf<String, Any>()
         val whereParts = mutableListOf<String>()
+        val anchorExpression = listAnchorExpression(status)
 
         if (status != null) {
             whereParts.add("br.status = :status")
             params["status"] = status.name
         }
 
-        if (cursorId != null) {
+        if (cursorAnchorAt != null && cursorId != null) {
+            whereParts.add(
+                """
+                (
+                  COALESCE($anchorExpression, TIMESTAMP '1970-01-01 00:00:00') < :cursorAnchorAt
+                  OR (
+                    COALESCE($anchorExpression, TIMESTAMP '1970-01-01 00:00:00') = :cursorAnchorAt
+                    AND br.id < :cursorId
+                  )
+                )
+                """.trimIndent(),
+            )
+            params["cursorAnchorAt"] = Timestamp.from(cursorAnchorAt)
+            params["cursorId"] = cursorId
+        } else if (cursorId != null) {
+            // Backward compatibility with any previously issued id-only cursor.
             whereParts.add("br.id < :cursorId")
             params["cursorId"] = cursorId
         }
@@ -432,14 +448,14 @@ class BookQueryRepository(
         val rows =
             fetchReadRows(
                 where = where,
-                orderBy = "br.id DESC",
+                orderBy = "COALESCE($anchorExpression, TIMESTAMP '1970-01-01 00:00:00') DESC, br.id DESC",
                 params = params,
                 limit = limit,
             )
 
         val authorsByBookId = fetchAuthorsByBookIds(rows.map { it.bookId }.toSet())
         val items = rows.map { it.toDto(authorsByBookId) }
-        val nextCursor = items.lastOrNull()?.let { buildCursor(it.readId) }
+        val nextCursor = rows.lastOrNull()?.let { buildActivityCursor(resolveListAnchor(it, status), it.readId) }
 
         return BooksListResponse(
             items = items,
@@ -892,6 +908,33 @@ class BookQueryRepository(
                 RangeDto(start, end)
             }
             else -> error("Unsupported range: $range")
+        }
+
+    private fun listAnchorExpression(status: BookReadStatus?): String =
+        when (status) {
+            BookReadStatus.READ -> "br.finished_at"
+            BookReadStatus.CURRENTLY_READING -> "COALESCE(br.updated_at, br.started_at, br.created_at)"
+            BookReadStatus.WANT_TO_READ -> "br.created_at"
+            BookReadStatus.PAUSED,
+            BookReadStatus.DID_NOT_FINISH,
+            BookReadStatus.UNKNOWN,
+            null,
+            -> "COALESCE(br.finished_at, br.updated_at, br.started_at, br.created_at)"
+        }
+
+    private fun resolveListAnchor(
+        row: ReadRow,
+        status: BookReadStatus?,
+    ): Instant? =
+        when (status) {
+            BookReadStatus.READ -> row.finishedAt ?: row.startedAt ?: row.createdAt
+            BookReadStatus.CURRENTLY_READING -> row.updatedAt ?: row.startedAt ?: row.createdAt
+            BookReadStatus.WANT_TO_READ -> row.createdAt
+            BookReadStatus.PAUSED,
+            BookReadStatus.DID_NOT_FINISH,
+            BookReadStatus.UNKNOWN,
+            null,
+            -> row.finishedAt ?: row.updatedAt ?: row.startedAt ?: row.createdAt
         }
 
     private fun parseCursor(cursor: String?): Long? {
