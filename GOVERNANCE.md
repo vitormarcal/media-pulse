@@ -122,6 +122,24 @@ Se a tarefa for apenas documentação e nenhum arquivo Kotlin for alterado, não
 - Nunca ler `server/src/main/resources/application-local.yml` para análise, documentação ou implementação
 - Trate `application-local.yml` como arquivo local do usuário para testes com dados reais, fora do escopo normal de inspeção
 
+## 13. Design obrigatório
+
+Toda mudança de frontend deve consultar e seguir `DESIGN.md` antes de implementação.
+
+Regras:
+
+- `DESIGN.md` é a fonte de verdade para direção visual, UX, tom, hierarquia, grid, cor, tipografia, espaçamento e navegação
+- não introduzir padrões visuais, componentes ou fluxos que contrariem o `DESIGN.md` sem justificar explicitamente
+- preservar consistência entre páginas já implementadas
+- se código e `DESIGN.md` divergirem, alinhar explicitamente um dos lados
+- se surgir uma decisão de design não óbvia que afete padrões futuros, registrar isso em documentação
+
+Antes de implementar mudanças de frontend, explicite:
+
+1. quais partes do `DESIGN.md` guiam a solução
+2. quais arquivos principais serão alterados
+3. como a consistência visual com o que já existe será preservada
+
 # Regra para novas features
 
 Antes de escrever código em uma feature nova ou refactor amplo, você deve:
