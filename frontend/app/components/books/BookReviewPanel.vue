@@ -8,6 +8,8 @@
     />
 
     <article class="review-card">
+      <p v-if="reviewedLabel" class="review-meta">{{ reviewedLabel }}</p>
+
       <p v-for="(paragraph, index) in paragraphs" :key="`paragraph-${index}`" class="review-paragraph">
         {{ paragraph }}
       </p>
@@ -17,9 +19,11 @@
 
 <script setup lang="ts">
 import SectionHeading from '~/components/home/SectionHeading.vue'
+import { formatAbsoluteDate, formatRelativeDate } from '~/utils/formatting'
 
 const props = defineProps<{
   review: string
+  reviewedAt?: string | null
 }>()
 
 const paragraphs = computed(() =>
@@ -28,6 +32,11 @@ const paragraphs = computed(() =>
     .map((paragraph) => paragraph.trim())
     .filter(Boolean),
 )
+
+const reviewedLabel = computed(() => {
+  if (!props.reviewedAt) return null
+  return `Escrita ${formatRelativeDate(props.reviewedAt)} · ${formatAbsoluteDate(props.reviewedAt)}`
+})
 </script>
 
 <style scoped>
@@ -44,6 +53,15 @@ const paragraphs = computed(() =>
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.96));
   border: 1px solid color-mix(in srgb, var(--base-color-border) 52%, white);
+}
+
+.review-meta {
+  margin: 0;
+  color: var(--base-color-brand-red);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .review-paragraph {

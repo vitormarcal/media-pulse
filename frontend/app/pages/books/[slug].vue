@@ -24,7 +24,7 @@
         :editions="data.editions"
       />
 
-      <BookReviewPanel v-if="data.reviewRaw" :review="data.reviewRaw" />
+      <BookReviewPanel v-if="data.reviewRaw" :review="data.reviewRaw" :reviewed-at="data.reviewedAt" />
 
       <BookReadTimeline :reads="data.recentReads" />
     </template>

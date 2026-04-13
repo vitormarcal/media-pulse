@@ -108,6 +108,7 @@ export interface BookPageData {
   editions: BookEditionModel[]
   recentReads: BookReadEntryModel[]
   reviewRaw: string | null
+  reviewedAt: string | null
 }
 
 export interface AuthorPageData {

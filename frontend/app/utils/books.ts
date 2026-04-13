@@ -606,6 +606,7 @@ export function buildBookPageData(book: BookDetailsResponse): BookPageData {
     editions: book.editions.slice(0, 8).map(mapEdition),
     recentReads: book.reads.slice(0, 24).map(mapRead),
     reviewRaw: book.reviewRaw,
+    reviewedAt: book.reviewedAt,
   }
 }
 
