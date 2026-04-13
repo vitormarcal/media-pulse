@@ -1,10 +1,11 @@
-import type { MusicSummaryResponse } from '~/types/home'
 import type {
   AlbumLibraryPageResponse,
   ArtistLibraryPageResponse,
+  MusicByYearResponse,
   MusicLibraryKind,
   MusicLibraryPageData,
   MusicSearchResponse,
+  MusicStatsResponse,
   TrackLibraryPageResponse,
 } from '~/types/music'
 import { buildMusicLibraryPageData } from '~/utils/music'
@@ -12,6 +13,7 @@ import { buildMusicLibraryPageData } from '~/utils/music'
 export interface MusicLibraryQuery {
   q?: string
   kind?: MusicLibraryKind
+  year?: number | null
 }
 
 async function fetchLibraryKindPage(kind: MusicLibraryKind, limit: number, cursor?: string) {
@@ -42,23 +44,32 @@ export async function fetchMusicLibraryPageData(query: MusicLibraryQuery = {}): 
   const config = useRuntimeConfig()
   const q = query.q?.trim() || ''
   const selectedKind = query.kind ?? 'albums'
+  const year = query.year ?? null
 
-  const [summary, libraryPage, searchResults] = await Promise.all([
-    $fetch<MusicSummaryResponse>('/api/music/summary', { baseURL: config.public.apiBase, query: { range: 'month' } }),
-    q ? Promise.resolve(null) : fetchLibraryKindPage(selectedKind, 24),
+  const [stats, libraryPage, searchResults, yearResults] = await Promise.all([
+    $fetch<MusicStatsResponse>('/api/music/stats', { baseURL: config.public.apiBase }),
+    q || year ? Promise.resolve(null) : fetchLibraryKindPage(selectedKind, 24),
     q
       ? $fetch<MusicSearchResponse>('/api/music/search', { baseURL: config.public.apiBase, query: { q, limit: 40 } })
+      : Promise.resolve(null),
+    year
+      ? $fetch<MusicByYearResponse>(`/api/music/year/${year}`, {
+          baseURL: config.public.apiBase,
+          query: { limitAlbums: 80, limitArtists: 12, limitTracks: 12 },
+        })
       : Promise.resolve(null),
   ])
 
   return buildMusicLibraryPageData({
-    summary,
-    selectedKind,
+    stats,
+    selectedKind: year ? 'albums' : selectedKind,
+    selectedYear: year,
     query: q,
     artists: selectedKind === 'artists' ? (libraryPage as ArtistLibraryPageResponse | null) : null,
     albums: selectedKind === 'albums' ? (libraryPage as AlbumLibraryPageResponse | null) : null,
     tracks: selectedKind === 'tracks' ? (libraryPage as TrackLibraryPageResponse | null) : null,
     searchResults,
+    yearResults,
   })
 }
 
@@ -67,6 +78,6 @@ export async function fetchMusicLibraryNextPage(kind: MusicLibraryKind, cursor: 
 }
 
 export function useMusicLibraryData(query: MusicLibraryQuery = {}) {
-  const key = `music-library-${query.kind ?? 'albums'}-${query.q ?? ''}`
+  const key = `music-library-${query.kind ?? 'albums'}-${query.q ?? ''}-${query.year ?? 'all'}`
   return useAsyncData(key, () => fetchMusicLibraryPageData(query))
 }

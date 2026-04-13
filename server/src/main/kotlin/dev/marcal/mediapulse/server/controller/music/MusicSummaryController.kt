@@ -4,6 +4,8 @@ import dev.marcal.mediapulse.server.api.music.AlbumLibraryPageResponse
 import dev.marcal.mediapulse.server.api.music.AlbumPageResponse
 import dev.marcal.mediapulse.server.api.music.ArtistLibraryPageResponse
 import dev.marcal.mediapulse.server.api.music.ArtistPageResponse
+import dev.marcal.mediapulse.server.api.music.MusicByYearResponse
+import dev.marcal.mediapulse.server.api.music.MusicStatsResponse
 import dev.marcal.mediapulse.server.api.music.MusicSummaryResponse
 import dev.marcal.mediapulse.server.api.music.RecentAlbumsPageResponse
 import dev.marcal.mediapulse.server.api.music.SearchResponse
@@ -17,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import kotlin.math.min
 
 @RestController
 @RequestMapping("/api/music")
@@ -56,6 +61,31 @@ class MusicSummaryController(
         @RequestParam(defaultValue = "20") limit: Int,
         @RequestParam(required = false) cursor: String?,
     ): TrackLibraryPageResponse = repository.getTrackLibrary(limit, cursor)
+
+    @GetMapping("/stats")
+    fun stats(): MusicStatsResponse = repository.getStats()
+
+    @GetMapping("/year/{year}")
+    fun byYear(
+        @PathVariable year: Int,
+        @RequestParam(defaultValue = "80") limitAlbums: Int,
+        @RequestParam(defaultValue = "12") limitArtists: Int,
+        @RequestParam(defaultValue = "12") limitTracks: Int,
+    ): MusicByYearResponse {
+        val validatedYear = validateYear(year)
+        val resolvedLimitAlbums = normalizeLimit("limitAlbums", limitAlbums)
+        val resolvedLimitArtists = normalizeLimit("limitArtists", limitArtists)
+        val resolvedLimitTracks = normalizeLimit("limitTracks", limitTracks)
+        val (start, end) = yearRange(validatedYear)
+        return repository.getByYear(
+            year = validatedYear,
+            start = start,
+            end = end,
+            limitAlbums = resolvedLimitAlbums,
+            limitArtists = resolvedLimitArtists,
+            limitTracks = resolvedLimitTracks,
+        )
+    }
 
     @GetMapping("/tops/artists")
     fun topArtists(
@@ -169,4 +199,26 @@ class MusicSummaryController(
             "custom" -> requireNotNull(start) to requireNotNull(end)
             else -> throw IllegalArgumentException("range inválido")
         }
+
+    private fun validateYear(year: Int): Int {
+        val maxYear = LocalDate.now(ZoneOffset.UTC).year + 1
+        if (year < 1900 || year > maxYear) {
+            throw IllegalArgumentException("year inválido")
+        }
+        return year
+    }
+
+    private fun normalizeLimit(
+        name: String,
+        value: Int,
+    ): Int {
+        require(value >= 1) { "$name deve ser >= 1" }
+        return min(value, 1000)
+    }
+
+    private fun yearRange(year: Int): Pair<Instant, Instant> {
+        val start = LocalDate.of(year, 1, 1).atStartOfDay(ZoneOffset.UTC).toInstant()
+        val end = LocalDate.of(year, 12, 31).atTime(23, 59, 59).toInstant(ZoneOffset.UTC)
+        return start to end
+    }
 }

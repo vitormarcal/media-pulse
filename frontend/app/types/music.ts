@@ -123,6 +123,41 @@ export interface MusicSearchResponse {
   }>
 }
 
+export interface MusicByYearResponse {
+  year: number
+  range: {
+    start: string
+    end: string
+  }
+  stats: {
+    playsCount: number
+    uniqueArtistsCount: number
+    uniqueAlbumsCount: number
+    uniqueTracksCount: number
+  }
+  albums: AlbumLibraryRow[]
+  artists: TopArtistResponse[]
+  tracks: TopTrackResponse[]
+}
+
+export interface MusicStatsResponse {
+  total: {
+    playsCount: number
+    uniqueArtistsCount: number
+    uniqueAlbumsCount: number
+    uniqueTracksCount: number
+  }
+  years: Array<{
+    year: number
+    playsCount: number
+    uniqueArtistsCount: number
+    uniqueAlbumsCount: number
+    uniqueTracksCount: number
+  }>
+  latestPlayAt: string | null
+  firstPlayAt: string | null
+}
+
 export interface AlbumTrackModel {
   id: string
   title: string
@@ -197,6 +232,12 @@ export interface MusicLibraryTab {
   summary: string
 }
 
+export interface MusicLibraryYearChip {
+  year: number
+  label: string
+  detail: string
+}
+
 export interface MusicLibraryCardModel {
   id: string
   kind: MusicLibraryKind
@@ -230,7 +271,9 @@ export interface MusicLibraryPageData {
   filters: {
     query: string
     selectedKind: MusicLibraryKind
+    selectedYear: number | null
     tabs: MusicLibraryTab[]
+    years: MusicLibraryYearChip[]
   }
   context: {
     eyebrow: string
@@ -239,7 +282,7 @@ export interface MusicLibraryPageData {
     summary: string
     metrics: MusicLibraryMetric[]
   }
-  section: {
+  sections: Array<{
     id: string
     eyebrow: string
     title: string
@@ -247,7 +290,7 @@ export interface MusicLibraryPageData {
     summary: string
     items: MusicLibraryCardModel[]
     emptyMessage?: string
-  }
+  }>
   libraryCursor: string | null
-  mode: 'library' | 'search'
+  mode: 'library' | 'search' | 'year'
 }

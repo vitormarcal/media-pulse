@@ -206,6 +206,52 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MusicSummaryResponse"
+  /api/music/stats:
+    get:
+      summary: Music stats
+      tags: [Music]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MusicStatsResponse"
+  /api/music/year/{year}:
+    get:
+      summary: Music by year
+      tags: [Music]
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limitAlbums
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 80
+        - name: limitArtists
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 12
+        - name: limitTracks
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 12
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MusicByYearResponse"
   /api/music/recent-albums:
     get:
       summary: Recent albums
@@ -223,9 +269,76 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/RecentAlbumResponse"
+                $ref: "#/components/schemas/RecentAlbumsPageResponse"
+  /api/music/library/artists:
+    get:
+      summary: Artist music library
+      tags: [Music]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtistLibraryPageResponse"
+  /api/music/library/albums:
+    get:
+      summary: Album music library
+      tags: [Music]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumLibraryPageResponse"
+  /api/music/library/tracks:
+    get:
+      summary: Track music library
+      tags: [Music]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackLibraryPageResponse"
   /api/music/tops/artists:
     get:
       summary: Top artists
@@ -1330,6 +1443,229 @@ components:
           type: integer
           format: int64
       required: [range, artistsCount, albumsCount, tracksCount]
+    MusicStatsResponse:
+      type: object
+      properties:
+        total:
+          $ref: "#/components/schemas/MusicTotalStatsDto"
+        years:
+          type: array
+          items:
+            $ref: "#/components/schemas/MusicYearStatsDto"
+        latestPlayAt:
+          type: string
+          format: date-time
+          nullable: true
+        firstPlayAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [total, years]
+    MusicTotalStatsDto:
+      type: object
+      properties:
+        playsCount:
+          type: integer
+          format: int64
+        uniqueArtistsCount:
+          type: integer
+          format: int64
+        uniqueAlbumsCount:
+          type: integer
+          format: int64
+        uniqueTracksCount:
+          type: integer
+          format: int64
+      required: [playsCount, uniqueArtistsCount, uniqueAlbumsCount, uniqueTracksCount]
+    MusicYearStatsDto:
+      type: object
+      properties:
+        year:
+          type: integer
+        playsCount:
+          type: integer
+          format: int64
+        uniqueArtistsCount:
+          type: integer
+          format: int64
+        uniqueAlbumsCount:
+          type: integer
+          format: int64
+        uniqueTracksCount:
+          type: integer
+          format: int64
+      required: [year, playsCount, uniqueArtistsCount, uniqueAlbumsCount, uniqueTracksCount]
+    MusicByYearResponse:
+      type: object
+      properties:
+        year:
+          type: integer
+        range:
+          $ref: "#/components/schemas/MusicRangeDto"
+        stats:
+          $ref: "#/components/schemas/MusicByYearStatsDto"
+        albums:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlbumLibraryRow"
+        artists:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopArtistResponse"
+        tracks:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopTrackResponse"
+      required: [year, range, stats, albums, artists, tracks]
+    MusicByYearStatsDto:
+      type: object
+      properties:
+        playsCount:
+          type: integer
+          format: int64
+        uniqueArtistsCount:
+          type: integer
+          format: int64
+        uniqueAlbumsCount:
+          type: integer
+          format: int64
+        uniqueTracksCount:
+          type: integer
+          format: int64
+      required: [playsCount, uniqueArtistsCount, uniqueAlbumsCount, uniqueTracksCount]
+    ArtistLibraryRow:
+      type: object
+      properties:
+        artistId:
+          type: integer
+          format: int64
+        artistName:
+          type: string
+        coverUrl:
+          type: string
+          nullable: true
+        totalPlays:
+          type: integer
+          format: int64
+        albumsCount:
+          type: integer
+          format: int64
+        tracksCount:
+          type: integer
+          format: int64
+        lastPlayed:
+          type: string
+          format: date-time
+          nullable: true
+      required: [artistId, artistName, totalPlays, albumsCount, tracksCount]
+    ArtistLibraryPageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArtistLibraryRow"
+        nextCursor:
+          type: string
+          nullable: true
+      required: [items]
+    AlbumLibraryRow:
+      type: object
+      properties:
+        albumId:
+          type: integer
+          format: int64
+        albumTitle:
+          type: string
+        artistId:
+          type: integer
+          format: int64
+        artistName:
+          type: string
+        coverUrl:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        totalTracks:
+          type: integer
+          format: int64
+        playedTracks:
+          type: integer
+          format: int64
+        playCount:
+          type: integer
+          format: int64
+        lastPlayed:
+          type: string
+          format: date-time
+          nullable: true
+      required: [albumId, albumTitle, artistId, artistName, totalTracks, playedTracks, playCount]
+    AlbumLibraryPageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlbumLibraryRow"
+        nextCursor:
+          type: string
+          nullable: true
+      required: [items]
+    TrackLibraryRow:
+      type: object
+      properties:
+        trackId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        artistId:
+          type: integer
+          format: int64
+        artistName:
+          type: string
+        albumId:
+          type: integer
+          format: int64
+          nullable: true
+        albumTitle:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        totalPlays:
+          type: integer
+          format: int64
+        lastPlayed:
+          type: string
+          format: date-time
+          nullable: true
+      required: [trackId, title, artistId, artistName, totalPlays]
+    TrackLibraryPageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrackLibraryRow"
+        nextCursor:
+          type: string
+          nullable: true
+      required: [items]
+    RecentAlbumsPageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentAlbumResponse"
+        nextCursor:
+          type: string
+          nullable: true
+      required: [items]
     RecentAlbumResponse:
       type: object
       properties:
@@ -1367,6 +1703,16 @@ components:
         playCount:
           type: integer
           format: int64
+        albumId:
+          type: integer
+          format: int64
+          nullable: true
+        albumTitle:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
       required: [artistId, artistName, playCount]
     TopAlbumResponse:
       type: object

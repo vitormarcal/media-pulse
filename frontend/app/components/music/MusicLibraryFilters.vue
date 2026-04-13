@@ -13,6 +13,28 @@
       </NuxtLink>
     </div>
 
+    <div class="years">
+      <NuxtLink
+        class="year-chip"
+        :class="{ active: selectedYear == null && !query }"
+        to="/music/library?kind=albums"
+      >
+        <span>Tudo</span>
+        <strong>arquivo</strong>
+      </NuxtLink>
+
+      <NuxtLink
+        v-for="year in years"
+        :key="year.year"
+        class="year-chip"
+        :class="{ active: selectedYear === year.year }"
+        :to="`/music/library?year=${year.year}`"
+      >
+        <span>{{ year.label }}</span>
+        <strong>{{ year.detail }}</strong>
+      </NuxtLink>
+    </div>
+
     <form class="search-form" @submit.prevent="submitSearch">
       <label class="search-label" for="music-library-query">Buscar na biblioteca</label>
       <div class="search-row">
@@ -32,12 +54,14 @@
 </template>
 
 <script setup lang="ts">
-import type { MusicLibraryKind, MusicLibraryTab } from '~/types/music'
+import type { MusicLibraryKind, MusicLibraryTab, MusicLibraryYearChip } from '~/types/music'
 
 const props = defineProps<{
   query: string
   selectedKind: MusicLibraryKind
+  selectedYear: number | null
   tabs: MusicLibraryTab[]
+  years: MusicLibraryYearChip[]
 }>()
 
 const localQuery = ref(props.query)
@@ -47,6 +71,12 @@ watch(() => props.query, (value) => {
 })
 
 function tabLink(kind: MusicLibraryKind) {
+  if (props.selectedYear) {
+    return kind === 'albums'
+      ? `/music/library?year=${props.selectedYear}`
+      : `/music/library?kind=${kind}`
+  }
+
   return props.query
     ? `/music/library?kind=${kind}&q=${encodeURIComponent(props.query)}`
     : `/music/library?kind=${kind}`
@@ -104,6 +134,32 @@ function submitSearch() {
 .search-form {
   display: grid;
   gap: 10px;
+}
+
+.years {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.year-chip {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--base-color-surface-warm) 82%, white);
+  color: var(--base-color-text-secondary);
+  font-size: 0.78rem;
+}
+
+.year-chip strong {
+  color: var(--base-color-text-primary);
+  font-size: 0.72rem;
+}
+
+.year-chip.active {
+  background: color-mix(in srgb, var(--base-color-brand-red) 16%, white);
+  color: var(--base-color-text-primary);
 }
 
 .search-label {

@@ -7,13 +7,16 @@ import type {
   AlbumTrackModel,
   ArtistLibraryPageResponse,
   ArtistLibraryRow,
+  MusicByYearResponse,
   MusicCollectionContextMetric,
   MusicCollectionData,
   MusicLibraryCardModel,
   MusicLibraryKind,
   MusicLibraryMetric,
   MusicLibraryPageData,
+  MusicLibraryYearChip,
   MusicSearchResponse,
+  MusicStatsResponse,
   TopAlbumResponse,
   TopArtistResponse,
   TopTrackResponse,
@@ -185,53 +188,67 @@ export function buildMusicCollectionData(payload: {
   }
 }
 
-function tabs(summary: MusicSummaryResponse) {
+function tabs(summary: MusicStatsResponse['total']) {
   return [
     {
       kind: 'artists' as const,
       label: 'Artistas',
-      summary: `${formatShortNumber(summary.artistsCount)} no recorte`,
+      summary: `${formatShortNumber(summary.uniqueArtistsCount)} no arquivo`,
     },
     {
       kind: 'albums' as const,
       label: 'Álbuns',
-      summary: `${formatShortNumber(summary.albumsCount)} no recorte`,
+      summary: `${formatShortNumber(summary.uniqueAlbumsCount)} no arquivo`,
     },
     {
       kind: 'tracks' as const,
       label: 'Faixas',
-      summary: `${formatShortNumber(summary.tracksCount)} no recorte`,
+      summary: `${formatShortNumber(summary.uniqueTracksCount)} no arquivo`,
     },
   ]
 }
 
-function buildLibraryMetrics(summary: MusicSummaryResponse): MusicLibraryMetric[] {
+function buildLibraryMetrics(stats: MusicStatsResponse): MusicLibraryMetric[] {
   return [
     {
       id: 'artists',
-      label: 'Artistas na escuta',
-      value: formatShortNumber(summary.artistsCount),
-      note: 'a frente de nomes que realmente entrou em circulação no período',
+      label: 'Artistas no histórico',
+      value: formatShortNumber(stats.total.uniqueArtistsCount),
+      note: 'quem já apareceu de fato no histórico de plays consolidado',
     },
     {
       id: 'albums',
-      label: 'Álbuns em foco',
-      value: formatShortNumber(summary.albumsCount),
-      note: 'a unidade principal de descoberta e retorno na seção de música',
+      label: 'Álbuns no histórico',
+      value: formatShortNumber(stats.total.uniqueAlbumsCount),
+      note: 'a unidade principal de descoberta e retorno já registrada no arquivo',
     },
     {
       id: 'tracks',
-      label: 'Faixas em jogo',
-      value: formatShortNumber(summary.tracksCount),
-      note: 'o nível de granularidade que a escuta recente já alcançou',
+      label: 'Faixas no histórico',
+      value: formatShortNumber(stats.total.uniqueTracksCount),
+      note: 'a camada mais granular já tocada ao longo do arquivo',
     },
     {
-      id: 'range',
-      label: 'Janela do recorte',
-      value: formatAbsoluteDate(summary.range.start),
-      note: `até ${formatAbsoluteDate(summary.range.end)}`,
+      id: 'plays',
+      label: 'Plays acumulados',
+      value: formatShortNumber(stats.total.playsCount),
+      note: stats.firstPlayAt
+        ? `do primeiro em ${formatAbsoluteDate(stats.firstPlayAt)} ao mais recente`
+        : 'ainda sem janela consolidada suficiente',
     },
   ]
+}
+
+function buildYearChips(stats: MusicStatsResponse): MusicLibraryYearChip[] {
+  return stats.years
+    .slice()
+    .sort((a, b) => b.year - a.year)
+    .slice(0, 12)
+    .map((year) => ({
+      year: year.year,
+      label: String(year.year),
+      detail: `${formatShortNumber(year.uniqueAlbumsCount)} álbuns`,
+    }))
 }
 
 function artistCard(item: ArtistLibraryRow): MusicLibraryCardModel {
@@ -327,6 +344,34 @@ function searchTrackCard(item: MusicSearchResponse['tracks'][number]): MusicLibr
   }
 }
 
+function yearArtistCard(item: TopArtistResponse): MusicLibraryCardModel {
+  return {
+    id: `year-artist-${item.artistId}`,
+    kind: 'artists',
+    title: item.artistName,
+    subtitle: item.albumTitle ? `Puxado por ${item.albumTitle}` : 'Artista em destaque no ano',
+    href: null,
+    imageUrl: item.coverUrl,
+    primaryMeta: `${formatShortNumber(item.playCount)} plays no ano`,
+    secondaryMeta: 'Leitura do recorte anual',
+    aside: 'Ano',
+  }
+}
+
+function yearTrackCard(item: TopTrackResponse): MusicLibraryCardModel {
+  return {
+    id: `year-track-${item.trackId}`,
+    kind: 'tracks',
+    title: item.title,
+    subtitle: `${item.artistName} · ${item.albumTitle}`,
+    href: null,
+    imageUrl: null,
+    primaryMeta: `${formatShortNumber(item.playCount)} plays no ano`,
+    secondaryMeta: 'Faixa recorrente do recorte anual',
+    aside: 'Ano',
+  }
+}
+
 function buildSpotlightFromCard(card: MusicLibraryCardModel | undefined, fallbackTitle: string) {
   if (!card) return null
 
@@ -391,17 +436,109 @@ export function buildMusicLibraryCards(
 }
 
 export function buildMusicLibraryPageData(payload: {
-  summary: MusicSummaryResponse
+  stats: MusicStatsResponse
   selectedKind: MusicLibraryKind
+  selectedYear: number | null
   query: string
   artists: ArtistLibraryPageResponse | null
   albums: AlbumLibraryPageResponse | null
   tracks: TrackLibraryPageResponse | null
   searchResults: MusicSearchResponse | null
+  yearResults: MusicByYearResponse | null
 }): MusicLibraryPageData {
   const selectedCopy = kindCopy(payload.selectedKind)
   const searchQuery = payload.query.trim()
   const isSearch = !!searchQuery
+  const yearMode = payload.selectedYear != null && !!payload.yearResults
+
+  if (yearMode && payload.yearResults) {
+    const yearAlbums = buildMusicLibraryCards('albums', payload.yearResults.albums)
+    const yearArtists = payload.yearResults.artists.map(yearArtistCard)
+    const yearTracks = payload.yearResults.tracks.map(yearTrackCard)
+    const spotlight = buildSpotlightFromCard(yearAlbums[0], `O ano musical de ${payload.yearResults.year}`)
+
+    return {
+      hero: {
+        title: `A música em ${payload.yearResults.year}`,
+        intro: 'Um recorte anual para reconhecer fases de escuta sem perder o peso editorial da seção. O eixo continua sendo álbum, com artistas e faixas entrando como apoio do mesmo período.',
+        backLink: '/music',
+        backLabel: 'Voltar ao recorte',
+        accentLink: '/music/library?kind=albums',
+        accentLabel: 'Ver biblioteca inteira',
+        spotlight,
+      },
+      filters: {
+        query: searchQuery,
+        selectedKind: 'albums',
+        selectedYear: payload.selectedYear,
+        tabs: tabs(payload.stats.total),
+        years: buildYearChips(payload.stats),
+      },
+      context: {
+        eyebrow: 'Ano',
+        title: `O que ${payload.yearResults.year} concentrou`,
+        description: 'O ano funciona aqui como memória de fase: quais discos seguraram mais peso, quais artistas puxaram o período e quais faixas insistiram em voltar.',
+        summary: `${formatShortNumber(payload.yearResults.stats.uniqueAlbumsCount)} álbuns, ${formatShortNumber(payload.yearResults.stats.uniqueArtistsCount)} artistas e ${formatShortNumber(payload.yearResults.stats.playsCount)} plays compõem o recorte anual.`,
+        metrics: [
+          {
+            id: 'plays',
+            label: 'Plays no ano',
+            value: formatShortNumber(payload.yearResults.stats.playsCount),
+            note: 'o volume bruto de escuta que realmente passou por esse período',
+          },
+          {
+            id: 'albums',
+            label: 'Álbuns no ano',
+            value: formatShortNumber(payload.yearResults.stats.uniqueAlbumsCount),
+            note: 'o eixo principal de navegação e memória dentro do recorte anual',
+          },
+          {
+            id: 'artists',
+            label: 'Artistas no ano',
+            value: formatShortNumber(payload.yearResults.stats.uniqueArtistsCount),
+            note: 'quem realmente estruturou essa fase musical',
+          },
+          {
+            id: 'tracks',
+            label: 'Faixas no ano',
+            value: formatShortNumber(payload.yearResults.stats.uniqueTracksCount),
+            note: 'a camada fina de repetição e retorno desse período',
+          },
+        ],
+      },
+      sections: [
+        {
+          id: 'year-albums',
+          eyebrow: 'Álbuns do ano',
+          title: 'Os discos que seguraram o centro do período',
+          description: 'O miolo do recorte anual: capa, repetição e cobertura do álbum como memória principal.',
+          summary: 'Aqui o ano é tratado como fase de escuta, não como tabela de arquivo.',
+          items: yearAlbums,
+          emptyMessage: 'Nenhum álbum apareceu nesse ano.',
+        },
+        {
+          id: 'year-artists',
+          eyebrow: 'Artistas do ano',
+          title: 'Quem puxou essa fase',
+          description: 'Os artistas entram como espinha dorsal do período, apoiando a leitura dos álbuns mais presentes.',
+          summary: 'Eles organizam o recorte sem competir com o protagonismo do álbum.',
+          items: yearArtists,
+          emptyMessage: 'Nenhum artista apareceu nesse ano.',
+        },
+        {
+          id: 'year-tracks',
+          eyebrow: 'Faixas do ano',
+          title: 'O detalhe que voltou mais',
+          description: 'A camada de replay fino que ajuda a reconhecer o período no nível da faixa.',
+          summary: 'Faixa aparece como apoio tático, não como centro da página.',
+          items: yearTracks,
+          emptyMessage: 'Nenhuma faixa apareceu nesse ano.',
+        },
+      ],
+      libraryCursor: null,
+      mode: 'year',
+    }
+  }
 
   const libraryItems =
     payload.selectedKind === 'artists'
@@ -445,7 +582,9 @@ export function buildMusicLibraryPageData(payload: {
     filters: {
       query: searchQuery,
       selectedKind: payload.selectedKind,
-      tabs: tabs(payload.summary),
+      selectedYear: payload.selectedYear,
+      tabs: tabs(payload.stats.total),
+      years: buildYearChips(payload.stats),
     },
     context: {
       eyebrow: isSearch ? 'Busca' : 'Arquivo',
@@ -457,24 +596,26 @@ export function buildMusicLibraryPageData(payload: {
         : 'A library existe para navegação densa e reconhecimento rápido, não para virar uma tabela fria.',
       summary: isSearch
         ? `${formatShortNumber(items.length)} resultados na camada de ${selectedCopy.name}.`
-        : `${formatShortNumber(payload.summary.artistsCount)} artistas, ${formatShortNumber(payload.summary.albumsCount)} álbuns e ${formatShortNumber(payload.summary.tracksCount)} faixas compõem a frente recente de música.`,
-      metrics: buildLibraryMetrics(payload.summary),
+        : `${formatShortNumber(payload.stats.total.uniqueArtistsCount)} artistas, ${formatShortNumber(payload.stats.total.uniqueAlbumsCount)} álbuns e ${formatShortNumber(payload.stats.total.uniqueTracksCount)} faixas compõem o arquivo já tocado de música.`,
+      metrics: buildLibraryMetrics(payload.stats),
     },
-    section: {
-      id: payload.selectedKind,
-      eyebrow: isSearch ? 'Resultados' : 'Arquivo principal',
-      title: isSearch ? `Resultados em ${selectedCopy.name}` : selectedCopy.title,
-      description: isSearch
-        ? 'Os resultados ficam separados por camada para preservar o eixo da navegação.'
-        : selectedCopy.description,
-      summary: isSearch
-        ? 'Busca curta, leitura rápida e continuidade visual com o resto da seção.'
-        : 'A exploração continua centrada em reconhecimento visual e contexto curto.',
-      items,
-      emptyMessage: isSearch
-        ? `Nada apareceu em ${selectedCopy.name} para essa busca.`
-        : `Nenhuma entrada de ${selectedCopy.name} apareceu ainda.`,
-    },
+    sections: [
+      {
+        id: payload.selectedKind,
+        eyebrow: isSearch ? 'Resultados' : 'Arquivo principal',
+        title: isSearch ? `Resultados em ${selectedCopy.name}` : selectedCopy.title,
+        description: isSearch
+          ? 'Os resultados ficam separados por camada para preservar o eixo da navegação.'
+          : selectedCopy.description,
+        summary: isSearch
+          ? 'Busca curta, leitura rápida e continuidade visual com o resto da seção.'
+          : 'A exploração continua centrada em reconhecimento visual e contexto curto.',
+        items,
+        emptyMessage: isSearch
+          ? `Nada apareceu em ${selectedCopy.name} para essa busca.`
+          : `Nenhuma entrada de ${selectedCopy.name} apareceu ainda.`,
+      },
+    ],
     libraryCursor: isSearch ? null : libraryCursor,
     mode: isSearch ? 'search' : 'library',
   }

@@ -23,7 +23,9 @@
       <MusicLibraryFilters
         :query="data.filters.query"
         :selected-kind="data.filters.selectedKind"
+        :selected-year="data.filters.selectedYear"
         :tabs="data.filters.tabs"
+        :years="data.filters.years"
       />
 
       <MusicCollectionContext
@@ -35,12 +37,14 @@
       />
 
       <MusicLibraryGrid
-        :eyebrow="data.section.eyebrow"
-        :title="data.section.title"
-        :description="data.section.description"
-        :summary="data.section.summary"
-        :items="displayItems"
-        :empty-message="data.section.emptyMessage"
+        v-for="section in displaySections"
+        :key="section.id"
+        :eyebrow="section.eyebrow"
+        :title="section.title"
+        :description="section.description"
+        :summary="section.summary"
+        :items="section.items"
+        :empty-message="section.emptyMessage"
       />
 
       <div v-if="canLoadMore" class="load-more-row">
@@ -79,11 +83,19 @@ const selectedKind = computed<MusicLibraryKind>(() => {
   return value === 'artists' || value === 'tracks' ? value : 'albums'
 })
 
+const selectedYear = computed<number | null>(() => {
+  const value = route.query.year
+  if (typeof value !== 'string' || !value.trim()) return null
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+})
+
 const { data, error, status } = await useAsyncData(
   'music-library-page',
-  () => fetchMusicLibraryPageData({ q: queryText.value, kind: selectedKind.value }),
+  () => fetchMusicLibraryPageData({ q: queryText.value, kind: selectedKind.value, year: selectedYear.value }),
   {
-    watch: [queryText, selectedKind],
+    watch: [queryText, selectedKind, selectedYear],
   },
 )
 
@@ -96,7 +108,16 @@ watch(data, (value) => {
   extraItems.value = []
 }, { immediate: true })
 
-const displayItems = computed(() => data.value ? [...data.value.section.items, ...extraItems.value] : [])
+const displaySections = computed(() => {
+  if (!data.value) return []
+
+  return data.value.sections.map((section, index) => (
+    index === 0 && data.value?.mode === 'library'
+      ? { ...section, items: [...section.items, ...extraItems.value] }
+      : section
+  ))
+})
+
 const canLoadMore = computed(() => data.value?.mode === 'library' && !!nextCursor.value)
 
 async function handleLoadMore() {

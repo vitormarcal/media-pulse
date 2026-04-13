@@ -7,6 +7,8 @@ A Music API expõe exploração read-only da biblioteca, escuta recente, ranking
 | Path | Params | Retorna |
 | --- | --- | --- |
 | `GET /api/music/summary` | `range=week|month|custom`, `start?`, `end?` | `MusicSummaryResponse` |
+| `GET /api/music/stats` | - | `MusicStatsResponse` |
+| `GET /api/music/year/{year}` | `limitAlbums=80`, `limitArtists=12`, `limitTracks=12` | `MusicByYearResponse` |
 | `GET /api/music/recent-albums` | `limit=20`, `cursor?` | `RecentAlbumsPageResponse` |
 | `GET /api/music/library/artists` | `limit=20`, `cursor?` | `ArtistLibraryPageResponse` |
 | `GET /api/music/library/albums` | `limit=20`, `cursor?` | `AlbumLibraryPageResponse` |
@@ -46,8 +48,15 @@ Os endpoints abaixo usam paginação por cursor retornado no payload:
 
 Os endpoints de ranking e análise por período exigem `start` e `end` explícitos em ISO-8601 UTC.
 
+`GET /api/music/year/{year}` resolve automaticamente a janela inteira do ano em UTC:
+
+- início: `YYYY-01-01T00:00:00Z`
+- fim: `YYYY-12-31T23:59:59Z`
+
 ## Observações de contrato
 
 - páginas de artista, álbum e faixa retornam visão agregada do histórico, não eventos crus
 - endpoints de coverage comparam catálogo conhecido com o que já foi ouvido
 - `genres/recent` usa os últimos plays, não uma janela por data
+- `stats` existe para sustentar navegação anual e visão consolidada da library
+- `year/{year}` é centrado em álbuns; artistas e faixas entram como contexto editorial do mesmo período

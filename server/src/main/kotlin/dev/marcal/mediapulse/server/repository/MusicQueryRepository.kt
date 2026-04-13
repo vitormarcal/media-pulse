@@ -13,7 +13,12 @@ import dev.marcal.mediapulse.server.api.music.ArtistLibraryRow
 import dev.marcal.mediapulse.server.api.music.ArtistPageResponse
 import dev.marcal.mediapulse.server.api.music.ArtistTrackRow
 import dev.marcal.mediapulse.server.api.music.IdName
+import dev.marcal.mediapulse.server.api.music.MusicByYearResponse
+import dev.marcal.mediapulse.server.api.music.MusicByYearStatsDto
+import dev.marcal.mediapulse.server.api.music.MusicStatsResponse
 import dev.marcal.mediapulse.server.api.music.MusicSummaryResponse
+import dev.marcal.mediapulse.server.api.music.MusicTotalStatsDto
+import dev.marcal.mediapulse.server.api.music.MusicYearStatsDto
 import dev.marcal.mediapulse.server.api.music.PlaysByDayRow
 import dev.marcal.mediapulse.server.api.music.RangeDto
 import dev.marcal.mediapulse.server.api.music.RecentAlbumResponse
@@ -381,6 +386,148 @@ class MusicQueryRepository(
                 .singleResult
 
         return MusicSummaryResponse(RangeDto(start, end), artists, albums, tracks)
+    }
+
+    fun getStats(): MusicStatsResponse {
+        val totalRow =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      COUNT(*) AS plays_count,
+                      COUNT(DISTINCT al.artist_id) AS unique_artists_count,
+                      COUNT(DISTINCT tp.album_id) AS unique_albums_count,
+                      COUNT(DISTINCT tp.track_id) AS unique_tracks_count,
+                      MAX(tp.played_at) AS latest_play_at,
+                      MIN(tp.played_at) AS first_play_at
+                    FROM track_playbacks tp
+                    JOIN albums al ON al.id = tp.album_id
+                    """.trimIndent(),
+                ).singleResult as Array<*>
+
+        val years =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      EXTRACT(YEAR FROM tp.played_at) AS play_year,
+                      COUNT(*) AS plays_count,
+                      COUNT(DISTINCT al.artist_id) AS unique_artists_count,
+                      COUNT(DISTINCT tp.album_id) AS unique_albums_count,
+                      COUNT(DISTINCT tp.track_id) AS unique_tracks_count
+                    FROM track_playbacks tp
+                    JOIN albums al ON al.id = tp.album_id
+                    GROUP BY EXTRACT(YEAR FROM tp.played_at)
+                    ORDER BY play_year DESC
+                    """.trimIndent(),
+                ).resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    MusicYearStatsDto(
+                        year = (fields[0] as Number).toInt(),
+                        playsCount = (fields[1] as Number).toLong(),
+                        uniqueArtistsCount = (fields[2] as Number).toLong(),
+                        uniqueAlbumsCount = (fields[3] as Number).toLong(),
+                        uniqueTracksCount = (fields[4] as Number).toLong(),
+                    )
+                }
+
+        return MusicStatsResponse(
+            total =
+                MusicTotalStatsDto(
+                    playsCount = (totalRow[0] as Number).toLong(),
+                    uniqueArtistsCount = (totalRow[1] as Number).toLong(),
+                    uniqueAlbumsCount = (totalRow[2] as Number).toLong(),
+                    uniqueTracksCount = (totalRow[3] as Number).toLong(),
+                ),
+            years = years,
+            latestPlayAt = asInstant(totalRow[4]),
+            firstPlayAt = asInstant(totalRow[5]),
+        )
+    }
+
+    fun getByYear(
+        year: Int,
+        start: Instant,
+        end: Instant,
+        limitAlbums: Int,
+        limitArtists: Int,
+        limitTracks: Int,
+    ): MusicByYearResponse {
+        val statsRow =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      COUNT(*) AS plays_count,
+                      COUNT(DISTINCT al.artist_id) AS unique_artists_count,
+                      COUNT(DISTINCT tp.album_id) AS unique_albums_count,
+                      COUNT(DISTINCT tp.track_id) AS unique_tracks_count
+                    FROM track_playbacks tp
+                    JOIN albums al ON al.id = tp.album_id
+                    WHERE tp.played_at BETWEEN :s AND :e
+                    """.trimIndent(),
+                ).setParameter("s", start)
+                .setParameter("e", end)
+                .singleResult as Array<*>
+
+        val albums =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      al.id AS album_id,
+                      al.title AS album_title,
+                      a.id AS artist_id,
+                      a.name AS artist_name,
+                      al.cover_url,
+                      al.year,
+                      (SELECT COUNT(*) FROM album_tracks at WHERE at.album_id = al.id) AS total_tracks,
+                      COUNT(DISTINCT tp.track_id) AS played_tracks,
+                      COUNT(tp.id) AS play_count,
+                      MAX(tp.played_at) AS last_played
+                    FROM track_playbacks tp
+                    JOIN albums al ON al.id = tp.album_id
+                    JOIN artists a ON a.id = al.artist_id
+                    WHERE tp.played_at BETWEEN :s AND :e
+                    GROUP BY al.id, al.title, a.id, a.name, al.cover_url, al.year
+                    ORDER BY MAX(tp.played_at) DESC, COUNT(tp.id) DESC, al.title ASC
+                    LIMIT :limitAlbums
+                    """.trimIndent(),
+                ).setParameter("s", start)
+                .setParameter("e", end)
+                .setParameter("limitAlbums", limitAlbums)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    AlbumLibraryRow(
+                        albumId = (fields[0] as Number).toLong(),
+                        albumTitle = fields[1] as String,
+                        artistId = (fields[2] as Number).toLong(),
+                        artistName = fields[3] as String,
+                        coverUrl = fields[4] as String?,
+                        year = (fields[5] as Number?)?.toInt(),
+                        totalTracks = (fields[6] as Number).toLong(),
+                        playedTracks = (fields[7] as Number).toLong(),
+                        playCount = (fields[8] as Number).toLong(),
+                        lastPlayed = asInstant(fields[9]),
+                    )
+                }
+
+        return MusicByYearResponse(
+            year = year,
+            range = RangeDto(start = start, end = end),
+            stats =
+                MusicByYearStatsDto(
+                    playsCount = (statsRow[0] as Number).toLong(),
+                    uniqueArtistsCount = (statsRow[1] as Number).toLong(),
+                    uniqueAlbumsCount = (statsRow[2] as Number).toLong(),
+                    uniqueTracksCount = (statsRow[3] as Number).toLong(),
+                ),
+            albums = albums,
+            artists = getTopArtists(start, end, limitArtists),
+            tracks = getTopTracks(start, end, limitTracks),
+        )
     }
 
     fun getRecentAlbums(
