@@ -141,7 +141,15 @@ function statusBadge(status: string | null) {
   }
 }
 
+function isDormantLibraryBook(book: BookLibraryCardDto) {
+  return book.currentStatus === 'WANT_TO_READ' || book.readsCount === 0
+}
+
 function progressLabelForLibrary(book: BookLibraryCardDto) {
+  if (book.currentStatus === 'WANT_TO_READ') {
+    return 'Ainda sem leitura iniciada'
+  }
+
   if (book.currentStatus === 'CURRENTLY_READING' && book.activeProgressPct != null) {
     return `${Math.round(book.activeProgressPct)}% em leitura`
   }
@@ -154,6 +162,8 @@ function progressLabelForLibrary(book: BookLibraryCardDto) {
 }
 
 function buildLibraryCardModel(book: BookLibraryCardDto): BookLibraryCardModel {
+  const dormant = isDormantLibraryBook(book)
+
   return {
     id: `library-${book.bookId}`,
     title: book.title,
@@ -161,9 +171,12 @@ function buildLibraryCardModel(book: BookLibraryCardDto): BookLibraryCardModel {
     href: `/books/${book.slug}`,
     imageUrl: book.coverUrl,
     progressLabel: progressLabelForLibrary(book),
-    activityLabel: book.lastActivityAt ? `Última atividade ${formatRelativeDate(book.lastActivityAt)}` : 'Sem passagem pela mesa ainda',
+    activityLabel:
+      dormant
+        ? (book.lastActivityAt ? `Entrou na pilha ${formatRelativeDate(book.lastActivityAt)}` : 'Ainda sem passagem pela mesa')
+        : (book.lastActivityAt ? `Última atividade ${formatRelativeDate(book.lastActivityAt)}` : 'Sem passagem pela mesa ainda'),
     aside: statusBadge(book.currentStatus),
-    isDormant: !book.lastActivityAt,
+    isDormant: dormant,
   }
 }
 
