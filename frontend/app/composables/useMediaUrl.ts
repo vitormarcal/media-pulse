@@ -9,7 +9,8 @@ export function useMediaUrl() {
       return value
     }
 
-    const base = config.public.apiBase || requestUrl.origin
+    const apiBase = String(config.public.apiBase || '').trim()
+    const base = /^https?:\/\//i.test(apiBase) ? apiBase : requestUrl.origin
     return new URL(value, base).toString()
   }
 

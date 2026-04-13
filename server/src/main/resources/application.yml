@@ -103,5 +103,7 @@ media-pulse:
   storage:
     covers-path: "/data/covers"
     imports-path: "/data/imports"
+  frontend:
+    static-path: ${MEDIA_PULSE_FRONTEND_STATIC_PATH:}
   allowed-origin:
     - http://localhost:8080

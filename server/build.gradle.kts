@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.marcal.mediapulse.server"
-version = "1.0.0-beta.35"
+version = "1.0.0-beta.36"
 
 java {
     toolchain {
@@ -75,37 +75,4 @@ tasks.withType<Test> {
 
 tasks.jar {
     enabled = false
-}
-
-val frontendDir = project.layout.projectDirectory.dir("../frontend")
-val frontendPublicDir = frontendDir.dir(".output/public")
-
-val buildFrontendStatic by tasks.registering(Exec::class) {
-    group = "build"
-    description = "Builds the Nuxt frontend when the static output is missing or stale."
-    workingDir = frontendDir.asFile
-    commandLine(
-        "bash",
-        "-lc",
-        """
-        if [ ! -f .output/public/index.html ] || [ -n "$(find app public package.json package-lock.json nuxt.config.ts -type f -newer .output/public/index.html 2>/dev/null | head -n 1)" ]; then
-          if [ ! -d node_modules ]; then npm ci; fi
-          npm run build
-        fi
-        """.trimIndent(),
-    )
-    outputs.dir(frontendPublicDir)
-}
-
-val syncFrontendStatic by tasks.registering(Sync::class) {
-    dependsOn(buildFrontendStatic)
-    from(frontendPublicDir)
-    into(layout.buildDirectory.dir("generated/frontend-static"))
-}
-
-tasks.processResources {
-    dependsOn(syncFrontendStatic)
-    from(syncFrontendStatic) {
-        into("static")
-    }
 }
