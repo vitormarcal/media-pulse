@@ -1,6 +1,6 @@
-# Frontend V2
+# Frontend
 
-Home editorial do Media Pulse em Nuxt 4, construída sem dependência do frontend legado.
+Frontend editorial do Media Pulse em Nuxt 4.
 
 ## Setup
 
@@ -30,12 +30,26 @@ Se a API estiver em outra origem, defina `NUXT_PUBLIC_API_BASE`.
 NUXT_PUBLIC_API_BASE=http://localhost:8080 npm run dev
 ```
 
-## Build
+Quando frontend e backend estiverem no mesmo domínio, o valor esperado é relativo:
 
 ```bash
-npm run dev
+NUXT_PUBLIC_API_BASE=/api npm run dev
 ```
+
+## Build
 
 ```bash
 npm run build
 ```
+
+Isso gera o frontend estático em `.output/public`.
+
+## Docker
+
+Build standalone do frontend:
+
+```bash
+docker build -f ./frontend/Dockerfile -t media-pulse-frontend:test .
+```
+
+Esse caminho é útil para validar apenas a camada de UI. Para produção com frontend e backend no mesmo domínio, use o `Dockerfile` raiz do repositório.
