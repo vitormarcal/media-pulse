@@ -162,6 +162,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BooksSummaryResponse"
+  /api/books/stats:
+    get:
+      summary: Books archive stats
+      description: Returns archive-wide reading aggregates for library navigation and yearly chips.
+      tags: [Books]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BooksStatsResponse"
 
   /api/music/summary:
     get:
@@ -1223,6 +1235,75 @@ components:
           items:
             $ref: "#/components/schemas/TopAuthorDto"
       required: [range, counts, topAuthors]
+    BooksTotalStatsDto:
+      type: object
+      properties:
+        booksCount:
+          type: integer
+          format: int64
+        readsCount:
+          type: integer
+          format: int64
+        completedCount:
+          type: integer
+          format: int64
+      required: [booksCount, readsCount, completedCount]
+    BooksYearStatsDto:
+      type: object
+      properties:
+        year:
+          type: integer
+        readsCount:
+          type: integer
+          format: int64
+        uniqueBooksCount:
+          type: integer
+          format: int64
+        finishedCount:
+          type: integer
+          format: int64
+        currentlyReadingCount:
+          type: integer
+          format: int64
+        wantCount:
+          type: integer
+          format: int64
+        pausedCount:
+          type: integer
+          format: int64
+        didNotFinishCount:
+          type: integer
+          format: int64
+      required:
+        - year
+        - readsCount
+        - uniqueBooksCount
+        - finishedCount
+        - currentlyReadingCount
+        - wantCount
+        - pausedCount
+        - didNotFinishCount
+    BooksStatsResponse:
+      type: object
+      properties:
+        total:
+          $ref: "#/components/schemas/BooksTotalStatsDto"
+        unreadCount:
+          type: integer
+          format: int64
+        years:
+          type: array
+          items:
+            $ref: "#/components/schemas/BooksYearStatsDto"
+        latestActivityAt:
+          type: string
+          format: date-time
+          nullable: true
+        firstActivityAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [total, unreadCount, years]
 
     MusicRangeDto:
       type: object

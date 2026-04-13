@@ -15,6 +15,7 @@ As leituras são armazenadas como sessões consolidadas, não como eventos bruto
 | Path | Params | Retorna |
 | --- | --- | --- |
 | `GET /api/books/library` | `limit=20`, `cursor?` | `BooksLibraryResponse` |
+| `GET /api/books/stats` | - | `BooksStatsResponse` |
 | `GET /api/books/year/{year}` | `year` | `YearReadsResponse` |
 | `GET /api/books/{bookId}` | `bookId` | `BookDetailsResponse` |
 | `GET /api/books/slug/{slug}` | `slug` | `BookDetailsResponse` |
@@ -28,6 +29,17 @@ As leituras são armazenadas como sessões consolidadas, não como eventos bruto
 ### `/api/books/library`
 
 Lista a biblioteca de livros em ordem paginada, com `nextCursor` retornado pela API.
+
+### `/api/books/stats`
+
+Retorna agregados do arquivo inteiro para uso de biblioteca e navegação anual.
+
+- `total.booksCount`: quantidade de livros distintos no arquivo
+- `total.readsCount`: quantidade total de registros/sessões de leitura
+- `total.completedCount`: quantidade total de leituras concluídas
+- `unreadCount`: livros que ainda não passaram por leitura efetiva
+- `years[]`: série anual agregada por data de leitura/atividade, não por data de cadastro
+- `latestActivityAt` e `firstActivityAt`: limites temporais do arquivo consolidado
 
 ### `/api/books/list`
 
@@ -54,3 +66,5 @@ O cursor é baseado no `readId` da sessão de leitura, em formato `id:123`.
 - detalhes de livro podem ser buscados por `bookId` ou `slug`
 - detalhes de autor retornam catálogo agregado e leituras recentes
 - `summary` é agregado por período, não por evento bruto do provedor
+- `stats` representa o arquivo inteiro e serve melhor para biblioteca, métricas acumuladas e chips anuais
+- `list` e `stats` priorizam a data real de leitura/atividade; data de cadastro não deve empurrar itens antigos para o topo do arquivo

@@ -9,7 +9,10 @@ import dev.marcal.mediapulse.server.api.books.BookReadStatus
 import dev.marcal.mediapulse.server.api.books.BooksLibraryResponse
 import dev.marcal.mediapulse.server.api.books.BooksListResponse
 import dev.marcal.mediapulse.server.api.books.BooksSearchResponse
+import dev.marcal.mediapulse.server.api.books.BooksStatsResponse
 import dev.marcal.mediapulse.server.api.books.BooksSummaryResponse
+import dev.marcal.mediapulse.server.api.books.BooksTotalStatsDto
+import dev.marcal.mediapulse.server.api.books.BooksYearStatsDto
 import dev.marcal.mediapulse.server.api.books.EditionDto
 import dev.marcal.mediapulse.server.api.books.RangeDto
 import dev.marcal.mediapulse.server.api.books.ReadCardDto
@@ -408,16 +411,32 @@ class BookQueryRepository(
         limit: Int,
         cursor: String?,
     ): BooksListResponse {
-        val cursorId = parseCursor(cursor)
+        val (cursorAnchorAt, cursorId) = parseActivityCursor(cursor)
         val params = mutableMapOf<String, Any>()
         val whereParts = mutableListOf<String>()
+        val anchorExpression = listAnchorExpression(status)
 
         if (status != null) {
             whereParts.add("br.status = :status")
             params["status"] = status.name
         }
 
-        if (cursorId != null) {
+        if (cursorAnchorAt != null && cursorId != null) {
+            whereParts.add(
+                """
+                (
+                  COALESCE($anchorExpression, TIMESTAMP '1970-01-01 00:00:00') < :cursorAnchorAt
+                  OR (
+                    COALESCE($anchorExpression, TIMESTAMP '1970-01-01 00:00:00') = :cursorAnchorAt
+                    AND br.id < :cursorId
+                  )
+                )
+                """.trimIndent(),
+            )
+            params["cursorAnchorAt"] = Timestamp.from(cursorAnchorAt)
+            params["cursorId"] = cursorId
+        } else if (cursorId != null) {
+            // Backward compatibility with any previously issued id-only cursor.
             whereParts.add("br.id < :cursorId")
             params["cursorId"] = cursorId
         }
@@ -432,14 +451,14 @@ class BookQueryRepository(
         val rows =
             fetchReadRows(
                 where = where,
-                orderBy = "br.id DESC",
+                orderBy = "COALESCE($anchorExpression, TIMESTAMP '1970-01-01 00:00:00') DESC, br.id DESC",
                 params = params,
                 limit = limit,
             )
 
         val authorsByBookId = fetchAuthorsByBookIds(rows.map { it.bookId }.toSet())
         val items = rows.map { it.toDto(authorsByBookId) }
-        val nextCursor = items.lastOrNull()?.let { buildCursor(it.readId) }
+        val nextCursor = rows.lastOrNull()?.let { buildActivityCursor(resolveListAnchor(it, status), it.readId) }
 
         return BooksListResponse(
             items = items,
@@ -624,6 +643,125 @@ class BookQueryRepository(
             range = RangeDto(resolvedRange.start, resolvedRange.end),
             counts = counts,
             topAuthors = topAuthors,
+        )
+    }
+
+    fun stats(): BooksStatsResponse {
+        val totalRow =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      COUNT(DISTINCT b.id) AS books_count,
+                      COUNT(br.id) AS reads_count,
+                      COUNT(*) FILTER (WHERE br.status = 'READ') AS completed_count
+                    FROM books b
+                    LEFT JOIN book_reads br ON br.book_id = b.id
+                    """.trimIndent(),
+                ).singleResult as Array<*>
+
+        val unreadCount =
+            (
+                entityManager
+                    .createNativeQuery(
+                        """
+                        SELECT COUNT(*)
+                        FROM books b
+                        WHERE NOT EXISTS (
+                          SELECT 1
+                          FROM book_reads br
+                          WHERE br.book_id = b.id
+                            AND br.status <> 'WANT_TO_READ'
+                        )
+                        """.trimIndent(),
+                    ).singleResult as Number
+            ).toLong()
+
+        val years =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH read_activity AS (
+                      SELECT
+                        EXTRACT(
+                          YEAR FROM (
+                            COALESCE(
+                              CASE WHEN br.status = 'READ' THEN br.finished_at END,
+                              CASE WHEN br.status = 'CURRENTLY_READING' THEN COALESCE(br.updated_at, br.started_at, br.created_at) END,
+                              CASE WHEN br.status = 'WANT_TO_READ' THEN br.created_at END,
+                              COALESCE(br.updated_at, br.started_at, br.created_at)
+                            ) AT TIME ZONE 'UTC'
+                          )
+                        ) AS year,
+                        br.book_id,
+                        br.status
+                      FROM book_reads br
+                    )
+                    SELECT
+                      year,
+                      COUNT(*) AS reads_count,
+                      COUNT(DISTINCT book_id) AS unique_books_count,
+                      COUNT(*) FILTER (WHERE status = 'READ') AS finished_count,
+                      COUNT(*) FILTER (WHERE status = 'CURRENTLY_READING') AS currently_reading_count,
+                      COUNT(*) FILTER (WHERE status = 'WANT_TO_READ') AS want_count,
+                      COUNT(*) FILTER (WHERE status = 'PAUSED') AS paused_count,
+                      COUNT(*) FILTER (WHERE status = 'DID_NOT_FINISH') AS did_not_finish_count
+                    FROM read_activity
+                    WHERE year IS NOT NULL
+                    GROUP BY year
+                    ORDER BY year DESC
+                    """.trimIndent(),
+                ).resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    BooksYearStatsDto(
+                        year = (fields[0] as Number).toInt(),
+                        readsCount = (fields[1] as Number).toLong(),
+                        uniqueBooksCount = (fields[2] as Number).toLong(),
+                        finishedCount = (fields[3] as Number).toLong(),
+                        currentlyReadingCount = (fields[4] as Number).toLong(),
+                        wantCount = (fields[5] as Number).toLong(),
+                        pausedCount = (fields[6] as Number).toLong(),
+                        didNotFinishCount = (fields[7] as Number).toLong(),
+                    )
+                }
+
+        val boundsRow =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      MAX(
+                        COALESCE(
+                          CASE WHEN br.status = 'READ' THEN br.finished_at END,
+                          CASE WHEN br.status = 'CURRENTLY_READING' THEN COALESCE(br.updated_at, br.started_at, br.created_at) END,
+                          CASE WHEN br.status = 'WANT_TO_READ' THEN br.created_at END,
+                          COALESCE(br.updated_at, br.started_at, br.created_at)
+                        )
+                      ),
+                      MIN(
+                        COALESCE(
+                          CASE WHEN br.status = 'READ' THEN br.finished_at END,
+                          CASE WHEN br.status = 'CURRENTLY_READING' THEN COALESCE(br.updated_at, br.started_at, br.created_at) END,
+                          CASE WHEN br.status = 'WANT_TO_READ' THEN br.created_at END,
+                          COALESCE(br.updated_at, br.started_at, br.created_at)
+                        )
+                      )
+                    FROM book_reads br
+                    """.trimIndent(),
+                ).singleResult as Array<*>
+
+        return BooksStatsResponse(
+            total =
+                BooksTotalStatsDto(
+                    booksCount = (totalRow[0] as Number).toLong(),
+                    readsCount = (totalRow[1] as Number).toLong(),
+                    completedCount = (totalRow[2] as Number).toLong(),
+                ),
+            unreadCount = unreadCount,
+            years = years,
+            latestActivityAt = asInstant(boundsRow[0]),
+            firstActivityAt = asInstant(boundsRow[1]),
         )
     }
 
@@ -892,6 +1030,33 @@ class BookQueryRepository(
                 RangeDto(start, end)
             }
             else -> error("Unsupported range: $range")
+        }
+
+    private fun listAnchorExpression(status: BookReadStatus?): String =
+        when (status) {
+            BookReadStatus.READ -> "br.finished_at"
+            BookReadStatus.CURRENTLY_READING -> "COALESCE(br.updated_at, br.started_at, br.created_at)"
+            BookReadStatus.WANT_TO_READ -> "br.created_at"
+            BookReadStatus.PAUSED,
+            BookReadStatus.DID_NOT_FINISH,
+            BookReadStatus.UNKNOWN,
+            null,
+            -> "COALESCE(br.finished_at, br.updated_at, br.started_at, br.created_at)"
+        }
+
+    private fun resolveListAnchor(
+        row: ReadRow,
+        status: BookReadStatus?,
+    ): Instant? =
+        when (status) {
+            BookReadStatus.READ -> row.finishedAt ?: row.startedAt ?: row.createdAt
+            BookReadStatus.CURRENTLY_READING -> row.updatedAt ?: row.startedAt ?: row.createdAt
+            BookReadStatus.WANT_TO_READ -> row.createdAt
+            BookReadStatus.PAUSED,
+            BookReadStatus.DID_NOT_FINISH,
+            BookReadStatus.UNKNOWN,
+            null,
+            -> row.finishedAt ?: row.updatedAt ?: row.startedAt ?: row.createdAt
         }
 
     private fun parseCursor(cursor: String?): Long? {

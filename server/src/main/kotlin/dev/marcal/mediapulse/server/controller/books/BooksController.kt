@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.api.books.BookReadStatus
 import dev.marcal.mediapulse.server.api.books.BooksLibraryResponse
 import dev.marcal.mediapulse.server.api.books.BooksListResponse
 import dev.marcal.mediapulse.server.api.books.BooksSearchResponse
+import dev.marcal.mediapulse.server.api.books.BooksStatsResponse
 import dev.marcal.mediapulse.server.api.books.BooksSummaryResponse
 import dev.marcal.mediapulse.server.api.books.YearReadsResponse
 import dev.marcal.mediapulse.server.repository.BookQueryRepository
@@ -26,6 +27,9 @@ class BooksController(
         @RequestParam(defaultValue = "20") limit: Int,
         @RequestParam(required = false) cursor: String?,
     ): BooksLibraryResponse = repository.library(limit, cursor)
+
+    @GetMapping("/stats")
+    fun stats(): BooksStatsResponse = repository.stats()
 
     @GetMapping("/year/{year}")
     fun yearReads(

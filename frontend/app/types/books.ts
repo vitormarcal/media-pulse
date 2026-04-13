@@ -1,3 +1,5 @@
+import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
+
 export interface AuthorDto {
   id: number
   name: string
@@ -86,4 +88,163 @@ export interface BookPageData {
   editions: BookEditionModel[]
   recentReads: BookReadEntryModel[]
   reviewRaw: string | null
+}
+
+export interface BookCollectionContextMetric {
+  id: string
+  label: string
+  value: string
+  note: string
+}
+
+export interface BookCollectionData {
+  generatedAt: string
+  hero: {
+    title: string
+    intro: string
+    lead: EditorialHighlight | null
+    supporting: EditorialHighlight[]
+  }
+  inProgress: EditorialShelfItem[]
+  recentFinishes: EditorialShelfItem[]
+  context: {
+    eyebrow: string
+    title: string
+    description: string
+    summary: string
+    metrics: BookCollectionContextMetric[]
+  }
+}
+
+export interface BookLibraryCardDto {
+  bookId: number
+  slug: string
+  title: string
+  coverUrl: string | null
+  authors: AuthorDto[]
+  readsCount: number
+  completedCount: number
+  currentStatus: string | null
+  activeProgressPct: number | null
+  lastActivityAt: string | null
+}
+
+export interface BooksLibraryResponse {
+  items: BookLibraryCardDto[]
+  nextCursor: string | null
+}
+
+export interface BooksStatsResponse {
+  total: {
+    booksCount: number
+    readsCount: number
+    completedCount: number
+  }
+  unreadCount: number
+  years: Array<{
+    year: number
+    readsCount: number
+    uniqueBooksCount: number
+    finishedCount: number
+    currentlyReadingCount: number
+    wantCount: number
+    pausedCount: number
+    didNotFinishCount: number
+  }>
+  latestActivityAt: string | null
+  firstActivityAt: string | null
+}
+
+export interface BooksSearchResponse {
+  books: BookCardDto[]
+  authors: AuthorDto[]
+}
+
+export interface YearReadsResponse {
+  year: number
+  range: {
+    start: string
+    end: string
+  }
+  currentlyReading: ReadCardDto[]
+  finished: ReadCardDto[]
+  paused: ReadCardDto[]
+  didNotFinish: ReadCardDto[]
+  wantToRead: ReadCardDto[]
+  unknown: ReadCardDto[]
+  stats: {
+    finishedCount: number
+    currentlyReadingCount: number
+    wantCount: number
+    didNotFinishCount: number
+    pausedCount: number
+    pagesFinished: number | null
+  }
+}
+
+export interface BookLibraryMetric {
+  id: string
+  label: string
+  value: string
+  note: string
+}
+
+export interface BookLibraryYearChip {
+  year: number
+  label: string
+  detail: string
+}
+
+export interface BookLibraryCardModel {
+  id: string
+  title: string
+  subtitle: string
+  href: string
+  imageUrl: string | null
+  progressLabel: string
+  activityLabel: string
+  aside: string
+  isDormant?: boolean
+}
+
+export interface BookLibraryPageData {
+  hero: {
+    title: string
+    intro: string
+    backLink: string
+    backLabel: string
+    accentLink: string
+    accentLabel: string
+    spotlight: {
+      title: string
+      subtitle: string
+      imageUrl: string | null
+      href: string
+      meta: string
+      note: string
+    } | null
+  }
+  filters: {
+    query: string
+    selectedYear: number | null
+    years: BookLibraryYearChip[]
+  }
+  context: {
+    eyebrow: string
+    title: string
+    description: string
+    summary: string
+    metrics: BookLibraryMetric[]
+  }
+  sections: Array<{
+    id: string
+    eyebrow: string
+    title: string
+    description: string
+    summary: string
+    items: BookLibraryCardModel[]
+    emptyMessage?: string
+  }>
+  libraryCursor: string | null
+  mode: 'library' | 'search' | 'year'
 }
