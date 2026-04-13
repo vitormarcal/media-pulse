@@ -13,6 +13,7 @@ class SpaForwardController {
         "/movies",
         "/movies/library",
         "/movies/{slug}",
+        "/books",
         "/books/{slug}",
         "/music/albums/{id}",
     )

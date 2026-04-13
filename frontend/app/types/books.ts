@@ -1,3 +1,5 @@
+import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
+
 export interface AuthorDto {
   id: number
   name: string
@@ -86,4 +88,30 @@ export interface BookPageData {
   editions: BookEditionModel[]
   recentReads: BookReadEntryModel[]
   reviewRaw: string | null
+}
+
+export interface BookCollectionContextMetric {
+  id: string
+  label: string
+  value: string
+  note: string
+}
+
+export interface BookCollectionData {
+  generatedAt: string
+  hero: {
+    title: string
+    intro: string
+    lead: EditorialHighlight | null
+    supporting: EditorialHighlight[]
+  }
+  inProgress: EditorialShelfItem[]
+  recentFinishes: EditorialShelfItem[]
+  context: {
+    eyebrow: string
+    title: string
+    description: string
+    summary: string
+    metrics: BookCollectionContextMetric[]
+  }
 }

@@ -1,7 +1,7 @@
 <template>
   <section class="book-hero">
-    <NuxtLink class="back-link" to="/">
-      Voltar para a capa
+    <NuxtLink class="back-link" to="/books">
+      Voltar para livros
     </NuxtLink>
 
     <div class="hero-grid">
