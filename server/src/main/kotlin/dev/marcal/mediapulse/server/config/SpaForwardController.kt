@@ -11,6 +11,7 @@ class SpaForwardController {
         "/shows/library",
         "/shows/{slug}",
         "/movies",
+        "/movies/library",
         "/movies/{slug}",
         "/books/{slug}",
         "/music/albums/{id}",

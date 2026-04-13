@@ -5,9 +5,9 @@
         Voltar para a capa
       </NuxtLink>
 
-      <a class="recent-link" href="#movies-recent">
-        Ver sessões recentes
-      </a>
+      <NuxtLink class="recent-link" to="/movies/library">
+        Abrir biblioteca inteira
+      </NuxtLink>
     </div>
 
     <div class="hero-grid">
