@@ -1,3 +1,5 @@
+import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
+
 export interface AlbumTrackRow {
   trackId: number
   title: string
@@ -23,6 +25,102 @@ export interface AlbumPageResponse {
   totalPlays: number
   tracks: AlbumTrackRow[]
   playsByDay: PlaysByDayRow[]
+}
+
+export interface TopArtistResponse {
+  artistId: number
+  artistName: string
+  playCount: number
+  albumId: number | null
+  albumTitle: string | null
+  coverUrl: string | null
+}
+
+export interface TopAlbumResponse {
+  albumId: number
+  albumTitle: string
+  artistId: number
+  artistName: string
+  playCount: number
+}
+
+export interface TopTrackResponse {
+  trackId: number
+  title: string
+  albumId: number
+  albumTitle: string
+  artistId: number
+  artistName: string
+  playCount: number
+}
+
+export interface ArtistLibraryRow {
+  artistId: number
+  artistName: string
+  coverUrl: string | null
+  totalPlays: number
+  albumsCount: number
+  tracksCount: number
+  lastPlayed: string | null
+}
+
+export interface ArtistLibraryPageResponse {
+  items: ArtistLibraryRow[]
+  nextCursor: string | null
+}
+
+export interface AlbumLibraryRow {
+  albumId: number
+  albumTitle: string
+  artistId: number
+  artistName: string
+  coverUrl: string | null
+  year: number | null
+  totalTracks: number
+  playedTracks: number
+  playCount: number
+  lastPlayed: string | null
+}
+
+export interface AlbumLibraryPageResponse {
+  items: AlbumLibraryRow[]
+  nextCursor: string | null
+}
+
+export interface TrackLibraryRow {
+  trackId: number
+  title: string
+  artistId: number
+  artistName: string
+  albumId: number | null
+  albumTitle: string | null
+  coverUrl: string | null
+  totalPlays: number
+  lastPlayed: string | null
+}
+
+export interface TrackLibraryPageResponse {
+  items: TrackLibraryRow[]
+  nextCursor: string | null
+}
+
+export interface MusicSearchResponse {
+  artists: Array<{
+    id: number
+    name: string
+  }>
+  albums: Array<{
+    id: number
+    title: string
+    artistName: string
+    year: number | null
+  }>
+  tracks: Array<{
+    id: number
+    title: string
+    artistName: string
+    albumTitle: string
+  }>
 }
 
 export interface AlbumTrackModel {
@@ -54,4 +152,102 @@ export interface AlbumPageData {
   }
   tracks: AlbumTrackModel[]
   recentDays: AlbumDayModel[]
+}
+
+export interface MusicCollectionContextMetric {
+  id: string
+  label: string
+  value: string
+  note: string
+}
+
+export interface MusicCollectionData {
+  generatedAt: string
+  hero: {
+    title: string
+    intro: string
+    lead: EditorialHighlight | null
+    supporting: EditorialHighlight[]
+  }
+  featuredAlbums: EditorialShelfItem[]
+  topArtists: EditorialShelfItem[]
+  topTracks: EditorialShelfItem[]
+  discoveryAlbums: EditorialShelfItem[]
+  context: {
+    eyebrow: string
+    title: string
+    description: string
+    summary: string
+    metrics: MusicCollectionContextMetric[]
+  }
+}
+
+export type MusicLibraryKind = 'artists' | 'albums' | 'tracks'
+
+export interface MusicLibraryMetric {
+  id: string
+  label: string
+  value: string
+  note: string
+}
+
+export interface MusicLibraryTab {
+  kind: MusicLibraryKind
+  label: string
+  summary: string
+}
+
+export interface MusicLibraryCardModel {
+  id: string
+  kind: MusicLibraryKind
+  title: string
+  subtitle: string
+  href: string | null
+  imageUrl: string | null
+  primaryMeta: string
+  secondaryMeta: string
+  aside: string
+  isDormant?: boolean
+}
+
+export interface MusicLibraryPageData {
+  hero: {
+    title: string
+    intro: string
+    backLink: string
+    backLabel: string
+    accentLink: string
+    accentLabel: string
+    spotlight: {
+      title: string
+      subtitle: string
+      imageUrl: string | null
+      href: string | null
+      meta: string
+      note: string
+    } | null
+  }
+  filters: {
+    query: string
+    selectedKind: MusicLibraryKind
+    tabs: MusicLibraryTab[]
+  }
+  context: {
+    eyebrow: string
+    title: string
+    description: string
+    summary: string
+    metrics: MusicLibraryMetric[]
+  }
+  section: {
+    id: string
+    eyebrow: string
+    title: string
+    description: string
+    summary: string
+    items: MusicLibraryCardModel[]
+    emptyMessage?: string
+  }
+  libraryCursor: string | null
+  mode: 'library' | 'search'
 }
