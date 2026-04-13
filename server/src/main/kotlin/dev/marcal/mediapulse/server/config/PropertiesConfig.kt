@@ -12,5 +12,6 @@ import org.springframework.context.annotation.Configuration
     HardcoverProperties::class,
     HttpClientsProperties::class,
     TmdbProperties::class,
+    FrontendProperties::class,
 )
 class PropertiesConfig

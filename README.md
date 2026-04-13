@@ -12,7 +12,7 @@ O backend agrega dados de provedores externos, persiste uma visão canônica loc
 ## Estrutura do repositório
 
 - `server/`: backend Kotlin + Spring Boot
-- `frontend/`: frontend estático
+- `frontend/`: frontend Nuxt 4
 - `docs/`: contratos HTTP e notas operacionais
 - `http-client-env/`: exemplos de ambiente para clientes HTTP locais
 
@@ -24,7 +24,11 @@ O backend agrega dados de provedores externos, persiste uma visão canônica loc
 - Migrations: Flyway em `server/src/main/resources/db/migration`
 - Start local: `./server/gradlew bootRun`
 
-O build do backend fingerprinta os assets de `frontend/` e os publica em `server/build/generated/frontend-static`, que depois são empacotados como recursos estáticos do Spring Boot.
+O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento conjunto agora acontece no `Dockerfile` raiz, que monta uma imagem única com:
+
+- backend Spring Boot
+- frontend estático gerado pelo Nuxt
+- entrega no mesmo domínio, com APIs em `/api/*` e UI em `/`
 
 ## Migrations atuais
 
@@ -60,6 +64,7 @@ O build do backend fingerprinta os assets de `frontend/` e os publica em `server
 - `PIPELINE_IMPORT_ENABLED`
 - `PIPELINE_IMPORT_CRON`
 - `PIPELINE_RUN_ON_STARTUP`
+- `MEDIA_PULSE_FRONTEND_STATIC_PATH`
 - `media-pulse.allowed-origin` via config YAML para CORS
 - `media-pulse.storage.covers-path`
 - `media-pulse.storage.imports-path`
@@ -195,9 +200,28 @@ O build do backend fingerprinta os assets de `frontend/` e os publica em `server
 
 ## Frontend
 
-O frontend em `frontend/` pode ser servido separadamente para desenvolvimento ou entregue pelo próprio backend quando empacotado junto do build do Spring Boot.
+O frontend em `frontend/` pode ser servido separadamente para desenvolvimento ou via imagem combinada.
 
-Se o frontend rodar em outra origem, ajuste `media-pulse.allowed-origin` para incluir essa origem no CORS. O `application.yml` versionado não libera `localhost:4173` ou `localhost:5500` por padrão.
+Para desenvolvimento local do Nuxt, use `NUXT_PUBLIC_API_BASE` se o backend estiver em outra origem. Em produção no mesmo domínio, o valor esperado é relativo, normalmente `/api`.
+
+Se o frontend rodar em outra origem, ajuste `media-pulse.allowed-origin` para incluir essa origem no CORS.
+
+## Docker
+
+O repositório agora tem três Dockerfiles com responsabilidades distintas:
+
+- `frontend/Dockerfile`: build e entrega standalone do frontend estático via `nginx`
+- `server/Dockerfile`: build e entrega standalone do backend
+- `Dockerfile`: imagem combinada para produção, servindo frontend e backend no mesmo domínio
+
+Fluxo padrão de publicação:
+
+```bash
+make build VERSION=1.0.0-beta.35 EXTRA_TAGS="latest"
+make push VERSION=1.0.0-beta.35 EXTRA_TAGS="latest"
+```
+
+Por padrão, o `Makefile` usa o `Dockerfile` raiz.
 
 ## Documentação detalhada
 

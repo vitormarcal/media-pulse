@@ -7,7 +7,6 @@ COPY ./server/gradle ./server/gradle
 COPY ./server/build.gradle.kts ./server/build.gradle.kts
 COPY ./server/settings.gradle.kts ./server/settings.gradle.kts
 COPY ./server/src ./server/src
-COPY ./frontend ./frontend
 
 RUN chmod +x ./server/gradlew
 RUN ./server/gradlew -p ./server bootJar --no-daemon

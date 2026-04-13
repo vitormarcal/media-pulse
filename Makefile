@@ -7,7 +7,7 @@ VERSION ?= dev
 # Optional extra tags (e.g. latest)
 EXTRA_TAGS ?=
 
-DOCKERFILE ?= ./server/Dockerfile
+DOCKERFILE ?= ./Dockerfile
 CONTEXT ?= .
 
 .DEFAULT_GOAL := help
@@ -55,7 +55,7 @@ help:
 	@echo "  IMAGE_NAME=ghcr.io/vitormarcal/media-pulse"
 	@echo "  VERSION=dev"
 	@echo "  EXTRA_TAGS=\"latest other\""
-	@echo "  DOCKERFILE=./server/Dockerfile"
+	@echo "  DOCKERFILE=./Dockerfile"
 	@echo "  CONTEXT=."
 	@echo ""
 	@echo "Notes:"
@@ -66,8 +66,6 @@ help:
 # ---------- Targets ----------
 .PHONY: build
 build:
-	@echo "Building application jar with Gradle"
-	./server/gradlew -p ./server build
 	@echo "Building Docker image: $(IMAGE_NAME):$(VERSION)"
 	docker build -f $(DOCKERFILE) -t $(IMAGE_NAME):$(VERSION) $(CONTEXT)
 	@for t in $(EXTRA_TAGS); do \
