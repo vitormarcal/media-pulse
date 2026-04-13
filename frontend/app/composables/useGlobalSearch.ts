@@ -1,4 +1,6 @@
-import type { BooksSearchResponse, MoviesSearchResponse, ShowsSearchResponse } from '~/types/home'
+import type { BooksSearchResponse } from '~/types/books'
+import type { MoviesSearchResponse } from '~/types/movies'
+import type { ShowsSearchResponse } from '~/types/shows'
 import type { GlobalSearchData, MusicSearchResponse, SearchResultItem } from '~/types/search'
 
 function group(id: string, title: string, items: SearchResultItem[]) {
@@ -77,7 +79,7 @@ export async function fetchGlobalSearch(query: string): Promise<GlobalSearchData
         kind: 'artist',
         title: item.name,
         subtitle: 'Artista',
-        href: null,
+        href: `/music/artists/${item.id}`,
       })),
     ),
     group(
@@ -99,7 +101,7 @@ export async function fetchGlobalSearch(query: string): Promise<GlobalSearchData
         kind: 'author',
         title: item.name,
         subtitle: 'Autor',
-        href: null,
+        href: `/books/authors/${item.id}`,
       })),
     ),
   ].filter((group) => group.items.length > 0)

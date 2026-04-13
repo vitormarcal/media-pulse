@@ -5,6 +5,9 @@ import type {
   AlbumPageData,
   AlbumPageResponse,
   AlbumTrackModel,
+  ArtistPageData,
+  ArtistPageResponse,
+  ArtistTrackModel,
   ArtistLibraryPageResponse,
   ArtistLibraryRow,
   MusicByYearResponse,
@@ -42,6 +45,17 @@ function mapTrack(track: AlbumPageResponse['tracks'][number]): AlbumTrackModel {
   }
 }
 
+function mapArtistTrack(track: ArtistPageResponse['topTracks'][number]): ArtistTrackModel {
+  return {
+    id: `artist-track-${track.trackId}`,
+    title: track.title,
+    albumTitle: track.albumTitle,
+    albumHref: track.albumId != null ? `/music/albums/${track.albumId}` : null,
+    meta: `${formatShortNumber(track.playCount)} plays`,
+    lastPlayed: track.lastPlayed ? formatRelativeDate(track.lastPlayed) : 'Sem play recente',
+  }
+}
+
 function recentAlbumToShelfItem(album: RecentAlbumsPageResponse['items'][number]): EditorialShelfItem {
   return {
     id: `album-${album.albumId}`,
@@ -63,7 +77,7 @@ function topArtistToShelfItem(artist: TopArtistResponse): EditorialShelfItem {
     title: artist.artistName,
     subtitle: artist.albumTitle ? `Puxado por ${artist.albumTitle}` : 'Artista em rotação',
     imageUrl: artist.coverUrl,
-    href: null,
+    href: `/music/artists/${artist.artistId}`,
     meta: `${formatShortNumber(artist.playCount)} plays`,
     detail: artist.albumTitle ? 'Recorte do período' : 'Sem álbum líder visível',
   }
@@ -257,7 +271,7 @@ function artistCard(item: ArtistLibraryRow): MusicLibraryCardModel {
     kind: 'artists',
     title: item.artistName,
     subtitle: `${formatShortNumber(item.albumsCount)} álbuns · ${formatShortNumber(item.tracksCount)} faixas`,
-    href: null,
+    href: `/music/artists/${item.artistId}`,
     imageUrl: item.coverUrl,
     primaryMeta: `${formatShortNumber(item.totalPlays)} plays acumulados`,
     secondaryMeta: item.lastPlayed ? `Último play ${formatRelativeDate(item.lastPlayed)}` : 'Ainda sem play recente',
@@ -308,10 +322,10 @@ function searchArtistCard(item: MusicSearchResponse['artists'][number]): MusicLi
     kind: 'artists',
     title: item.name,
     subtitle: 'Artista encontrado pela busca',
-    href: null,
+    href: `/music/artists/${item.id}`,
     imageUrl: null,
     primaryMeta: 'Entrada localizada pela busca',
-    secondaryMeta: 'Página de artista entra na próxima etapa',
+    secondaryMeta: 'Artista disponível para abertura direta',
     aside: 'Busca',
   }
 }
@@ -350,7 +364,7 @@ function yearArtistCard(item: TopArtistResponse): MusicLibraryCardModel {
     kind: 'artists',
     title: item.artistName,
     subtitle: item.albumTitle ? `Puxado por ${item.albumTitle}` : 'Artista em destaque no ano',
-    href: null,
+    href: `/music/artists/${item.artistId}`,
     imageUrl: item.coverUrl,
     primaryMeta: `${formatShortNumber(item.playCount)} plays no ano`,
     secondaryMeta: 'Leitura do recorte anual',
@@ -626,6 +640,7 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
     id: String(album.albumId),
     title: album.albumTitle,
     artistName: album.artistName,
+    artistHref: `/music/artists/${album.artistId}`,
     year: album.year,
     coverUrl: album.coverUrl,
     heroMeta: [
@@ -642,6 +657,50 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
     },
     tracks: album.tracks.map(mapTrack),
     recentDays: album.playsByDay.slice(-12).map((day) => ({
+      id: day.day,
+      label: day.day,
+      plays: day.plays,
+    })),
+  }
+}
+
+export function buildArtistPageData(artist: ArtistPageResponse): ArtistPageData {
+  const albums = artist.albums.map((album) => albumCard({
+    albumId: album.albumId,
+    albumTitle: album.albumTitle,
+    artistId: artist.artistId,
+    artistName: artist.artistName,
+    coverUrl: album.coverUrl,
+    year: album.year,
+    totalTracks: album.totalTracks,
+    playedTracks: album.playedTracks,
+    playCount: album.playCount,
+    lastPlayed: album.lastPlayed,
+  }))
+  const heroCover = artist.albums.find((album) => album.coverUrl)?.coverUrl ?? null
+
+  return {
+    id: String(artist.artistId),
+    title: artist.artistName,
+    coverUrl: heroCover,
+    heroMeta: [
+      `${formatShortNumber(artist.libraryAlbumsCount)} álbuns na library`,
+      `${formatShortNumber(artist.libraryTracksCount)} faixas na library`,
+      `${formatShortNumber(artist.totalPlays)} plays`,
+      artist.lastPlayed ? `Último ${formatRelativeDate(artist.lastPlayed)}` : 'Sem play recente',
+    ],
+    stats: {
+      totalPlays: artist.totalPlays,
+      libraryAlbumsCount: artist.libraryAlbumsCount,
+      libraryTracksCount: artist.libraryTracksCount,
+      uniqueAlbumsPlayed: artist.uniqueAlbumsPlayed,
+      uniqueTracksPlayed: artist.uniqueTracksPlayed,
+      latestPlay: artist.lastPlayed ? formatRelativeDate(artist.lastPlayed) : 'Sem play recente',
+      latestPlayAbsolute: artist.lastPlayed ? formatAbsoluteDate(artist.lastPlayed) : null,
+    },
+    albums,
+    topTracks: artist.topTracks.map(mapArtistTrack),
+    recentDays: artist.playsByDay.slice(-12).map((day) => ({
       id: day.day,
       label: day.day,
       plays: day.plays,

@@ -14,7 +14,10 @@
           <div class="timeline-header">
             <div>
               <p class="timeline-context">{{ read.context }}</p>
-              <h3>{{ read.title }}</h3>
+              <NuxtLink v-if="read.href" :to="read.href" class="title-link">
+                <h3>{{ read.title }}</h3>
+              </NuxtLink>
+              <h3 v-else>{{ read.title }}</h3>
             </div>
             <div class="timeline-dates">
               <strong>{{ read.relativeDate }}</strong>
@@ -32,6 +35,7 @@
 </template>
 
 <script setup lang="ts">
+import { NuxtLink } from '#components'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { BookReadEntryModel } from '~/types/books'
 
@@ -95,6 +99,11 @@ h3 {
   margin: 6px 0 0;
   font-size: 1.14rem;
   line-height: 1.03;
+}
+
+.title-link {
+  color: inherit;
+  text-decoration: none;
 }
 
 .timeline-dates {

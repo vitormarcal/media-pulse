@@ -1,14 +1,13 @@
 <template>
-  <section class="album-hero">
-    <NuxtLink class="back-link" to="/">
-      Voltar para a capa
+  <section class="artist-hero">
+    <NuxtLink class="back-link" to="/music">
+      Voltar para música
     </NuxtLink>
 
     <div class="hero-grid">
       <div class="copy">
-        <p class="eyebrow">Álbum</p>
+        <p class="eyebrow">Artista</p>
         <h1>{{ title }}</h1>
-        <NuxtLink class="subtitle subtitle-link" :to="artistHref">{{ artistName }}</NuxtLink>
 
         <div class="meta-list">
           <span v-for="item in heroMeta" :key="item" class="meta-pill">{{ item }}</span>
@@ -26,8 +25,6 @@
 <script setup lang="ts">
 const props = defineProps<{
   title: string
-  artistName: string
-  artistHref: string
   coverUrl: string | null
   heroMeta: string[]
 }>()
@@ -37,7 +34,7 @@ const resolvedCoverUrl = computed(() => resolveMediaUrl(props.coverUrl))
 </script>
 
 <style scoped>
-.album-hero {
+.artist-hero {
   display: grid;
   gap: 18px;
 }
@@ -83,21 +80,6 @@ h1 {
   font-size: clamp(3rem, 7vw, 5.8rem);
   line-height: 0.92;
   letter-spacing: -0.07em;
-}
-
-.subtitle {
-  margin: 0;
-  color: var(--base-color-text-secondary);
-  font-size: 1.05rem;
-}
-
-.subtitle-link {
-  width: fit-content;
-  text-decoration: none;
-}
-
-.subtitle-link:hover {
-  color: var(--base-color-text-primary);
 }
 
 .meta-list {

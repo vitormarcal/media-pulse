@@ -1,14 +1,13 @@
 <template>
-  <section class="album-hero">
-    <NuxtLink class="back-link" to="/">
-      Voltar para a capa
+  <section class="author-hero">
+    <NuxtLink class="back-link" to="/books">
+      Voltar para livros
     </NuxtLink>
 
     <div class="hero-grid">
       <div class="copy">
-        <p class="eyebrow">Álbum</p>
+        <p class="eyebrow">Autor</p>
         <h1>{{ title }}</h1>
-        <NuxtLink class="subtitle subtitle-link" :to="artistHref">{{ artistName }}</NuxtLink>
 
         <div class="meta-list">
           <span v-for="item in heroMeta" :key="item" class="meta-pill">{{ item }}</span>
@@ -26,8 +25,6 @@
 <script setup lang="ts">
 const props = defineProps<{
   title: string
-  artistName: string
-  artistHref: string
   coverUrl: string | null
   heroMeta: string[]
 }>()
@@ -37,7 +34,7 @@ const resolvedCoverUrl = computed(() => resolveMediaUrl(props.coverUrl))
 </script>
 
 <style scoped>
-.album-hero {
+.author-hero {
   display: grid;
   gap: 18px;
 }
@@ -53,7 +50,7 @@ const resolvedCoverUrl = computed(() => resolveMediaUrl(props.coverUrl))
 
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(16rem, 0.72fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(16rem, 0.7fr);
   gap: 28px;
   padding: clamp(24px, 4vw, 42px);
   border-radius: 40px;
@@ -85,21 +82,6 @@ h1 {
   letter-spacing: -0.07em;
 }
 
-.subtitle {
-  margin: 0;
-  color: var(--base-color-text-secondary);
-  font-size: 1.05rem;
-}
-
-.subtitle-link {
-  width: fit-content;
-  text-decoration: none;
-}
-
-.subtitle-link:hover {
-  color: var(--base-color-text-primary);
-}
-
 .meta-list {
   display: flex;
   flex-wrap: wrap;
@@ -116,7 +98,7 @@ h1 {
 }
 
 .cover-frame {
-  min-height: 28rem;
+  min-height: 32rem;
   overflow: hidden;
   border-radius: 28px;
   border: 8px solid #fff;

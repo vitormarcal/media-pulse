@@ -36,10 +36,10 @@
             <p class="group-title">{{ group.title }}</p>
 
             <component
-              :is="item.href ? 'a' : 'div'"
+              :is="item.href ? NuxtLink : 'div'"
               v-for="item in group.items"
               :key="item.id"
-              :href="item.href || undefined"
+              :to="item.href || undefined"
               class="result-item"
               @click="handleItemClick"
             >
@@ -54,6 +54,7 @@
 </template>
 
 <script setup lang="ts">
+import { NuxtLink } from '#components'
 import type { GlobalSearchData } from '~/types/search'
 
 const props = defineProps<{

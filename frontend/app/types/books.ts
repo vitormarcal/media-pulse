@@ -5,6 +5,12 @@ export interface AuthorDto {
   name: string
 }
 
+export interface AuthorLinkModel {
+  id: string
+  name: string
+  href: string
+}
+
 export interface EditionDto {
   id: number
   title: string | null
@@ -56,9 +62,22 @@ export interface BookDetailsResponse {
   reads: ReadCardDto[]
 }
 
+export interface AuthorDetailsResponse {
+  authorId: number
+  name: string
+  booksCount: number
+  readsCount: number
+  finishedCount: number
+  currentlyReadingCount: number
+  lastFinishedAt: string | null
+  books: BookCardDto[]
+  recentReads: ReadCardDto[]
+}
+
 export interface BookReadEntryModel {
   id: string
   title: string
+  href: string | null
   context: string
   meta: string
   relativeDate: string
@@ -77,6 +96,7 @@ export interface BookPageData {
   description: string | null
   coverUrl: string | null
   authorsLine: string
+  authors: AuthorLinkModel[]
   subtitle: string | null
   heroMeta: string[]
   stats: {
@@ -88,6 +108,23 @@ export interface BookPageData {
   editions: BookEditionModel[]
   recentReads: BookReadEntryModel[]
   reviewRaw: string | null
+}
+
+export interface AuthorPageData {
+  id: string
+  name: string
+  coverUrl: string | null
+  heroMeta: string[]
+  stats: {
+    booksCount: number
+    readsCount: number
+    finishedCount: number
+    currentlyReadingCount: number
+    latestFinish: string
+    latestFinishAbsolute: string | null
+  }
+  books: BookLibraryCardModel[]
+  recentReads: BookReadEntryModel[]
 }
 
 export interface BookCollectionContextMetric {

@@ -27,6 +27,36 @@ export interface AlbumPageResponse {
   playsByDay: PlaysByDayRow[]
 }
 
+export interface ArtistPageResponse {
+  artistId: number
+  artistName: string
+  totalPlays: number
+  uniqueTracksPlayed: number
+  uniqueAlbumsPlayed: number
+  libraryAlbumsCount: number
+  libraryTracksCount: number
+  lastPlayed: string | null
+  albums: Array<{
+    albumId: number
+    albumTitle: string
+    year: number | null
+    coverUrl: string | null
+    totalTracks: number
+    playedTracks: number
+    playCount: number
+    lastPlayed: string | null
+  }>
+  topTracks: Array<{
+    trackId: number
+    title: string
+    albumId: number | null
+    albumTitle: string | null
+    playCount: number
+    lastPlayed: string | null
+  }>
+  playsByDay: PlaysByDayRow[]
+}
+
 export interface TopArtistResponse {
   artistId: number
   artistName: string
@@ -176,6 +206,7 @@ export interface AlbumPageData {
   id: string
   title: string
   artistName: string
+  artistHref: string
   year: number | null
   coverUrl: string | null
   heroMeta: string[]
@@ -186,6 +217,34 @@ export interface AlbumPageData {
     latestPlayAbsolute: string | null
   }
   tracks: AlbumTrackModel[]
+  recentDays: AlbumDayModel[]
+}
+
+export interface ArtistTrackModel {
+  id: string
+  title: string
+  albumTitle: string | null
+  albumHref: string | null
+  meta: string
+  lastPlayed: string
+}
+
+export interface ArtistPageData {
+  id: string
+  title: string
+  coverUrl: string | null
+  heroMeta: string[]
+  stats: {
+    totalPlays: number
+    libraryAlbumsCount: number
+    libraryTracksCount: number
+    uniqueAlbumsPlayed: number
+    uniqueTracksPlayed: number
+    latestPlay: string
+    latestPlayAbsolute: string | null
+  }
+  albums: MusicLibraryCardModel[]
+  topTracks: ArtistTrackModel[]
   recentDays: AlbumDayModel[]
 }
 

@@ -12,6 +12,7 @@
     <template v-else-if="data">
       <BookPageHero
         :title="data.title"
+        :authors="data.authors"
         :subtitle="data.subtitle"
         :description="data.description"
         :cover-url="data.coverUrl"

@@ -8,6 +8,11 @@
       <div class="copy">
         <p class="eyebrow">Livro</p>
         <h1>{{ title }}</h1>
+        <div v-if="authors.length" class="authors-row">
+          <NuxtLink v-for="author in authors" :key="author.id" class="author-link" :to="author.href">
+            {{ author.name }}
+          </NuxtLink>
+        </div>
         <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
         <p v-if="description" class="description">{{ description }}</p>
 
@@ -25,8 +30,11 @@
 </template>
 
 <script setup lang="ts">
+import type { AuthorLinkModel } from '~/types/books'
+
 const props = defineProps<{
   title: string
+  authors: AuthorLinkModel[]
   subtitle: string | null
   description: string | null
   coverUrl: string | null
@@ -90,6 +98,25 @@ h1 {
   margin: 0;
   color: var(--base-color-text-secondary);
   font-size: 1.02rem;
+}
+
+.authors-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.author-link {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--base-color-surface-wash) 72%, white);
+  color: var(--base-color-text-primary);
+  font-size: 0.84rem;
+  text-decoration: none;
+}
+
+.author-link:hover {
+  background: color-mix(in srgb, var(--base-color-surface-warm) 88%, white);
 }
 
 .description {

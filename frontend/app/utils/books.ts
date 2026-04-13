@@ -1,8 +1,10 @@
 import type {
+  AuthorDetailsResponse,
   BookCollectionContextMetric,
   BookCollectionData,
   BookDetailsResponse,
   BookEditionModel,
+  AuthorPageData,
   BookLibraryCardDto,
   BookLibraryCardModel,
   BookLibraryMetric,
@@ -54,6 +56,21 @@ function mapRead(read: ReadCardDto, index: number): BookReadEntryModel {
   return {
     id: `read-${read.readId}`,
     title: index === 0 ? 'Leitura mais recente' : `Registro ${index + 1}`,
+    href: null,
+    context: buildReadContext(read),
+    meta: anchorDate ? formatAbsoluteDate(anchorDate) : 'Sem data definida',
+    relativeDate: anchorDate ? formatRelativeDate(anchorDate) : 'Sem atividade recente',
+    source: read.source,
+  }
+}
+
+function mapAuthorRead(read: ReadCardDto): BookReadEntryModel {
+  const anchorDate = read.finishedAt ?? read.startedAt
+
+  return {
+    id: `author-read-${read.readId}`,
+    title: read.book.title,
+    href: `/books/${read.book.slug}`,
     context: buildReadContext(read),
     meta: anchorDate ? formatAbsoluteDate(anchorDate) : 'Sem data definida',
     relativeDate: anchorDate ? formatRelativeDate(anchorDate) : 'Sem atividade recente',
@@ -568,7 +585,12 @@ export function buildBookPageData(book: BookDetailsResponse): BookPageData {
     description: book.description,
     coverUrl: book.coverUrl,
     authorsLine,
-    subtitle: book.releaseDate ? `${authorsLine} · ${book.releaseDate.slice(0, 4)}` : authorsLine,
+    authors: book.authors.map((author) => ({
+      id: `author-${author.id}`,
+      name: author.name,
+      href: `/books/authors/${author.id}`,
+    })),
+    subtitle: book.releaseDate ? book.releaseDate.slice(0, 4) : null,
     heroMeta: [
       book.releaseDate ? book.releaseDate.slice(0, 4) : null,
       book.rating != null ? `${book.rating.toFixed(1)} de nota` : null,
@@ -584,5 +606,32 @@ export function buildBookPageData(book: BookDetailsResponse): BookPageData {
     editions: book.editions.slice(0, 8).map(mapEdition),
     recentReads: book.reads.slice(0, 24).map(mapRead),
     reviewRaw: book.reviewRaw,
+  }
+}
+
+export function buildAuthorPageData(author: AuthorDetailsResponse): AuthorPageData {
+  const books = author.books.map((book) => buildSearchCardModel(book))
+  const heroCover = author.books.find((book) => book.coverUrl)?.coverUrl ?? null
+
+  return {
+    id: String(author.authorId),
+    name: author.name,
+    coverUrl: heroCover,
+    heroMeta: [
+      `${formatShortNumber(author.booksCount)} livros`,
+      `${formatShortNumber(author.readsCount)} registros`,
+      `${formatShortNumber(author.finishedCount)} concluídos`,
+      author.lastFinishedAt ? `Último fechamento ${formatRelativeDate(author.lastFinishedAt)}` : 'Sem conclusão recente',
+    ],
+    stats: {
+      booksCount: author.booksCount,
+      readsCount: author.readsCount,
+      finishedCount: author.finishedCount,
+      currentlyReadingCount: author.currentlyReadingCount,
+      latestFinish: author.lastFinishedAt ? formatRelativeDate(author.lastFinishedAt) : 'Sem conclusão recente',
+      latestFinishAbsolute: author.lastFinishedAt ? formatAbsoluteDate(author.lastFinishedAt) : null,
+    },
+    books,
+    recentReads: author.recentReads.slice(0, 24).map(mapAuthorRead),
   }
 }

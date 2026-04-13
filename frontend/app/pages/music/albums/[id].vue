@@ -13,6 +13,7 @@
       <AlbumPageHero
         :title="data.title"
         :artist-name="data.artistName"
+        :artist-href="data.artistHref"
         :cover-url="data.coverUrl"
         :hero-meta="data.heroMeta"
       />
