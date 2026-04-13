@@ -5,9 +5,9 @@
         Voltar para a capa
       </NuxtLink>
 
-      <a class="section-link" href="#books-finished">
-        Ver leituras fechadas
-      </a>
+      <NuxtLink class="section-link" to="/books/library">
+        Abrir biblioteca inteira
+      </NuxtLink>
     </div>
 
     <div class="hero-grid">
