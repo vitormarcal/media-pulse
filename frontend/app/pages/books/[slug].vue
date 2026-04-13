@@ -24,6 +24,8 @@
         :editions="data.editions"
       />
 
+      <BookReviewPanel v-if="data.reviewRaw" :review="data.reviewRaw" />
+
       <BookReadTimeline :reads="data.recentReads" />
     </template>
   </main>
@@ -33,6 +35,7 @@
 import BookContextPanel from '~/components/books/BookContextPanel.vue'
 import BookPageHero from '~/components/books/BookPageHero.vue'
 import BookReadTimeline from '~/components/books/BookReadTimeline.vue'
+import BookReviewPanel from '~/components/books/BookReviewPanel.vue'
 import { useBookPageData } from '~/composables/useBookPageData'
 
 const route = useRoute()
