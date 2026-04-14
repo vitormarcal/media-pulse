@@ -29,6 +29,20 @@ data class MovieExternalIdDto(
     val externalId: String,
 )
 
+enum class MovieEnrichmentField {
+    TITLE,
+    YEAR,
+    DESCRIPTION,
+    TMDB_ID,
+    IMDB_ID,
+    IMAGES,
+}
+
+enum class MovieEnrichmentApplyMode {
+    MISSING,
+    SELECTED,
+}
+
 data class MovieDetailsResponse(
     val movieId: Long,
     val title: String,
@@ -40,6 +54,88 @@ data class MovieDetailsResponse(
     val images: List<MovieImageDto>,
     val watches: List<MovieWatchDto>,
     val externalIds: List<MovieExternalIdDto>,
+)
+
+data class ManualMovieCatalogCreateRequest(
+    val title: String,
+    val year: Int? = null,
+    val tmdbId: String? = null,
+    val imdbId: String? = null,
+)
+
+data class ManualMovieCatalogCreateResponse(
+    val movieId: Long,
+    val slug: String?,
+    val title: String,
+    val year: Int?,
+    val coverUrl: String?,
+    val createdMovie: Boolean,
+    val coverAssigned: Boolean,
+    val externalIds: List<ManualMovieExternalIdView>,
+)
+
+data class MovieEnrichmentPreviewRequest(
+    val tmdbId: String? = null,
+)
+
+data class MovieEnrichmentFieldPreview(
+    val field: MovieEnrichmentField,
+    val label: String,
+    val currentValue: String?,
+    val suggestedValue: String?,
+    val available: Boolean,
+    val missing: Boolean,
+    val changed: Boolean,
+    val selectedByDefault: Boolean,
+)
+
+data class MovieEnrichmentImagePreview(
+    val currentCoverUrl: String?,
+    val suggestedPosterUrl: String?,
+    val suggestedBackdropUrl: String?,
+    val candidates: List<MovieEnrichmentImageCandidatePreview>,
+    val available: Boolean,
+    val missing: Boolean,
+    val changed: Boolean,
+    val selectedByDefault: Boolean,
+)
+
+data class MovieEnrichmentImageCandidatePreview(
+    val key: String,
+    val label: String,
+    val imageUrl: String,
+    val kind: String,
+    val selectedByDefault: Boolean,
+    val suggestedAsPrimary: Boolean,
+)
+
+data class MovieEnrichmentPreviewResponse(
+    val movieId: Long,
+    val resolvedTmdbId: String,
+    val title: String,
+    val fields: List<MovieEnrichmentFieldPreview>,
+    val images: MovieEnrichmentImagePreview,
+)
+
+data class MovieEnrichmentApplyRequest(
+    val tmdbId: String? = null,
+    val mode: MovieEnrichmentApplyMode = MovieEnrichmentApplyMode.MISSING,
+    val fields: List<MovieEnrichmentField> = emptyList(),
+    val imageSelection: MovieEnrichmentImageSelectionRequest? = null,
+)
+
+data class MovieEnrichmentImageSelectionRequest(
+    val selectedKeys: List<String> = emptyList(),
+    val primaryKey: String? = null,
+)
+
+data class MovieEnrichmentApplyResponse(
+    val movieId: Long,
+    val slug: String?,
+    val title: String,
+    val appliedFields: List<MovieEnrichmentField>,
+    val coverAssigned: Boolean,
+    val externalIds: List<ManualMovieExternalIdView>,
 )
 
 data class MoviesSearchResponse(

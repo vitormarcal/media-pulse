@@ -45,6 +45,8 @@
         :empty-message="section.emptyMessage"
       />
 
+      <MovieManualAddCard v-if="showManualAddCard" :initial-title="queryText" />
+
       <div v-if="canLoadMore" class="load-more-row">
         <button type="button" class="load-more" :disabled="loadingMore || hydratingDormant" @click="handleLoadMore">
           {{ loadingMore || hydratingDormant ? 'Buscando mais filmes...' : 'Carregar mais da biblioteca' }}
@@ -59,6 +61,7 @@ import MoviesCollectionContext from '~/components/movies/MoviesCollectionContext
 import MoviesLibraryFilters from '~/components/movies/MoviesLibraryFilters.vue'
 import MoviesLibraryGrid from '~/components/movies/MoviesLibraryGrid.vue'
 import MoviesLibraryHero from '~/components/movies/MoviesLibraryHero.vue'
+import MovieManualAddCard from '~/components/movies/MovieManualAddCard.vue'
 import { fetchMoviesLibraryNextPage, fetchMoviesLibraryPageData } from '~/composables/useMoviesLibraryData'
 import type { MovieLibraryCardModel } from '~/types/movies'
 import { buildMovieLibraryCards } from '~/utils/movies'
@@ -128,6 +131,15 @@ const displaySections = computed(() => {
 
     return section
   })
+})
+
+const showManualAddCard = computed(() => {
+  if (!queryText.value || !data.value || data.value.mode !== 'search') {
+    return false
+  }
+
+  const resultsSection = data.value.sections.find(section => section.id === 'search-results')
+  return (resultsSection?.items.length ?? 0) === 0
 })
 
 async function handleLoadMore() {

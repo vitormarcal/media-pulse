@@ -1,3 +1,6 @@
+server:
+  forward-headers-strategy: framework
+
 spring:
   servlet:
     multipart:
@@ -106,4 +109,8 @@ media-pulse:
   frontend:
     static-path: ${MEDIA_PULSE_FRONTEND_STATIC_PATH:}
   allowed-origin:
+    - http://localhost:3000
+    - http://127.0.0.1:3000
+    - http://localhost:3001
+    - http://127.0.0.1:3001
     - http://localhost:8080

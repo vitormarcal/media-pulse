@@ -22,7 +22,9 @@ import io.mockk.runs
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import java.util.Optional
 import kotlin.test.assertEquals
@@ -138,6 +140,7 @@ class ManualMovieCatalogServiceTest {
             TmdbApiClient.TmdbMovieDetails(
                 title = "Dune",
                 originalTitle = "Dune",
+                imdbId = null,
                 overview = "desc",
                 releaseYear = 2021,
                 posterPath = "/poster.jpg",
@@ -173,7 +176,16 @@ class ManualMovieCatalogServiceTest {
             movieImageCrudRepository.insertIgnore(
                 51,
                 "/covers/tmdb/movies/51/51_dune_poster.jpg",
-                true,
+                false,
+            )
+        }
+        verify(exactly = 1) {
+            movieImageCrudRepository.clearPrimaryForMovie(51)
+        }
+        verify(exactly = 1) {
+            movieImageCrudRepository.markPrimaryForMovie(
+                51,
+                "/covers/tmdb/movies/51/51_dune_poster.jpg",
             )
         }
         verify(exactly = 1) { movieRepository.save(match { it.id == 51L && it.coverUrl != null }) }
@@ -197,6 +209,7 @@ class ManualMovieCatalogServiceTest {
             TmdbApiClient.TmdbMovieDetails(
                 title = "Dune: Part Two",
                 originalTitle = "Dune: Part Two",
+                imdbId = null,
                 overview = "Paul Atreides unites with Chani.",
                 releaseYear = 2024,
                 posterPath = null,
@@ -228,5 +241,49 @@ class ManualMovieCatalogServiceTest {
                 },
             )
         }
+    }
+
+    @Test
+    fun `falha quando external id ja pertence a outro filme`() {
+        val movie = Movie(id = 51, originalTitle = "Dune", year = 2021, slug = "dune", coverUrl = null, fingerprint = "fp")
+
+        every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
+        every { movieRepository.findByFingerprint(any()) } returns movie
+        every { movieRepository.findById(51) } returns Optional.of(movie)
+        every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
+        every { tmdbApiClient.fetchMovieDetails("222") } returns
+            TmdbApiClient.TmdbMovieDetails(
+                title = "Dune",
+                originalTitle = "Dune",
+                imdbId = null,
+                overview = "desc",
+                releaseYear = 2021,
+                posterPath = null,
+                backdropPath = null,
+            )
+        every {
+            externalIdentifierRepository.findByProviderAndExternalId(Provider.TMDB, "222")
+        } returns
+            ExternalIdentifier(
+                entityType = EntityType.MOVIE,
+                entityId = 99,
+                provider = Provider.TMDB,
+                externalId = "222",
+            )
+
+        val exception =
+            kotlin
+                .runCatching {
+                    service.resolveOrCreate(
+                        ManualMovieWatchCreateRequest(
+                            watchedAt = Instant.parse("2026-03-01T10:00:00Z"),
+                            title = "Dune",
+                            year = 2021,
+                            tmdbId = "222",
+                        ),
+                    )
+                }.exceptionOrNull() as ResponseStatusException
+
+        assertEquals(HttpStatus.CONFLICT, exception.statusCode)
     }
 }

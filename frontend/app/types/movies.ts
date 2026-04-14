@@ -30,6 +30,84 @@ export interface MovieDetailsResponse {
   externalIds: MovieExternalIdDto[]
 }
 
+export type MovieEnrichmentField = 'TITLE' | 'YEAR' | 'DESCRIPTION' | 'TMDB_ID' | 'IMDB_ID' | 'IMAGES'
+export type MovieEnrichmentApplyMode = 'MISSING' | 'SELECTED'
+
+export interface ManualMovieExternalIdView {
+  provider: string
+  externalId: string
+}
+
+export interface ManualMovieCatalogCreateRequest {
+  title: string
+  year: number | null
+  tmdbId: string | null
+  imdbId: string | null
+}
+
+export interface ManualMovieCatalogCreateResponse {
+  movieId: number
+  slug: string | null
+  title: string
+  year: number | null
+  coverUrl: string | null
+  createdMovie: boolean
+  coverAssigned: boolean
+  externalIds: ManualMovieExternalIdView[]
+}
+
+export interface MovieEnrichmentPreviewResponse {
+  movieId: number
+  resolvedTmdbId: string
+  title: string
+  fields: Array<{
+    field: MovieEnrichmentField
+    label: string
+    currentValue: string | null
+    suggestedValue: string | null
+    available: boolean
+    missing: boolean
+    changed: boolean
+    selectedByDefault: boolean
+  }>
+  images: {
+    currentCoverUrl: string | null
+    suggestedPosterUrl: string | null
+    suggestedBackdropUrl: string | null
+    candidates: Array<{
+      key: string
+      label: string
+      imageUrl: string
+      kind: string
+      selectedByDefault: boolean
+      suggestedAsPrimary: boolean
+    }>
+    available: boolean
+    missing: boolean
+    changed: boolean
+    selectedByDefault: boolean
+  }
+}
+
+export interface MovieEnrichmentApplyRequest {
+  tmdbId: string | null
+  mode: MovieEnrichmentApplyMode
+  fields: MovieEnrichmentField[]
+  imageSelection?: {
+    selectedKeys: string[]
+    primaryKey: string | null
+  } | null
+}
+
+export interface MovieEnrichmentApplyResponse {
+  movieId: number
+  slug: string | null
+  title: string
+  appliedFields: MovieEnrichmentField[]
+  coverAssigned: boolean
+  externalIds: ManualMovieExternalIdView[]
+}
+
 export interface MovieWatchEntryModel {
   id: string
   title: string
@@ -39,6 +117,7 @@ export interface MovieWatchEntryModel {
 }
 
 export interface MoviePageData {
+  movieId: number
   slug: string
   title: string
   originalTitle: string

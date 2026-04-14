@@ -919,6 +919,74 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieDetailsResponse"
 
+  /api/movies/catalog:
+    post:
+      summary: Create or reuse movie catalog entry
+      tags: [Movies]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualMovieCatalogCreateRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManualMovieCatalogCreateResponse"
+
+  /api/movies/{movieId}/enrichment/preview:
+    post:
+      summary: Preview movie enrichment from TMDb
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieEnrichmentPreviewRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieEnrichmentPreviewResponse"
+
+  /api/movies/{movieId}/enrichment/apply:
+    post:
+      summary: Apply movie enrichment from TMDb
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieEnrichmentApplyRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieEnrichmentApplyResponse"
+
   /api/movies/search:
     get:
       summary: Search movies by title or slug
@@ -2126,6 +2194,162 @@ components:
           items:
             $ref: "#/components/schemas/MovieExternalIdDto"
       required: [movieId, title, originalTitle, images, watches, externalIds]
+    ManualMovieCatalogCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        year:
+          type: integer
+          nullable: true
+        tmdbId:
+          type: string
+          nullable: true
+        imdbId:
+          type: string
+          nullable: true
+      required: [title]
+    ManualMovieCatalogCreateResponse:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        slug:
+          type: string
+          nullable: true
+        title:
+          type: string
+        year:
+          type: integer
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        createdMovie:
+          type: boolean
+        coverAssigned:
+          type: boolean
+        externalIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManualMovieExternalIdView"
+      required: [movieId, title, createdMovie, coverAssigned, externalIds]
+    MovieEnrichmentField:
+      type: string
+      enum: [TITLE, YEAR, DESCRIPTION, TMDB_ID, IMDB_ID, IMAGES]
+    MovieEnrichmentApplyMode:
+      type: string
+      enum: [MISSING, SELECTED]
+    MovieEnrichmentPreviewRequest:
+      type: object
+      properties:
+        tmdbId:
+          type: string
+          nullable: true
+    MovieEnrichmentFieldPreview:
+      type: object
+      properties:
+        field:
+          $ref: "#/components/schemas/MovieEnrichmentField"
+        label:
+          type: string
+        currentValue:
+          type: string
+          nullable: true
+        suggestedValue:
+          type: string
+          nullable: true
+        available:
+          type: boolean
+        missing:
+          type: boolean
+        changed:
+          type: boolean
+        selectedByDefault:
+          type: boolean
+      required: [field, label, available, missing, changed, selectedByDefault]
+    MovieEnrichmentImagePreview:
+      type: object
+      properties:
+        currentCoverUrl:
+          type: string
+          nullable: true
+        suggestedPosterUrl:
+          type: string
+          nullable: true
+        suggestedBackdropUrl:
+          type: string
+          nullable: true
+        available:
+          type: boolean
+        missing:
+          type: boolean
+        changed:
+          type: boolean
+        selectedByDefault:
+          type: boolean
+      required: [available, missing, changed, selectedByDefault]
+    MovieEnrichmentPreviewResponse:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        resolvedTmdbId:
+          type: string
+        title:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieEnrichmentFieldPreview"
+        images:
+          $ref: "#/components/schemas/MovieEnrichmentImagePreview"
+      required: [movieId, resolvedTmdbId, title, fields, images]
+    MovieEnrichmentApplyRequest:
+      type: object
+      properties:
+        tmdbId:
+          type: string
+          nullable: true
+        mode:
+          $ref: "#/components/schemas/MovieEnrichmentApplyMode"
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieEnrichmentField"
+      required: [mode, fields]
+    MovieEnrichmentApplyResponse:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        slug:
+          type: string
+          nullable: true
+        title:
+          type: string
+        appliedFields:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieEnrichmentField"
+        coverAssigned:
+          type: boolean
+        externalIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManualMovieExternalIdView"
+      required: [movieId, title, appliedFields, coverAssigned, externalIds]
+    ManualMovieExternalIdView:
+      type: object
+      properties:
+        provider:
+          type: string
+        externalId:
+          type: string
+      required: [provider, externalId]
     MoviesSearchResponse:
       type: object
       properties:

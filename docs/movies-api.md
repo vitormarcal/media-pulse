@@ -20,6 +20,9 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/summary` | `range=month|year|custom`, `start?`, `end?` | `MoviesSummaryResponse` |
 | `GET /api/movies/stats` | - | `MoviesStatsResponse` |
 | `GET /api/movies/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `MoviesByYearResponse` |
+| `POST /api/movies/catalog` | body com `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieCatalogCreateResponse` |
+| `POST /api/movies/{movieId}/enrichment/preview` | body com `tmdbId?` | `MovieEnrichmentPreviewResponse` |
+| `POST /api/movies/{movieId}/enrichment/apply` | body com `tmdbId?`, `mode`, `fields[]` | `MovieEnrichmentApplyResponse` |
 | `POST /api/movies/watches` | body com `watchedAt`, `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieWatchCreateResponse` |
 
 ## Paginação e limites
@@ -64,3 +67,33 @@ Regras importantes:
 
 - deduplicação por `(source, movie_id, watched_at)`
 - quando `tmdbId` existir, o serviço tenta preencher metadados faltantes e baixar imagens do TMDb
+
+## Catálogo e enriquecimento
+
+`POST /api/movies/catalog` cria ou reaproveita um filme sem registrar sessão.
+
+Uso esperado:
+
+- corrigir lacunas a partir da UI quando a busca não encontrou o título certo
+- consolidar ids externos antes do primeiro watch
+- abrir um detalhe de filme utilizável mesmo sem histórico de sessão
+
+`POST /api/movies/{movieId}/enrichment/preview` compara o estado atual do filme com uma sugestão do TMDb.
+
+- se o filme já tiver vínculo `TMDB`, o body pode omitir `tmdbId`
+- se ainda não tiver vínculo, o caller deve informar `tmdbId`
+- o preview retorna campos comparáveis e a sugestão de imagens
+
+`POST /api/movies/{movieId}/enrichment/apply` aplica a sugestão do TMDb em dois modos:
+
+- `mode=MISSING`: só preenche lacunas
+- `mode=SELECTED`: aplica apenas os campos explicitamente escolhidos em `fields[]`
+
+Campos suportados no MVP:
+
+- `TITLE`
+- `YEAR`
+- `DESCRIPTION`
+- `TMDB_ID`
+- `IMDB_ID`
+- `IMAGES`

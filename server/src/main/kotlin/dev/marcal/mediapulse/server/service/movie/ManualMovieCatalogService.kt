@@ -17,7 +17,9 @@ import dev.marcal.mediapulse.server.service.image.ImageStorageService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.SlugTextUtil
 import org.apache.commons.codec.digest.DigestUtils
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 
 @Service
@@ -31,21 +33,69 @@ class ManualMovieCatalogService(
     private val imageStorageService: ImageStorageService,
     private val tmdbProperties: TmdbProperties,
 ) {
+    data class TmdbImageCandidate(
+        val key: String,
+        val label: String,
+        val path: String,
+        val imageUrl: String,
+        val suggestedAsPrimary: Boolean,
+    )
+
+    data class TmdbImageSelection(
+        val selectedKeys: Set<String>,
+        val primaryKey: String? = null,
+    )
+
+    data class TmdbImageAssignmentResult(
+        val insertedCount: Int,
+        val primaryImageUrl: String? = null,
+    )
+
+    data class MovieCatalogUpsertRequest(
+        val title: String,
+        val year: Int? = null,
+        val tmdbId: String? = null,
+        val imdbId: String? = null,
+    )
+
     data class MovieCatalogResult(
         val movie: Movie,
         val created: Boolean,
         val coverAssigned: Boolean,
     )
 
-    fun resolveOrCreate(request: ManualMovieWatchCreateRequest): MovieCatalogResult {
+    data class TmdbMovieSnapshot(
+        val tmdbId: String,
+        val title: String?,
+        val originalTitle: String?,
+        val imdbId: String?,
+        val overview: String?,
+        val releaseYear: Int?,
+        val posterPath: String?,
+        val backdropPath: String?,
+        val posterUrl: String?,
+        val backdropUrl: String?,
+    )
+
+    fun resolveOrCreate(request: ManualMovieWatchCreateRequest): MovieCatalogResult =
+        resolveOrCreate(
+            MovieCatalogUpsertRequest(
+                title = request.title,
+                year = request.year,
+                tmdbId = request.tmdbId,
+                imdbId = request.imdbId,
+            ),
+        )
+
+    fun resolveOrCreate(request: MovieCatalogUpsertRequest): MovieCatalogResult {
         val normalizedTitle = request.title.trim().ifBlank { throw IllegalArgumentException("title deve ser preenchido") }
         val normalizedTmdbId = request.tmdbId?.trim()?.ifBlank { null }
         val normalizedImdbId = request.imdbId?.trim()?.ifBlank { null }
-        val tmdbDetails = normalizedTmdbId?.let { tmdbApiClient.fetchMovieDetails(it) }
-        val resolvedOriginalTitle = tmdbDetails?.originalTitle ?: normalizedTitle
-        val resolvedYear = request.year ?: tmdbDetails?.releaseYear
-        val resolvedDescription = tmdbDetails?.overview
-        val resolvedSlug = resolveSlug(tmdbDetails?.title ?: resolvedOriginalTitle)
+        val tmdbSnapshot = normalizedTmdbId?.let { fetchTmdbMovieSnapshot(it) }
+        val resolvedOriginalTitle = tmdbSnapshot?.originalTitle ?: normalizedTitle
+        val resolvedYear = request.year ?: tmdbSnapshot?.releaseYear
+        val resolvedDescription = tmdbSnapshot?.overview
+        val resolvedSlug = resolveSlug(tmdbSnapshot?.title ?: resolvedOriginalTitle)
 
         val existingByTmdb = normalizedTmdbId?.let { findMovieByExternalId(Provider.TMDB, it) }
         val existingByImdb = if (existingByTmdb == null) normalizedImdbId?.let { findMovieByExternalId(Provider.IMDB, it) } else null
@@ -82,7 +132,7 @@ class ManualMovieCatalogService(
             source = MovieTitleSource.MANUAL.name,
             isPrimary = true,
         )
-        tmdbDetails
+        tmdbSnapshot
             ?.title
             ?.takeIf { it.lowercase() != normalizedTitle.lowercase() }
             ?.let { tmdbTitle ->
@@ -96,9 +146,9 @@ class ManualMovieCatalogService(
             }
 
         normalizedTmdbId?.let { safeLink(movieAfterMetadata.id, Provider.TMDB, it) }
-        normalizedImdbId?.let { safeLink(movieAfterMetadata.id, Provider.IMDB, it) }
+        (normalizedImdbId ?: tmdbSnapshot?.imdbId)?.let { safeLink(movieAfterMetadata.id, Provider.IMDB, it) }
 
-        val coverAssigned = maybeAssignTmdbImages(movie = movieAfterMetadata, tmdbDetails = tmdbDetails)
+        val coverAssigned = maybeAssignTmdbImages(movie = movieAfterMetadata, tmdbSnapshot = tmdbSnapshot).primaryImageUrl != null
         val refreshedMovie = movieRepository.findById(movieAfterMetadata.id).orElse(movieAfterMetadata)
 
         return MovieCatalogResult(
@@ -107,6 +157,84 @@ class ManualMovieCatalogService(
             coverAssigned = coverAssigned,
         )
     }
+
+    fun fetchTmdbMovieSnapshot(tmdbId: String): TmdbMovieSnapshot? {
+        val normalizedTmdbId = tmdbId.trim().ifBlank { return null }
+        val tmdbDetails = tmdbApiClient.fetchMovieDetails(normalizedTmdbId) ?: return null
+        return TmdbMovieSnapshot(
+            tmdbId = normalizedTmdbId,
+            title = tmdbDetails.title,
+            originalTitle = tmdbDetails.originalTitle,
+            imdbId = tmdbDetails.imdbId,
+            overview = tmdbDetails.overview,
+            releaseYear = tmdbDetails.releaseYear,
+            posterPath = tmdbDetails.posterPath,
+            backdropPath = tmdbDetails.backdropPath,
+            posterUrl = tmdbDetails.posterPath?.let(::buildTmdbImageUrl),
+            backdropUrl = tmdbDetails.backdropPath?.let(::buildTmdbImageUrl),
+        )
+    }
+
+    fun addMovieTitle(
+        movieId: Long,
+        title: String,
+        isPrimary: Boolean = false,
+    ) {
+        movieTitleCrudRepository.insertIgnore(
+            movieId = movieId,
+            title = title,
+            locale = null,
+            source = MovieTitleSource.MANUAL.name,
+            isPrimary = isPrimary,
+        )
+    }
+
+    fun linkExternalIdIfAvailable(
+        movieId: Long,
+        provider: Provider,
+        externalId: String,
+    ) {
+        safeLink(movieId, provider, externalId)
+    }
+
+    fun assignTmdbImages(
+        movie: Movie,
+        tmdbSnapshot: TmdbMovieSnapshot,
+    ): Boolean = maybeAssignTmdbImages(movie, tmdbSnapshot).primaryImageUrl != null
+
+    fun buildTmdbImageCandidates(tmdbSnapshot: TmdbMovieSnapshot): List<TmdbImageCandidate> =
+        buildList {
+            tmdbSnapshot.posterPath?.let { path ->
+                add(
+                    TmdbImageCandidate(
+                        key = "poster",
+                        label = "Poster",
+                        path = path,
+                        imageUrl = buildTmdbImageUrl(path),
+                        suggestedAsPrimary = true,
+                    ),
+                )
+            }
+            tmdbSnapshot.backdropPath?.let { path ->
+                add(
+                    TmdbImageCandidate(
+                        key = "backdrop",
+                        label = "Backdrop",
+                        path = path,
+                        imageUrl = buildTmdbImageUrl(path),
+                        suggestedAsPrimary = false,
+                    ),
+                )
+            }
+        }.distinctBy { it.path }
+
+    fun assignSelectedTmdbImages(
+        movie: Movie,
+        tmdbSnapshot: TmdbMovieSnapshot,
+        selection: TmdbImageSelection? = null,
+    ): TmdbImageAssignmentResult = maybeAssignTmdbImages(movie, tmdbSnapshot, selection)
+
+    fun resolveMovieSlug(title: String): String? = resolveSlug(title)
 
     private fun findMovieByExternalId(
         provider: Provider,
@@ -127,7 +255,17 @@ class ManualMovieCatalogService(
         provider: Provider,
         externalId: String,
     ) {
-        if (externalIdentifierRepository.findByProviderAndExternalId(provider, externalId) != null) return
+        val existing = externalIdentifierRepository.findByProviderAndExternalId(provider, externalId)
+        if (existing != null) {
+            if (existing.entityType == EntityType.MOVIE && existing.entityId == movieId) {
+                return
+            }
+
+            throw ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "${provider.name} $externalId já está vinculado a outra entidade",
+            )
+        }
 
         externalIdentifierRepository.save(
             ExternalIdentifier(
@@ -168,26 +306,28 @@ class ManualMovieCatalogService(
 
     private fun maybeAssignTmdbImages(
         movie: Movie,
-        tmdbDetails: TmdbApiClient.TmdbMovieDetails?,
-    ): Boolean {
-        if (tmdbDetails == null) return false
+        tmdbSnapshot: TmdbMovieSnapshot?,
+        selection: TmdbImageSelection? = null,
+    ): TmdbImageAssignmentResult {
+        if (tmdbSnapshot == null) return TmdbImageAssignmentResult(insertedCount = 0)
 
+        val allCandidates = buildTmdbImageCandidates(tmdbSnapshot)
         val candidates =
-            buildList {
-                tmdbDetails.posterPath?.let { add(it to true) }
-                tmdbDetails.backdropPath?.let { add(it to false) }
-            }.distinctBy { it.first }
+            if (selection == null || selection.selectedKeys.isEmpty()) {
+                allCandidates
+            } else {
+                allCandidates.filter { selection.selectedKeys.contains(it.key) }
+            }
 
-        if (candidates.isEmpty()) return false
+        if (candidates.isEmpty()) return TmdbImageAssignmentResult(insertedCount = 0)
 
-        val savedImages = mutableListOf<Pair<String, Boolean>>()
+        val savedImages = mutableListOf<Pair<String, TmdbImageCandidate>>()
 
-        candidates.forEach { (path, preferredPrimary) ->
+        candidates.forEach { candidate ->
             val localPath =
                 runCatching {
-                    val fullUrl = buildTmdbImageUrl(path)
-                    val image = tmdbImageClient.downloadImage(fullUrl)
-                    val fileHint = "${movie.originalTitle}_${DigestUtils.sha1Hex(fullUrl).take(12)}"
+                    val image = tmdbImageClient.downloadImage(candidate.imageUrl)
+                    val fileHint = "${movie.originalTitle}_${DigestUtils.sha1Hex(candidate.imageUrl).take(12)}"
                     imageStorageService.saveImageForMovie(
                         image = image,
                         provider = "TMDB",
@@ -195,38 +335,40 @@ class ManualMovieCatalogService(
                         fileNameHint = fileHint,
                     )
                 }.getOrNull() ?: return@forEach
-            savedImages += localPath to preferredPrimary
+            savedImages += localPath to candidate
         }
 
-        if (savedImages.isEmpty()) return false
+        if (savedImages.isEmpty()) return TmdbImageAssignmentResult(insertedCount = 0)
 
-        val hasPrimaryImage = movieImageCrudRepository.existsByMovieIdAndIsPrimaryTrue(movie.id)
-        if (hasPrimaryImage) {
-            savedImages.forEach { (localPath, _) ->
-                movieImageCrudRepository.insertIgnore(
-                    movieId = movie.id,
-                    url = localPath,
-                    isPrimary = false,
-                )
-            }
-            return false
-        }
-
-        val primaryLocalPath = savedImages.firstOrNull { it.second }?.first ?: savedImages.first().first
+        val explicitPrimaryKey = selection?.primaryKey
+        val primaryLocalPath =
+            explicitPrimaryKey
+                ?.let { key -> savedImages.firstOrNull { it.second.key == key }?.first }
+                ?: savedImages.firstOrNull { it.second.suggestedAsPrimary }?.first
+                ?: savedImages.first().first
 
         savedImages.forEach { (localPath, _) ->
             movieImageCrudRepository.insertIgnore(
                 movieId = movie.id,
                 url = localPath,
-                isPrimary = localPath == primaryLocalPath,
+                isPrimary = false,
             )
         }
 
-        if (movie.coverUrl == null) {
+        val shouldPromotePrimary =
+            selection?.primaryKey != null || !movieImageCrudRepository.existsByMovieIdAndIsPrimaryTrue(movie.id)
+
+        if (shouldPromotePrimary) {
+            movieImageCrudRepository.lockMovieRowForPrimaryUpdate(movie.id)
+            movieImageCrudRepository.clearPrimaryForMovie(movie.id)
+            movieImageCrudRepository.markPrimaryForMovie(movie.id, primaryLocalPath)
             movieRepository.save(movie.copy(coverUrl = primaryLocalPath, updatedAt = Instant.now()))
         }
 
-        return true
+        return TmdbImageAssignmentResult(
+            insertedCount = savedImages.size,
+            primaryImageUrl = if (shouldPromotePrimary) primaryLocalPath else null,
+        )
     }
 
     private fun buildTmdbImageUrl(posterPath: String): String {

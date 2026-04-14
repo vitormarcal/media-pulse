@@ -81,15 +81,20 @@ class PlexMovieArtworkService(
 
         val primaryLocalPath = savedBySource[preferredPrimarySource] ?: savedBySource.values.first()
 
-        movieImagePrimaryService.setPrimaryForMovie(movie.id, primaryLocalPath)
+        if (shouldPromotePlexImage(movie.coverUrl)) {
+            movieImagePrimaryService.setPrimaryForMovie(movie.id, primaryLocalPath)
 
-        if (movie.coverUrl != primaryLocalPath) {
-            movieRepository.save(
-                movie.copy(
-                    coverUrl = primaryLocalPath,
-                    updatedAt = Instant.now(),
-                ),
-            )
+            if (movie.coverUrl != primaryLocalPath) {
+                movieRepository.save(
+                    movie.copy(
+                        coverUrl = primaryLocalPath,
+                        updatedAt = Instant.now(),
+                    ),
+                )
+            }
         }
     }
+
+    private fun shouldPromotePlexImage(currentCoverUrl: String?): Boolean =
+        currentCoverUrl.isNullOrBlank() || currentCoverUrl.startsWith("/covers/plex/")
 }

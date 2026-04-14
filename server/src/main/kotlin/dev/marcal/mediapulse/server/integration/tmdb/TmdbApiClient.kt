@@ -12,6 +12,8 @@ data class TmdbMovieDetailsResponse(
     val title: String? = null,
     @JsonProperty("original_title")
     val originalTitle: String? = null,
+    @JsonProperty("imdb_id")
+    val imdbId: String? = null,
     val overview: String? = null,
     @JsonProperty("release_date")
     val releaseDate: String? = null,
@@ -43,6 +45,7 @@ class TmdbApiClient(
     data class TmdbMovieDetails(
         val title: String?,
         val originalTitle: String?,
+        val imdbId: String?,
         val overview: String?,
         val releaseYear: Int?,
         val posterPath: String?,
@@ -87,6 +90,7 @@ class TmdbApiClient(
                 return TmdbMovieDetails(
                     title = response.title?.trim()?.ifBlank { null },
                     originalTitle = response.originalTitle?.trim()?.ifBlank { null },
+                    imdbId = response.imdbId?.trim()?.ifBlank { null },
                     overview = response.overview?.trim()?.ifBlank { null },
                     releaseYear = parseReleaseYear(response.releaseDate),
                     posterPath = response.posterPath?.trim()?.ifBlank { null },

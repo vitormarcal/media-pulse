@@ -108,4 +108,47 @@ class PlexMovieArtworkServiceTest {
                 assertEquals("/covers/plex/movies/11/cover.jpg", slot.captured.coverUrl)
             }
         }
+
+    @Test
+    fun `should preserve non plex cover when syncing artwork`() =
+        runBlocking {
+            val movie =
+                Movie(
+                    id = 58,
+                    originalTitle = "Le Mépris",
+                    year = 1963,
+                    description = null,
+                    coverUrl = "/covers/tmdb/movies/58/58_le_mepris_4310440ee5f7.jpg",
+                    fingerprint = "fp58",
+                )
+            val imageContent = ImageContent("abc".toByteArray(), MediaType.IMAGE_JPEG)
+
+            coEvery { plexApiClient.downloadImageContent(any()) } returns imageContent
+            every {
+                imageStorageService.saveImageForMovie(
+                    image = any(),
+                    provider = "PLEX",
+                    movieId = 58,
+                    fileNameHint = any(),
+                )
+            } returnsMany
+                listOf(
+                    "/covers/plex/movies/58/58_le_mepris_background.jpg",
+                    "/covers/plex/movies/58/58_le_mepris_poster.jpg",
+                )
+
+            service.ensureMovieImagesFromPlex(
+                movie = movie,
+                images =
+                    listOf(
+                        PlexMovieArtworkService.PlexMovieImageCandidate(url = "/library/metadata/58/art/1", isPoster = false),
+                        PlexMovieArtworkService.PlexMovieImageCandidate(url = "/library/metadata/58/thumb/1", isPoster = true),
+                    ),
+                fallbackThumbPath = null,
+            )
+
+            verify(exactly = 2) { movieImageCrudRepository.insertIgnore(movieId = 58, url = any(), isPrimary = false) }
+            verify(exactly = 0) { movieImagePrimaryService.setPrimaryForMovie(any(), any()) }
+            verify(exactly = 0) { movieRepository.save(any()) }
+        }
 }

@@ -18,6 +18,12 @@
         :hero-meta="data.heroMeta"
       />
 
+      <MovieEnrichmentPanel
+        :movie-id="data.movieId"
+        :identifiers="data.identifiers"
+        @applied="handleEnrichmentApplied"
+      />
+
       <MovieContextPanel
         :stats="data.stats"
         :identifiers="data.identifiers"
@@ -30,14 +36,16 @@
 
 <script setup lang="ts">
 import MovieContextPanel from '~/components/movies/MovieContextPanel.vue'
+import MovieEnrichmentPanel from '~/components/movies/MovieEnrichmentPanel.vue'
 import MoviePageHero from '~/components/movies/MoviePageHero.vue'
 import MovieWatchTimeline from '~/components/movies/MovieWatchTimeline.vue'
 import { useMoviePageData } from '~/composables/useMoviePageData'
+import type { MovieEnrichmentApplyResponse } from '~/types/movies'
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
 
-const { data, error, status } = await useMoviePageData(slug.value)
+const { data, error, status, refresh } = await useMoviePageData(slug.value)
 
 const heroSubtitle = computed(() => {
   if (!data.value) return null
@@ -62,6 +70,10 @@ useHead(() => ({
     },
   ],
 }))
+
+async function handleEnrichmentApplied(_response: MovieEnrichmentApplyResponse) {
+  await refresh()
+}
 </script>
 
 <style scoped>

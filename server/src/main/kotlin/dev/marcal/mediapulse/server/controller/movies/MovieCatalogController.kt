@@ -1,0 +1,39 @@
+package dev.marcal.mediapulse.server.controller.movies
+
+import dev.marcal.mediapulse.server.api.movies.ManualMovieCatalogCreateRequest
+import dev.marcal.mediapulse.server.api.movies.ManualMovieCatalogCreateResponse
+import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentApplyRequest
+import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentApplyResponse
+import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentPreviewRequest
+import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentPreviewResponse
+import dev.marcal.mediapulse.server.service.movie.ManualMovieCatalogCreateFlowService
+import dev.marcal.mediapulse.server.service.movie.MovieMetadataEnrichmentService
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+@RestController
+@RequestMapping("/api/movies")
+class MovieCatalogController(
+    private val manualMovieCatalogCreateFlowService: ManualMovieCatalogCreateFlowService,
+    private val movieMetadataEnrichmentService: MovieMetadataEnrichmentService,
+) {
+    @PostMapping("/catalog")
+    fun createCatalogEntry(
+        @RequestBody request: ManualMovieCatalogCreateRequest,
+    ): ManualMovieCatalogCreateResponse = manualMovieCatalogCreateFlowService.execute(request)
+
+    @PostMapping("/{movieId}/enrichment/preview")
+    fun previewEnrichment(
+        @PathVariable movieId: Long,
+        @RequestBody request: MovieEnrichmentPreviewRequest,
+    ): MovieEnrichmentPreviewResponse = movieMetadataEnrichmentService.preview(movieId, request)
+
+    @PostMapping("/{movieId}/enrichment/apply")
+    fun applyEnrichment(
+        @PathVariable movieId: Long,
+        @RequestBody request: MovieEnrichmentApplyRequest,
+    ): MovieEnrichmentApplyResponse = movieMetadataEnrichmentService.apply(movieId, request)
+}

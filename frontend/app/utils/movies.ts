@@ -449,18 +449,29 @@ export function buildMovieLibraryPageData(payload: {
 export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
   const latestWatch = movie.watches[0]?.watchedAt ?? null
   const firstWatch = movie.watches[movie.watches.length - 1]?.watchedAt ?? null
+  const orderedGallery = [
+    ...(movie.coverUrl ? [movie.coverUrl] : []),
+    ...movie.images
+      .slice()
+      .sort((left, right) => {
+        if (left.isPrimary !== right.isPrimary) {
+          return left.isPrimary ? -1 : 1
+        }
+
+        return right.id - left.id
+      })
+      .map(image => image.url),
+  ].filter((value, index, array) => array.indexOf(value) === index)
 
   return {
+    movieId: movie.movieId,
     slug: movie.slug ?? String(movie.movieId),
     title: movie.title,
     originalTitle: movie.originalTitle,
     year: movie.year,
     description: movie.description,
     coverUrl: movie.coverUrl,
-    gallery: [
-      ...(movie.coverUrl ? [movie.coverUrl] : []),
-      ...movie.images.map((image) => image.url),
-    ].filter((value, index, array) => array.indexOf(value) === index).slice(0, 4),
+    gallery: orderedGallery.slice(0, 4),
     heroMeta: [
       movie.year ? String(movie.year) : null,
       `${movie.watches.length} sessões`,
