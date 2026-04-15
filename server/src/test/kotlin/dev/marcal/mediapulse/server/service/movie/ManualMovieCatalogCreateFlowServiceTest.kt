@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.service.movie
 
 import dev.marcal.mediapulse.server.api.movies.ManualMovieCatalogCreateRequest
+import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
@@ -15,11 +16,13 @@ import kotlin.test.assertTrue
 class ManualMovieCatalogCreateFlowServiceTest {
     private val manualMovieCatalogService = mockk<ManualMovieCatalogService>()
     private val externalIdentifierRepository = mockk<ExternalIdentifierRepository>()
+    private val tmdbApiClient = mockk<TmdbApiClient>()
 
     private val service =
         ManualMovieCatalogCreateFlowService(
             manualMovieCatalogService = manualMovieCatalogService,
             externalIdentifierRepository = externalIdentifierRepository,
+            tmdbApiClient = tmdbApiClient,
         )
 
     @Test
@@ -46,5 +49,27 @@ class ManualMovieCatalogCreateFlowServiceTest {
         assertEquals("dune", response.slug)
         assertTrue(response.createdMovie)
         assertEquals("TMDB", response.externalIds.single().provider)
+    }
+
+    @Test
+    fun `monta sugestoes de catalogo a partir do tmdb`() {
+        every { tmdbApiClient.searchMovies("Le Mépris") } returns
+            listOf(
+                TmdbApiClient.TmdbMovieSearchItem(
+                    tmdbId = "115",
+                    title = "Le Mépris",
+                    originalTitle = "Le Mépris",
+                    overview = "Camille drifts away from Paul.",
+                    releaseYear = 1963,
+                    posterPath = "/poster.jpg",
+                ),
+            )
+        every { manualMovieCatalogService.buildTmdbImageUrl("/poster.jpg") } returns "https://image.tmdb.org/t/p/w780/poster.jpg"
+
+        val response = service.suggest("Le Mépris")
+
+        assertEquals("Le Mépris", response.query)
+        assertEquals("115", response.suggestions.single().tmdbId)
+        assertEquals("https://image.tmdb.org/t/p/w780/poster.jpg", response.suggestions.single().posterUrl)
     }
 }

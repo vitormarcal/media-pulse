@@ -371,7 +371,7 @@ class ManualMovieCatalogService(
         )
     }
 
-    private fun buildTmdbImageUrl(posterPath: String): String {
+    fun buildTmdbImageUrl(posterPath: String): String {
         val normalizedPath = if (posterPath.startsWith('/')) posterPath else "/$posterPath"
         val normalizedImageBaseUrl = tmdbProperties.imageBaseUrl.trimEnd('/')
         return "$normalizedImageBaseUrl/t/p/w780$normalizedPath"

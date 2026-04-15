@@ -20,6 +20,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/summary` | `range=month|year|custom`, `start?`, `end?` | `MoviesSummaryResponse` |
 | `GET /api/movies/stats` | - | `MoviesStatsResponse` |
 | `GET /api/movies/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `MoviesByYearResponse` |
+| `GET /api/movies/catalog/suggestions` | `q` | `MovieCatalogSuggestionsResponse` |
 | `POST /api/movies/catalog` | body com `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieCatalogCreateResponse` |
 | `POST /api/movies/{movieId}/enrichment/preview` | body com `tmdbId?` | `MovieEnrichmentPreviewResponse` |
 | `POST /api/movies/{movieId}/enrichment/apply` | body com `tmdbId?`, `mode`, `fields[]` | `MovieEnrichmentApplyResponse` |
@@ -70,11 +71,18 @@ Regras importantes:
 
 ## Catálogo e enriquecimento
 
+`GET /api/movies/catalog/suggestions` busca correspondências no TMDb para apoiar a criação de catálogo pela UI.
+
+- retorna cards curtos com `tmdbId`, `title`, `originalTitle`, `year`, `overview` e `posterUrl`
+- o fluxo esperado é: buscar por nome, escolher uma sugestão, salvar o catálogo já com contexto externo
+- se nenhuma sugestão servir, a UI pode cair para criação manual
+
 `POST /api/movies/catalog` cria ou reaproveita um filme sem registrar sessão.
 
 Uso esperado:
 
-- corrigir lacunas a partir da UI quando a busca não encontrou o título certo
+- criar uma entrada já ancorada no TMDb quando houver correspondência
+- cair para manual apenas quando a busca externa não ajudar
 - consolidar ids externos antes do primeiro watch
 - abrir um detalhe de filme utilizável mesmo sem histórico de sessão
 

@@ -63,6 +63,20 @@ data class ManualMovieCatalogCreateRequest(
     val imdbId: String? = null,
 )
 
+data class MovieCatalogSuggestionDto(
+    val tmdbId: String,
+    val title: String,
+    val originalTitle: String?,
+    val year: Int?,
+    val overview: String?,
+    val posterUrl: String?,
+)
+
+data class MovieCatalogSuggestionsResponse(
+    val query: String,
+    val suggestions: List<MovieCatalogSuggestionDto>,
+)
+
 data class ManualMovieCatalogCreateResponse(
     val movieId: Long,
     val slug: String?,

@@ -23,6 +23,22 @@ data class TmdbMovieDetailsResponse(
     val backdropPath: String? = null,
 )
 
+data class TmdbMovieSearchItemResponse(
+    val id: Long,
+    val title: String? = null,
+    @JsonProperty("original_title")
+    val originalTitle: String? = null,
+    val overview: String? = null,
+    @JsonProperty("release_date")
+    val releaseDate: String? = null,
+    @JsonProperty("poster_path")
+    val posterPath: String? = null,
+)
+
+data class TmdbMovieSearchResponse(
+    val results: List<TmdbMovieSearchItemResponse> = emptyList(),
+)
+
 data class TmdbShowDetailsResponse(
     val name: String? = null,
     @JsonProperty("original_name")
@@ -59,6 +75,15 @@ class TmdbApiClient(
         val firstAirYear: Int?,
         val posterPath: String?,
         val backdropPath: String?,
+    )
+
+    data class TmdbMovieSearchItem(
+        val tmdbId: String,
+        val title: String?,
+        val originalTitle: String?,
+        val overview: String?,
+        val releaseYear: Int?,
+        val posterPath: String?,
     )
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -170,6 +195,75 @@ class TmdbApiClient(
         }
 
         return null
+    }
+
+    fun searchMovies(
+        query: String,
+        limit: Int = 8,
+    ): List<TmdbMovieSearchItem> {
+        if (!tmdbProperties.enabled) return emptyList()
+
+        val normalizedQuery = query.trim()
+        if (normalizedQuery.isBlank()) return emptyList()
+
+        val attempts = (tmdbProperties.max429Retries + 1).coerceAtLeast(1)
+        var attempt = 0
+
+        while (attempt < attempts) {
+            attempt++
+            tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
+
+            try {
+                val response =
+                    tmdbWebClient
+                        .get()
+                        .uri { uriBuilder ->
+                            val builder =
+                                uriBuilder
+                                    .path("/search/movie")
+                                    .queryParam("query", normalizedQuery)
+                            if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
+                                builder.queryParam("api_key", tmdbProperties.apiKey)
+                            }
+                            builder.build()
+                        }.retrieve()
+                        .bodyToMono<TmdbMovieSearchResponse>()
+                        .block() ?: return emptyList()
+
+                return response.results
+                    .asSequence()
+                    .map { item ->
+                        TmdbMovieSearchItem(
+                            tmdbId = item.id.toString(),
+                            title = item.title?.trim()?.ifBlank { null },
+                            originalTitle = item.originalTitle?.trim()?.ifBlank { null },
+                            overview = item.overview?.trim()?.ifBlank { null },
+                            releaseYear = parseReleaseYear(item.releaseDate),
+                            posterPath = item.posterPath?.trim()?.ifBlank { null },
+                        )
+                    }.filter { !it.title.isNullOrBlank() }
+                    .take(limit.coerceAtLeast(1))
+                    .toList()
+            } catch (ex: WebClientResponseException.NotFound) {
+                return emptyList()
+            } catch (ex: WebClientResponseException) {
+                val isTooManyRequests = ex.statusCode.value() == 429
+                val hasRemainingRetry = attempt < attempts
+                if (isTooManyRequests && hasRemainingRetry) {
+                    val waitMs = resolve429WaitMs(ex, attempt)
+                    logger.warn("TMDb rate limited (429). Waiting {}ms before retry {}/{}", waitMs, attempt + 1, attempts)
+                    Thread.sleep(waitMs)
+                    continue
+                }
+                logger.warn("Failed to search TMDb movies for query='{}' status={}", normalizedQuery, ex.statusCode.value(), ex)
+                return emptyList()
+            } catch (ex: Exception) {
+                logger.warn("Failed to search TMDb movies for query='{}'", normalizedQuery, ex)
+                return emptyList()
+            }
+        }
+
+        return emptyList()
     }
 
     private fun parseReleaseYear(releaseDate: String?): Int? {

@@ -3,6 +3,9 @@ package dev.marcal.mediapulse.server.service.movie
 import dev.marcal.mediapulse.server.api.movies.ManualMovieCatalogCreateRequest
 import dev.marcal.mediapulse.server.api.movies.ManualMovieCatalogCreateResponse
 import dev.marcal.mediapulse.server.api.movies.ManualMovieExternalIdView
+import dev.marcal.mediapulse.server.api.movies.MovieCatalogSuggestionDto
+import dev.marcal.mediapulse.server.api.movies.MovieCatalogSuggestionsResponse
+import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import org.springframework.stereotype.Service
@@ -12,7 +15,26 @@ import org.springframework.transaction.annotation.Transactional
 class ManualMovieCatalogCreateFlowService(
     private val manualMovieCatalogService: ManualMovieCatalogService,
     private val externalIdentifierRepository: ExternalIdentifierRepository,
+    private val tmdbApiClient: TmdbApiClient,
 ) {
+    fun suggest(query: String): MovieCatalogSuggestionsResponse =
+        MovieCatalogSuggestionsResponse(
+            query = query.trim(),
+            suggestions =
+                tmdbApiClient
+                    .searchMovies(query)
+                    .map { item ->
+                        MovieCatalogSuggestionDto(
+                            tmdbId = item.tmdbId,
+                            title = item.title ?: item.originalTitle ?: item.tmdbId,
+                            originalTitle = item.originalTitle,
+                            year = item.releaseYear,
+                            overview = item.overview,
+                            posterUrl = item.posterPath?.let { path -> manualMovieCatalogService.buildTmdbImageUrl(path) },
+                        )
+                    },
+        )
+
     @Transactional
     fun execute(request: ManualMovieCatalogCreateRequest): ManualMovieCatalogCreateResponse {
         val catalogResult =

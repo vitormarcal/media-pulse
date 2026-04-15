@@ -920,6 +920,22 @@ paths:
                 $ref: "#/components/schemas/MovieDetailsResponse"
 
   /api/movies/catalog:
+    get:
+      summary: Suggest movie catalog matches from TMDb
+      tags: [Movies]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieCatalogSuggestionsResponse"
     post:
       summary: Create or reuse movie catalog entry
       tags: [Movies]
@@ -2235,6 +2251,36 @@ components:
           items:
             $ref: "#/components/schemas/ManualMovieExternalIdView"
       required: [movieId, title, createdMovie, coverAssigned, externalIds]
+    MovieCatalogSuggestionDto:
+      type: object
+      properties:
+        tmdbId:
+          type: string
+        title:
+          type: string
+        originalTitle:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        overview:
+          type: string
+          nullable: true
+        posterUrl:
+          type: string
+          nullable: true
+      required: [tmdbId, title]
+    MovieCatalogSuggestionsResponse:
+      type: object
+      properties:
+        query:
+          type: string
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieCatalogSuggestionDto"
+      required: [query, suggestions]
     MovieEnrichmentField:
       type: string
       enum: [TITLE, YEAR, DESCRIPTION, TMDB_ID, IMDB_ID, IMAGES]

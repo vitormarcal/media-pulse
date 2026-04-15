@@ -56,6 +56,20 @@ export interface ManualMovieCatalogCreateResponse {
   externalIds: ManualMovieExternalIdView[]
 }
 
+export interface MovieCatalogSuggestion {
+  tmdbId: string
+  title: string
+  originalTitle: string | null
+  year: number | null
+  overview: string | null
+  posterUrl: string | null
+}
+
+export interface MovieCatalogSuggestionsResponse {
+  query: string
+  suggestions: MovieCatalogSuggestion[]
+}
+
 export interface MovieEnrichmentPreviewResponse {
   movieId: number
   resolvedTmdbId: string
