@@ -29,18 +29,24 @@
         :identifiers="data.identifiers"
       />
 
+      <MovieAddWatchPanel
+        :movie-id="data.movieId"
+        @created="handleWatchCreated"
+      />
+
       <MovieWatchTimeline :watches="data.recentWatches" />
     </template>
   </main>
 </template>
 
 <script setup lang="ts">
+import MovieAddWatchPanel from '~/components/movies/MovieAddWatchPanel.vue'
 import MovieContextPanel from '~/components/movies/MovieContextPanel.vue'
 import MovieEnrichmentPanel from '~/components/movies/MovieEnrichmentPanel.vue'
 import MoviePageHero from '~/components/movies/MoviePageHero.vue'
 import MovieWatchTimeline from '~/components/movies/MovieWatchTimeline.vue'
 import { useMoviePageData } from '~/composables/useMoviePageData'
-import type { MovieEnrichmentApplyResponse } from '~/types/movies'
+import type { ManualMovieWatchCreateResponse, MovieEnrichmentApplyResponse } from '~/types/movies'
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
@@ -72,6 +78,10 @@ useHead(() => ({
 }))
 
 async function handleEnrichmentApplied(_response: MovieEnrichmentApplyResponse) {
+  await refresh()
+}
+
+async function handleWatchCreated(_response: ManualMovieWatchCreateResponse) {
   await refresh()
 }
 </script>

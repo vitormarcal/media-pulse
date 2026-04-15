@@ -1,12 +1,11 @@
 # Movies API
 
-A Movies API expõe consulta read-only da biblioteca e do histórico de watches, além de ingestão manual idempotente.
+A Movies API expõe consulta read-only da biblioteca e do histórico de watches, além de ações editoriais de catálogo e sessão manual.
 
 ## Escopo e origem dos dados
 
 - o histórico de filmes é preenchido por eventos Plex `media.scrobble` com `Metadata.type=movie`
 - o import de biblioteca no startup cadastra metadados, mas não cria linhas em `movie_watches`
-- o endpoint manual `POST /api/movies/watches` cria ou reutiliza o filme e registra um watch idempotente
 
 ## Endpoints
 
@@ -22,9 +21,9 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `MoviesByYearResponse` |
 | `GET /api/movies/catalog/suggestions` | `q` | `MovieCatalogSuggestionsResponse` |
 | `POST /api/movies/catalog` | body com `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieCatalogCreateResponse` |
+| `POST /api/movies/{movieId}/watches` | body com `watchedAt` | `ManualMovieWatchCreateResponse` |
 | `POST /api/movies/{movieId}/enrichment/preview` | body com `tmdbId?` | `MovieEnrichmentPreviewResponse` |
 | `POST /api/movies/{movieId}/enrichment/apply` | body com `tmdbId?`, `mode`, `fields[]` | `MovieEnrichmentApplyResponse` |
-| `POST /api/movies/watches` | body com `watchedAt`, `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieWatchCreateResponse` |
 
 ## Paginação e limites
 
@@ -56,6 +55,12 @@ O range do relatório anual é:
 - `unwatched` inclui apenas filmes nunca assistidos
 
 ## Ingestão manual
+
+`POST /api/movies/{movieId}/watches` registra uma sessão manual em um filme já existente.
+
+- uso esperado: cinema, memória antiga, lacuna de histórico ou correção manual
+- a inserção continua idempotente por `(movie_id, source=MANUAL, watched_at)`
+- o endpoint não recria nem recatalogra o filme; só acrescenta a sessão
 
 Resolução do filme:
 

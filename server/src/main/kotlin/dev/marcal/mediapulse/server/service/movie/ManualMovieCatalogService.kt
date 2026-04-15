@@ -1,6 +1,5 @@
 package dev.marcal.mediapulse.server.service.movie
 
-import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateRequest
 import dev.marcal.mediapulse.server.config.TmdbProperties
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbImageClient
@@ -76,16 +75,6 @@ class ManualMovieCatalogService(
         val posterUrl: String?,
         val backdropUrl: String?,
     )
-
-    fun resolveOrCreate(request: ManualMovieWatchCreateRequest): MovieCatalogResult =
-        resolveOrCreate(
-            MovieCatalogUpsertRequest(
-                title = request.title,
-                year = request.year,
-                tmdbId = request.tmdbId,
-                imdbId = request.imdbId,
-            ),
-        )
 
     fun resolveOrCreate(request: MovieCatalogUpsertRequest): MovieCatalogResult {
         val normalizedTitle = request.title.trim().ifBlank { throw IllegalArgumentException("title deve ser preenchido") }

@@ -122,6 +122,10 @@ export interface MovieEnrichmentApplyResponse {
   externalIds: ManualMovieExternalIdView[]
 }
 
+export interface ExistingMovieWatchCreateRequest {
+  watchedAt: string
+}
+
 export interface MovieWatchEntryModel {
   id: string
   title: string

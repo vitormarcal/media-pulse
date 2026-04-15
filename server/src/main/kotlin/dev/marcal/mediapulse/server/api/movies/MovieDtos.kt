@@ -227,12 +227,8 @@ data class RangeDto(
     val end: Instant,
 )
 
-data class ManualMovieWatchCreateRequest(
+data class ExistingMovieWatchCreateRequest(
     val watchedAt: Instant,
-    val title: String,
-    val year: Int? = null,
-    val tmdbId: String? = null,
-    val imdbId: String? = null,
 )
 
 data class ManualMovieWatchCreateResponse(

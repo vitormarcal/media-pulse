@@ -1,6 +1,5 @@
 package dev.marcal.mediapulse.server.service.movie
 
-import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateRequest
 import dev.marcal.mediapulse.server.config.TmdbProperties
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbImageClient
@@ -25,7 +24,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.server.ResponseStatusException
-import java.time.Instant
 import java.util.Optional
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -68,7 +66,7 @@ class ManualMovieCatalogServiceTest {
     @Test
     fun `nao duplica movie para fingerprint repetido`() {
         val movie = Movie(id = 11, originalTitle = "Dune", year = 2021, slug = "dune", fingerprint = "fp")
-        val request = ManualMovieWatchCreateRequest(Instant.parse("2026-03-01T10:00:00Z"), "Dune", 2021)
+        val request = ManualMovieCatalogService.MovieCatalogUpsertRequest(title = "Dune", year = 2021)
 
         every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
         every { movieRepository.findByFingerprint(any()) } returnsMany listOf(null, movie)
@@ -114,8 +112,7 @@ class ManualMovieCatalogServiceTest {
 
         val result =
             service.resolveOrCreate(
-                ManualMovieWatchCreateRequest(
-                    watchedAt = Instant.parse("2026-03-01T10:00:00Z"),
+                ManualMovieCatalogService.MovieCatalogUpsertRequest(
                     title = "Novo Titulo",
                     year = 2024,
                     tmdbId = "999",
@@ -163,8 +160,7 @@ class ManualMovieCatalogServiceTest {
 
         val result =
             service.resolveOrCreate(
-                ManualMovieWatchCreateRequest(
-                    watchedAt = Instant.parse("2026-03-01T10:00:00Z"),
+                ManualMovieCatalogService.MovieCatalogUpsertRequest(
                     title = "Dune",
                     year = 2021,
                     tmdbId = "222",
@@ -223,8 +219,7 @@ class ManualMovieCatalogServiceTest {
         every { externalIdentifierRepository.save(any()) } returns mockk()
 
         service.resolveOrCreate(
-            ManualMovieWatchCreateRequest(
-                watchedAt = Instant.parse("2026-03-01T10:00:00Z"),
+            ManualMovieCatalogService.MovieCatalogUpsertRequest(
                 title = "Duna: Parte Dois",
                 year = null,
                 tmdbId = "693134",
@@ -275,8 +270,7 @@ class ManualMovieCatalogServiceTest {
             kotlin
                 .runCatching {
                     service.resolveOrCreate(
-                        ManualMovieWatchCreateRequest(
-                            watchedAt = Instant.parse("2026-03-01T10:00:00Z"),
+                        ManualMovieCatalogService.MovieCatalogUpsertRequest(
                             title = "Dune",
                             year = 2021,
                             tmdbId = "222",

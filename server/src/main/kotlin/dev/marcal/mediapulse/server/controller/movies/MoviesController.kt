@@ -1,5 +1,7 @@
 package dev.marcal.mediapulse.server.controller.movies
 
+import dev.marcal.mediapulse.server.api.movies.ExistingMovieWatchCreateRequest
+import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesLibraryResponse
@@ -8,9 +10,12 @@ import dev.marcal.mediapulse.server.api.movies.MoviesSearchResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
+import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -25,6 +30,7 @@ import kotlin.math.min
 @RequestMapping("/api/movies")
 class MoviesController(
     private val repository: MovieQueryRepository,
+    private val existingMovieWatchCreateFlowService: ExistingMovieWatchCreateFlowService,
 ) {
     @GetMapping("/library")
     fun library(
@@ -47,6 +53,12 @@ class MoviesController(
     fun detailsBySlug(
         @PathVariable slug: String,
     ): MovieDetailsResponse = repository.getMovieDetailsBySlug(slug)
+
+    @PostMapping("/{movieId}/watches")
+    fun addWatch(
+        @PathVariable movieId: Long,
+        @RequestBody request: ExistingMovieWatchCreateRequest,
+    ): ManualMovieWatchCreateResponse = existingMovieWatchCreateFlowService.execute(movieId, request.watchedAt)
 
     @GetMapping("/search")
     fun search(

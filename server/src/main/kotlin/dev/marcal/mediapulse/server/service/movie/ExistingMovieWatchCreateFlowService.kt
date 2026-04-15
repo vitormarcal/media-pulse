@@ -1,45 +1,55 @@
 package dev.marcal.mediapulse.server.service.movie
 
 import dev.marcal.mediapulse.server.api.movies.ManualMovieExternalIdView
-import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateRequest
 import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateResponse
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.movie.MovieWatchSource
 import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
+import dev.marcal.mediapulse.server.repository.crud.MovieRepository
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
+import java.time.Instant
 
 @Service
-class ManualMovieWatchCreateFlowService(
-    private val manualMovieCatalogService: ManualMovieCatalogService,
+class ExistingMovieWatchCreateFlowService(
+    private val movieRepository: MovieRepository,
     private val manualMovieWatchRegistrationService: ManualMovieWatchRegistrationService,
     private val externalIdentifierRepository: ExternalIdentifierRepository,
 ) {
     @Transactional
-    fun execute(request: ManualMovieWatchCreateRequest): ManualMovieWatchCreateResponse {
-        val catalogResult = manualMovieCatalogService.resolveOrCreate(request)
+    fun execute(
+        movieId: Long,
+        watchedAt: Instant,
+    ): ManualMovieWatchCreateResponse {
+        val movie =
+            movieRepository.findById(movieId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Movie not found")
+            }
+
         val watchInserted =
             manualMovieWatchRegistrationService.register(
-                movieId = catalogResult.movie.id,
-                watchedAt = request.watchedAt,
+                movieId = movieId,
+                watchedAt = watchedAt,
             )
 
         val externalIds =
             externalIdentifierRepository
-                .findByEntityTypeAndEntityId(EntityType.MOVIE, catalogResult.movie.id)
+                .findByEntityTypeAndEntityId(EntityType.MOVIE, movieId)
                 .sortedWith(compareBy({ it.provider.name }, { it.externalId }))
                 .map { ManualMovieExternalIdView(provider = it.provider.name, externalId = it.externalId) }
 
         return ManualMovieWatchCreateResponse(
-            movieId = catalogResult.movie.id,
-            title = catalogResult.movie.originalTitle,
-            year = catalogResult.movie.year,
-            coverUrl = catalogResult.movie.coverUrl,
-            watchedAt = request.watchedAt,
+            movieId = movie.id,
+            title = movie.originalTitle,
+            year = movie.year,
+            coverUrl = movie.coverUrl,
+            watchedAt = watchedAt,
             source = MovieWatchSource.MANUAL.name,
-            createdMovie = catalogResult.created,
+            createdMovie = false,
             watchInserted = watchInserted,
-            coverAssigned = catalogResult.coverAssigned,
+            coverAssigned = false,
             externalIds = externalIds,
         )
     }
