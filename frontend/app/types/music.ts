@@ -188,6 +188,56 @@ export interface MusicStatsResponse {
   firstPlayAt: string | null
 }
 
+export interface DuplicateTrackCandidateResponse {
+  trackId: number
+  title: string
+  durationMs: number | null
+  discNumber: number | null
+  trackNumber: number | null
+  playbackCount: number
+  lastPlayed: string | null
+  hasMusicBrainz: boolean
+  hasSpotify: boolean
+  externalIdentifiers: string[]
+}
+
+export interface DuplicateTrackGroupResponse {
+  albumId: number
+  albumTitle: string
+  albumYear: number | null
+  albumCoverUrl: string | null
+  artistId: number
+  artistName: string
+  groupKey: string
+  normalizedTitle: string
+  ignored: boolean
+  confidence: string
+  suggestionReason: string
+  suggestedTargetTrackId: number
+  candidates: DuplicateTrackCandidateResponse[]
+}
+
+export interface DuplicateTrackReviewPageResponse {
+  items: DuplicateTrackGroupResponse[]
+  nextCursor: string | null
+}
+
+export interface DuplicateTrackMergeResponse {
+  albumId: number
+  groupKey: string
+  targetTrackId: number
+  mergedTrackIds: number[]
+  deletedDuplicatePlaybacks: number
+  movedPlaybacks: number
+  linkedExternalIdentifiers: number
+  migratedAlbumLinks: number
+}
+
+export interface DuplicateTrackBatchMergeResponse {
+  processedGroups: number
+  results: DuplicateTrackMergeResponse[]
+}
+
 export interface AlbumTrackModel {
   id: string
   title: string

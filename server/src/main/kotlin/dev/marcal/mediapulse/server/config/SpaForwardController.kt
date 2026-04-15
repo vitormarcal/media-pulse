@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.GetMapping
 class SpaForwardController {
     @GetMapping(
         "/",
+        "/music",
+        "/music/library",
+        "/music/artists/{id}",
         "/shows",
         "/shows/library",
         "/shows/{slug}",
@@ -15,8 +18,10 @@ class SpaForwardController {
         "/movies/{slug}",
         "/books",
         "/books/library",
+        "/books/authors/{id}",
         "/books/{slug}",
         "/music/albums/{id}",
+        "/music/admin/duplicates",
     )
     fun forwardToIndex(): String = "forward:/index.html"
 }
