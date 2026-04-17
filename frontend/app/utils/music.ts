@@ -591,6 +591,8 @@ export function buildMusicLibraryPageData(payload: {
       backLabel: 'Voltar ao recorte',
       accentLink: '/music/library?kind=albums',
       accentLabel: 'Abrir álbuns',
+      utilityLink: '/music/admin/duplicates',
+      utilityLabel: 'Revisar duplicatas',
       spotlight,
     },
     filters: {

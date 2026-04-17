@@ -41,4 +41,6 @@ object TitleKeyUtil {
         // colapsa espaços
         return cleaned.trim().replace(Regex("\\s+"), " ")
     }
+
+    fun trackTitleKey(raw: String): String = albumTitleKey(raw)
 }

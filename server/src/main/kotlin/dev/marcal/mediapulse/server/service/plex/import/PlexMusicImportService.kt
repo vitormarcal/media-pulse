@@ -170,10 +170,13 @@ class PlexMusicImportService(
                 val mbidTrack = PlexGuidUtil.firstValue(track.guids, "mbid")
 
                 val t =
-                    canonical.ensureTrack(
+                    canonical.ensureTrackInAlbum(
+                        album = album,
                         artist = artist,
                         title = track.title,
                         durationMs = track.duration?.toInt(),
+                        discNumber = track.parentIndex,
+                        trackNumber = track.index,
                         musicbrainzId = mbidTrack,
                     )
 

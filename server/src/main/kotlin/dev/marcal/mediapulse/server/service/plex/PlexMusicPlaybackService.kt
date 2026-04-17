@@ -81,10 +81,13 @@ class PlexMusicPlaybackService(
 
         // 3) Track
         val track =
-            canonical.ensureTrack(
+            canonical.ensureTrackInAlbum(
+                album = album,
                 artist = artist,
                 title = trackTitle,
                 durationMs = null,
+                discNumber = discNumber,
+                trackNumber = trackNumber,
                 musicbrainzId = mbidTrack,
             )
 

@@ -81,10 +81,13 @@ class SpotifyExtendedPlaybackService(
         val trackKey = trackSpotifyId ?: ("t:$trackTitle")
         val trackEntity =
             trackCache.getOrPut(trackKey) {
-                canonical.ensureTrack(
+                canonical.ensureTrackInAlbum(
+                    album = albumEntity,
                     artist = artistEntity,
                     title = trackTitle,
                     durationMs = null,
+                    discNumber = null,
+                    trackNumber = null,
                     spotifyId = trackSpotifyId,
                 )
             }
