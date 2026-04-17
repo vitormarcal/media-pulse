@@ -17,6 +17,8 @@
         :back-label="data.hero.backLabel"
         :accent-link="data.hero.accentLink"
         :accent-label="data.hero.accentLabel"
+        :utility-link="data.hero.utilityLink"
+        :utility-label="data.hero.utilityLabel"
         :spotlight="data.hero.spotlight"
       />
 
@@ -25,6 +27,23 @@
         :selected-year="data.filters.selectedYear"
         :years="data.filters.years"
       />
+
+      <MovieManualAddCard v-if="showManualAddCard" :initial-title="queryText" />
+
+      <section v-else-if="showManualEntryHint" class="manual-entry-hint">
+        <div class="manual-entry-hint__copy">
+          <p class="manual-entry-hint__eyebrow">Entrada manual</p>
+          <h2>Não era o filme certo?</h2>
+          <p>
+            A busca da biblioteca serve para reencontrar o que já existe. Se você quer trazer um título novo,
+            pode abrir a entrada manual sem depender de zero resultados.
+          </p>
+        </div>
+
+        <NuxtLink class="manual-entry-hint__action" :to="manualAddLink">
+          Adicionar filme
+        </NuxtLink>
+      </section>
 
       <MoviesCollectionContext
         :eyebrow="data.context.eyebrow"
@@ -44,8 +63,6 @@
         :items="section.items"
         :empty-message="section.emptyMessage"
       />
-
-      <MovieManualAddCard v-if="showManualAddCard" :initial-title="queryText" />
 
       <div v-if="canLoadMore" class="load-more-row">
         <button type="button" class="load-more" :disabled="loadingMore || hydratingDormant" @click="handleLoadMore">
@@ -79,6 +96,11 @@ const selectedYear = computed<number | null>(() => {
 
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : null
+})
+
+const addMode = computed(() => {
+  const value = route.query.add
+  return value === '1' || value === 'true'
 })
 
 const { data, error, status } = await useAsyncData(
@@ -134,13 +156,27 @@ const displaySections = computed(() => {
 })
 
 const showManualAddCard = computed(() => {
-  if (!queryText.value || !data.value || data.value.mode !== 'search') {
-    return false
-  }
+  if (addMode.value) return true
+  if (!queryText.value || !data.value || data.value.mode !== 'search') return false
 
   const resultsSection = data.value.sections.find(section => section.id === 'search-results')
   return (resultsSection?.items.length ?? 0) === 0
 })
+
+const showManualEntryHint = computed(() => {
+  if (showManualAddCard.value || !queryText.value || !data.value || data.value.mode !== 'search') {
+    return false
+  }
+
+  const resultsSection = data.value.sections.find(section => section.id === 'search-results')
+  return (resultsSection?.items.length ?? 0) > 0
+})
+
+const manualAddLink = computed(() => (
+  queryText.value
+    ? `/movies/library?q=${encodeURIComponent(queryText.value)}&add=1`
+    : '/movies/library?add=1'
+))
 
 async function handleLoadMore() {
   if (!nextCursor.value || loadingMore.value || hydratingDormant.value) return
@@ -215,6 +251,55 @@ useHead(() => ({
   justify-content: center;
 }
 
+.manual-entry-hint {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 24px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 243, 238, 0.98));
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 48%, white);
+}
+
+.manual-entry-hint__copy {
+  display: grid;
+  gap: 8px;
+}
+
+.manual-entry-hint__eyebrow {
+  margin: 0;
+  color: var(--base-color-brand-red);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.manual-entry-hint__copy h2,
+.manual-entry-hint__copy p {
+  margin: 0;
+}
+
+.manual-entry-hint__copy h2 {
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.manual-entry-hint__copy p {
+  color: var(--base-color-text-secondary);
+  line-height: 1.56;
+}
+
+.manual-entry-hint__action {
+  padding: 10px 16px;
+  border-radius: 16px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+  white-space: nowrap;
+}
+
 .load-more {
   padding: 10px 18px;
   border: 0;
@@ -249,6 +334,10 @@ pre {
   .movies-library-page {
     width: min(100vw - 20px, 1480px);
     padding: 20px 0 64px;
+  }
+
+  .manual-entry-hint {
+    grid-template-columns: 1fr;
   }
 }
 </style>

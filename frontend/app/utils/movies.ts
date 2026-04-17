@@ -357,6 +357,8 @@ export function buildMovieLibraryPageData(payload: {
         backLabel: 'Voltar ao recorte',
         accentLink: '/movies/library',
         accentLabel: 'Limpar busca',
+        utilityLink: payload.query ? `/movies/library?q=${encodeURIComponent(payload.query)}&add=1` : '/movies/library?add=1',
+        utilityLabel: 'Adicionar filme',
         spotlight: buildSpotlightFromCard(
           searchItems[0],
           'A biblioteca de filmes, puxada pela busca',
@@ -403,6 +405,8 @@ export function buildMovieLibraryPageData(payload: {
       backLabel: 'Voltar ao recorte',
       accentLink: '/movies/library?year=' + (years[0]?.year ?? new Date().getFullYear()),
       accentLabel: 'Abrir um recorte por ano',
+      utilityLink: '/movies/library?add=1',
+      utilityLabel: 'Adicionar filme',
       spotlight: buildSpotlightFromCard(
         activeItems[0] ?? dormantItems[0],
         'A biblioteca inteira de filmes',

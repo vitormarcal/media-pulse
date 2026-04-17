@@ -13,6 +13,10 @@
         <NuxtLink class="action-accent" :to="accentLink">
           {{ accentLabel }}
         </NuxtLink>
+
+        <NuxtLink v-if="utilityLink && utilityLabel" class="action-secondary" :to="utilityLink">
+          {{ utilityLabel }}
+        </NuxtLink>
       </div>
     </div>
 
@@ -45,6 +49,8 @@ const props = defineProps<{
   backLabel: string
   accentLink: string
   accentLabel: string
+  utilityLink?: string | null
+  utilityLabel?: string | null
   spotlight: {
     title: string
     subtitle: string
@@ -119,6 +125,14 @@ h1 {
   font-size: 0.8rem;
   background: var(--base-color-brand-red);
   color: #000;
+}
+
+.action-secondary {
+  padding: 8px 14px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
 }
 
 .spotlight-link {

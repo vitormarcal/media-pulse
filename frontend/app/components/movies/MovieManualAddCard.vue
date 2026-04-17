@@ -1,10 +1,10 @@
 <template>
   <section class="manual-add-card">
     <SectionHeading
-      eyebrow="Não achou?"
-      title="Busque uma sugestão antes de criar"
-      description="Quando o filme não aparece na biblioteca, o caminho principal passa por uma busca curta no TMDb para já nascer com contexto."
-      summary="Se nenhuma sugestão servir, a entrada manual continua disponível."
+      eyebrow="Entrada manual"
+      title="Adicionar filme ao catálogo"
+      description="O caminho principal continua sendo uma busca curta no TMDb, para o filme já nascer com contexto, IDs externos e imagem."
+      summary="Se a sugestão não servir ou você já souber os IDs, a entrada mínima continua disponível logo abaixo."
     />
 
     <article class="form-card">
@@ -16,10 +16,10 @@
 
         <div class="actions">
           <button type="submit" class="primary-button" :disabled="loadingSuggestions || !title.trim()">
-            {{ loadingSuggestions ? 'Buscando...' : 'Buscar sugestões' }}
+            {{ loadingSuggestions ? 'Buscando...' : 'Buscar no TMDb' }}
           </button>
           <button type="button" class="secondary-button" @click="showManual = !showManual">
-            {{ showManual ? 'Fechar manual' : 'Adicionar manualmente' }}
+            {{ showManual ? 'Fechar entrada mínima' : 'Criar entrada mínima' }}
           </button>
         </div>
       </form>
@@ -68,10 +68,10 @@
       <section v-if="showManual" class="manual-section">
         <div class="manual-head">
           <div>
-            <p class="suggestions-label">Fallback manual</p>
+            <p class="suggestions-label">Entrada mínima</p>
             <h3>Crie uma entrada mínima</h3>
           </div>
-          <p class="suggestions-summary">Use só quando a busca externa não ajudar.</p>
+          <p class="suggestions-summary">Use quando você quiser registrar direto ou quando a busca externa não ajudar.</p>
         </div>
 
         <form class="manual-form" @submit.prevent="handleManualSubmit">
