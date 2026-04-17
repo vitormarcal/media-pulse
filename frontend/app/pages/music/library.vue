@@ -17,6 +17,8 @@
         :back-label="data.hero.backLabel"
         :accent-link="data.hero.accentLink"
         :accent-label="data.hero.accentLabel"
+        :utility-link="data.hero.utilityLink"
+        :utility-label="data.hero.utilityLabel"
         :spotlight="data.hero.spotlight"
       />
 

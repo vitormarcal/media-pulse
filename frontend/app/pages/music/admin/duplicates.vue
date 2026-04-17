@@ -44,11 +44,11 @@
       </div>
     </section>
 
-    <div v-if="status === 'pending'" class="state-card">
+    <div v-if="showInitialLoading" class="state-card">
       <p>Carregando grupos suspeitos...</p>
     </div>
 
-    <div v-else-if="error" class="state-card state-card--error">
+    <div v-else-if="error && !groups.length" class="state-card state-card--error">
       <p>Não foi possível carregar a revisão de duplicatas.</p>
       <pre>{{ error.message }}</pre>
     </div>
@@ -72,6 +72,10 @@
             placeholder="Ex.: Clube da Esquina"
           >
         </label>
+
+        <p class="filter-status" :data-pending="isRefreshingFilters">
+          {{ filterStatusMessage }}
+        </p>
       </section>
 
       <section class="review-toolbar">
@@ -350,8 +354,14 @@ const confirmState = ref<ConfirmState | null>(null)
 
 const artistFilter = ref('')
 const albumFilter = ref('')
+const minimumFilterLength = 2
 
 let filterTimer: ReturnType<typeof setTimeout> | null = null
+
+function normalizeAutoFilter(value: string) {
+  const trimmed = value.trim()
+  return trimmed.length >= minimumFilterLength ? trimmed : ''
+}
 
 watch([artistFilterInput, albumFilterInput], () => {
   if (filterTimer) {
@@ -359,9 +369,9 @@ watch([artistFilterInput, albumFilterInput], () => {
   }
 
   filterTimer = setTimeout(() => {
-    artistFilter.value = artistFilterInput.value.trim()
-    albumFilter.value = albumFilterInput.value.trim()
-  }, 220)
+    artistFilter.value = normalizeAutoFilter(artistFilterInput.value)
+    albumFilter.value = normalizeAutoFilter(albumFilterInput.value)
+  }, 500)
 })
 
 const { data, error, status } = await useAsyncData(
@@ -387,6 +397,10 @@ watch(data, (value) => {
   selectedGroupIds.value = selectedGroupIds.value.filter((id) => groups.value.some((group) => groupId(group) === id))
 }, { immediate: true })
 
+const showInitialLoading = computed(() => status.value === 'pending' && !groups.value.length)
+const isRefreshingFilters = computed(() => status.value === 'pending' && groups.value.length > 0)
+const ignoredArtistInput = computed(() => artistFilterInput.value.trim().length > 0 && artistFilter.value === '')
+const ignoredAlbumInput = computed(() => albumFilterInput.value.trim().length > 0 && albumFilter.value === '')
 const highConfidenceCount = computed(() => groups.value.filter((group) => group.confidence === 'high').length)
 const ignoredCount = computed(() => groups.value.filter((group) => group.ignored).length)
 const allVisibleSelected = computed(() => groups.value.length > 0 && groups.value.every((group) => selectedGroupIds.value.includes(groupId(group))))
@@ -396,6 +410,13 @@ const activeFilterSummary = computed(() => {
   if (artistFilter.value) parts.push(`artista: ${artistFilter.value}`)
   if (albumFilter.value) parts.push(`álbum: ${albumFilter.value}`)
   return `Mostrando apenas grupos com ${parts.join(' · ')}.`
+})
+const filterStatusMessage = computed(() => {
+  if (isRefreshingFilters.value) return 'Atualizando resultados...'
+  if (ignoredArtistInput.value && ignoredAlbumInput.value) return `Continue digitando. Os filtros passam a valer com pelo menos ${minimumFilterLength} caracteres em cada campo.`
+  if (ignoredArtistInput.value) return `Continue digitando o artista. A busca automática começa com pelo menos ${minimumFilterLength} caracteres.`
+  if (ignoredAlbumInput.value) return `Continue digitando o álbum. A busca automática começa com pelo menos ${minimumFilterLength} caracteres.`
+  return 'Os filtros aplicam automaticamente após uma breve pausa na digitação.'
 })
 
 function groupId(group: Pick<DuplicateTrackGroupResponse, 'albumId' | 'groupKey'>) {
@@ -856,6 +877,25 @@ useHead({
   padding: 20px 24px;
   border-radius: 24px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 243, 238, 0.92));
+}
+
+.review-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 18px;
+  align-items: end;
+}
+
+.filter-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: color-mix(in srgb, var(--base-color-text) 66%, white);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.filter-status[data-pending='true'] {
+  color: var(--accent-color-danger-strong);
 }
 
 .admin-subheader__copy {

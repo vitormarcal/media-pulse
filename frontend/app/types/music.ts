@@ -368,6 +368,8 @@ export interface MusicLibraryPageData {
     backLabel: string
     accentLink: string
     accentLabel: string
+    utilityLink?: string | null
+    utilityLabel?: string | null
     spotlight: {
       title: string
       subtitle: string

@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
+import java.sql.Timestamp
 import java.time.Instant
 
 @Repository
@@ -11,6 +12,14 @@ class MusicDuplicateReviewRepository(
     private val jdbc: NamedParameterJdbcTemplate,
     private val entityManager: EntityManager,
 ) {
+    data class ConsolidatedAlbumTrackRow(
+        val albumId: Long,
+        val trackId: Long,
+        val discNumber: Int?,
+        val trackNumber: Int?,
+        val createdAt: Instant,
+    )
+
     data class DuplicateTrackCandidateRow(
         val albumId: Long,
         val albumTitle: String,
@@ -417,28 +426,91 @@ class MusicDuplicateReviewRepository(
                 params,
             )
 
-        val migratedAlbumLinks =
-            jdbc.update(
+        val chosenAlbumLinks =
+            jdbc.query(
                 """
-                INSERT INTO album_tracks(album_id, track_id, disc_number, track_number, created_at)
-                SELECT album_id, :targetTrackId, disc_number, track_number, created_at
-                FROM album_tracks
-                WHERE track_id IN (:sourceTrackIds)
-                ON CONFLICT (album_id, track_id)
-                DO UPDATE SET
-                  disc_number = COALESCE(album_tracks.disc_number, EXCLUDED.disc_number),
-                  track_number = COALESCE(album_tracks.track_number, EXCLUDED.track_number)
+                WITH ranked_rows AS (
+                  SELECT
+                    at.album_id,
+                    at.track_id,
+                    at.disc_number,
+                    at.track_number,
+                    at.created_at,
+                    row_number() OVER (
+                      PARTITION BY at.album_id
+                      ORDER BY
+                        CASE WHEN at.track_id = :targetTrackId THEN 0 ELSE 1 END,
+                        CASE WHEN at.disc_number IS NOT NULL AND at.track_number IS NOT NULL THEN 0 ELSE 1 END,
+                        at.created_at ASC,
+                        at.track_id ASC
+                    ) AS rn
+                  FROM album_tracks at
+                  WHERE at.track_id = :targetTrackId
+                     OR at.track_id IN (:sourceTrackIds)
+                )
+                SELECT
+                  ranked.album_id,
+                  :targetTrackId AS track_id,
+                  CASE
+                    WHEN ranked.disc_number IS NOT NULL
+                     AND ranked.track_number IS NOT NULL
+                     AND conflict.track_id IS NULL THEN ranked.disc_number
+                    ELSE NULL
+                  END AS disc_number,
+                  CASE
+                    WHEN ranked.disc_number IS NOT NULL
+                     AND ranked.track_number IS NOT NULL
+                     AND conflict.track_id IS NULL THEN ranked.track_number
+                    ELSE NULL
+                  END AS track_number,
+                  ranked.created_at
+                FROM ranked_rows ranked
+                LEFT JOIN album_tracks conflict
+                  ON conflict.album_id = ranked.album_id
+                 AND conflict.disc_number = ranked.disc_number
+                 AND conflict.track_number = ranked.track_number
+                 AND ranked.disc_number IS NOT NULL
+                 AND ranked.track_number IS NOT NULL
+                 AND conflict.track_id <> :targetTrackId
+                 AND conflict.track_id NOT IN (:sourceTrackIds)
+                WHERE ranked.rn = 1
                 """.trimIndent(),
                 params,
-            )
+            ) { rs, _ ->
+                ConsolidatedAlbumTrackRow(
+                    albumId = rs.getLong("album_id"),
+                    trackId = rs.getLong("track_id"),
+                    discNumber = rs.getObject("disc_number") as Int?,
+                    trackNumber = rs.getObject("track_number") as Int?,
+                    createdAt = rs.getTimestamp("created_at").toInstant(),
+                )
+            }
 
         jdbc.update(
             """
             DELETE FROM album_tracks
-            WHERE track_id IN (:sourceTrackIds)
+            WHERE track_id = :targetTrackId
+               OR track_id IN (:sourceTrackIds)
             """.trimIndent(),
             params,
         )
+
+        var migratedAlbumLinks = 0
+        for (link in chosenAlbumLinks) {
+            migratedAlbumLinks +=
+                jdbc.update(
+                    """
+                    INSERT INTO album_tracks(album_id, track_id, disc_number, track_number, created_at)
+                    VALUES (:albumId, :trackId, :discNumber, :trackNumber, :createdAt)
+                    """.trimIndent(),
+                    MapSqlParameterSource()
+                        .addValue("albumId", link.albumId)
+                        .addValue("trackId", link.trackId)
+                        .addValue("discNumber", link.discNumber)
+                        .addValue("trackNumber", link.trackNumber)
+                        .addValue("createdAt", Timestamp.from(link.createdAt)),
+                )
+        }
 
         jdbc.update(
             """
