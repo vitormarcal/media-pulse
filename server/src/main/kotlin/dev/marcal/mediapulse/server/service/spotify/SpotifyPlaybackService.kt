@@ -58,10 +58,13 @@ class SpotifyPlaybackService(
             )
 
         val trackEntity =
-            canonical.ensureTrack(
+            canonical.ensureTrackInAlbum(
+                album = albumEntity,
                 artist = artistEntity,
                 title = trackTitle,
                 durationMs = durationMs,
+                discNumber = discNumber,
+                trackNumber = trackNumber,
                 spotifyId = trackSpotifyId,
             )
 

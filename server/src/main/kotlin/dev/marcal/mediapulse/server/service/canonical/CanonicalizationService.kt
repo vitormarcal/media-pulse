@@ -149,6 +149,29 @@ class CanonicalizationService(
         musicbrainzId: String? = null,
         spotifyId: String? = null,
     ): Track {
+        return ensureTrackInAlbum(
+            album = null,
+            artist = artist,
+            title = title,
+            durationMs = durationMs,
+            discNumber = null,
+            trackNumber = null,
+            musicbrainzId = musicbrainzId,
+            spotifyId = spotifyId,
+        )
+    }
+
+    @Transactional
+    fun ensureTrackInAlbum(
+        album: Album?,
+        artist: Artist,
+        title: String,
+        durationMs: Int?,
+        discNumber: Int?,
+        trackNumber: Int?,
+        musicbrainzId: String? = null,
+        spotifyId: String? = null,
+    ): Track {
         fun findByExternal(
             provider: Provider,
             externalId: String,
@@ -158,23 +181,53 @@ class CanonicalizationService(
             return trackRepo.findById(ext.entityId).orElse(null)
         }
 
+        fun isDurationClose(
+            left: Int?,
+            right: Int?,
+            toleranceMs: Int = 2_500,
+        ): Boolean {
+            if (left == null || right == null) return true
+            return kotlin.math.abs(left - right) <= toleranceMs
+        }
+
+        fun findByAlbumPosition(): Track? {
+            if (album == null || discNumber == null || trackNumber == null) return null
+            return trackRepo.findFirstByAlbumPosition(album.id, discNumber, trackNumber)
+                ?.takeIf { it.artistId == artist.id }
+        }
+
+        fun findByAlbumTitle(): Track? {
+            if (album == null) return null
+
+            val titleKey = TitleKeyUtil.trackTitleKey(title).ifBlank { return null }
+            val candidates =
+                trackRepo.findAllByAlbumAndArtist(album.id, artist.id)
+                    .filter { TitleKeyUtil.trackTitleKey(it.title) == titleKey }
+
+            if (candidates.isEmpty()) return null
+            if (candidates.size == 1) return candidates.first()
+
+            val byDuration = candidates.filter { isDurationClose(it.durationMs, durationMs) }
+            return if (byDuration.size == 1) byDuration.first() else null
+        }
+
+        fun trackFingerprint() = FingerprintUtil.trackFp(title = title, artistId = artist.id, durationMs = durationMs)
+
         val found =
             musicbrainzId?.let { findByExternal(Provider.MUSICBRAINZ, it) }
                 ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
-                ?: run {
-                    val fp = FingerprintUtil.trackFp(title = title, artistId = artist.id, durationMs = durationMs)
-                    trackRepo.findByFingerprint(fp)
-                }
+                ?: findByAlbumPosition()
+                ?: findByAlbumTitle()
+                ?: trackRepo.findByFingerprint(trackFingerprint())
 
         val track =
             found ?: run {
-                val fp = FingerprintUtil.trackFp(title = title, artistId = artist.id, durationMs = durationMs)
                 trackRepo.save(
                     Track(
                         artistId = artist.id,
                         title = title,
                         durationMs = durationMs,
-                        fingerprint = fp,
+                        fingerprint = trackFingerprint(),
                     ),
                 )
             }

@@ -84,10 +84,13 @@ class SpotifyAlbumTracklistBackfillService(
 
                             // Always use album's canonical artist.
                             val trackEntity =
-                                canonical.ensureTrack(
+                                canonical.ensureTrackInAlbum(
+                                    album = album,
                                     artist = albumArtist,
                                     title = trackTitle,
                                     durationMs = durationMs,
+                                    discNumber = discNumber,
+                                    trackNumber = trackNumber,
                                     spotifyId = trackSpotifyId,
                                 )
 
