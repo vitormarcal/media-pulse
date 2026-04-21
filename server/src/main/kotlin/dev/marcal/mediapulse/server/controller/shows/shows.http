@@ -25,6 +25,22 @@ Accept: application/json
 GET {{baseUrl}}/search?q=dark&limit=10
 Accept: application/json
 
+### Sugestoes TMDb para catalogo
+GET {{baseUrl}}/catalog/suggestions?q=severance
+Accept: application/json
+
+### Adicionar serie ao catalogo via TMDb
+POST {{baseUrl}}/catalog
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Severance",
+  "year": 2022,
+  "tmdbId": "95396",
+  "importEpisodes": true
+}
+
 ### Resumo mensal
 GET {{baseUrl}}/summary?range=month
 Accept: application/json

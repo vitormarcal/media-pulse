@@ -192,6 +192,7 @@ class ManualShowCatalogServiceTest {
                 firstAirYear = 2022,
                 posterPath = "/poster.jpg",
                 backdropPath = "/backdrop.jpg",
+                seasons = emptyList(),
             )
         every { tmdbImageClient.downloadImage("https://image.tmdb.org/t/p/w780/poster.jpg") } returns
             ImageContent(bytes = byteArrayOf(1, 2, 3), contentType = MediaType.IMAGE_JPEG)
@@ -254,6 +255,7 @@ class ManualShowCatalogServiceTest {
                 firstAirYear = 2022,
                 posterPath = null,
                 backdropPath = null,
+                seasons = emptyList(),
             )
         every { tvShowRepository.findByFingerprint(any()) } returns null
         every { tvShowRepository.save(any()) } returns savedShow

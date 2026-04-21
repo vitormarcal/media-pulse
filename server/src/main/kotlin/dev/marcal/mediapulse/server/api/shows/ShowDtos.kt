@@ -202,6 +202,41 @@ data class ExistingShowWatchCreateRequest(
     val originallyAvailableAt: LocalDate? = null,
 )
 
+data class ManualShowCatalogCreateRequest(
+    val title: String,
+    val year: Int? = null,
+    val tmdbId: String? = null,
+    val tvdbId: String? = null,
+    val importEpisodes: Boolean = true,
+)
+
+data class ShowCatalogSuggestionDto(
+    val tmdbId: String,
+    val title: String,
+    val originalTitle: String?,
+    val year: Int?,
+    val overview: String?,
+    val posterUrl: String?,
+)
+
+data class ShowCatalogSuggestionsResponse(
+    val query: String,
+    val suggestions: List<ShowCatalogSuggestionDto>,
+)
+
+data class ManualShowCatalogCreateResponse(
+    val showId: Long,
+    val slug: String?,
+    val title: String,
+    val year: Int?,
+    val coverUrl: String?,
+    val createdShow: Boolean,
+    val coverAssigned: Boolean,
+    val seasonsImported: Int,
+    val episodesImported: Int,
+    val externalIds: List<ManualShowExternalIdView>,
+)
+
 enum class ShowSeasonEnrichmentField {
     SEASON_TITLE,
     EPISODE_TITLE,

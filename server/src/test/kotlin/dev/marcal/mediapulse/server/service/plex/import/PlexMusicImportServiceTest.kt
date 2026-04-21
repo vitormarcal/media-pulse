@@ -46,6 +46,7 @@ class PlexMusicImportServiceTest {
                 plexArtworkService = plexArtworkService,
                 albumGenreService = albumGenreService,
             )
+        stubEnsureTrackInAlbumThroughEnsureTrack()
     }
 
     @Test
@@ -552,4 +553,27 @@ class PlexMusicImportServiceTest {
             assertEquals(0, stats.tracksSeen)
             assertEquals(0, stats.tracksUpserted)
         }
+
+    private fun stubEnsureTrackInAlbumThroughEnsureTrack() {
+        every {
+            canonical.ensureTrackInAlbum(
+                album = any(),
+                artist = any(),
+                title = any(),
+                durationMs = any(),
+                discNumber = any(),
+                trackNumber = any(),
+                musicbrainzId = any(),
+                spotifyId = any(),
+            )
+        } answers {
+            canonical.ensureTrack(
+                artist = invocation.args[1] as Artist,
+                title = invocation.args[2] as String,
+                durationMs = invocation.args[3] as Int?,
+                musicbrainzId = invocation.args[6] as String?,
+                spotifyId = invocation.args[7] as String?,
+            )
+        }
+    }
 }

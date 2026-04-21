@@ -148,8 +148,8 @@ class CanonicalizationService(
         durationMs: Int?,
         musicbrainzId: String? = null,
         spotifyId: String? = null,
-    ): Track {
-        return ensureTrackInAlbum(
+    ): Track =
+        ensureTrackInAlbum(
             album = null,
             artist = artist,
             title = title,
@@ -159,7 +159,6 @@ class CanonicalizationService(
             musicbrainzId = musicbrainzId,
             spotifyId = spotifyId,
         )
-    }
 
     @Transactional
     fun ensureTrackInAlbum(
@@ -192,7 +191,8 @@ class CanonicalizationService(
 
         fun findByAlbumPosition(): Track? {
             if (album == null || discNumber == null || trackNumber == null) return null
-            return trackRepo.findFirstByAlbumPosition(album.id, discNumber, trackNumber)
+            return trackRepo
+                .findFirstByAlbumPosition(album.id, discNumber, trackNumber)
                 ?.takeIf { it.artistId == artist.id }
         }
 
@@ -201,7 +201,8 @@ class CanonicalizationService(
 
             val titleKey = TitleKeyUtil.trackTitleKey(title).ifBlank { return null }
             val candidates =
-                trackRepo.findAllByAlbumAndArtist(album.id, artist.id)
+                trackRepo
+                    .findAllByAlbumAndArtist(album.id, artist.id)
                     .filter { TitleKeyUtil.trackTitleKey(it.title) == titleKey }
 
             if (candidates.isEmpty()) return null

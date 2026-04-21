@@ -39,6 +39,35 @@ data class TmdbMovieSearchResponse(
     val results: List<TmdbMovieSearchItemResponse> = emptyList(),
 )
 
+data class TmdbShowSearchItemResponse(
+    val id: Long,
+    val name: String? = null,
+    @JsonProperty("original_name")
+    val originalName: String? = null,
+    val overview: String? = null,
+    @JsonProperty("first_air_date")
+    val firstAirDate: String? = null,
+    @JsonProperty("poster_path")
+    val posterPath: String? = null,
+)
+
+data class TmdbShowSearchResponse(
+    val results: List<TmdbShowSearchItemResponse> = emptyList(),
+)
+
+data class TmdbShowSeasonSummaryResponse(
+    val id: Long? = null,
+    val name: String? = null,
+    @JsonProperty("season_number")
+    val seasonNumber: Int? = null,
+    @JsonProperty("episode_count")
+    val episodeCount: Int? = null,
+    @JsonProperty("air_date")
+    val airDate: String? = null,
+    @JsonProperty("poster_path")
+    val posterPath: String? = null,
+)
+
 data class TmdbShowDetailsResponse(
     val name: String? = null,
     @JsonProperty("original_name")
@@ -50,6 +79,7 @@ data class TmdbShowDetailsResponse(
     val posterPath: String? = null,
     @JsonProperty("backdrop_path")
     val backdropPath: String? = null,
+    val seasons: List<TmdbShowSeasonSummaryResponse> = emptyList(),
 )
 
 data class TmdbShowSeasonEpisodeResponse(
@@ -99,6 +129,16 @@ class TmdbApiClient(
         val firstAirYear: Int?,
         val posterPath: String?,
         val backdropPath: String?,
+        val seasons: List<TmdbShowSeasonSummary>,
+    )
+
+    data class TmdbShowSeasonSummary(
+        val tmdbId: String?,
+        val title: String?,
+        val seasonNumber: Int?,
+        val episodeCount: Int?,
+        val airDate: String?,
+        val posterPath: String?,
     )
 
     data class TmdbShowSeasonEpisode(
@@ -126,6 +166,15 @@ class TmdbApiClient(
         val originalTitle: String?,
         val overview: String?,
         val releaseYear: Int?,
+        val posterPath: String?,
+    )
+
+    data class TmdbShowSearchItem(
+        val tmdbId: String,
+        val title: String?,
+        val originalTitle: String?,
+        val overview: String?,
+        val firstAirYear: Int?,
         val posterPath: String?,
     )
 
@@ -217,6 +266,17 @@ class TmdbApiClient(
                     firstAirYear = parseReleaseYear(response.firstAirDate),
                     posterPath = response.posterPath?.trim()?.ifBlank { null },
                     backdropPath = response.backdropPath?.trim()?.ifBlank { null },
+                    seasons =
+                        response.seasons.map { season ->
+                            TmdbShowSeasonSummary(
+                                tmdbId = season.id?.toString(),
+                                title = season.name?.trim()?.ifBlank { null },
+                                seasonNumber = season.seasonNumber,
+                                episodeCount = season.episodeCount?.takeIf { it >= 0 },
+                                airDate = season.airDate?.trim()?.ifBlank { null },
+                                posterPath = season.posterPath?.trim()?.ifBlank { null },
+                            )
+                        },
                 )
             } catch (ex: WebClientResponseException.NotFound) {
                 return null
@@ -376,6 +436,75 @@ class TmdbApiClient(
                 return emptyList()
             } catch (ex: Exception) {
                 logger.warn("Failed to search TMDb movies for query='{}'", normalizedQuery, ex)
+                return emptyList()
+            }
+        }
+
+        return emptyList()
+    }
+
+    fun searchShows(
+        query: String,
+        limit: Int = 8,
+    ): List<TmdbShowSearchItem> {
+        if (!tmdbProperties.enabled) return emptyList()
+
+        val normalizedQuery = query.trim()
+        if (normalizedQuery.isBlank()) return emptyList()
+
+        val attempts = (tmdbProperties.max429Retries + 1).coerceAtLeast(1)
+        var attempt = 0
+
+        while (attempt < attempts) {
+            attempt++
+            tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
+
+            try {
+                val response =
+                    tmdbWebClient
+                        .get()
+                        .uri { uriBuilder ->
+                            val builder =
+                                uriBuilder
+                                    .path("/search/tv")
+                                    .queryParam("query", normalizedQuery)
+                            if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
+                                builder.queryParam("api_key", tmdbProperties.apiKey)
+                            }
+                            builder.build()
+                        }.retrieve()
+                        .bodyToMono<TmdbShowSearchResponse>()
+                        .block() ?: return emptyList()
+
+                return response.results
+                    .asSequence()
+                    .map { item ->
+                        TmdbShowSearchItem(
+                            tmdbId = item.id.toString(),
+                            title = item.name?.trim()?.ifBlank { null },
+                            originalTitle = item.originalName?.trim()?.ifBlank { null },
+                            overview = item.overview?.trim()?.ifBlank { null },
+                            firstAirYear = parseReleaseYear(item.firstAirDate),
+                            posterPath = item.posterPath?.trim()?.ifBlank { null },
+                        )
+                    }.filter { !it.title.isNullOrBlank() }
+                    .take(limit.coerceAtLeast(1))
+                    .toList()
+            } catch (ex: WebClientResponseException.NotFound) {
+                return emptyList()
+            } catch (ex: WebClientResponseException) {
+                val isTooManyRequests = ex.statusCode.value() == 429
+                val hasRemainingRetry = attempt < attempts
+                if (isTooManyRequests && hasRemainingRetry) {
+                    val waitMs = resolve429WaitMs(ex, attempt)
+                    logger.warn("TMDb rate limited (429). Waiting {}ms before retry {}/{}", waitMs, attempt + 1, attempts)
+                    Thread.sleep(waitMs)
+                    continue
+                }
+                logger.warn("Failed to search TMDb shows for query='{}' status={}", normalizedQuery, ex.statusCode.value(), ex)
+                return emptyList()
+            } catch (ex: Exception) {
+                logger.warn("Failed to search TMDb shows for query='{}'", normalizedQuery, ex)
                 return emptyList()
             }
         }

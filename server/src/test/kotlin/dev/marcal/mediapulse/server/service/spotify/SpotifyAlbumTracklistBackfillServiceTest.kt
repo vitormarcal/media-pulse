@@ -46,6 +46,10 @@ class SpotifyAlbumTracklistBackfillServiceTest {
             em = em,
         )
 
+    init {
+        stubEnsureTrackInAlbumThroughEnsureTrack()
+    }
+
     @Test
     fun `should backfill one album, skip invalid items, and count result`(): Unit =
         runBlocking {
@@ -206,6 +210,29 @@ class SpotifyAlbumTracklistBackfillServiceTest {
             verify(exactly = 0) { canonical.ensureTrack(any(), any(), any(), any(), any()) }
             verify(exactly = 0) { canonical.linkTrackToAlbum(any(), any(), any(), any()) }
         }
+
+    private fun stubEnsureTrackInAlbumThroughEnsureTrack() {
+        every {
+            canonical.ensureTrackInAlbum(
+                album = any(),
+                artist = any(),
+                title = any(),
+                durationMs = any(),
+                discNumber = any(),
+                trackNumber = any(),
+                musicbrainzId = any(),
+                spotifyId = any(),
+            )
+        } answers {
+            canonical.ensureTrack(
+                artist = invocation.args[1] as Artist,
+                title = invocation.args[2] as String,
+                durationMs = invocation.args[3] as Int?,
+                musicbrainzId = invocation.args[6] as String?,
+                spotifyId = invocation.args[7] as String?,
+            )
+        }
+    }
 
     @Test
     fun `should ignore second call while first is running`(): Unit =

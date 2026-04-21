@@ -107,6 +107,31 @@ export interface ManualShowWatchCreateResponse {
   externalIds: ShowExternalIdDto[]
 }
 
+export interface ManualShowCatalogCreateResponse {
+  showId: number
+  slug: string | null
+  title: string
+  year: number | null
+  coverUrl: string | null
+  createdShow: boolean
+  coverAssigned: boolean
+  seasonsImported: number
+  episodesImported: number
+  externalIds: ShowExternalIdDto[]
+}
+
+export interface ShowCatalogSuggestionsResponse {
+  query: string
+  suggestions: Array<{
+    tmdbId: string
+    title: string
+    originalTitle: string | null
+    year: number | null
+    overview: string | null
+    posterUrl: string | null
+  }>
+}
+
 export type ShowSeasonEnrichmentField =
   | 'SEASON_TITLE'
   | 'EPISODE_TITLE'

@@ -22,6 +22,8 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 | `GET /api/shows/summary` | `range=month|year|custom`, `start?`, `end?` | `ShowsSummaryResponse` |
 | `GET /api/shows/stats` | - | `ShowsStatsResponse` |
 | `GET /api/shows/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `ShowsByYearResponse` |
+| `GET /api/shows/catalog/suggestions` | `q` | `ShowCatalogSuggestionsResponse` |
+| `POST /api/shows/catalog` | body com `title`, `year?`, `tmdbId?`, `tvdbId?`, `importEpisodes=true` | `ManualShowCatalogCreateResponse` |
 | `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview` | body com `tmdbId?` | `ShowSeasonEnrichmentPreviewResponse` |
 | `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/apply` | body com `tmdbId?`, `mode`, `seasonFields`, `episodeFields` | `ShowSeasonEnrichmentApplyResponse` |
 | `POST /api/shows/{showId}/watches` | body com `watchedAt`, `episodeTitle`, `seasonNumber?`, `episodeNumber?`, `originallyAvailableAt?` | `ManualShowWatchCreateResponse` |
@@ -78,6 +80,19 @@ Campos aceitos:
 - `EPISODE_SUMMARY`
 - `EPISODE_DURATION`
 - `EPISODE_AIR_DATE`
+
+## Catálogo manual
+
+`GET /api/shows/catalog/suggestions` busca sugestões no TMDb usando o título informado em `q`.
+
+`POST /api/shows/catalog` cria ou consolida uma série sem registrar watch.
+
+- uso esperado: trazer uma série nova para a biblioteca antes de marcar episódios assistidos
+- resolução de série: `tmdbId`, `tvdbId`, fingerprint por `title + year`
+- quando `tmdbId` existir, o serviço tenta preencher título, ano, descrição, poster/backdrop e vínculo externo
+- com `importEpisodes=true`, importa temporadas numeradas a partir de `1` e episódios disponíveis no TMDb
+- a importação de episódios não cria linhas em `tv_episode_watches`
+- episódios existentes são reaproveitados por `(show_id, season_number, episode_number)` ou fingerprint
 
 ## Ingestão manual
 

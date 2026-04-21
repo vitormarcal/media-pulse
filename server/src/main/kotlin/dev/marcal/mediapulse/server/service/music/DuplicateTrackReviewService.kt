@@ -1,8 +1,8 @@
 package dev.marcal.mediapulse.server.service.music
 
-import dev.marcal.mediapulse.server.api.music.DuplicateTrackCandidateResponse
 import dev.marcal.mediapulse.server.api.music.DuplicateTrackBatchMergeRequest
 import dev.marcal.mediapulse.server.api.music.DuplicateTrackBatchMergeResponse
+import dev.marcal.mediapulse.server.api.music.DuplicateTrackCandidateResponse
 import dev.marcal.mediapulse.server.api.music.DuplicateTrackGroupResponse
 import dev.marcal.mediapulse.server.api.music.DuplicateTrackIgnoreRequest
 import dev.marcal.mediapulse.server.api.music.DuplicateTrackMergeRequest
@@ -69,9 +69,7 @@ class DuplicateTrackReviewService(
     }
 
     @Transactional
-    fun merge(request: DuplicateTrackMergeRequest): DuplicateTrackMergeResponse {
-        return mergeInternal(request)
-    }
+    fun merge(request: DuplicateTrackMergeRequest): DuplicateTrackMergeResponse = mergeInternal(request)
 
     @Transactional
     fun mergeBatch(request: DuplicateTrackBatchMergeRequest): DuplicateTrackBatchMergeResponse {

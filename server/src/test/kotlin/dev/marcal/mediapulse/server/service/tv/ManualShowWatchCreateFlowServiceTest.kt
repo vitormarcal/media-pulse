@@ -44,7 +44,7 @@ class ManualShowWatchCreateFlowServiceTest {
             TvEpisode(id = 99, showId = 42, title = "Good News About Hell", seasonNumber = 1, episodeNumber = 1, fingerprint = "ep-fp")
 
         every { manualShowCatalogService.resolveOrCreate(request) } returns
-            ManualShowCatalogService.ShowCatalogResult(
+            ManualShowCatalogService.ShowWatchCatalogResult(
                 show = show,
                 episode = episode,
                 createdShow = false,

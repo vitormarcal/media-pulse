@@ -183,6 +183,8 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `GET /api/shows/summary`
 - `GET /api/shows/stats`
 - `GET /api/shows/year/{year}`
+- `GET /api/shows/catalog/suggestions`
+- `POST /api/shows/catalog`
 - `POST /api/shows/watches`
 
 ## Endpoints operacionais

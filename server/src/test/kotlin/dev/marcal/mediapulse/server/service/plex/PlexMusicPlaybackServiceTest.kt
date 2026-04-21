@@ -55,6 +55,7 @@ class PlexMusicPlaybackServiceTest {
 
         every { eventSourceCrudRepository.findByIdOrNull(any()) } returns null
         mockkObject(PlexGuidExtractor)
+        stubEnsureTrackInAlbumThroughEnsureTrack()
     }
 
     @AfterEach
@@ -349,5 +350,28 @@ class PlexMusicPlaybackServiceTest {
             }.bufferedReader().use { it.readText() }
 
         return JacksonConfig().objectMapper().readValue(json, PlexWebhookPayload::class.java)
+    }
+
+    private fun stubEnsureTrackInAlbumThroughEnsureTrack() {
+        every {
+            canonical.ensureTrackInAlbum(
+                album = any(),
+                artist = any(),
+                title = any(),
+                durationMs = any(),
+                discNumber = any(),
+                trackNumber = any(),
+                musicbrainzId = any(),
+                spotifyId = any(),
+            )
+        } answers {
+            canonical.ensureTrack(
+                artist = invocation.args[1] as Artist,
+                title = invocation.args[2] as String,
+                durationMs = invocation.args[3] as Int?,
+                musicbrainzId = invocation.args[6] as String?,
+                spotifyId = invocation.args[7] as String?,
+            )
+        }
     }
 }

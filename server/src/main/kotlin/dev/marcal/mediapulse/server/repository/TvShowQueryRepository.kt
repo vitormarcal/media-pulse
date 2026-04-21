@@ -8,8 +8,8 @@ import dev.marcal.mediapulse.server.api.shows.ShowExternalIdDto
 import dev.marcal.mediapulse.server.api.shows.ShowImageDto
 import dev.marcal.mediapulse.server.api.shows.ShowLibraryCardDto
 import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
-import dev.marcal.mediapulse.server.api.shows.ShowSeasonDto
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowSeasonDto
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEpisodeDto
 import dev.marcal.mediapulse.server.api.shows.ShowWatchDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearUnwatchedDto
