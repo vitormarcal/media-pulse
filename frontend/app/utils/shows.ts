@@ -8,6 +8,8 @@ import type {
   ShowDetailsResponse,
   ShowPageData,
   ShowSeasonCardModel,
+  ShowSeasonDetailsResponse,
+  ShowSeasonPageData,
   ShowWatchDto,
   ShowWatchEntryModel,
   ShowsByYearResponse,
@@ -47,7 +49,10 @@ function formatProgressStatus(show: ShowDetailsResponse) {
   return 'Ainda sem avanço suficiente'
 }
 
-function mapSeason(season: ShowDetailsResponse['seasons'][number]): ShowSeasonCardModel {
+function mapSeason(
+  season: ShowDetailsResponse['seasons'][number],
+  showSlug: string | null,
+): ShowSeasonCardModel {
   const progressValue =
     season.episodesCount > 0
       ? Math.round((season.watchedEpisodesCount / season.episodesCount) * 100)
@@ -67,6 +72,7 @@ function mapSeason(season: ShowDetailsResponse['seasons'][number]): ShowSeasonCa
       ? `Último avanço ${formatRelativeDate(season.lastWatchedAt)}`
       : 'Sem episódio visto ainda',
     isComplete: season.completed,
+    href: showSlug && season.seasonNumber != null ? `/shows/${showSlug}/seasons/${season.seasonNumber}` : null,
   }
 }
 
@@ -340,8 +346,70 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
       statusText: formatProgressStatus(show),
     },
     heroMeta,
-    seasons: show.seasons.map(mapSeason),
+    seasons: show.seasons.map((season) => mapSeason(season, show.slug)),
     recentWatches: show.watches.slice(0, 24).map(mapWatch),
+  }
+}
+
+function formatDuration(durationMs: number | null) {
+  if (!durationMs) return null
+  const minutes = Math.round(durationMs / 60000)
+  return `${minutes} min`
+}
+
+function formatEpisodeNumber(episodeNumber: number | null) {
+  return episodeNumber != null ? `E${String(episodeNumber).padStart(2, '0')}` : 'Episódio'
+}
+
+export function buildShowSeasonPageData(season: ShowSeasonDetailsResponse): ShowSeasonPageData {
+  const completionPct =
+    season.episodesCount > 0
+      ? Math.round((season.watchedEpisodesCount / season.episodesCount) * 100)
+      : 0
+  const seasonTitle =
+    season.seasonTitle ||
+    (season.seasonNumber != null ? `Temporada ${season.seasonNumber}` : 'Especiais')
+  const statusText = season.completed ? 'Temporada concluída' : season.watchedEpisodesCount > 0 ? 'Temporada em andamento' : 'Ainda sem episódio visto'
+  const lastWatchedLabel = season.lastWatchedAt ? `Último avanço ${formatRelativeDate(season.lastWatchedAt)}` : 'Sem avanço registrado'
+
+  return {
+    showId: season.showId,
+    showSlug: season.showSlug,
+    showTitle: season.showTitle,
+    showOriginalTitle: season.showOriginalTitle,
+    showYear: season.showYear,
+    showCoverUrl: season.showCoverUrl,
+    seasonTitle,
+    seasonNumber: season.seasonNumber,
+    progress: {
+      watchedEpisodes: season.watchedEpisodesCount,
+      totalEpisodes: season.episodesCount,
+      completionPct,
+      statusText,
+      lastWatchedLabel,
+    },
+    heroMeta: [
+      season.showYear ? String(season.showYear) : null,
+      `${season.watchedEpisodesCount}/${season.episodesCount} episódios`,
+      `${completionPct}% visto`,
+      lastWatchedLabel,
+    ].filter(Boolean) as string[],
+    episodes: season.episodes.map((episode) => {
+      const duration = formatDuration(episode.durationMs)
+      const release = episode.originallyAvailableAt ? formatAbsoluteDate(episode.originallyAvailableAt) : null
+
+      return {
+        id: `episode-${episode.episodeId}`,
+        episodeId: episode.episodeId,
+        title: episode.title,
+        episodeNumber: episode.episodeNumber,
+        context: formatEpisodeNumber(episode.episodeNumber),
+        summary: episode.summary,
+        meta: [duration, release].filter(Boolean) as string[],
+        watchedLabel: episode.lastWatchedAt ? `Visto ${formatRelativeDate(episode.lastWatchedAt)}` : 'Sem watch',
+        watched: episode.watchCount > 0,
+      }
+    }),
   }
 }
 

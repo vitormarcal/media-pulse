@@ -17,6 +17,7 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 | `GET /api/shows/currently-watching` | `limit=20`, `activeWithinDays=90` | lista de `CurrentlyWatchingShowDto` |
 | `GET /api/shows/{showId}` | `showId` | `ShowDetailsResponse` |
 | `GET /api/shows/slug/{slug}` | `slug` | `ShowDetailsResponse` |
+| `GET /api/shows/slug/{slug}/seasons/{seasonNumber}` | `slug`, `seasonNumber` | `ShowSeasonDetailsResponse` |
 | `GET /api/shows/search` | `q`, `limit=10` | `ShowsSearchResponse` |
 | `GET /api/shows/summary` | `range=month|year|custom`, `start?`, `end?` | `ShowsSummaryResponse` |
 | `GET /api/shows/stats` | - | `ShowsStatsResponse` |

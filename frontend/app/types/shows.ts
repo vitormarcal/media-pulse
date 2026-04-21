@@ -26,6 +26,33 @@ export interface ShowSeasonDto {
   lastWatchedAt: string | null
 }
 
+export interface ShowSeasonEpisodeDto {
+  episodeId: number
+  title: string
+  episodeNumber: number | null
+  summary: string | null
+  durationMs: number | null
+  originallyAvailableAt: string | null
+  watchCount: number
+  lastWatchedAt: string | null
+}
+
+export interface ShowSeasonDetailsResponse {
+  showId: number
+  showSlug: string | null
+  showTitle: string
+  showOriginalTitle: string
+  showYear: number | null
+  showCoverUrl: string | null
+  seasonNumber: number | null
+  seasonTitle: string | null
+  episodesCount: number
+  watchedEpisodesCount: number
+  completed: boolean
+  lastWatchedAt: string | null
+  episodes: ShowSeasonEpisodeDto[]
+}
+
 export interface ShowExternalIdDto {
   provider: string
   externalId: string
@@ -86,6 +113,7 @@ export interface ShowSeasonCardModel {
   progressValue: number
   detail: string
   isComplete: boolean
+  href: string | null
 }
 
 export interface ShowWatchEntryModel {
@@ -118,6 +146,38 @@ export interface ShowPageData {
   heroMeta: string[]
   seasons: ShowSeasonCardModel[]
   recentWatches: ShowWatchEntryModel[]
+}
+
+export interface ShowSeasonEpisodeModel {
+  id: string
+  episodeId: number
+  title: string
+  episodeNumber: number | null
+  context: string
+  summary: string | null
+  meta: string[]
+  watchedLabel: string
+  watched: boolean
+}
+
+export interface ShowSeasonPageData {
+  showId: number
+  showSlug: string | null
+  showTitle: string
+  showOriginalTitle: string
+  showYear: number | null
+  showCoverUrl: string | null
+  seasonTitle: string
+  seasonNumber: number | null
+  progress: {
+    watchedEpisodes: number
+    totalEpisodes: number
+    completionPct: number
+    statusText: string
+    lastWatchedLabel: string
+  }
+  heroMeta: string[]
+  episodes: ShowSeasonEpisodeModel[]
 }
 
 export interface ShowCollectionContextMetric {

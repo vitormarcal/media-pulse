@@ -156,6 +156,65 @@ class TvShowQueryRepositoryTest {
     }
 
     @Test
+    fun `season details by slug should map episodes and progress`() {
+        every { query.resultList } returnsMany
+            listOf(
+                listOf(
+                    arrayOf(
+                        10L,
+                        "the-big-bang-theory",
+                        "The Big Bang Theory",
+                        "The Big Bang Theory",
+                        2007,
+                        "/covers/show.jpg",
+                    ),
+                ),
+                listOf(
+                    arrayOf(
+                        99L,
+                        "Pilot",
+                        1,
+                        "Temporada 1",
+                        1,
+                        "Leonard and Sheldon meet Penny.",
+                        1320000,
+                        java.sql.Date.valueOf("2007-09-24"),
+                        1L,
+                        Timestamp.from(Instant.parse("2024-01-03T14:35:00Z")),
+                    ),
+                    arrayOf(
+                        100L,
+                        "The Big Bran Hypothesis",
+                        1,
+                        "Temporada 1",
+                        2,
+                        null,
+                        1260000,
+                        java.sql.Date.valueOf("2007-10-01"),
+                        0L,
+                        null,
+                    ),
+                ),
+            )
+        every { query.singleResult } returns "Temporada 1"
+
+        val response = repository.getShowSeasonDetailsBySlug("the-big-bang-theory", 1)
+
+        assertEquals(10L, response.showId)
+        assertEquals("Temporada 1", response.seasonTitle)
+        assertEquals(2L, response.episodesCount)
+        assertEquals(1L, response.watchedEpisodesCount)
+        assertEquals(false, response.completed)
+        assertEquals(2, response.episodes.size)
+        assertEquals("Pilot", response.episodes.first().title)
+        assertEquals(java.time.LocalDate.parse("2007-09-24"), response.episodes.first().originallyAvailableAt)
+        assertEquals(Instant.parse("2024-01-03T14:35:00Z"), response.lastWatchedAt)
+        verify(exactly = 1) { query.setParameter("slug", "the-big-bang-theory") }
+        verify(exactly = 2) { query.setParameter("showId", 10L) }
+        verify(exactly = 2) { query.setParameter("seasonNumber", 1) }
+    }
+
+    @Test
     fun `details should count unique episodes in progress when there are rewatches`() {
         every { query.resultList } returnsMany
             listOf(

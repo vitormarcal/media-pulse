@@ -19,19 +19,28 @@
       </article>
 
       <div class="season-grid">
-        <article v-for="season in seasons" :key="season.id" class="season-card">
-          <div class="season-header">
-            <h3>{{ season.title }}</h3>
-            <span class="season-badge" :class="{ complete: season.isComplete }">
-              {{ season.progressValue }}%
-            </span>
-          </div>
-          <p class="season-meta">{{ season.progressLabel }}</p>
-          <div class="season-bar">
-            <span class="season-bar-fill" :style="{ width: `${season.progressValue}%` }" />
-          </div>
-          <p class="season-detail">{{ season.detail }}</p>
-        </article>
+        <NuxtLink
+          v-for="season in seasons"
+          :key="season.id"
+          class="season-card"
+          :class="{ disabled: !season.href }"
+          :to="season.href || '#'"
+          :aria-disabled="!season.href"
+        >
+          <article>
+            <div class="season-header">
+              <h3>{{ season.title }}</h3>
+              <span class="season-badge" :class="{ complete: season.isComplete }">
+                {{ season.progressValue }}%
+              </span>
+            </div>
+            <p class="season-meta">{{ season.progressLabel }}</p>
+            <div class="season-bar">
+              <span class="season-bar-fill" :style="{ width: `${season.progressValue}%` }" />
+            </div>
+            <p class="season-detail">{{ season.detail }}</p>
+          </article>
+        </NuxtLink>
       </div>
     </div>
   </section>
@@ -108,9 +117,28 @@ defineProps<{
 }
 
 .season-card {
+  color: inherit;
+  text-decoration: none;
+}
+
+.season-card article {
   display: grid;
   gap: 12px;
   padding: 20px;
+  height: 100%;
+  border-radius: inherit;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.season-card:not(.disabled):hover article {
+  background: color-mix(in srgb, var(--base-color-surface-warm) 34%, transparent);
+  transform: translateY(-2px);
+}
+
+.season-card.disabled {
+  pointer-events: none;
 }
 
 .season-header {

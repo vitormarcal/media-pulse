@@ -9,6 +9,8 @@ import dev.marcal.mediapulse.server.api.shows.ShowImageDto
 import dev.marcal.mediapulse.server.api.shows.ShowLibraryCardDto
 import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDto
+import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowSeasonEpisodeDto
 import dev.marcal.mediapulse.server.api.shows.ShowWatchDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearWatchedDto
@@ -482,6 +484,124 @@ class TvShowQueryRepository(
             ).toLong()
 
         return getShowDetails(showId)
+    }
+
+    fun getShowSeasonDetailsBySlug(
+        slug: String,
+        seasonNumber: Int,
+    ): ShowSeasonDetailsResponse {
+        val base =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      s.id,
+                      s.slug,
+                      COALESCE((
+                        SELECT st.title
+                        FROM tv_show_titles st
+                        WHERE st.show_id = s.id
+                        ORDER BY st.is_primary ASC, st.id ASC
+                        LIMIT 1
+                      ), s.original_title) AS title,
+                      s.original_title,
+                      s.year,
+                      s.cover_url
+                    FROM tv_shows s
+                    WHERE s.slug = :slug
+                    LIMIT 1
+                    """.trimIndent(),
+                ).setParameter("slug", slug.trim())
+                .resultList
+                .firstOrNull() as Array<*>?
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Show not found")
+
+        val showId = (base[0] as Number).toLong()
+        val episodes =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      te.id,
+                      te.title,
+                      te.season_number,
+                      te.season_title,
+                      te.episode_number,
+                      te.summary,
+                      te.duration_ms,
+                      te.originally_available_at,
+                      COUNT(tew.id) AS watch_count,
+                      MAX(tew.watched_at) AS last_watched_at
+                    FROM tv_episodes te
+                    LEFT JOIN tv_episode_watches tew ON tew.episode_id = te.id
+                    WHERE te.show_id = :showId
+                      AND te.season_number = :seasonNumber
+                    GROUP BY
+                      te.id,
+                      te.title,
+                      te.season_number,
+                      te.season_title,
+                      te.episode_number,
+                      te.summary,
+                      te.duration_ms,
+                      te.originally_available_at
+                    ORDER BY te.episode_number NULLS LAST, te.id ASC
+                    """.trimIndent(),
+                ).setParameter("showId", showId)
+                .setParameter("seasonNumber", seasonNumber)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    ShowSeasonEpisodeDto(
+                        episodeId = (fields[0] as Number).toLong(),
+                        title = fields[1] as String,
+                        episodeNumber = (fields[4] as Number?)?.toInt(),
+                        summary = fields[5] as String?,
+                        durationMs = (fields[6] as Number?)?.toInt(),
+                        originallyAvailableAt =
+                            when (val value = fields[7]) {
+                                is java.sql.Date -> value.toLocalDate()
+                                is java.time.LocalDate -> value
+                                else -> null
+                            },
+                        watchCount = (fields[8] as Number).toLong(),
+                        lastWatchedAt = asInstant(fields[9]),
+                    )
+                }
+
+        if (episodes.isEmpty()) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Season not found")
+        }
+
+        val watchedEpisodesCount = episodes.count { it.watchCount > 0 }.toLong()
+        val seasonTitle =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT MAX(te.season_title)
+                    FROM tv_episodes te
+                    WHERE te.show_id = :showId
+                      AND te.season_number = :seasonNumber
+                    """.trimIndent(),
+                ).setParameter("showId", showId)
+                .setParameter("seasonNumber", seasonNumber)
+                .singleResult as String?
+
+        return ShowSeasonDetailsResponse(
+            showId = showId,
+            showSlug = base[1] as String?,
+            showTitle = base[2] as String,
+            showOriginalTitle = base[3] as String,
+            showYear = (base[4] as Number?)?.toInt(),
+            showCoverUrl = base[5] as String?,
+            seasonNumber = seasonNumber,
+            seasonTitle = seasonTitle,
+            episodesCount = episodes.size.toLong(),
+            watchedEpisodesCount = watchedEpisodesCount,
+            completed = episodes.isNotEmpty() && watchedEpisodesCount == episodes.size.toLong(),
+            lastWatchedAt = episodes.mapNotNull { it.lastWatchedAt }.maxOrNull(),
+            episodes = episodes,
+        )
     }
 
     fun search(

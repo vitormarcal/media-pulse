@@ -39,6 +39,33 @@ data class ShowSeasonDto(
     val lastWatchedAt: Instant? = null,
 )
 
+data class ShowSeasonEpisodeDto(
+    val episodeId: Long,
+    val title: String,
+    val episodeNumber: Int?,
+    val summary: String?,
+    val durationMs: Int?,
+    val originallyAvailableAt: LocalDate?,
+    val watchCount: Long,
+    val lastWatchedAt: Instant?,
+)
+
+data class ShowSeasonDetailsResponse(
+    val showId: Long,
+    val showSlug: String?,
+    val showTitle: String,
+    val showOriginalTitle: String,
+    val showYear: Int?,
+    val showCoverUrl: String?,
+    val seasonNumber: Int?,
+    val seasonTitle: String?,
+    val episodesCount: Long,
+    val watchedEpisodesCount: Long,
+    val completed: Boolean,
+    val lastWatchedAt: Instant?,
+    val episodes: List<ShowSeasonEpisodeDto>,
+)
+
 data class ShowProgressDto(
     val episodesCount: Long,
     val watchedEpisodesCount: Long,

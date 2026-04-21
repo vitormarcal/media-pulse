@@ -4,6 +4,8 @@ import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.RangeDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
+import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowSeasonEpisodeDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearWatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearResponse
@@ -113,6 +115,45 @@ class ShowsControllerTest {
 
         assertEquals(10, response.showId)
         verify(exactly = 1) { repository.getShowDetailsBySlug("severance") }
+    }
+
+    @Test
+    fun `season details by slug should delegate to repository`() {
+        val expected =
+            ShowSeasonDetailsResponse(
+                showId = 10,
+                showSlug = "the-big-bang-theory",
+                showTitle = "The Big Bang Theory",
+                showOriginalTitle = "The Big Bang Theory",
+                showYear = 2007,
+                showCoverUrl = "/covers/show.jpg",
+                seasonNumber = 1,
+                seasonTitle = "Temporada 1",
+                episodesCount = 17,
+                watchedEpisodesCount = 3,
+                completed = false,
+                lastWatchedAt = Instant.parse("2024-01-03T14:35:00Z"),
+                episodes =
+                    listOf(
+                        ShowSeasonEpisodeDto(
+                            episodeId = 99,
+                            title = "Pilot",
+                            episodeNumber = 1,
+                            summary = null,
+                            durationMs = 1200000,
+                            originallyAvailableAt = null,
+                            watchCount = 1,
+                            lastWatchedAt = Instant.parse("2024-01-03T14:35:00Z"),
+                        ),
+                    ),
+            )
+        every { repository.getShowSeasonDetailsBySlug("the-big-bang-theory", 1) } returns expected
+
+        val response = controller.seasonDetailsBySlug("the-big-bang-theory", 1)
+
+        assertEquals(10, response.showId)
+        assertEquals(1, response.seasonNumber)
+        verify(exactly = 1) { repository.getShowSeasonDetailsBySlug("the-big-bang-theory", 1) }
     }
 
     @Test

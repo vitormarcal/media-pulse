@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.controller.shows
 
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsLibraryResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsRecentResponse
@@ -59,6 +60,12 @@ class ShowsController(
     fun detailsBySlug(
         @PathVariable slug: String,
     ): ShowDetailsResponse = repository.getShowDetailsBySlug(slug)
+
+    @GetMapping("/slug/{slug}/seasons/{seasonNumber}")
+    fun seasonDetailsBySlug(
+        @PathVariable slug: String,
+        @PathVariable seasonNumber: Int,
+    ): ShowSeasonDetailsResponse = repository.getShowSeasonDetailsBySlug(slug, seasonNumber)
 
     @GetMapping("/search")
     fun search(
