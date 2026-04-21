@@ -77,15 +77,23 @@
                   <button
                     type="button"
                     class="secondary-button"
-                    :disabled="submittingEpisodeId === episode.episodeId"
+                    :disabled="isEpisodeSubmitting(episode.episodeId)"
                     @click="toggleEditor(episode.episodeId)"
                   >
                     Data
                   </button>
                   <button
                     type="button"
+                    class="secondary-button"
+                    :disabled="isEpisodeSubmitting(episode.episodeId)"
+                    @click="markUntilEpisode(episode)"
+                  >
+                    {{ submittingUntilEpisodeId === episode.episodeId ? 'Salvando...' : 'Até aqui' }}
+                  </button>
+                  <button
+                    type="button"
                     class="primary-button"
-                    :disabled="submittingEpisodeId === episode.episodeId"
+                    :disabled="isEpisodeSubmitting(episode.episodeId)"
                     @click="markEpisode(episode)"
                   >
                     {{ submittingEpisodeId === episode.episodeId ? 'Salvando...' : 'Marcar' }}
@@ -128,6 +136,7 @@ const config = useRuntimeConfig()
 const { data, error, status, refresh } = await useShowSeasonPageData(slug.value, seasonNumber.value)
 const editingEpisodeId = ref<number | null>(null)
 const submittingEpisodeId = ref<number | null>(null)
+const submittingUntilEpisodeId = ref<number | null>(null)
 const watchedAtInput = ref(toDatetimeLocalValue(new Date()))
 
 const heroSubtitle = computed(() => {
@@ -167,29 +176,79 @@ function toggleEditor(episodeId: number) {
   watchedAtInput.value = toDatetimeLocalValue(new Date())
 }
 
-async function markEpisode(episode: ShowSeasonEpisodeModel) {
+function isEpisodeSubmitting(episodeId: number) {
+  return submittingUntilEpisodeId.value != null || submittingEpisodeId.value === episodeId
+}
+
+function episodesUntil(targetEpisode: ShowSeasonEpisodeModel) {
+  if (!data.value) return []
+
+  const targetIndex = data.value.episodes.findIndex((episode) => episode.episodeId === targetEpisode.episodeId)
+  if (targetIndex < 0) return []
+
+  return data.value.episodes.slice(0, targetIndex + 1).filter((episode) => !episode.watched)
+}
+
+function buildWatchRequest(episode: ShowSeasonEpisodeModel): ExistingShowWatchCreateRequest {
+  if (!data.value) {
+    throw new Error('Temporada indisponível')
+  }
+
+  return {
+    watchedAt: new Date(watchedAtInput.value).toISOString(),
+    episodeTitle: episode.title,
+    seasonNumber: data.value.seasonNumber,
+    episodeNumber: episode.episodeNumber,
+  }
+}
+
+async function submitEpisodeWatch(episode: ShowSeasonEpisodeModel) {
+  if (!data.value) return
+
+  await $fetch(`/api/shows/${data.value.showId}/watches`, {
+    baseURL: config.public.apiBase,
+    method: 'POST',
+    body: buildWatchRequest(episode),
+  })
+}
+
+async function markEpisode(episode: ShowSeasonEpisodeModel, refreshAfterSubmit = true) {
   if (!data.value) return
 
   submittingEpisodeId.value = episode.episodeId
 
   try {
-    const body: ExistingShowWatchCreateRequest = {
-      watchedAt: new Date(watchedAtInput.value).toISOString(),
-      episodeTitle: episode.title,
-      seasonNumber: data.value.seasonNumber,
-      episodeNumber: episode.episodeNumber,
-    }
+    await submitEpisodeWatch(episode)
 
-    await $fetch(`/api/shows/${data.value.showId}/watches`, {
-      baseURL: config.public.apiBase,
-      method: 'POST',
-      body,
-    })
+    editingEpisodeId.value = null
+    watchedAtInput.value = toDatetimeLocalValue(new Date())
+    if (refreshAfterSubmit) {
+      await refresh()
+    }
+  } finally {
+    submittingEpisodeId.value = null
+  }
+}
+
+async function markUntilEpisode(episode: ShowSeasonEpisodeModel) {
+  if (!data.value) return
+
+  const pendingEpisodes = episodesUntil(episode)
+  if (!pendingEpisodes.length) return
+
+  submittingUntilEpisodeId.value = episode.episodeId
+  submittingEpisodeId.value = episode.episodeId
+
+  try {
+    for (const pendingEpisode of pendingEpisodes) {
+      await submitEpisodeWatch(pendingEpisode)
+    }
 
     editingEpisodeId.value = null
     watchedAtInput.value = toDatetimeLocalValue(new Date())
     await refresh()
   } finally {
+    submittingUntilEpisodeId.value = null
     submittingEpisodeId.value = null
   }
 }
