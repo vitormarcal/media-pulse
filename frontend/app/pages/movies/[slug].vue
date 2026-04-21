@@ -34,7 +34,11 @@
         @created="handleWatchCreated"
       />
 
-      <MovieWatchTimeline :watches="data.recentWatches" />
+      <MovieWatchTimeline
+        :movie-id="data.movieId"
+        :watches="data.recentWatches"
+        @deleted="handleWatchDeleted"
+      />
     </template>
   </main>
 </template>
@@ -82,6 +86,10 @@ async function handleEnrichmentApplied(_response: MovieEnrichmentApplyResponse) 
 }
 
 async function handleWatchCreated(_response: ManualMovieWatchCreateResponse) {
+  await refresh()
+}
+
+async function handleWatchDeleted() {
   await refresh()
 }
 </script>

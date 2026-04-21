@@ -19,6 +19,7 @@ import { formatAbsoluteDate, formatRelativeDate, formatShortNumber } from '~/uti
 function mapWatch(watch: MovieDetailsResponse['watches'][number], index: number): MovieWatchEntryModel {
   return {
     id: `watch-${watch.watchId}`,
+    watchId: watch.watchId,
     title: index === 0 ? 'Última sessão registrada' : `Sessão ${index + 1}`,
     meta: formatAbsoluteDate(watch.watchedAt),
     relativeWatchedAt: formatRelativeDate(watch.watchedAt),

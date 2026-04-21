@@ -128,6 +128,7 @@ export interface ExistingMovieWatchCreateRequest {
 
 export interface MovieWatchEntryModel {
   id: string
+  watchId: number
   title: string
   meta: string
   relativeWatchedAt: string

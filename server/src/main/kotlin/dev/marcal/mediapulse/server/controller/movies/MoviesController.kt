@@ -11,7 +11,9 @@ import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
+import dev.marcal.mediapulse.server.service.movie.MovieWatchRemovalService
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -31,6 +33,7 @@ import kotlin.math.min
 class MoviesController(
     private val repository: MovieQueryRepository,
     private val existingMovieWatchCreateFlowService: ExistingMovieWatchCreateFlowService,
+    private val movieWatchRemovalService: MovieWatchRemovalService,
 ) {
     @GetMapping("/library")
     fun library(
@@ -59,6 +62,14 @@ class MoviesController(
         @PathVariable movieId: Long,
         @RequestBody request: ExistingMovieWatchCreateRequest,
     ): ManualMovieWatchCreateResponse = existingMovieWatchCreateFlowService.execute(movieId, request.watchedAt)
+
+    @DeleteMapping("/{movieId}/watches/{watchId}")
+    fun deleteWatch(
+        @PathVariable movieId: Long,
+        @PathVariable watchId: Long,
+    ) {
+        movieWatchRemovalService.remove(movieId, watchId)
+    }
 
     @GetMapping("/search")
     fun search(

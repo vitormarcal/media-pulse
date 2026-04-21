@@ -13,6 +13,7 @@ import dev.marcal.mediapulse.server.api.movies.MoviesYearStatsDto
 import dev.marcal.mediapulse.server.api.movies.RangeDto
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
+import dev.marcal.mediapulse.server.service.movie.MovieWatchRemovalService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -25,7 +26,8 @@ import kotlin.test.assertFailsWith
 class MoviesControllerTest {
     private val repository = mockk<MovieQueryRepository>(relaxed = true)
     private val existingMovieWatchCreateFlowService = mockk<ExistingMovieWatchCreateFlowService>(relaxed = true)
-    private val controller = MoviesController(repository, existingMovieWatchCreateFlowService)
+    private val movieWatchRemovalService = mockk<MovieWatchRemovalService>(relaxed = true)
+    private val controller = MoviesController(repository, existingMovieWatchCreateFlowService, movieWatchRemovalService)
 
     @Test
     fun `recent should delegate to repository`() {
@@ -57,6 +59,13 @@ class MoviesControllerTest {
 
         assertEquals(10, response.movieId)
         verify(exactly = 1) { repository.getMovieDetailsBySlug("3828") }
+    }
+
+    @Test
+    fun `delete watch should delegate to removal service`() {
+        controller.deleteWatch(movieId = 58, watchId = 991)
+
+        verify(exactly = 1) { movieWatchRemovalService.remove(movieId = 58, watchId = 991) }
     }
 
     @Test
