@@ -167,6 +167,7 @@ class TvShowQueryRepositoryTest {
                         "The Big Bang Theory",
                         2007,
                         "/covers/show.jpg",
+                        "1418",
                     ),
                 ),
                 listOf(
@@ -201,6 +202,7 @@ class TvShowQueryRepositoryTest {
         val response = repository.getShowSeasonDetailsBySlug("the-big-bang-theory", 1)
 
         assertEquals(10L, response.showId)
+        assertEquals("1418", response.showTmdbId)
         assertEquals("Temporada 1", response.seasonTitle)
         assertEquals(2L, response.episodesCount)
         assertEquals(1L, response.watchedEpisodesCount)

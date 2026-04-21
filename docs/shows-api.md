@@ -22,6 +22,8 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 | `GET /api/shows/summary` | `range=month|year|custom`, `start?`, `end?` | `ShowsSummaryResponse` |
 | `GET /api/shows/stats` | - | `ShowsStatsResponse` |
 | `GET /api/shows/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `ShowsByYearResponse` |
+| `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview` | body com `tmdbId?` | `ShowSeasonEnrichmentPreviewResponse` |
+| `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/apply` | body com `tmdbId?`, `mode`, `seasonFields`, `episodeFields` | `ShowSeasonEnrichmentApplyResponse` |
 | `POST /api/shows/{showId}/watches` | body com `watchedAt`, `episodeTitle`, `seasonNumber?`, `episodeNumber?`, `originallyAvailableAt?` | `ManualShowWatchCreateResponse` |
 | `POST /api/shows/watches` | body com `watchedAt`, `showTitle`, `episodeTitle`, `seasonNumber?`, `episodeNumber?`, `year?`, `tmdbId?`, `tvdbId?` | `ManualShowWatchCreateResponse` |
 
@@ -52,6 +54,30 @@ O range anual é:
 - `uniqueShowsCount`: conta séries distintas com watch no período
 - `rewatchesCount = watchesCount - uniqueShowsCount`
 - `currently-watching` considera séries com atividade recente e retorna progresso agregado
+
+## Enriquecimento de temporada
+
+`POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview` compara os episódios existentes da temporada com o TMDb.
+
+- usa o vínculo `TMDB` salvo na série ou o `tmdbId` enviado no body
+- não cria episódios ou temporadas faltantes
+- marca como lacuna títulos genéricos como `Episode 5`, `Episódio 5` e `Ep. 5`
+- compara nome da temporada, título do episódio, descrição, duração e data original
+
+`POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/apply` aplica o preview.
+
+- `mode=MISSING`: preenche apenas lacunas seguras
+- `mode=SELECTED`: aplica os campos selecionados no payload
+- atualiza somente linhas existentes de `tv_episodes`
+- vincula o `tmdbId` à série quando ele foi informado e ainda não existe vínculo
+
+Campos aceitos:
+
+- `SEASON_TITLE`
+- `EPISODE_TITLE`
+- `EPISODE_SUMMARY`
+- `EPISODE_DURATION`
+- `EPISODE_AIR_DATE`
 
 ## Ingestão manual
 

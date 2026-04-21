@@ -379,6 +379,7 @@ export function buildShowSeasonPageData(season: ShowSeasonDetailsResponse): Show
     showOriginalTitle: season.showOriginalTitle,
     showYear: season.showYear,
     showCoverUrl: season.showCoverUrl,
+    showTmdbId: season.showTmdbId,
     seasonTitle,
     seasonNumber: season.seasonNumber,
     progress: {

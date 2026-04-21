@@ -11,4 +11,9 @@ interface TvEpisodeRepository : CrudRepository<TvEpisode, Long> {
         seasonNumber: Int?,
         episodeNumber: Int?,
     ): TvEpisode?
+
+    fun findByShowIdAndSeasonNumberOrderByEpisodeNumberAscIdAsc(
+        showId: Long,
+        seasonNumber: Int?,
+    ): List<TvEpisode>
 }

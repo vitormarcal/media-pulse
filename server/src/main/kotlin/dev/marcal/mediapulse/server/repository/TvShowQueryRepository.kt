@@ -506,7 +506,16 @@ class TvShowQueryRepository(
                       ), s.original_title) AS title,
                       s.original_title,
                       s.year,
-                      s.cover_url
+                      s.cover_url,
+                      (
+                        SELECT ei.external_id
+                        FROM external_identifiers ei
+                        WHERE ei.entity_type = 'SHOW'
+                          AND ei.provider = 'TMDB'
+                          AND ei.entity_id = s.id
+                        ORDER BY ei.id ASC
+                        LIMIT 1
+                      ) AS tmdb_id
                     FROM tv_shows s
                     WHERE s.slug = :slug
                     LIMIT 1
@@ -594,6 +603,7 @@ class TvShowQueryRepository(
             showOriginalTitle = base[3] as String,
             showYear = (base[4] as Number?)?.toInt(),
             showCoverUrl = base[5] as String?,
+            showTmdbId = base[6] as String?,
             seasonNumber = seasonNumber,
             seasonTitle = seasonTitle,
             episodesCount = episodes.size.toLong(),

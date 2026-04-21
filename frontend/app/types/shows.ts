@@ -44,6 +44,7 @@ export interface ShowSeasonDetailsResponse {
   showOriginalTitle: string
   showYear: number | null
   showCoverUrl: string | null
+  showTmdbId: string | null
   seasonNumber: number | null
   seasonTitle: string | null
   episodesCount: number
@@ -104,6 +105,72 @@ export interface ManualShowWatchCreateResponse {
   watchInserted: boolean
   coverAssigned: boolean
   externalIds: ShowExternalIdDto[]
+}
+
+export type ShowSeasonEnrichmentField =
+  | 'SEASON_TITLE'
+  | 'EPISODE_TITLE'
+  | 'EPISODE_SUMMARY'
+  | 'EPISODE_DURATION'
+  | 'EPISODE_AIR_DATE'
+
+export type ShowSeasonEnrichmentApplyMode = 'MISSING' | 'SELECTED'
+
+export interface ShowSeasonEnrichmentPreviewRequest {
+  tmdbId?: string | null
+}
+
+export interface ShowSeasonEnrichmentFieldPreview {
+  field: ShowSeasonEnrichmentField
+  label: string
+  currentValue: string | null
+  suggestedValue: string | null
+  available: boolean
+  missing: boolean
+  changed: boolean
+  selectedByDefault: boolean
+}
+
+export interface ShowSeasonEpisodeEnrichmentPreview {
+  episodeId: number
+  episodeNumber: number | null
+  currentTitle: string
+  suggestedTitle: string | null
+  fields: ShowSeasonEnrichmentFieldPreview[]
+}
+
+export interface ShowSeasonEnrichmentPreviewResponse {
+  showId: number
+  seasonNumber: number
+  resolvedTmdbId: string
+  showTitle: string
+  seasonTitle: string | null
+  suggestedSeasonTitle: string | null
+  seasonFields: ShowSeasonEnrichmentFieldPreview[]
+  episodes: ShowSeasonEpisodeEnrichmentPreview[]
+  changedEpisodesCount: number
+  selectedFieldsCount: number
+  missingTmdbEpisodesCount: number
+}
+
+export interface ShowSeasonEpisodeEnrichmentSelection {
+  episodeId: number
+  fields: ShowSeasonEnrichmentField[]
+}
+
+export interface ShowSeasonEnrichmentApplyRequest {
+  tmdbId?: string | null
+  mode: ShowSeasonEnrichmentApplyMode
+  seasonFields: ShowSeasonEnrichmentField[]
+  episodeFields: ShowSeasonEpisodeEnrichmentSelection[]
+}
+
+export interface ShowSeasonEnrichmentApplyResponse {
+  showId: number
+  seasonNumber: number
+  resolvedTmdbId: string
+  updatedEpisodesCount: number
+  appliedFieldsCount: number
 }
 
 export interface ShowSeasonCardModel {
@@ -167,6 +234,7 @@ export interface ShowSeasonPageData {
   showOriginalTitle: string
   showYear: number | null
   showCoverUrl: string | null
+  showTmdbId: string | null
   seasonTitle: string
   seasonNumber: number | null
   progress: {

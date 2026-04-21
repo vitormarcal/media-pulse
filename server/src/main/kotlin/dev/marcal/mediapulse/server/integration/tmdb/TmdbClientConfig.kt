@@ -16,7 +16,17 @@ class TmdbClientConfig(
     fun tmdbWebClient(
         @Qualifier("remoteWebClientBuilder") builder: WebClient.Builder,
     ): WebClient {
-        val webClientBuilder = builder.baseUrl(props.apiBaseUrl)
+        val maxBytes = 2 * 1024 * 1024
+        val strategies =
+            ExchangeStrategies
+                .builder()
+                .codecs { it.defaultCodecs().maxInMemorySize(maxBytes) }
+                .build()
+
+        val webClientBuilder =
+            builder
+                .baseUrl(props.apiBaseUrl)
+                .exchangeStrategies(strategies)
 
         if (props.token.isNotBlank()) {
             webClientBuilder.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer ${props.token}")

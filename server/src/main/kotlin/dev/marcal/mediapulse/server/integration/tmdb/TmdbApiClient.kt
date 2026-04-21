@@ -52,6 +52,30 @@ data class TmdbShowDetailsResponse(
     val backdropPath: String? = null,
 )
 
+data class TmdbShowSeasonEpisodeResponse(
+    val id: Long? = null,
+    val name: String? = null,
+    val overview: String? = null,
+    @JsonProperty("episode_number")
+    val episodeNumber: Int? = null,
+    @JsonProperty("air_date")
+    val airDate: String? = null,
+    val runtime: Int? = null,
+)
+
+data class TmdbShowSeasonDetailsResponse(
+    val id: Long? = null,
+    val name: String? = null,
+    val overview: String? = null,
+    @JsonProperty("season_number")
+    val seasonNumber: Int? = null,
+    @JsonProperty("air_date")
+    val airDate: String? = null,
+    @JsonProperty("poster_path")
+    val posterPath: String? = null,
+    val episodes: List<TmdbShowSeasonEpisodeResponse> = emptyList(),
+)
+
 @Component
 class TmdbApiClient(
     private val tmdbWebClient: WebClient,
@@ -75,6 +99,25 @@ class TmdbApiClient(
         val firstAirYear: Int?,
         val posterPath: String?,
         val backdropPath: String?,
+    )
+
+    data class TmdbShowSeasonEpisode(
+        val tmdbId: String?,
+        val title: String?,
+        val overview: String?,
+        val episodeNumber: Int?,
+        val airDate: String?,
+        val runtimeMinutes: Int?,
+    )
+
+    data class TmdbShowSeasonDetails(
+        val tmdbId: String?,
+        val title: String?,
+        val overview: String?,
+        val seasonNumber: Int?,
+        val airDate: String?,
+        val posterPath: String?,
+        val episodes: List<TmdbShowSeasonEpisode>,
     )
 
     data class TmdbMovieSearchItem(
@@ -190,6 +233,80 @@ class TmdbApiClient(
                 return null
             } catch (ex: Exception) {
                 logger.warn("Failed to fetch TMDb show details for id={}", tmdbId, ex)
+                return null
+            }
+        }
+
+        return null
+    }
+
+    fun fetchShowSeasonDetails(
+        tmdbId: String,
+        seasonNumber: Int,
+    ): TmdbShowSeasonDetails? {
+        if (!tmdbProperties.enabled) return null
+
+        val attempts = (tmdbProperties.max429Retries + 1).coerceAtLeast(1)
+        var attempt = 0
+
+        while (attempt < attempts) {
+            attempt++
+            tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
+
+            try {
+                val response =
+                    tmdbWebClient
+                        .get()
+                        .uri { uriBuilder ->
+                            val builder = uriBuilder.path("/tv/{id}/season/{seasonNumber}")
+                            if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
+                                builder.queryParam("api_key", tmdbProperties.apiKey)
+                            }
+                            builder.build(tmdbId, seasonNumber)
+                        }.retrieve()
+                        .bodyToMono<TmdbShowSeasonDetailsResponse>()
+                        .block() ?: return null
+
+                return TmdbShowSeasonDetails(
+                    tmdbId = response.id?.toString(),
+                    title = response.name?.trim()?.ifBlank { null },
+                    overview = response.overview?.trim()?.ifBlank { null },
+                    seasonNumber = response.seasonNumber,
+                    airDate = response.airDate?.trim()?.ifBlank { null },
+                    posterPath = response.posterPath?.trim()?.ifBlank { null },
+                    episodes =
+                        response.episodes.map { episode ->
+                            TmdbShowSeasonEpisode(
+                                tmdbId = episode.id?.toString(),
+                                title = episode.name?.trim()?.ifBlank { null },
+                                overview = episode.overview?.trim()?.ifBlank { null },
+                                episodeNumber = episode.episodeNumber,
+                                airDate = episode.airDate?.trim()?.ifBlank { null },
+                                runtimeMinutes = episode.runtime?.takeIf { it > 0 },
+                            )
+                        },
+                )
+            } catch (ex: WebClientResponseException.NotFound) {
+                return null
+            } catch (ex: WebClientResponseException) {
+                val isTooManyRequests = ex.statusCode.value() == 429
+                val hasRemainingRetry = attempt < attempts
+                if (isTooManyRequests && hasRemainingRetry) {
+                    val waitMs = resolve429WaitMs(ex, attempt)
+                    logger.warn("TMDb rate limited (429). Waiting {}ms before retry {}/{}", waitMs, attempt + 1, attempts)
+                    Thread.sleep(waitMs)
+                    continue
+                }
+                logger.warn(
+                    "Failed to fetch TMDb show season details for id={} season={} status={}",
+                    tmdbId,
+                    seasonNumber,
+                    ex.statusCode.value(),
+                    ex,
+                )
+                return null
+            } catch (ex: Exception) {
+                logger.warn("Failed to fetch TMDb show season details for id={} season={}", tmdbId, seasonNumber, ex)
                 return null
             }
         }

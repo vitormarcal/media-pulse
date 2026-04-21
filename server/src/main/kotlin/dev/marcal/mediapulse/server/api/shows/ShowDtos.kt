@@ -57,6 +57,7 @@ data class ShowSeasonDetailsResponse(
     val showOriginalTitle: String,
     val showYear: Int?,
     val showCoverUrl: String?,
+    val showTmdbId: String?,
     val seasonNumber: Int?,
     val seasonTitle: String?,
     val episodesCount: Long,
@@ -199,6 +200,76 @@ data class ExistingShowWatchCreateRequest(
     val seasonNumber: Int? = null,
     val episodeNumber: Int? = null,
     val originallyAvailableAt: LocalDate? = null,
+)
+
+enum class ShowSeasonEnrichmentField {
+    SEASON_TITLE,
+    EPISODE_TITLE,
+    EPISODE_SUMMARY,
+    EPISODE_DURATION,
+    EPISODE_AIR_DATE,
+}
+
+enum class ShowSeasonEnrichmentApplyMode {
+    MISSING,
+    SELECTED,
+}
+
+data class ShowSeasonEnrichmentPreviewRequest(
+    val tmdbId: String? = null,
+)
+
+data class ShowSeasonEnrichmentFieldPreview(
+    val field: ShowSeasonEnrichmentField,
+    val label: String,
+    val currentValue: String?,
+    val suggestedValue: String?,
+    val available: Boolean,
+    val missing: Boolean,
+    val changed: Boolean,
+    val selectedByDefault: Boolean,
+)
+
+data class ShowSeasonEpisodeEnrichmentPreview(
+    val episodeId: Long,
+    val episodeNumber: Int?,
+    val currentTitle: String,
+    val suggestedTitle: String?,
+    val fields: List<ShowSeasonEnrichmentFieldPreview>,
+)
+
+data class ShowSeasonEnrichmentPreviewResponse(
+    val showId: Long,
+    val seasonNumber: Int,
+    val resolvedTmdbId: String,
+    val showTitle: String,
+    val seasonTitle: String?,
+    val suggestedSeasonTitle: String?,
+    val seasonFields: List<ShowSeasonEnrichmentFieldPreview>,
+    val episodes: List<ShowSeasonEpisodeEnrichmentPreview>,
+    val changedEpisodesCount: Int,
+    val selectedFieldsCount: Int,
+    val missingTmdbEpisodesCount: Int,
+)
+
+data class ShowSeasonEpisodeEnrichmentSelection(
+    val episodeId: Long,
+    val fields: List<ShowSeasonEnrichmentField> = emptyList(),
+)
+
+data class ShowSeasonEnrichmentApplyRequest(
+    val tmdbId: String? = null,
+    val mode: ShowSeasonEnrichmentApplyMode = ShowSeasonEnrichmentApplyMode.MISSING,
+    val seasonFields: List<ShowSeasonEnrichmentField> = emptyList(),
+    val episodeFields: List<ShowSeasonEpisodeEnrichmentSelection> = emptyList(),
+)
+
+data class ShowSeasonEnrichmentApplyResponse(
+    val showId: Long,
+    val seasonNumber: Int,
+    val resolvedTmdbId: String,
+    val updatedEpisodesCount: Int,
+    val appliedFieldsCount: Int,
 )
 
 data class ManualShowWatchCreateResponse(

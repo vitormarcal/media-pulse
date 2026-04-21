@@ -3,6 +3,10 @@ package dev.marcal.mediapulse.server.controller.shows
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentApplyRequest
+import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentApplyResponse
+import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentPreviewRequest
+import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentPreviewResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsLibraryResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsRecentResponse
@@ -10,9 +14,12 @@ import dev.marcal.mediapulse.server.api.shows.ShowsSearchResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsStatsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
+import dev.marcal.mediapulse.server.service.tv.ShowSeasonMetadataEnrichmentService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -27,6 +34,7 @@ import kotlin.math.min
 @RequestMapping("/api/shows")
 class ShowsController(
     private val repository: TvShowQueryRepository,
+    private val showSeasonMetadataEnrichmentService: ShowSeasonMetadataEnrichmentService,
 ) {
     @GetMapping("/library")
     fun library(
@@ -66,6 +74,20 @@ class ShowsController(
         @PathVariable slug: String,
         @PathVariable seasonNumber: Int,
     ): ShowSeasonDetailsResponse = repository.getShowSeasonDetailsBySlug(slug, seasonNumber)
+
+    @PostMapping("/{showId}/seasons/{seasonNumber}/enrichment/preview")
+    fun previewSeasonEnrichment(
+        @PathVariable showId: Long,
+        @PathVariable seasonNumber: Int,
+        @RequestBody request: ShowSeasonEnrichmentPreviewRequest,
+    ): ShowSeasonEnrichmentPreviewResponse = showSeasonMetadataEnrichmentService.preview(showId, seasonNumber, request)
+
+    @PostMapping("/{showId}/seasons/{seasonNumber}/enrichment/apply")
+    fun applySeasonEnrichment(
+        @PathVariable showId: Long,
+        @PathVariable seasonNumber: Int,
+        @RequestBody request: ShowSeasonEnrichmentApplyRequest,
+    ): ShowSeasonEnrichmentApplyResponse = showSeasonMetadataEnrichmentService.apply(showId, seasonNumber, request)
 
     @GetMapping("/search")
     fun search(

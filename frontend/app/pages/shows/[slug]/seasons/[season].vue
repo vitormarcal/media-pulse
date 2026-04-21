@@ -43,6 +43,14 @@
         </div>
       </section>
 
+      <ShowSeasonEnrichmentPanel
+        v-if="data.seasonNumber != null"
+        :show-id="data.showId"
+        :season-number="data.seasonNumber"
+        :initial-tmdb-id="data.showTmdbId"
+        @applied="handleEnrichmentApplied"
+      />
+
       <section class="episodes-section">
         <SectionHeading
           eyebrow="Episódios"
@@ -104,8 +112,9 @@
 
 <script setup lang="ts">
 import SectionHeading from '~/components/home/SectionHeading.vue'
+import ShowSeasonEnrichmentPanel from '~/components/shows/ShowSeasonEnrichmentPanel.vue'
 import { useShowSeasonPageData } from '~/composables/useShowSeasonPageData'
-import type { ExistingShowWatchCreateRequest, ShowSeasonEpisodeModel } from '~/types/shows'
+import type { ExistingShowWatchCreateRequest, ShowSeasonEnrichmentApplyResponse, ShowSeasonEpisodeModel } from '~/types/shows'
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
@@ -177,6 +186,10 @@ async function markEpisode(episode: ShowSeasonEpisodeModel) {
   } finally {
     submittingEpisodeId.value = null
   }
+}
+
+async function handleEnrichmentApplied(_response: ShowSeasonEnrichmentApplyResponse) {
+  await refresh()
 }
 </script>
 

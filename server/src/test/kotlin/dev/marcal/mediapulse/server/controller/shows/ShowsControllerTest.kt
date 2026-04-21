@@ -16,6 +16,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsTotalStatsDto
 import dev.marcal.mediapulse.server.api.shows.ShowsYearStatsDto
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
+import dev.marcal.mediapulse.server.service.tv.ShowSeasonMetadataEnrichmentService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -28,7 +29,8 @@ import kotlin.test.assertFailsWith
 
 class ShowsControllerTest {
     private val repository = mockk<TvShowQueryRepository>(relaxed = true)
-    private val controller = ShowsController(repository)
+    private val showSeasonMetadataEnrichmentService = mockk<ShowSeasonMetadataEnrichmentService>(relaxed = true)
+    private val controller = ShowsController(repository, showSeasonMetadataEnrichmentService)
 
     @Test
     fun `recent should delegate to repository`() {
@@ -127,6 +129,7 @@ class ShowsControllerTest {
                 showOriginalTitle = "The Big Bang Theory",
                 showYear = 2007,
                 showCoverUrl = "/covers/show.jpg",
+                showTmdbId = "1418",
                 seasonNumber = 1,
                 seasonTitle = "Temporada 1",
                 episodesCount = 17,
