@@ -46,6 +46,39 @@ export interface ShowDetailsResponse {
   externalIds: ShowExternalIdDto[]
 }
 
+export interface ExistingShowWatchCreateRequest {
+  watchedAt: string
+  episodeTitle: string
+  seasonNumber?: number | null
+  episodeNumber?: number | null
+  originallyAvailableAt?: string | null
+}
+
+export interface ManualShowWatchCreateRequest extends ExistingShowWatchCreateRequest {
+  showTitle: string
+  year?: number | null
+  tmdbId?: string | null
+  tvdbId?: string | null
+}
+
+export interface ManualShowWatchCreateResponse {
+  showId: number
+  title: string
+  year: number | null
+  coverUrl: string | null
+  episodeId: number
+  episodeTitle: string
+  seasonNumber: number | null
+  episodeNumber: number | null
+  watchedAt: string
+  source: string
+  createdShow: boolean
+  createdEpisode: boolean
+  watchInserted: boolean
+  coverAssigned: boolean
+  externalIds: ShowExternalIdDto[]
+}
+
 export interface ShowSeasonCardModel {
   id: string
   title: string
@@ -66,6 +99,7 @@ export interface ShowWatchEntryModel {
 }
 
 export interface ShowPageData {
+  showId: number
   slug: string
   title: string
   originalTitle: string

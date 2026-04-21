@@ -23,21 +23,28 @@
         :seasons="data.seasons"
       />
 
+      <ShowAddWatchPanel
+        :show-id="data.showId"
+        @created="handleWatchCreated"
+      />
+
       <ShowWatchTimeline :watches="data.recentWatches" />
     </template>
   </main>
 </template>
 
 <script setup lang="ts">
+import ShowAddWatchPanel from '~/components/shows/ShowAddWatchPanel.vue'
 import ShowPageHero from '~/components/shows/ShowPageHero.vue'
 import ShowProgressPanel from '~/components/shows/ShowProgressPanel.vue'
 import ShowWatchTimeline from '~/components/shows/ShowWatchTimeline.vue'
 import { useShowPageData } from '~/composables/useShowPageData'
+import type { ManualShowWatchCreateResponse } from '~/types/shows'
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
 
-const { data, error, status } = await useShowPageData(slug.value)
+const { data, error, status, refresh } = await useShowPageData(slug.value)
 
 const heroSubtitle = computed(() => {
   if (!data.value) return null
@@ -62,6 +69,10 @@ useHead(() => ({
     },
   ],
 }))
+
+async function handleWatchCreated(_response: ManualShowWatchCreateResponse) {
+  await refresh()
+}
 </script>
 
 <style scoped>

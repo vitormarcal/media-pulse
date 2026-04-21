@@ -320,6 +320,7 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
   ].filter(Boolean) as string[]
 
   return {
+    showId: show.showId,
     slug: show.slug ?? String(show.showId),
     title: show.title,
     originalTitle: show.originalTitle,

@@ -166,6 +166,14 @@ data class ManualShowWatchCreateRequest(
     val originallyAvailableAt: LocalDate? = null,
 )
 
+data class ExistingShowWatchCreateRequest(
+    val watchedAt: Instant,
+    val episodeTitle: String,
+    val seasonNumber: Int? = null,
+    val episodeNumber: Int? = null,
+    val originallyAvailableAt: LocalDate? = null,
+)
+
 data class ManualShowWatchCreateResponse(
     val showId: Long,
     val title: String,

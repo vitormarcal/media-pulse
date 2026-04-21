@@ -21,6 +21,7 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 | `GET /api/shows/summary` | `range=month|year|custom`, `start?`, `end?` | `ShowsSummaryResponse` |
 | `GET /api/shows/stats` | - | `ShowsStatsResponse` |
 | `GET /api/shows/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `ShowsByYearResponse` |
+| `POST /api/shows/{showId}/watches` | body com `watchedAt`, `episodeTitle`, `seasonNumber?`, `episodeNumber?`, `originallyAvailableAt?` | `ManualShowWatchCreateResponse` |
 | `POST /api/shows/watches` | body com `watchedAt`, `showTitle`, `episodeTitle`, `seasonNumber?`, `episodeNumber?`, `year?`, `tmdbId?`, `tvdbId?` | `ManualShowWatchCreateResponse` |
 
 ## Paginação e limites
@@ -53,7 +54,21 @@ O range anual é:
 
 ## Ingestão manual
 
-Ordem de resolução:
+### Série existente
+
+`POST /api/shows/{showId}/watches` registra um episódio manual dentro de uma série já existente.
+
+- uso esperado: página de detalhe da série, lacuna de histórico antigo, correção manual
+- o endpoint resolve a série apenas por `showId`
+- o endpoint nunca cria `tv_shows`; se `showId` não existir, retorna `404`
+- o episódio é reaproveitado por fingerprint ou por `(show_id, season_number, episode_number)`
+- watches manuais são persistidos com `source=MANUAL`
+
+### Resolução ou criação de catálogo
+
+`POST /api/shows/watches` é o fluxo solto para resolver ou criar a série a partir dos dados enviados.
+
+Ordem de resolução de série:
 
 1. `tmdbId`
 2. `tvdbId`
