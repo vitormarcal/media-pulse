@@ -42,9 +42,7 @@
         <section class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="remove-watch-title">
           <p class="confirm-eyebrow">Confirmar remoção</p>
           <h3 id="remove-watch-title">Remover esta sessão?</h3>
-          <p>
-            A sessão registrada em {{ pendingRemoval.meta }} será retirada do histórico deste filme.
-          </p>
+          <p>A sessão registrada em {{ pendingRemoval.meta }} será retirada do histórico deste filme.</p>
 
           <div class="confirm-actions">
             <button type="button" class="secondary-button" :disabled="deletingWatchId != null" @click="cancelRemoval">

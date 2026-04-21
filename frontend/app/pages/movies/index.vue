@@ -26,12 +26,7 @@
         />
 
         <div class="strip-grid">
-          <MediaStripCard
-            v-for="item in data.featuredSessions"
-            :key="item.id"
-            :item="item"
-            variant="large"
-          />
+          <MediaStripCard v-for="item in data.featuredSessions" :key="item.id" :item="item" variant="large" />
         </div>
       </section>
 

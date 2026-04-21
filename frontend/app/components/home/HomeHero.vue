@@ -10,7 +10,7 @@
       <NuxtLink v-if="lead?.href" :to="lead.href" class="lead-link">
         <article class="lead-card">
           <div class="lead-image">
-            <img v-if="resolvedLeadImageUrl" :src="resolvedLeadImageUrl" :alt="lead.title">
+            <img v-if="resolvedLeadImageUrl" :src="resolvedLeadImageUrl" :alt="lead.title" />
             <div v-else class="lead-fallback">{{ lead.title.slice(0, 1) }}</div>
           </div>
           <div class="lead-body">
@@ -25,7 +25,7 @@
       <div v-else-if="lead" class="lead-link">
         <article class="lead-card">
           <div class="lead-image">
-            <img v-if="resolvedLeadImageUrl" :src="resolvedLeadImageUrl" :alt="lead.title">
+            <img v-if="resolvedLeadImageUrl" :src="resolvedLeadImageUrl" :alt="lead.title" />
             <div v-else class="lead-fallback">{{ lead.title.slice(0, 1) }}</div>
           </div>
           <div class="lead-body">
@@ -42,7 +42,7 @@
           <NuxtLink v-if="item.href" :to="item.href" class="supporting-link">
             <article class="supporting-card">
               <div class="supporting-image">
-                <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title">
+                <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title" />
                 <div v-else class="supporting-fallback">{{ item.title.slice(0, 1) }}</div>
               </div>
               <div class="supporting-body">
@@ -56,7 +56,7 @@
           <div v-else class="supporting-link">
             <article class="supporting-card">
               <div class="supporting-image">
-                <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title">
+                <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title" />
                 <div v-else class="supporting-fallback">{{ item.title.slice(0, 1) }}</div>
               </div>
               <div class="supporting-body">

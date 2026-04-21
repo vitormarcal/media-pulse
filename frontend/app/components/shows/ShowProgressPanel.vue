@@ -30,9 +30,7 @@
           <article>
             <div class="season-header">
               <h3>{{ season.title }}</h3>
-              <span class="season-badge" :class="{ complete: season.isComplete }">
-                {{ season.progressValue }}%
-              </span>
+              <span class="season-badge" :class="{ complete: season.isComplete }"> {{ season.progressValue }}% </span>
             </div>
             <p class="season-meta">{{ season.progressLabel }}</p>
             <div class="season-bar">

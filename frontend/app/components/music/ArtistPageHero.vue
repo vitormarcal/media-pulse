@@ -1,8 +1,6 @@
 <template>
   <section class="artist-hero">
-    <NuxtLink class="back-link" to="/music">
-      Voltar para música
-    </NuxtLink>
+    <NuxtLink class="back-link" to="/music"> Voltar para música </NuxtLink>
 
     <div class="hero-grid">
       <div class="copy">
@@ -15,7 +13,7 @@
       </div>
 
       <div class="cover-frame">
-        <img v-if="resolvedCoverUrl" :src="resolvedCoverUrl" :alt="title">
+        <img v-if="resolvedCoverUrl" :src="resolvedCoverUrl" :alt="title" />
         <div v-else class="cover-fallback">{{ title.slice(0, 1) }}</div>
       </div>
     </div>

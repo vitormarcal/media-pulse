@@ -1,11 +1,6 @@
 <template>
   <section class="library-section">
-    <SectionHeading
-      :eyebrow="eyebrow"
-      :title="title"
-      :description="description"
-      :summary="summary"
-    />
+    <SectionHeading :eyebrow="eyebrow" :title="title" :description="description" :summary="summary" />
 
     <p v-if="!items.length" class="empty-state">
       {{ emptyMessage || 'Nada para mostrar aqui ainda.' }}

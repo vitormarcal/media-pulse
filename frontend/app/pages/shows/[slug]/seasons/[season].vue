@@ -99,7 +99,7 @@
               <div v-if="editingEpisodeId === episode.episodeId && !episode.watched" class="episode-date-row">
                 <label>
                   <span>Data e hora</span>
-                  <input v-model="watchedAtInput" type="datetime-local">
+                  <input v-model="watchedAtInput" type="datetime-local" />
                 </label>
               </div>
             </div>
@@ -114,7 +114,11 @@
 import SectionHeading from '~/components/home/SectionHeading.vue'
 import ShowSeasonEnrichmentPanel from '~/components/shows/ShowSeasonEnrichmentPanel.vue'
 import { useShowSeasonPageData } from '~/composables/useShowSeasonPageData'
-import type { ExistingShowWatchCreateRequest, ShowSeasonEnrichmentApplyResponse, ShowSeasonEpisodeModel } from '~/types/shows'
+import type {
+  ExistingShowWatchCreateRequest,
+  ShowSeasonEnrichmentApplyResponse,
+  ShowSeasonEpisodeModel,
+} from '~/types/shows'
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
@@ -145,7 +149,9 @@ useHead(() => ({
   meta: [
     {
       name: 'description',
-      content: data.value ? `Temporada de ${data.value.showTitle} no Media Pulse.` : 'Página interna de temporada no Media Pulse.',
+      content: data.value
+        ? `Temporada de ${data.value.showTitle} no Media Pulse.`
+        : 'Página interna de temporada no Media Pulse.',
     },
   ],
 }))

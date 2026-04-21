@@ -3,21 +3,13 @@
     <div class="panel-copy">
       <p class="eyebrow">Catálogo</p>
       <h2>Enriquecer episódios</h2>
-      <p>
-        Preencha títulos genéricos, descrições, duração e data original usando os dados da temporada no TMDb.
-      </p>
+      <p>Preencha títulos genéricos, descrições, duração e data original usando os dados da temporada no TMDb.</p>
     </div>
 
     <div class="panel-actions">
       <label class="tmdb-field">
         <span>TMDb ID</span>
-        <input
-          v-model="tmdbId"
-          type="text"
-          inputmode="numeric"
-          autocomplete="off"
-          placeholder="Usar vínculo salvo"
-        >
+        <input v-model="tmdbId" type="text" inputmode="numeric" autocomplete="off" placeholder="Usar vínculo salvo" />
       </label>
 
       <button type="button" class="secondary-button" :disabled="loading" @click="loadPreview">
@@ -40,7 +32,9 @@
       <div class="preview-summary">
         <span>{{ preview.changedEpisodesCount }} episódios com melhorias</span>
         <span>{{ preview.selectedFieldsCount }} lacunas prontas</span>
-        <span v-if="preview.missingTmdbEpisodesCount > 0">{{ preview.missingTmdbEpisodesCount }} episódios só no TMDb</span>
+        <span v-if="preview.missingTmdbEpisodesCount > 0"
+          >{{ preview.missingTmdbEpisodesCount }} episódios só no TMDb</span
+        >
       </div>
 
       <div v-if="preview.seasonFields.some((field) => field.available && field.changed)" class="field-strip">
@@ -53,7 +47,7 @@
             type="checkbox"
             :checked="isSeasonFieldSelected(field.field)"
             @change="toggleSeasonField(field.field)"
-          >
+          />
           <span>
             <strong>{{ field.label }}</strong>
             <small>{{ field.currentValue || 'Vazio' }} -> {{ field.suggestedValue }}</small>
@@ -62,11 +56,7 @@
       </div>
 
       <div class="preview-list">
-        <article
-          v-for="episode in visibleEpisodes"
-          :key="episode.episodeId"
-          class="preview-row"
-        >
+        <article v-for="episode in visibleEpisodes" :key="episode.episodeId" class="preview-row">
           <div class="episode-index">{{ formatEpisode(episode.episodeNumber) }}</div>
           <div class="preview-content">
             <div class="preview-heading">
@@ -86,7 +76,7 @@
                   type="checkbox"
                   :checked="isEpisodeFieldSelected(episode.episodeId, field.field)"
                   @change="toggleEpisodeField(episode.episodeId, field.field)"
-                >
+                />
                 <span>
                   <strong>{{ field.label }}</strong>
                   <small>{{ field.currentValue || 'Vazio' }} -> {{ field.suggestedValue }}</small>
@@ -106,7 +96,12 @@
         >
           Ver todos
         </button>
-        <button type="button" class="secondary-button" :disabled="applying || selectedFieldsCount === 0" @click="applySelected">
+        <button
+          type="button"
+          class="secondary-button"
+          :disabled="applying || selectedFieldsCount === 0"
+          @click="applySelected"
+        >
           Aplicar seleção
         </button>
       </div>
@@ -142,14 +137,18 @@ const showAll = ref(false)
 const selectedSeasonFields = ref<Set<ShowSeasonEnrichmentField>>(new Set())
 const selectedEpisodeFields = ref<Record<number, ShowSeasonEnrichmentField[]>>({})
 
-const changedEpisodes = computed(() =>
-  preview.value?.episodes.filter((episode) => episode.fields.some((field) => field.available && field.changed)) ?? [],
+const changedEpisodes = computed(
+  () =>
+    preview.value?.episodes.filter((episode) => episode.fields.some((field) => field.available && field.changed)) ?? [],
 )
 
 const visibleEpisodes = computed(() => (showAll.value ? changedEpisodes.value : changedEpisodes.value.slice(0, 5)))
 
 const selectedFieldsCount = computed(() => {
-  const episodeFieldsCount = Object.values(selectedEpisodeFields.value).reduce((total, fields) => total + fields.length, 0)
+  const episodeFieldsCount = Object.values(selectedEpisodeFields.value).reduce(
+    (total, fields) => total + fields.length,
+    0,
+  )
   return selectedSeasonFields.value.size + episodeFieldsCount
 })
 
@@ -230,16 +229,12 @@ async function apply(body: ShowSeasonEnrichmentApplyRequest) {
 
 function hydrateSelection(response: ShowSeasonEnrichmentPreviewResponse) {
   selectedSeasonFields.value = new Set(
-    response.seasonFields
-      .filter((field) => field.selectedByDefault)
-      .map((field) => field.field),
+    response.seasonFields.filter((field) => field.selectedByDefault).map((field) => field.field),
   )
   selectedEpisodeFields.value = Object.fromEntries(
     response.episodes.map((episode) => [
       episode.episodeId,
-      episode.fields
-        .filter((field) => field.selectedByDefault)
-        .map((field) => field.field),
+      episode.fields.filter((field) => field.selectedByDefault).map((field) => field.field),
     ]),
   )
 }
@@ -261,9 +256,7 @@ function isEpisodeFieldSelected(episodeId: number, field: ShowSeasonEnrichmentFi
 
 function toggleEpisodeField(episodeId: number, field: ShowSeasonEnrichmentField) {
   const current = selectedEpisodeFields.value[episodeId] ?? []
-  const next = current.includes(field)
-    ? current.filter((item) => item !== field)
-    : [...current, field]
+  const next = current.includes(field) ? current.filter((item) => item !== field) : [...current, field]
 
   selectedEpisodeFields.value = {
     ...selectedEpisodeFields.value,
@@ -276,9 +269,10 @@ function formatEpisode(episodeNumber: number | null) {
 }
 
 function resolveErrorMessage(error: unknown) {
-  const message = typeof error === 'object' && error && 'data' in error
-    ? (error as { data?: { message?: string } }).data?.message
-    : null
+  const message =
+    typeof error === 'object' && error && 'data' in error
+      ? (error as { data?: { message?: string } }).data?.message
+      : null
   return message || 'Não foi possível enriquecer esta temporada.'
 }
 </script>

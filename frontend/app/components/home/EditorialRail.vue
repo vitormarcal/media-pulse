@@ -1,19 +1,9 @@
 <template>
   <section :id="id" class="rail">
-    <SectionHeading
-      :eyebrow="eyebrow"
-      :title="title"
-      :description="description"
-      :summary="summary"
-    />
+    <SectionHeading :eyebrow="eyebrow" :title="title" :description="description" :summary="summary" />
 
     <div class="grid">
-      <MediaPosterCard
-        v-for="(item, index) in items"
-        :key="item.id"
-        :item="item"
-        :variant="cardVariant(index)"
-      />
+      <MediaPosterCard v-for="(item, index) in items" :key="item.id" :item="item" :variant="cardVariant(index)" />
     </div>
   </section>
 </template>

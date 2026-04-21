@@ -11,7 +11,8 @@
       <div class="panel-copy">
         <p class="panel-title">Registrar episódio</p>
         <p class="panel-body">
-          Informe temporada, episódio e data. Se o título não estiver à mão, a página usa uma descrição simples para manter o histórico navegável.
+          Informe temporada, episódio e data. Se o título não estiver à mão, a página usa uma descrição simples para
+          manter o histórico navegável.
         </p>
       </div>
 
@@ -19,29 +20,27 @@
         <div class="episode-grid">
           <label class="field">
             <span>Temporada</span>
-            <input v-model.number="seasonNumber" type="number" inputmode="numeric" min="0" placeholder="1">
+            <input v-model.number="seasonNumber" type="number" inputmode="numeric" min="0" placeholder="1" />
           </label>
 
           <label class="field">
             <span>Episódio</span>
-            <input v-model.number="episodeNumber" type="number" inputmode="numeric" min="0" placeholder="1">
+            <input v-model.number="episodeNumber" type="number" inputmode="numeric" min="0" placeholder="1" />
           </label>
         </div>
 
         <label class="field title-field">
           <span>Título</span>
-          <input v-model="episodeTitle" type="text" placeholder="Piloto, The Tangerine Factor...">
+          <input v-model="episodeTitle" type="text" placeholder="Piloto, The Tangerine Factor..." />
         </label>
 
         <label class="field">
           <span>Data e hora</span>
-          <input v-model="watchedAtInput" type="datetime-local">
+          <input v-model="watchedAtInput" type="datetime-local" />
         </label>
 
         <div class="actions">
-          <button type="button" class="secondary-button" :disabled="submitting" @click="setNow">
-            Agora
-          </button>
+          <button type="button" class="secondary-button" :disabled="submitting" @click="setNow">Agora</button>
           <button type="submit" class="primary-button" :disabled="submitting || !canSubmit">
             {{ submitting ? 'Salvando...' : 'Marcar episódio' }}
           </button>
@@ -76,7 +75,9 @@ const feedbackError = ref(false)
 
 const normalizedSeasonNumber = computed(() => normalizeOptionalNumber(seasonNumber.value))
 const normalizedEpisodeNumber = computed(() => normalizeOptionalNumber(episodeNumber.value))
-const canSubmit = computed(() => Boolean(watchedAtInput.value && (episodeTitle.value.trim() || normalizedEpisodeNumber.value != null)))
+const canSubmit = computed(() =>
+  Boolean(watchedAtInput.value && (episodeTitle.value.trim() || normalizedEpisodeNumber.value != null)),
+)
 
 function toDatetimeLocalValue(date: Date) {
   const offset = date.getTimezoneOffset()
@@ -121,7 +122,9 @@ async function handleSubmit() {
       body,
     })
 
-    feedback.value = response.watchInserted ? 'Episódio marcado no histórico.' : 'Esse episódio já estava marcado nessa data.'
+    feedback.value = response.watchInserted
+      ? 'Episódio marcado no histórico.'
+      : 'Esse episódio já estava marcado nessa data.'
     emit('created', response)
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'Não foi possível marcar o episódio.'

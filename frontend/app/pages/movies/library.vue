@@ -35,14 +35,12 @@
           <p class="manual-entry-hint__eyebrow">Entrada manual</p>
           <h2>Não era o filme certo?</h2>
           <p>
-            A busca da biblioteca serve para reencontrar o que já existe. Se você quer trazer um título novo,
-            pode abrir a entrada manual sem depender de zero resultados.
+            A busca da biblioteca serve para reencontrar o que já existe. Se você quer trazer um título novo, pode abrir
+            a entrada manual sem depender de zero resultados.
           </p>
         </div>
 
-        <NuxtLink class="manual-entry-hint__action" :to="manualAddLink">
-          Adicionar filme
-        </NuxtLink>
+        <NuxtLink class="manual-entry-hint__action" :to="manualAddLink"> Adicionar filme </NuxtLink>
       </section>
 
       <MoviesCollectionContext
@@ -117,15 +115,19 @@ const extraDormantItems = ref<MovieLibraryCardModel[]>([])
 const loadingMore = ref(false)
 const hydratingDormant = ref(false)
 
-watch(data, (value) => {
-  nextCursor.value = value?.libraryCursor ?? null
-  extraActiveItems.value = []
-  extraDormantItems.value = []
+watch(
+  data,
+  (value) => {
+    nextCursor.value = value?.libraryCursor ?? null
+    extraActiveItems.value = []
+    extraDormantItems.value = []
 
-  if (value?.mode === 'library') {
-    void prefetchDormantPreview()
-  }
-}, { immediate: true })
+    if (value?.mode === 'library') {
+      void prefetchDormantPreview()
+    }
+  },
+  { immediate: true },
+)
 
 const canLoadMore = computed(() => data.value?.mode === 'library' && !!nextCursor.value)
 
@@ -159,7 +161,7 @@ const showManualAddCard = computed(() => {
   if (addMode.value) return true
   if (!queryText.value || !data.value || data.value.mode !== 'search') return false
 
-  const resultsSection = data.value.sections.find(section => section.id === 'search-results')
+  const resultsSection = data.value.sections.find((section) => section.id === 'search-results')
   return (resultsSection?.items.length ?? 0) === 0
 })
 
@@ -168,15 +170,13 @@ const showManualEntryHint = computed(() => {
     return false
   }
 
-  const resultsSection = data.value.sections.find(section => section.id === 'search-results')
+  const resultsSection = data.value.sections.find((section) => section.id === 'search-results')
   return (resultsSection?.items.length ?? 0) > 0
 })
 
-const manualAddLink = computed(() => (
-  queryText.value
-    ? `/movies/library?q=${encodeURIComponent(queryText.value)}&add=1`
-    : '/movies/library?add=1'
-))
+const manualAddLink = computed(() =>
+  queryText.value ? `/movies/library?q=${encodeURIComponent(queryText.value)}&add=1` : '/movies/library?add=1',
+)
 
 async function handleLoadMore() {
   if (!nextCursor.value || loadingMore.value || hydratingDormant.value) return
@@ -193,7 +193,7 @@ async function handleLoadMore() {
 function dormantItemsCount() {
   const baseDormant =
     data.value?.mode === 'library'
-      ? (data.value.sections.find(section => section.id === 'dormant-library')?.items.length ?? 0)
+      ? (data.value.sections.find((section) => section.id === 'dormant-library')?.items.length ?? 0)
       : 0
 
   return baseDormant + extraDormantItems.value.length
@@ -202,13 +202,19 @@ function dormantItemsCount() {
 async function appendLibraryPage(cursor: string) {
   const page = await fetchMoviesLibraryNextPage(cursor)
   const items = buildMovieLibraryCards(page.items)
-  extraActiveItems.value.push(...items.filter(item => !item.isDormant))
-  extraDormantItems.value.push(...items.filter(item => item.isDormant))
+  extraActiveItems.value.push(...items.filter((item) => !item.isDormant))
+  extraDormantItems.value.push(...items.filter((item) => item.isDormant))
   nextCursor.value = page.nextCursor
 }
 
 async function prefetchDormantPreview() {
-  if (!data.value || data.value.mode !== 'library' || hydratingDormant.value || dormantItemsCount() > 0 || !nextCursor.value) {
+  if (
+    !data.value ||
+    data.value.mode !== 'library' ||
+    hydratingDormant.value ||
+    dormantItemsCount() > 0 ||
+    !nextCursor.value
+  ) {
     return
   }
 

@@ -1,8 +1,6 @@
 <template>
   <section class="show-hero">
-    <NuxtLink class="back-link" to="/shows">
-      Voltar para séries
-    </NuxtLink>
+    <NuxtLink class="back-link" to="/shows"> Voltar para séries </NuxtLink>
 
     <div class="hero-grid">
       <div class="copy">
@@ -18,7 +16,7 @@
 
       <div class="gallery">
         <div v-for="(image, index) in gallery" :key="`${image}-${index}`" class="gallery-item" :class="`slot-${index}`">
-          <img v-if="resolveMediaUrl(image)" :src="resolveMediaUrl(image)" :alt="title">
+          <img v-if="resolveMediaUrl(image)" :src="resolveMediaUrl(image)" :alt="title" />
         </div>
       </div>
     </div>
@@ -26,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   title: string
   subtitle: string | null
   description: string | null

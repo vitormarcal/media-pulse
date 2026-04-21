@@ -50,8 +50,7 @@ const reviewedLabel = computed(() => {
   gap: 18px;
   padding: clamp(22px, 3vw, 32px);
   border-radius: 28px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.96));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.96));
   border: 1px solid color-mix(in srgb, var(--base-color-border) 52%, white);
 }
 

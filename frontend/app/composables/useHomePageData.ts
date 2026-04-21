@@ -33,10 +33,16 @@ export async function fetchHomePageData(): Promise<HomePageData> {
     $fetch<MoviesSummaryResponse>('/api/movies/summary', { baseURL: apiBase, query: { range: 'month' } }),
     $fetch<MoviesRecentResponse>('/api/movies/recent', { baseURL: apiBase, query: { limit: 6 } }),
     $fetch<ShowsSummaryResponse>('/api/shows/summary', { baseURL: apiBase, query: { range: 'month' } }),
-    $fetch<CurrentlyWatchingShowDto[]>('/api/shows/currently-watching', { baseURL: apiBase, query: { limit: 6, activeWithinDays: 90 } }),
+    $fetch<CurrentlyWatchingShowDto[]>('/api/shows/currently-watching', {
+      baseURL: apiBase,
+      query: { limit: 6, activeWithinDays: 90 },
+    }),
     $fetch<ShowsRecentResponse>('/api/shows/recent', { baseURL: apiBase, query: { limit: 6 } }),
     $fetch<BooksSummaryResponse>('/api/books/summary', { baseURL: apiBase, query: { range: 'month' } }),
-    $fetch<BooksListResponse>('/api/books/list', { baseURL: apiBase, query: { status: 'CURRENTLY_READING', limit: 4 } }),
+    $fetch<BooksListResponse>('/api/books/list', {
+      baseURL: apiBase,
+      query: { status: 'CURRENTLY_READING', limit: 4 },
+    }),
     $fetch<BooksListResponse>('/api/books/list', { baseURL: apiBase, query: { status: 'READ', limit: 4 } }),
   ])
 

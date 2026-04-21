@@ -23,7 +23,7 @@
     <component :is="spotlightWrapper" :to="spotlight?.href || undefined" class="spotlight-link">
       <article class="spotlight-card">
         <div class="spotlight-poster">
-          <img v-if="spotlightImageUrl" :src="spotlightImageUrl" :alt="spotlight?.title || title">
+          <img v-if="spotlightImageUrl" :src="spotlightImageUrl" :alt="spotlight?.title || title" />
           <div v-else class="spotlight-fallback">{{ (spotlight?.title || 'F').slice(0, 1) }}</div>
         </div>
 
@@ -62,8 +62,8 @@ const props = defineProps<{
 }>()
 
 const { resolveMediaUrl } = useMediaUrl()
-const spotlightImageUrl = computed(() => props.spotlight ? resolveMediaUrl(props.spotlight.imageUrl) : null)
-const spotlightWrapper = computed(() => props.spotlight?.href ? NuxtLink : 'div')
+const spotlightImageUrl = computed(() => (props.spotlight ? resolveMediaUrl(props.spotlight.imageUrl) : null))
+const spotlightWrapper = computed(() => (props.spotlight?.href ? NuxtLink : 'div'))
 </script>
 
 <style scoped>

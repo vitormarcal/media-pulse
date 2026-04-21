@@ -2,7 +2,7 @@
   <component :is="wrapperTag" :to="item.href || undefined" class="poster-link">
     <article class="poster-card" :class="[`type-${item.type}`, `variant-${variant}`]">
       <div class="poster">
-        <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy">
+        <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy" />
         <div v-else class="poster-fallback">{{ item.title.slice(0, 1) }}</div>
       </div>
 
@@ -30,7 +30,7 @@ const props = defineProps<{
 
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedImageUrl = computed(() => resolveMediaUrl(props.item.imageUrl))
-const wrapperTag = computed(() => props.item.href ? NuxtLink : 'div')
+const wrapperTag = computed(() => (props.item.href ? NuxtLink : 'div'))
 
 const label = computed(() => {
   switch (props.item.type) {
@@ -42,6 +42,8 @@ const label = computed(() => {
       return 'Filme'
     case 'book':
       return 'Livro'
+    default:
+      return 'Mídia'
   }
 })
 </script>
@@ -62,9 +64,7 @@ const label = computed(() => {
   aspect-ratio: 0.82;
   overflow: hidden;
   border-radius: 24px;
-  background:
-    linear-gradient(160deg, rgba(230, 0, 35, 0.12), rgba(33, 25, 34, 0.06)),
-    var(--base-color-surface-soft);
+  background: linear-gradient(160deg, rgba(230, 0, 35, 0.12), rgba(33, 25, 34, 0.06)), var(--base-color-surface-soft);
   border: 8px solid #fff;
 }
 

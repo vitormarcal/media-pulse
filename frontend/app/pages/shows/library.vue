@@ -91,11 +91,15 @@ const extraActiveItems = ref<ShowLibraryCardModel[]>([])
 const extraDormantItems = ref<ShowLibraryCardModel[]>([])
 const loadingMore = ref(false)
 
-watch(data, (value) => {
-  nextCursor.value = value?.libraryCursor ?? null
-  extraActiveItems.value = []
-  extraDormantItems.value = []
-}, { immediate: true })
+watch(
+  data,
+  (value) => {
+    nextCursor.value = value?.libraryCursor ?? null
+    extraActiveItems.value = []
+    extraDormantItems.value = []
+  },
+  { immediate: true },
+)
 
 const canLoadMore = computed(() => data.value?.mode === 'library' && !!nextCursor.value)
 
@@ -133,8 +137,8 @@ async function handleLoadMore() {
   try {
     const page = await fetchShowsLibraryNextPage(nextCursor.value)
     const items = buildShowLibraryCards(page.items)
-    extraActiveItems.value.push(...items.filter(item => !item.isDormant))
-    extraDormantItems.value.push(...items.filter(item => item.isDormant))
+    extraActiveItems.value.push(...items.filter((item) => !item.isDormant))
+    extraDormantItems.value.push(...items.filter((item) => item.isDormant))
     nextCursor.value = page.nextCursor
   } finally {
     loadingMore.value = false

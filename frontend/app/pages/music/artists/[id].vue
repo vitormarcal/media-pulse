@@ -10,16 +10,9 @@
     </div>
 
     <template v-else-if="data">
-      <ArtistPageHero
-        :title="data.title"
-        :cover-url="data.coverUrl"
-        :hero-meta="data.heroMeta"
-      />
+      <ArtistPageHero :title="data.title" :cover-url="data.coverUrl" :hero-meta="data.heroMeta" />
 
-      <ArtistContextPanel
-        :stats="data.stats"
-        :recent-days="data.recentDays"
-      />
+      <ArtistContextPanel :stats="data.stats" :recent-days="data.recentDays" />
 
       <MusicLibraryGrid
         eyebrow="Álbuns"
@@ -52,7 +45,9 @@ useHead(() => ({
   meta: [
     {
       name: 'description',
-      content: data.value ? `${data.value.title} dentro do seu arquivo de música.` : 'Página interna de artista no Media Pulse.',
+      content: data.value
+        ? `${data.value.title} dentro do seu arquivo de música.`
+        : 'Página interna de artista no Media Pulse.',
     },
   ],
 }))

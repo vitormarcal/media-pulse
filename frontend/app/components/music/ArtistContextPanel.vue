@@ -11,7 +11,9 @@
       <article class="stats-card">
         <p class="stats-label">Plays registrados</p>
         <div class="stats-value">{{ stats.totalPlays }}</div>
-        <p class="stats-copy">{{ stats.uniqueAlbumsPlayed }} álbuns tocados · {{ stats.uniqueTracksPlayed }} faixas tocadas</p>
+        <p class="stats-copy">
+          {{ stats.uniqueAlbumsPlayed }} álbuns tocados · {{ stats.uniqueTracksPlayed }} faixas tocadas
+        </p>
         <div class="stats-meta">
           <span>Library: {{ stats.libraryAlbumsCount }} álbuns · {{ stats.libraryTracksCount }} faixas</span>
           <span v-if="stats.latestPlayAbsolute">Último play {{ stats.latestPlayAbsolute }}</span>

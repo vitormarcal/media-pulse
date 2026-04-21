@@ -18,10 +18,7 @@
         :hero-meta="data.heroMeta"
       />
 
-      <AlbumContextPanel
-        :stats="data.stats"
-        :recent-days="data.recentDays"
-      />
+      <AlbumContextPanel :stats="data.stats" :recent-days="data.recentDays" />
 
       <AlbumTrackList :tracks="data.tracks" />
     </template>
@@ -44,7 +41,9 @@ useHead(() => ({
   meta: [
     {
       name: 'description',
-      content: data.value ? `${data.value.title} de ${data.value.artistName}.` : 'Página interna de álbum no Media Pulse.',
+      content: data.value
+        ? `${data.value.title} de ${data.value.artistName}.`
+        : 'Página interna de álbum no Media Pulse.',
     },
   ],
 }))

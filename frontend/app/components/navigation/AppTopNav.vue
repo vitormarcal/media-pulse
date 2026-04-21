@@ -12,9 +12,7 @@
         </NuxtLink>
       </nav>
 
-      <button type="button" class="search-trigger" @click="$emit('openSearch')">
-        Buscar
-      </button>
+      <button type="button" class="search-trigger" @click="$emit('openSearch')">Buscar</button>
     </div>
   </header>
 </template>

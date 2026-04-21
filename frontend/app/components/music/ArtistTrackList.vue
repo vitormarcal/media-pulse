@@ -7,9 +7,7 @@
       summary="Faixa como detalhe recorrente, não como ruído."
     />
 
-    <p v-if="!tracks.length" class="empty-state">
-      Nenhuma faixa apareceu com peso suficiente para destacar aqui.
-    </p>
+    <p v-if="!tracks.length" class="empty-state">Nenhuma faixa apareceu com peso suficiente para destacar aqui.</p>
 
     <div v-else class="tracks">
       <article v-for="track in tracks" :key="track.id" class="track-row">

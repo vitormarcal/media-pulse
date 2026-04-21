@@ -19,10 +19,7 @@
         :hero-meta="data.heroMeta"
       />
 
-      <BookContextPanel
-        :stats="data.stats"
-        :editions="data.editions"
-      />
+      <BookContextPanel :stats="data.stats" :editions="data.editions" />
 
       <BookReviewPanel v-if="data.reviewRaw" :review="data.reviewRaw" :reviewed-at="data.reviewedAt" />
 

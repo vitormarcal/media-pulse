@@ -24,21 +24,11 @@
         @applied="handleEnrichmentApplied"
       />
 
-      <MovieContextPanel
-        :stats="data.stats"
-        :identifiers="data.identifiers"
-      />
+      <MovieContextPanel :stats="data.stats" :identifiers="data.identifiers" />
 
-      <MovieAddWatchPanel
-        :movie-id="data.movieId"
-        @created="handleWatchCreated"
-      />
+      <MovieAddWatchPanel :movie-id="data.movieId" @created="handleWatchCreated" />
 
-      <MovieWatchTimeline
-        :movie-id="data.movieId"
-        :watches="data.recentWatches"
-        @deleted="handleWatchDeleted"
-      />
+      <MovieWatchTimeline :movie-id="data.movieId" :watches="data.recentWatches" @deleted="handleWatchDeleted" />
     </template>
   </main>
 </template>

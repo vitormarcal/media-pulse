@@ -32,7 +32,7 @@ function recentMovieToShelfItem(movie: MoviesRecentResponse['items'][number]): E
     id: `movie-${movie.movieId}`,
     type: 'movie',
     title: movie.title,
-    subtitle: movie.year ? String(movie.year) : (movie.originalTitle || 'Filme'),
+    subtitle: movie.year ? String(movie.year) : movie.originalTitle || 'Filme',
     imageUrl: movie.coverUrl,
     href: movie.slug ? `/movies/${movie.slug}` : null,
     meta: movie.originalTitle && movie.originalTitle !== movie.title ? movie.originalTitle : 'Sessão registrada',
@@ -87,7 +87,9 @@ function buildLibraryCardModel(movie: MovieLibraryCardDto): MovieLibraryCardMode
     href: movieHref(movie.slug),
     imageUrl: movie.coverUrl,
     sessionsLabel: movie.watchCount > 0 ? `${movie.watchCount} sessões registradas` : 'Sem sessão registrada ainda',
-    activityLabel: movie.lastWatchedAt ? `Última sessão ${formatRelativeDate(movie.lastWatchedAt)}` : 'Sem passagem pela tela ainda',
+    activityLabel: movie.lastWatchedAt
+      ? `Última sessão ${formatRelativeDate(movie.lastWatchedAt)}`
+      : 'Sem passagem pela tela ainda',
     aside: movie.watchCount > 1 ? 'Retornou' : movie.watchCount === 1 ? 'Visto' : 'Intocado',
     isDormant: !movie.lastWatchedAt,
   }
@@ -162,11 +164,7 @@ function buildStatsMetrics(stats: MoviesStatsResponse): MovieLibraryMetric[] {
   ]
 }
 
-function buildSpotlightFromCard(
-  card: MovieLibraryCardModel | undefined,
-  fallbackTitle: string,
-  fallbackNote: string,
-) {
+function buildSpotlightFromCard(card: MovieLibraryCardModel | undefined, fallbackTitle: string, fallbackNote: string) {
   if (!card) return null
 
   return {
@@ -238,7 +236,8 @@ export function buildMovieCollectionData(payload: {
     context: {
       eyebrow: 'Panorama',
       title: 'O tamanho e o ritmo desse recorte',
-      description: 'Um contexto curto para entender quanto a filmoteca girou e quanto dela ainda está só esperando a primeira sessão.',
+      description:
+        'Um contexto curto para entender quanto a filmoteca girou e quanto dela ainda está só esperando a primeira sessão.',
       summary: `${formatShortNumber(payload.summary.uniqueMoviesCount)} filmes circularam no recorte recente e ${formatShortNumber(payload.stats.total.watchesCount)} sessões já ficaram registradas no histórico total`,
       metrics: buildContextMetrics(payload),
     },
@@ -274,7 +273,8 @@ export function buildMovieLibraryPageData(payload: {
     return {
       hero: {
         title: `A biblioteca de filmes em ${payload.selectedYear}`,
-        intro: 'Um corte do arquivo completo para ver o que realmente voltou à tela nesse ano e o que ficou apenas como parte do catálogo.',
+        intro:
+          'Um corte do arquivo completo para ver o que realmente voltou à tela nesse ano e o que ficou apenas como parte do catálogo.',
         backLink: '/movies',
         backLabel: 'Voltar ao recorte',
         accentLink: '/movies/library',
@@ -353,12 +353,15 @@ export function buildMovieLibraryPageData(payload: {
     return {
       hero: {
         title: 'A biblioteca de filmes, puxada pela busca',
-        intro: 'Quando você já sabe o que está tentando reencontrar, a página vira arquivo de consulta sem perder a mesma superfície editorial.',
+        intro:
+          'Quando você já sabe o que está tentando reencontrar, a página vira arquivo de consulta sem perder a mesma superfície editorial.',
         backLink: '/movies',
         backLabel: 'Voltar ao recorte',
         accentLink: '/movies/library',
         accentLabel: 'Limpar busca',
-        utilityLink: payload.query ? `/movies/library?q=${encodeURIComponent(payload.query)}&add=1` : '/movies/library?add=1',
+        utilityLink: payload.query
+          ? `/movies/library?q=${encodeURIComponent(payload.query)}&add=1`
+          : '/movies/library?add=1',
         utilityLabel: 'Adicionar filme',
         spotlight: buildSpotlightFromCard(
           searchItems[0],
@@ -395,13 +398,14 @@ export function buildMovieLibraryPageData(payload: {
   }
 
   const libraryItems = payload.library.items.map(buildLibraryCardModel)
-  const activeItems = libraryItems.filter(item => !item.isDormant)
-  const dormantItems = libraryItems.filter(item => item.isDormant)
+  const activeItems = libraryItems.filter((item) => !item.isDormant)
+  const dormantItems = libraryItems.filter((item) => item.isDormant)
 
   return {
     hero: {
       title: 'A biblioteca inteira de filmes',
-      intro: 'O arquivo completo para quando a memória curta já não basta e você quer percorrer a filmoteca toda com mais calma.',
+      intro:
+        'O arquivo completo para quando a memória curta já não basta e você quer percorrer a filmoteca toda com mais calma.',
       backLink: '/movies',
       backLabel: 'Voltar ao recorte',
       accentLink: '/movies/library?year=' + (years[0]?.year ?? new Date().getFullYear()),
@@ -465,7 +469,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
 
         return right.id - left.id
       })
-      .map(image => image.url),
+      .map((image) => image.url),
   ].filter((value, index, array) => array.indexOf(value) === index)
 
   return {

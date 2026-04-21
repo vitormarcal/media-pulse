@@ -2,7 +2,7 @@
   <component :is="wrapperTag" :to="href || undefined" class="strip-link">
     <article class="strip-card" :class="`variant-${variant}`">
       <div class="thumb">
-        <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="title" loading="lazy">
+        <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="title" loading="lazy" />
         <div v-else class="thumb-fallback">{{ title.slice(0, 1) }}</div>
       </div>
 
@@ -36,7 +36,7 @@ const props = defineProps<{
 
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedImageUrl = computed(() => resolveMediaUrl(props.imageUrl))
-const wrapperTag = computed(() => props.href ? NuxtLink : 'div')
+const wrapperTag = computed(() => (props.href ? NuxtLink : 'div'))
 </script>
 
 <style scoped>

@@ -9,10 +9,8 @@
           type="search"
           class="search-input"
           placeholder="Artista, álbum, faixa..."
-        >
-        <button type="submit" class="search-button">
-          Buscar
-        </button>
+        />
+        <button type="submit" class="search-button">Buscar</button>
       </div>
     </form>
 
@@ -20,11 +18,7 @@
       <p class="group-label">Recortes anuais</p>
 
       <div class="years">
-        <NuxtLink
-          class="year-chip"
-          :class="{ active: selectedYear == null && !query }"
-          to="/music/library?kind=albums"
-        >
+        <NuxtLink class="year-chip" :class="{ active: selectedYear == null && !query }" to="/music/library?kind=albums">
           <span>Tudo</span>
           <strong>arquivo</strong>
         </NuxtLink>
@@ -74,9 +68,12 @@ const props = defineProps<{
 
 const localQuery = ref(props.query)
 
-watch(() => props.query, (value) => {
-  localQuery.value = value
-})
+watch(
+  () => props.query,
+  (value) => {
+    localQuery.value = value
+  },
+)
 
 function tabLink(kind: MusicLibraryKind) {
   if (props.selectedYear) {
@@ -106,8 +103,7 @@ function submitSearch() {
   gap: 20px;
   padding: 20px;
   border-radius: 32px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 243, 238, 0.98));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 243, 238, 0.98));
   border: 1px solid color-mix(in srgb, var(--base-color-border) 48%, white);
 }
 

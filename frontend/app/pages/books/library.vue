@@ -92,15 +92,19 @@ const extraDormantItems = ref<BookLibraryCardModel[]>([])
 const loadingMore = ref(false)
 const hydratingDormant = ref(false)
 
-watch(data, (value) => {
-  nextCursor.value = value?.libraryCursor ?? null
-  extraActiveItems.value = []
-  extraDormantItems.value = []
+watch(
+  data,
+  (value) => {
+    nextCursor.value = value?.libraryCursor ?? null
+    extraActiveItems.value = []
+    extraDormantItems.value = []
 
-  if (value?.mode === 'library') {
-    void prefetchDormantPreview()
-  }
-}, { immediate: true })
+    if (value?.mode === 'library') {
+      void prefetchDormantPreview()
+    }
+  },
+  { immediate: true },
+)
 
 const canLoadMore = computed(() => data.value?.mode === 'library' && !!nextCursor.value)
 
@@ -145,7 +149,7 @@ async function handleLoadMore() {
 function dormantItemsCount() {
   const baseDormant =
     data.value?.mode === 'library'
-      ? (data.value.sections.find(section => section.id === 'dormant-library')?.items.length ?? 0)
+      ? (data.value.sections.find((section) => section.id === 'dormant-library')?.items.length ?? 0)
       : 0
 
   return baseDormant + extraDormantItems.value.length
@@ -154,13 +158,19 @@ function dormantItemsCount() {
 async function appendLibraryPage(cursor: string) {
   const page = await fetchBooksLibraryNextPage(cursor)
   const items = buildBookLibraryCards(page.items)
-  extraActiveItems.value.push(...items.filter(item => !item.isDormant))
-  extraDormantItems.value.push(...items.filter(item => item.isDormant))
+  extraActiveItems.value.push(...items.filter((item) => !item.isDormant))
+  extraDormantItems.value.push(...items.filter((item) => item.isDormant))
   nextCursor.value = page.nextCursor
 }
 
 async function prefetchDormantPreview() {
-  if (!data.value || data.value.mode !== 'library' || hydratingDormant.value || dormantItemsCount() > 0 || !nextCursor.value) {
+  if (
+    !data.value ||
+    data.value.mode !== 'library' ||
+    hydratingDormant.value ||
+    dormantItemsCount() > 0 ||
+    !nextCursor.value
+  ) {
     return
   }
 

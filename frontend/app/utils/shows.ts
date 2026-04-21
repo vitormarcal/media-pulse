@@ -24,8 +24,7 @@ import type {
   ShowsRecentResponse,
   ShowsSummaryResponse,
 } from '~/types/home'
-import { formatAbsoluteDate, formatRelativeDate } from '~/utils/formatting'
-import { formatShortNumber } from '~/utils/formatting'
+import { formatAbsoluteDate, formatRelativeDate, formatShortNumber } from '~/utils/formatting'
 
 function formatEpisodeContext(watch: ShowWatchDto) {
   const season = watch.seasonNumber != null ? `T${String(watch.seasonNumber).padStart(2, '0')}` : 'Especial'
@@ -49,19 +48,11 @@ function formatProgressStatus(show: ShowDetailsResponse) {
   return 'Ainda sem avanço suficiente'
 }
 
-function mapSeason(
-  season: ShowDetailsResponse['seasons'][number],
-  showSlug: string | null,
-): ShowSeasonCardModel {
+function mapSeason(season: ShowDetailsResponse['seasons'][number], showSlug: string | null): ShowSeasonCardModel {
   const progressValue =
-    season.episodesCount > 0
-      ? Math.round((season.watchedEpisodesCount / season.episodesCount) * 100)
-      : 0
+    season.episodesCount > 0 ? Math.round((season.watchedEpisodesCount / season.episodesCount) * 100) : 0
 
-  const label =
-    season.seasonNumber != null
-      ? `Temporada ${season.seasonNumber}`
-      : (season.seasonTitle || 'Especiais')
+  const label = season.seasonNumber != null ? `Temporada ${season.seasonNumber}` : season.seasonTitle || 'Especiais'
 
   return {
     id: `${season.seasonNumber ?? 'special'}-${season.seasonTitle ?? 'season'}`,
@@ -171,7 +162,9 @@ function buildLibraryCardModel(show: ShowLibraryCardDto): ShowLibraryCardModel {
     imageUrl: show.coverUrl,
     progressLabel: totalEpisodes > 0 ? `${watchedEpisodes}/${totalEpisodes} episódios` : 'Sem total consolidado',
     progressValue,
-    activityLabel: show.lastWatchedAt ? `Último avanço ${formatRelativeDate(show.lastWatchedAt)}` : 'Sem watch registrado ainda',
+    activityLabel: show.lastWatchedAt
+      ? `Último avanço ${formatRelativeDate(show.lastWatchedAt)}`
+      : 'Sem watch registrado ainda',
     aside: complete ? 'Fechada' : progressValue > 0 ? 'Aberta' : 'Intocada',
     isDormant: !show.lastWatchedAt,
   }
@@ -253,11 +246,7 @@ function buildStatsMetrics(stats: ShowsStatsResponse): ShowLibraryMetric[] {
   ]
 }
 
-function buildSpotlightFromCard(
-  card: ShowLibraryCardModel | undefined,
-  fallbackTitle: string,
-  fallbackNote: string,
-) {
+function buildSpotlightFromCard(card: ShowLibraryCardModel | undefined, fallbackTitle: string, fallbackNote: string) {
   if (!card) return null
 
   return {
@@ -314,9 +303,7 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
   }
 
   const completionPct =
-    progress.episodesCount > 0
-      ? Math.round((progress.watchedEpisodesCount / progress.episodesCount) * 100)
-      : 0
+    progress.episodesCount > 0 ? Math.round((progress.watchedEpisodesCount / progress.episodesCount) * 100) : 0
 
   const heroMeta = [
     show.year ? String(show.year) : null,
@@ -333,10 +320,9 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
     year: show.year,
     description: show.description,
     coverUrl: show.coverUrl,
-    gallery: [
-      ...(show.coverUrl ? [show.coverUrl] : []),
-      ...show.images.map((image) => image.url),
-    ].filter((value, index, array) => array.indexOf(value) === index).slice(0, 4),
+    gallery: [...(show.coverUrl ? [show.coverUrl] : []), ...show.images.map((image) => image.url)]
+      .filter((value, index, array) => array.indexOf(value) === index)
+      .slice(0, 4),
     progress: {
       watchedEpisodes: progress.watchedEpisodesCount,
       totalEpisodes: progress.episodesCount,
@@ -363,14 +349,17 @@ function formatEpisodeNumber(episodeNumber: number | null) {
 
 export function buildShowSeasonPageData(season: ShowSeasonDetailsResponse): ShowSeasonPageData {
   const completionPct =
-    season.episodesCount > 0
-      ? Math.round((season.watchedEpisodesCount / season.episodesCount) * 100)
-      : 0
+    season.episodesCount > 0 ? Math.round((season.watchedEpisodesCount / season.episodesCount) * 100) : 0
   const seasonTitle =
-    season.seasonTitle ||
-    (season.seasonNumber != null ? `Temporada ${season.seasonNumber}` : 'Especiais')
-  const statusText = season.completed ? 'Temporada concluída' : season.watchedEpisodesCount > 0 ? 'Temporada em andamento' : 'Ainda sem episódio visto'
-  const lastWatchedLabel = season.lastWatchedAt ? `Último avanço ${formatRelativeDate(season.lastWatchedAt)}` : 'Sem avanço registrado'
+    season.seasonTitle || (season.seasonNumber != null ? `Temporada ${season.seasonNumber}` : 'Especiais')
+  const statusText = season.completed
+    ? 'Temporada concluída'
+    : season.watchedEpisodesCount > 0
+      ? 'Temporada em andamento'
+      : 'Ainda sem episódio visto'
+  const lastWatchedLabel = season.lastWatchedAt
+    ? `Último avanço ${formatRelativeDate(season.lastWatchedAt)}`
+    : 'Sem avanço registrado'
 
   return {
     showId: season.showId,
@@ -421,10 +410,7 @@ export function buildShowCollectionData(payload: {
 }): ShowCollectionData {
   const inProgress = payload.currentShows.map(currentShowToShelfItem)
   const recentMoments = payload.recentShows.items.map(recentShowToShelfItem)
-  const heroCandidates = sortByTimestamp([
-    ...inProgress,
-    ...recentMoments,
-  ])
+  const heroCandidates = sortByTimestamp([...inProgress, ...recentMoments])
 
   return {
     generatedAt: new Date().toISOString(),
@@ -472,7 +458,8 @@ export function buildShowLibraryPageData(payload: {
     return {
       hero: {
         title: `A biblioteca de séries em ${payload.selectedYear}`,
-        intro: 'Um corte do arquivo completo para ver o que realmente passou por esse ano e o que ficou apenas no catálogo.',
+        intro:
+          'Um corte do arquivo completo para ver o que realmente passou por esse ano e o que ficou apenas no catálogo.',
         backLink: '/shows',
         backLabel: 'Voltar ao recorte',
         accentLink: '/shows/library',
@@ -551,7 +538,8 @@ export function buildShowLibraryPageData(payload: {
     return {
       hero: {
         title: 'A biblioteca de séries, puxada pela busca',
-        intro: 'Quando você já sabe o que está tentando reencontrar, a página vira arquivo de consulta sem perder a mesma superfície editorial.',
+        intro:
+          'Quando você já sabe o que está tentando reencontrar, a página vira arquivo de consulta sem perder a mesma superfície editorial.',
         backLink: '/shows',
         backLabel: 'Voltar ao recorte',
         accentLink: '/shows/library',
@@ -591,13 +579,14 @@ export function buildShowLibraryPageData(payload: {
   }
 
   const libraryItems = payload.library.items.map(buildLibraryCardModel)
-  const activeItems = libraryItems.filter(item => !item.isDormant)
-  const dormantItems = libraryItems.filter(item => item.isDormant)
+  const activeItems = libraryItems.filter((item) => !item.isDormant)
+  const dormantItems = libraryItems.filter((item) => item.isDormant)
 
   return {
     hero: {
       title: 'A biblioteca inteira de séries',
-      intro: 'O arquivo completo para quando a memória curta já não basta e você quer percorrer o acervo todo com mais calma.',
+      intro:
+        'O arquivo completo para quando a memória curta já não basta e você quer percorrer o acervo todo com mais calma.',
       backLink: '/shows',
       backLabel: 'Voltar ao recorte',
       accentLink: '/shows/library?year=' + (years[0]?.year ?? new Date().getFullYear()),

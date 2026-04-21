@@ -44,6 +44,24 @@ npm run build
 
 Isso gera o frontend estático em `.output/public`.
 
+## Qualidade
+
+Valide lint e formatação antes de abrir PR ou publicar mudanças:
+
+```bash
+npm run check
+```
+
+Esse comando executa `npm run lint` e `npm run format:check`.
+
+Para aplicar correções automáticas:
+
+```bash
+npm run fix
+```
+
+Esse comando executa `npm run lint:fix` e `npm run format`.
+
 ## Docker
 
 Build standalone do frontend:

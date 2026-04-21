@@ -1,11 +1,6 @@
 <template>
   <section class="music-context">
-    <SectionHeading
-      :eyebrow="eyebrow"
-      :title="title"
-      :description="description"
-      :summary="summary"
-    />
+    <SectionHeading :eyebrow="eyebrow" :title="title" :description="description" :summary="summary" />
 
     <div class="metrics-grid">
       <article v-for="metric in metrics" :key="metric.id" class="metric-card">

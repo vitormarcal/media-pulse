@@ -167,10 +167,7 @@ export function buildHomePageData(payload: {
     ...payload.finishedBooks.items.map(bookToShelfItem),
   ]).slice(0, 12)
 
-  const heroCandidates = sortByTimestamp([
-    ...inProgress,
-    ...recentMoments,
-  ])
+  const heroCandidates = sortByTimestamp([...inProgress, ...recentMoments])
 
   const heroLead = heroCandidates[0] ? toHighlight(heroCandidates[0]) : null
   const heroSupporting = heroCandidates.slice(1, 5).map(toHighlight)

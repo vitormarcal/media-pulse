@@ -9,19 +9,13 @@
           type="search"
           class="search-input"
           placeholder="Título, nome original..."
-        >
-        <button type="submit" class="search-button">
-          Buscar
-        </button>
+        />
+        <button type="submit" class="search-button">Buscar</button>
       </div>
     </form>
 
     <div class="years">
-      <NuxtLink
-        class="year-chip"
-        :class="{ active: selectedYear == null && !query }"
-        to="/shows/library"
-      >
+      <NuxtLink class="year-chip" :class="{ active: selectedYear == null && !query }" to="/shows/library">
         Tudo
       </NuxtLink>
 
@@ -50,9 +44,12 @@ const props = defineProps<{
 
 const localQuery = ref(props.query)
 
-watch(() => props.query, (value) => {
-  localQuery.value = value
-})
+watch(
+  () => props.query,
+  (value) => {
+    localQuery.value = value
+  },
+)
 
 function submitSearch() {
   const trimmed = localQuery.value.trim()
@@ -72,8 +69,7 @@ function submitSearch() {
   gap: 18px;
   padding: 20px;
   border-radius: 32px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 243, 238, 0.98));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 243, 238, 0.98));
   border: 1px solid color-mix(in srgb, var(--base-color-border) 48%, white);
 }
 

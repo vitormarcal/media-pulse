@@ -105,19 +105,23 @@ const nextCursor = ref<string | null>(null)
 const extraItems = ref<MusicLibraryCardModel[]>([])
 const loadingMore = ref(false)
 
-watch(data, (value) => {
-  nextCursor.value = value?.libraryCursor ?? null
-  extraItems.value = []
-}, { immediate: true })
+watch(
+  data,
+  (value) => {
+    nextCursor.value = value?.libraryCursor ?? null
+    extraItems.value = []
+  },
+  { immediate: true },
+)
 
 const displaySections = computed(() => {
   if (!data.value) return []
 
-  return data.value.sections.map((section, index) => (
+  return data.value.sections.map((section, index) =>
     index === 0 && data.value?.mode === 'library'
       ? { ...section, items: [...section.items, ...extraItems.value] }
-      : section
-  ))
+      : section,
+  )
 })
 
 const canLoadMore = computed(() => data.value?.mode === 'library' && !!nextCursor.value)

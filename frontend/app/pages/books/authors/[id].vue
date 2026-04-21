@@ -10,11 +10,7 @@
     </div>
 
     <template v-else-if="data">
-      <AuthorPageHero
-        :title="data.name"
-        :cover-url="data.coverUrl"
-        :hero-meta="data.heroMeta"
-      />
+      <AuthorPageHero :title="data.name" :cover-url="data.coverUrl" :hero-meta="data.heroMeta" />
 
       <AuthorContextPanel :stats="data.stats" />
 
@@ -49,7 +45,9 @@ useHead(() => ({
   meta: [
     {
       name: 'description',
-      content: data.value ? `${data.value.name} dentro do seu arquivo de livros.` : 'Página interna de autor no Media Pulse.',
+      content: data.value
+        ? `${data.value.name} dentro do seu arquivo de livros.`
+        : 'Página interna de autor no Media Pulse.',
     },
   ],
 }))

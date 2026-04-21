@@ -1,13 +1,9 @@
 <template>
   <section class="shows-collection-hero">
     <div class="top-actions">
-      <NuxtLink class="back-link" to="/">
-        Voltar para a capa
-      </NuxtLink>
+      <NuxtLink class="back-link" to="/"> Voltar para a capa </NuxtLink>
 
-      <NuxtLink class="library-link" to="/shows/library">
-        Abrir biblioteca inteira
-      </NuxtLink>
+      <NuxtLink class="library-link" to="/shows/library"> Abrir biblioteca inteira </NuxtLink>
     </div>
 
     <div class="hero-grid">
@@ -20,7 +16,7 @@
       <component :is="leadWrapper" :to="lead?.href || undefined" class="lead-link">
         <article class="lead-card">
           <div class="lead-poster">
-            <img v-if="leadImageUrl" :src="leadImageUrl" :alt="lead?.title || title">
+            <img v-if="leadImageUrl" :src="leadImageUrl" :alt="lead?.title || title" />
             <div v-else class="lead-fallback">{{ (lead?.title || 'S').slice(0, 1) }}</div>
           </div>
 
@@ -39,7 +35,7 @@
         <NuxtLink v-if="item.href" :to="item.href" class="supporting-link">
           <article class="supporting-card">
             <div class="supporting-thumb">
-              <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title">
+              <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title" />
               <div v-else class="supporting-fallback">{{ item.title.slice(0, 1) }}</div>
             </div>
 
@@ -54,7 +50,7 @@
         <div v-else class="supporting-link">
           <article class="supporting-card">
             <div class="supporting-thumb">
-              <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title">
+              <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title" />
               <div v-else class="supporting-fallback">{{ item.title.slice(0, 1) }}</div>
             </div>
 
@@ -83,8 +79,8 @@ const props = defineProps<{
 
 const { resolveMediaUrl } = useMediaUrl()
 
-const leadImageUrl = computed(() => props.lead ? resolveMediaUrl(props.lead.imageUrl) : null)
-const leadWrapper = computed(() => props.lead?.href ? NuxtLink : 'div')
+const leadImageUrl = computed(() => (props.lead ? resolveMediaUrl(props.lead.imageUrl) : null))
+const leadWrapper = computed(() => (props.lead?.href ? NuxtLink : 'div'))
 </script>
 
 <style scoped>

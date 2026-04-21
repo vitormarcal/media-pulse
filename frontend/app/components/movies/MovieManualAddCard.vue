@@ -11,7 +11,7 @@
       <form class="lookup-form" @submit.prevent="handleSuggest">
         <label class="field">
           <span>Nome do filme</span>
-          <input v-model="title" type="text" placeholder="Ex.: Le Mépris">
+          <input v-model="title" type="text" placeholder="Ex.: Le Mépris" />
         </label>
 
         <div class="actions">
@@ -32,12 +32,14 @@
             <p class="suggestions-label">Sugestões TMDb</p>
             <h3>Escolha a melhor correspondência</h3>
           </div>
-          <p class="suggestions-summary">{{ suggestions.length }} opção<span v-if="suggestions.length !== 1">ões</span> para "{{ searchedQuery }}"</p>
+          <p class="suggestions-summary">
+            {{ suggestions.length }} opção<span v-if="suggestions.length !== 1">ões</span> para "{{ searchedQuery }}"
+          </p>
         </div>
 
         <div class="suggestions-grid">
           <article v-for="suggestion in suggestions" :key="suggestion.tmdbId" class="suggestion-card">
-            <img v-if="suggestion.posterUrl" :src="suggestion.posterUrl" :alt="suggestion.title">
+            <img v-if="suggestion.posterUrl" :src="suggestion.posterUrl" :alt="suggestion.title" />
             <div v-else class="poster-fallback">Sem poster</div>
 
             <div class="suggestion-copy">
@@ -45,7 +47,12 @@
                 <strong>{{ suggestion.title }}</strong>
                 <span v-if="suggestion.year">{{ suggestion.year }}</span>
               </div>
-              <p v-if="suggestion.originalTitle && suggestion.originalTitle !== suggestion.title" class="original-title">{{ suggestion.originalTitle }}</p>
+              <p
+                v-if="suggestion.originalTitle && suggestion.originalTitle !== suggestion.title"
+                class="original-title"
+              >
+                {{ suggestion.originalTitle }}
+              </p>
               <p class="overview">{{ suggestion.overview || 'Sem descrição curta disponível no provider.' }}</p>
             </div>
 
@@ -71,28 +78,30 @@
             <p class="suggestions-label">Entrada mínima</p>
             <h3>Crie uma entrada mínima</h3>
           </div>
-          <p class="suggestions-summary">Use quando você quiser registrar direto ou quando a busca externa não ajudar.</p>
+          <p class="suggestions-summary">
+            Use quando você quiser registrar direto ou quando a busca externa não ajudar.
+          </p>
         </div>
 
         <form class="manual-form" @submit.prevent="handleManualSubmit">
           <label class="field field-wide">
             <span>Título</span>
-            <input v-model="manualTitle" type="text" placeholder="Nome do filme">
+            <input v-model="manualTitle" type="text" placeholder="Nome do filme" />
           </label>
 
           <label class="field">
             <span>Ano</span>
-            <input v-model="year" type="number" inputmode="numeric" placeholder="2024">
+            <input v-model="year" type="number" inputmode="numeric" placeholder="2024" />
           </label>
 
           <label class="field">
             <span>TMDb ID</span>
-            <input v-model="tmdbId" type="text" placeholder="Opcional">
+            <input v-model="tmdbId" type="text" placeholder="Opcional" />
           </label>
 
           <label class="field">
             <span>IMDb ID</span>
-            <input v-model="imdbId" type="text" placeholder="Opcional">
+            <input v-model="imdbId" type="text" placeholder="Opcional" />
           </label>
 
           <div class="actions manual-actions">
@@ -108,10 +117,7 @@
 
 <script setup lang="ts">
 import SectionHeading from '~/components/home/SectionHeading.vue'
-import type {
-  ManualMovieCatalogCreateResponse,
-  MovieCatalogSuggestionsResponse,
-} from '~/types/movies'
+import type { ManualMovieCatalogCreateResponse, MovieCatalogSuggestionsResponse } from '~/types/movies'
 
 const props = defineProps<{
   initialTitle: string
@@ -132,12 +138,15 @@ const feedbackError = ref(false)
 const config = useRuntimeConfig()
 const router = useRouter()
 
-watch(() => props.initialTitle, (value) => {
-  title.value = value
-  manualTitle.value = value
-  suggestions.value = []
-  searchedQuery.value = ''
-})
+watch(
+  () => props.initialTitle,
+  (value) => {
+    title.value = value
+    manualTitle.value = value
+    suggestions.value = []
+    searchedQuery.value = ''
+  },
+)
 
 async function handleSuggest() {
   loadingSuggestions.value = true
@@ -198,8 +207,12 @@ async function createCatalogEntry(body: {
       body,
     })
 
-    feedback.value = response.createdMovie ? 'Filme adicionado ao catálogo.' : 'Filme existente reaproveitado e consolidado.'
-    await router.push(response.slug ? `/movies/${response.slug}` : `/movies/library?q=${encodeURIComponent(body.title)}`)
+    feedback.value = response.createdMovie
+      ? 'Filme adicionado ao catálogo.'
+      : 'Filme existente reaproveitado e consolidado.'
+    await router.push(
+      response.slug ? `/movies/${response.slug}` : `/movies/library?q=${encodeURIComponent(body.title)}`,
+    )
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'Não foi possível adicionar o filme agora.'
     feedbackError.value = true

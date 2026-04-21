@@ -8,10 +8,8 @@
           class="search-input"
           type="text"
           placeholder="Buscar séries, filmes, livros, álbuns..."
-        >
-        <button type="button" class="close-button" @click="$emit('close')">
-          Fechar
-        </button>
+        />
+        <button type="button" class="close-button" @click="$emit('close')">Fechar</button>
       </div>
 
       <div class="search-body">
@@ -19,17 +17,11 @@
           Use a busca para saltar direto para uma obra ou explorar por nome.
         </p>
 
-        <p v-else-if="loading" class="search-hint">
-          Procurando em toda a coleção...
-        </p>
+        <p v-else-if="loading" class="search-hint">Procurando em toda a coleção...</p>
 
-        <p v-else-if="error" class="search-hint error">
-          Não foi possível concluir a busca agora.
-        </p>
+        <p v-else-if="error" class="search-hint error">Não foi possível concluir a busca agora.</p>
 
-        <p v-else-if="results && results.total === 0" class="search-hint">
-          Nenhum resultado apareceu para esse termo.
-        </p>
+        <p v-else-if="results && results.total === 0" class="search-hint">Nenhum resultado apareceu para esse termo.</p>
 
         <div v-else-if="results" class="result-groups">
           <section v-for="group in results.groups" :key="group.id" class="result-group">
@@ -73,20 +65,26 @@ const emit = defineEmits<{
 const localQuery = ref(props.query)
 const inputRef = ref<HTMLInputElement | null>(null)
 
-watch(() => props.query, (value) => {
-  localQuery.value = value
-})
+watch(
+  () => props.query,
+  (value) => {
+    localQuery.value = value
+  },
+)
 
 watch(localQuery, (value) => {
   emit('search', value)
 })
 
-watch(() => props.open, async (value) => {
-  if (value) {
-    await nextTick()
-    inputRef.value?.focus()
-  }
-})
+watch(
+  () => props.open,
+  async (value) => {
+    if (value) {
+      await nextTick()
+      inputRef.value?.focus()
+    }
+  },
+)
 
 function handleItemClick() {
   emit('close')

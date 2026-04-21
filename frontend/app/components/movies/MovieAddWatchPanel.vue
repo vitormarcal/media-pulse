@@ -10,19 +10,19 @@
     <article class="panel-card">
       <div class="panel-copy">
         <p class="panel-title">Registrar sessão</p>
-        <p class="panel-body">Escolha a data e hora que fazem sentido para essa lembrança. O restante da página se atualiza logo depois.</p>
+        <p class="panel-body">
+          Escolha a data e hora que fazem sentido para essa lembrança. O restante da página se atualiza logo depois.
+        </p>
       </div>
 
       <form class="panel-form" @submit.prevent="handleSubmit">
         <label class="field">
           <span>Data e hora</span>
-          <input v-model="watchedAtInput" type="datetime-local">
+          <input v-model="watchedAtInput" type="datetime-local" />
         </label>
 
         <div class="actions">
-          <button type="button" class="secondary-button" :disabled="submitting" @click="setNow">
-            Agora
-          </button>
+          <button type="button" class="secondary-button" :disabled="submitting" @click="setNow">Agora</button>
           <button type="submit" class="primary-button" :disabled="submitting || !watchedAtInput">
             {{ submitting ? 'Salvando...' : 'Adicionar sessão' }}
           </button>

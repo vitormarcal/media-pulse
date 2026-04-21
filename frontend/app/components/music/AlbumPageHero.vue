@@ -1,8 +1,6 @@
 <template>
   <section class="album-hero">
-    <NuxtLink class="back-link" to="/">
-      Voltar para a capa
-    </NuxtLink>
+    <NuxtLink class="back-link" to="/"> Voltar para a capa </NuxtLink>
 
     <div class="hero-grid">
       <div class="copy">
@@ -16,7 +14,7 @@
       </div>
 
       <div class="cover-frame">
-        <img v-if="resolvedCoverUrl" :src="resolvedCoverUrl" :alt="title">
+        <img v-if="resolvedCoverUrl" :src="resolvedCoverUrl" :alt="title" />
         <div v-else class="cover-fallback">{{ title.slice(0, 1) }}</div>
       </div>
     </div>

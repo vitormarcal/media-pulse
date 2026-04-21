@@ -2,7 +2,7 @@
   <component :is="wrapperTag" :to="item.href || undefined" class="library-link">
     <article class="library-card" :class="{ dormant: item.isDormant }">
       <div class="poster">
-        <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy">
+        <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy" />
         <div v-else class="poster-fallback">{{ item.title.slice(0, 1) }}</div>
       </div>
 
@@ -34,7 +34,7 @@ const props = defineProps<{
 
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedImageUrl = computed(() => resolveMediaUrl(props.item.imageUrl))
-const wrapperTag = computed(() => props.item.href ? NuxtLink : 'div')
+const wrapperTag = computed(() => (props.item.href ? NuxtLink : 'div'))
 </script>
 
 <style scoped>
@@ -54,9 +54,7 @@ const wrapperTag = computed(() => props.item.href ? NuxtLink : 'div')
   overflow: hidden;
   border-radius: 24px;
   border: 8px solid #fff;
-  background:
-    linear-gradient(160deg, rgba(230, 0, 35, 0.1), rgba(33, 25, 34, 0.05)),
-    var(--base-color-surface-soft);
+  background: linear-gradient(160deg, rgba(230, 0, 35, 0.1), rgba(33, 25, 34, 0.05)), var(--base-color-surface-soft);
 }
 
 .poster img,

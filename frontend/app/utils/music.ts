@@ -1,4 +1,9 @@
-import type { MusicSummaryResponse, RecentAlbumsPageResponse } from '~/types/home'
+import type {
+  EditorialHighlight,
+  EditorialShelfItem,
+  MusicSummaryResponse,
+  RecentAlbumsPageResponse,
+} from '~/types/home'
 import type {
   AlbumLibraryPageResponse,
   AlbumLibraryRow,
@@ -26,7 +31,6 @@ import type {
   TrackLibraryPageResponse,
   TrackLibraryRow,
 } from '~/types/music'
-import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
 import { formatAbsoluteDate, formatRelativeDate, formatShortNumber } from '~/utils/formatting'
 
 function trackPosition(track: AlbumPageResponse['tracks'][number]) {
@@ -195,7 +199,8 @@ export function buildMusicCollectionData(payload: {
     context: {
       eyebrow: 'Panorama do recorte',
       title: 'O tamanho e a textura dessa fase musical',
-      description: 'Um contexto curto para lembrar o peso da escuta recente sem transformar a seção em dashboard de streaming.',
+      description:
+        'Um contexto curto para lembrar o peso da escuta recente sem transformar a seção em dashboard de streaming.',
       summary: `${formatShortNumber(payload.summary.albumsCount)} álbuns e ${formatShortNumber(payload.summary.tracksCount)} faixas passaram por aqui no último mês, com espaço claro para novas descobertas.`,
       metrics: buildCollectionMetrics(payload),
     },
@@ -295,7 +300,9 @@ function albumCard(item: AlbumLibraryRow): MusicLibraryCardModel {
     href: `/music/albums/${item.albumId}`,
     imageUrl: item.coverUrl,
     primaryMeta: `${formatShortNumber(item.playCount)} plays · ${formatShortNumber(item.playedTracks)}/${formatShortNumber(item.totalTracks)} faixas`,
-    secondaryMeta: item.lastPlayed ? `Último play ${formatRelativeDate(item.lastPlayed)}` : 'Ainda sem primeira audição',
+    secondaryMeta: item.lastPlayed
+      ? `Último play ${formatRelativeDate(item.lastPlayed)}`
+      : 'Ainda sem primeira audição',
     aside: albumAside(item),
     isDormant: item.playCount === 0,
   }
@@ -386,7 +393,7 @@ function yearTrackCard(item: TopTrackResponse): MusicLibraryCardModel {
   }
 }
 
-function buildSpotlightFromCard(card: MusicLibraryCardModel | undefined, fallbackTitle: string) {
+function buildSpotlightFromCard(card: MusicLibraryCardModel | undefined) {
   if (!card) return null
 
   return {
@@ -405,13 +412,15 @@ function kindCopy(kind: MusicLibraryKind) {
       return {
         name: 'artistas',
         title: 'Biblioteca de artistas',
-        description: 'Os nomes que estruturam sua escuta, para reconhecer recorrência e lacunas sem depender de memória bruta.',
+        description:
+          'Os nomes que estruturam sua escuta, para reconhecer recorrência e lacunas sem depender de memória bruta.',
       }
     case 'albums':
       return {
         name: 'álbuns',
         title: 'Biblioteca de álbuns',
-        description: 'O arquivo principal de descoberta e retorno, onde a capa e o contexto continuam guiando a navegação.',
+        description:
+          'O arquivo principal de descoberta e retorno, onde a capa e o contexto continuam guiando a navegação.',
       }
     case 'tracks':
       return {
@@ -469,12 +478,13 @@ export function buildMusicLibraryPageData(payload: {
     const yearAlbums = buildMusicLibraryCards('albums', payload.yearResults.albums)
     const yearArtists = payload.yearResults.artists.map(yearArtistCard)
     const yearTracks = payload.yearResults.tracks.map(yearTrackCard)
-    const spotlight = buildSpotlightFromCard(yearAlbums[0], `O ano musical de ${payload.yearResults.year}`)
+    const spotlight = buildSpotlightFromCard(yearAlbums[0])
 
     return {
       hero: {
         title: `A música em ${payload.yearResults.year}`,
-        intro: 'Um recorte anual para reconhecer fases de escuta sem perder o peso editorial da seção. O eixo continua sendo álbum, com artistas e faixas entrando como apoio do mesmo período.',
+        intro:
+          'Um recorte anual para reconhecer fases de escuta sem perder o peso editorial da seção. O eixo continua sendo álbum, com artistas e faixas entrando como apoio do mesmo período.',
         backLink: '/music',
         backLabel: 'Voltar ao recorte',
         accentLink: '/music/library?kind=albums',
@@ -491,7 +501,8 @@ export function buildMusicLibraryPageData(payload: {
       context: {
         eyebrow: 'Ano',
         title: `O que ${payload.yearResults.year} concentrou`,
-        description: 'O ano funciona aqui como memória de fase: quais discos seguraram mais peso, quais artistas puxaram o período e quais faixas insistiram em voltar.',
+        description:
+          'O ano funciona aqui como memória de fase: quais discos seguraram mais peso, quais artistas puxaram o período e quais faixas insistiram em voltar.',
         summary: `${formatShortNumber(payload.yearResults.stats.uniqueAlbumsCount)} álbuns, ${formatShortNumber(payload.yearResults.stats.uniqueArtistsCount)} artistas e ${formatShortNumber(payload.yearResults.stats.playsCount)} plays compõem o recorte anual.`,
         metrics: [
           {
@@ -534,7 +545,8 @@ export function buildMusicLibraryPageData(payload: {
           id: 'year-artists',
           eyebrow: 'Artistas do ano',
           title: 'Quem puxou essa fase',
-          description: 'Os artistas entram como espinha dorsal do período, apoiando a leitura dos álbuns mais presentes.',
+          description:
+            'Os artistas entram como espinha dorsal do período, apoiando a leitura dos álbuns mais presentes.',
           summary: 'Eles organizam o recorte sem competir com o protagonismo do álbum.',
           items: yearArtists,
           emptyMessage: 'Nenhum artista apareceu nesse ano.',
@@ -569,17 +581,14 @@ export function buildMusicLibraryPageData(payload: {
         : (payload.searchResults?.tracks ?? []).map(searchTrackCard)
 
   const items = isSearch ? searchItems : libraryItems
-  const spotlight = buildSpotlightFromCard(
-    items[0],
-    isSearch ? `Resultados para ${searchQuery}` : selectedCopy.title,
-  )
+  const spotlight = buildSpotlightFromCard(items[0])
 
   const libraryCursor =
     payload.selectedKind === 'artists'
-      ? payload.artists?.nextCursor ?? null
+      ? (payload.artists?.nextCursor ?? null)
       : payload.selectedKind === 'albums'
-        ? payload.albums?.nextCursor ?? null
-        : payload.tracks?.nextCursor ?? null
+        ? (payload.albums?.nextCursor ?? null)
+        : (payload.tracks?.nextCursor ?? null)
 
   return {
     hero: {
@@ -604,9 +613,7 @@ export function buildMusicLibraryPageData(payload: {
     },
     context: {
       eyebrow: isSearch ? 'Busca' : 'Arquivo',
-      title: isSearch
-        ? `Onde ${searchQuery} apareceu`
-        : `Como ${selectedCopy.name} entram no seu arquivo`,
+      title: isSearch ? `Onde ${searchQuery} apareceu` : `Como ${selectedCopy.name} entram no seu arquivo`,
       description: isSearch
         ? 'A busca funciona como atalho editorial: encontra primeiro, depois deixa a navegação continuar pelo mesmo ritmo visual.'
         : 'A library existe para navegação densa e reconhecimento rápido, não para virar uma tabela fria.',
@@ -667,18 +674,20 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
 }
 
 export function buildArtistPageData(artist: ArtistPageResponse): ArtistPageData {
-  const albums = artist.albums.map((album) => albumCard({
-    albumId: album.albumId,
-    albumTitle: album.albumTitle,
-    artistId: artist.artistId,
-    artistName: artist.artistName,
-    coverUrl: album.coverUrl,
-    year: album.year,
-    totalTracks: album.totalTracks,
-    playedTracks: album.playedTracks,
-    playCount: album.playCount,
-    lastPlayed: album.lastPlayed,
-  }))
+  const albums = artist.albums.map((album) =>
+    albumCard({
+      albumId: album.albumId,
+      albumTitle: album.albumTitle,
+      artistId: artist.artistId,
+      artistName: artist.artistName,
+      coverUrl: album.coverUrl,
+      year: album.year,
+      totalTracks: album.totalTracks,
+      playedTracks: album.playedTracks,
+      playCount: album.playCount,
+      lastPlayed: album.lastPlayed,
+    }),
+  )
   const heroCover = artist.albums.find((album) => album.coverUrl)?.coverUrl ?? null
 
   return {

@@ -5,20 +5,15 @@
         <p class="review-kicker">Painel administrativo</p>
         <h2>Ferramentas de saneamento da biblioteca</h2>
         <p class="admin-subheader__summary">
-          Área operacional para revisar inconsistências de catálogo, consolidar faixas e limpar duplicações sem sair da linguagem visual principal.
+          Área operacional para revisar inconsistências de catálogo, consolidar faixas e limpar duplicações sem sair da
+          linguagem visual principal.
         </p>
       </div>
 
       <nav class="admin-subheader__nav" aria-label="Navegação administrativa de música">
-        <NuxtLink class="admin-nav-link" to="/music">
-          Música
-        </NuxtLink>
-        <NuxtLink class="admin-nav-link" to="/music/library">
-          Biblioteca
-        </NuxtLink>
-        <span class="admin-nav-link admin-nav-link--active">
-          Revisão de duplicatas
-        </span>
+        <NuxtLink class="admin-nav-link" to="/music"> Música </NuxtLink>
+        <NuxtLink class="admin-nav-link" to="/music/library"> Biblioteca </NuxtLink>
+        <span class="admin-nav-link admin-nav-link--active"> Revisão de duplicatas </span>
       </nav>
     </section>
 
@@ -27,18 +22,16 @@
         <p class="review-kicker">Administração de música</p>
         <h1>Revisão de faixas duplicadas</h1>
         <p class="review-intro">
-          Esta fila reúne grupos suspeitos dentro do mesmo álbum. Você escolhe a faixa canônica,
-          marca o que deve ser absorvido e executa o merge com visibilidade do que será preservado.
+          Esta fila reúne grupos suspeitos dentro do mesmo álbum. Você escolhe a faixa canônica, marca o que deve ser
+          absorvido e executa o merge com visibilidade do que será preservado.
         </p>
       </div>
 
       <div class="review-hero__actions">
-        <NuxtLink class="secondary-link" to="/music/library">
-          Voltar para a biblioteca
-        </NuxtLink>
+        <NuxtLink class="secondary-link" to="/music/library"> Voltar para a biblioteca </NuxtLink>
 
         <label class="toggle-card">
-          <input v-model="includeIgnored" type="checkbox">
+          <input v-model="includeIgnored" type="checkbox" />
           <span>Mostrar grupos ignorados</span>
         </label>
       </div>
@@ -57,20 +50,12 @@
       <section class="review-filters">
         <label class="filter-field">
           <span>Filtrar por artista</span>
-          <input
-            v-model="artistFilterInput"
-            type="search"
-            placeholder="Ex.: Milton Nascimento"
-          >
+          <input v-model="artistFilterInput" type="search" placeholder="Ex.: Milton Nascimento" />
         </label>
 
         <label class="filter-field">
           <span>Filtrar por álbum</span>
-          <input
-            v-model="albumFilterInput"
-            type="search"
-            placeholder="Ex.: Clube da Esquina"
-          >
+          <input v-model="albumFilterInput" type="search" placeholder="Ex.: Clube da Esquina" />
         </label>
 
         <p class="filter-status" :data-pending="isRefreshingFilters">
@@ -85,19 +70,12 @@
             <span v-if="artistFilter || albumFilter">
               {{ activeFilterSummary }}
             </span>
-            <span v-else>
-              Sem filtro. A revisão está mostrando grupos de toda a base.
-            </span>
+            <span v-else> Sem filtro. A revisão está mostrando grupos de toda a base. </span>
           </p>
         </div>
 
         <div class="toolbar-actions">
-          <button
-            type="button"
-            class="secondary-button"
-            :disabled="!groups.length"
-            @click="toggleAllVisibleGroups"
-          >
+          <button type="button" class="secondary-button" :disabled="!groups.length" @click="toggleAllVisibleGroups">
             {{ allVisibleSelected ? 'Desmarcar visíveis' : 'Marcar visíveis' }}
           </button>
 
@@ -141,11 +119,7 @@
           <header class="group-card__header">
             <div class="group-card__identity">
               <label class="group-select">
-                <input
-                  :checked="isGroupSelected(group)"
-                  type="checkbox"
-                  @change="toggleGroupSelection(group)"
-                >
+                <input :checked="isGroupSelected(group)" type="checkbox" @change="toggleGroupSelection(group)" />
                 <span>Selecionar grupo</span>
               </label>
               <p class="group-card__eyebrow">
@@ -168,11 +142,7 @@
 
           <div class="group-card__grid">
             <div class="group-card__cover">
-              <img
-                v-if="group.albumCoverUrl"
-                :src="group.albumCoverUrl"
-                :alt="`Capa de ${group.albumTitle}`"
-              >
+              <img v-if="group.albumCoverUrl" :src="group.albumCoverUrl" :alt="`Capa de ${group.albumTitle}`" />
               <div v-else class="cover-fallback">
                 {{ group.albumTitle.slice(0, 1) }}
               </div>
@@ -192,7 +162,7 @@
                       type="radio"
                       :name="`target-${groupId(group)}`"
                       @change="selectTarget(group, candidate.trackId)"
-                    >
+                    />
                     <span>Faixa canônica</span>
                   </label>
 
@@ -202,7 +172,7 @@
                       type="checkbox"
                       :disabled="selectionFor(group).targetTrackId === candidate.trackId"
                       @change="toggleSource(group, candidate.trackId)"
-                    >
+                    />
                     <span>Mesclar na canônica</span>
                   </label>
                 </div>
@@ -230,11 +200,7 @@
                     <span v-if="candidate.hasMusicBrainz" class="tag tag--mb">MusicBrainz</span>
                     <span v-if="candidate.hasSpotify" class="tag tag--spotify">Spotify</span>
                     <span v-if="!candidate.externalIdentifiers.length" class="tag">sem IDs externos</span>
-                    <span
-                      v-for="externalId in candidate.externalIdentifiers.slice(0, 3)"
-                      :key="externalId"
-                      class="tag"
-                    >
+                    <span v-for="externalId in candidate.externalIdentifiers.slice(0, 3)" :key="externalId" class="tag">
                       {{ externalId }}
                     </span>
                   </div>
@@ -299,9 +265,7 @@
           </div>
 
           <div class="confirm-actions">
-            <button type="button" class="secondary-button" :disabled="busyBatch" @click="closeConfirm">
-              Cancelar
-            </button>
+            <button type="button" class="secondary-button" :disabled="busyBatch" @click="closeConfirm">Cancelar</button>
             <button type="button" class="primary-button" :disabled="busyBatch" @click="runConfirmedAction">
               {{ busyBatch ? 'Processando...' : confirmState.confirmLabel }}
             </button>
@@ -376,26 +340,31 @@ watch([artistFilterInput, albumFilterInput], () => {
 
 const { data, error, status } = await useAsyncData(
   'music-duplicate-review-page',
-  () => $fetch<DuplicateTrackReviewPageResponse>('/api/music/admin/track-duplicates', {
-    baseURL: config.public.apiBase,
-    query: {
-      limit: 20,
-      includeIgnored: includeIgnored.value,
-      artist: artistFilter.value || undefined,
-      album: albumFilter.value || undefined,
-    },
-  }),
+  () =>
+    $fetch<DuplicateTrackReviewPageResponse>('/api/music/admin/track-duplicates', {
+      baseURL: config.public.apiBase,
+      query: {
+        limit: 20,
+        includeIgnored: includeIgnored.value,
+        artist: artistFilter.value || undefined,
+        album: albumFilter.value || undefined,
+      },
+    }),
   {
     watch: [includeIgnored, artistFilter, albumFilter],
   },
 )
 
-watch(data, (value) => {
-  groups.value = value?.items ?? []
-  nextCursor.value = value?.nextCursor ?? null
-  syncSelections(groups.value)
-  selectedGroupIds.value = selectedGroupIds.value.filter((id) => groups.value.some((group) => groupId(group) === id))
-}, { immediate: true })
+watch(
+  data,
+  (value) => {
+    groups.value = value?.items ?? []
+    nextCursor.value = value?.nextCursor ?? null
+    syncSelections(groups.value)
+    selectedGroupIds.value = selectedGroupIds.value.filter((id) => groups.value.some((group) => groupId(group) === id))
+  },
+  { immediate: true },
+)
 
 const showInitialLoading = computed(() => status.value === 'pending' && !groups.value.length)
 const isRefreshingFilters = computed(() => status.value === 'pending' && groups.value.length > 0)
@@ -403,8 +372,12 @@ const ignoredArtistInput = computed(() => artistFilterInput.value.trim().length 
 const ignoredAlbumInput = computed(() => albumFilterInput.value.trim().length > 0 && albumFilter.value === '')
 const highConfidenceCount = computed(() => groups.value.filter((group) => group.confidence === 'high').length)
 const ignoredCount = computed(() => groups.value.filter((group) => group.ignored).length)
-const allVisibleSelected = computed(() => groups.value.length > 0 && groups.value.every((group) => selectedGroupIds.value.includes(groupId(group))))
-const canMergeAllFiltered = computed(() => (artistFilter.value || albumFilter.value) && !status.value?.includes?.('pending'))
+const allVisibleSelected = computed(
+  () => groups.value.length > 0 && groups.value.every((group) => selectedGroupIds.value.includes(groupId(group))),
+)
+const canMergeAllFiltered = computed(
+  () => (artistFilter.value || albumFilter.value) && !status.value?.includes?.('pending'),
+)
 const activeFilterSummary = computed(() => {
   const parts = []
   if (artistFilter.value) parts.push(`artista: ${artistFilter.value}`)
@@ -413,9 +386,12 @@ const activeFilterSummary = computed(() => {
 })
 const filterStatusMessage = computed(() => {
   if (isRefreshingFilters.value) return 'Atualizando resultados...'
-  if (ignoredArtistInput.value && ignoredAlbumInput.value) return `Continue digitando. Os filtros passam a valer com pelo menos ${minimumFilterLength} caracteres em cada campo.`
-  if (ignoredArtistInput.value) return `Continue digitando o artista. A busca automática começa com pelo menos ${minimumFilterLength} caracteres.`
-  if (ignoredAlbumInput.value) return `Continue digitando o álbum. A busca automática começa com pelo menos ${minimumFilterLength} caracteres.`
+  if (ignoredArtistInput.value && ignoredAlbumInput.value)
+    return `Continue digitando. Os filtros passam a valer com pelo menos ${minimumFilterLength} caracteres em cada campo.`
+  if (ignoredArtistInput.value)
+    return `Continue digitando o artista. A busca automática começa com pelo menos ${minimumFilterLength} caracteres.`
+  if (ignoredAlbumInput.value)
+    return `Continue digitando o álbum. A busca automática começa com pelo menos ${minimumFilterLength} caracteres.`
   return 'Os filtros aplicam automaticamente após uma breve pausa na digitação.'
 })
 
@@ -436,12 +412,9 @@ function syncSelections(items: DuplicateTrackGroupResponse[]) {
         : fallbackTarget
 
     const sourceTrackIds =
-      current?.sourceTrackIds.filter((trackId) => (
-        trackId !== targetTrackId && group.candidates.some((candidate) => candidate.trackId === trackId)
-      )) ??
-      group.candidates
-        .map((candidate) => candidate.trackId)
-        .filter((trackId) => trackId !== targetTrackId)
+      current?.sourceTrackIds.filter(
+        (trackId) => trackId !== targetTrackId && group.candidates.some((candidate) => candidate.trackId === trackId),
+      ) ?? group.candidates.map((candidate) => candidate.trackId).filter((trackId) => trackId !== targetTrackId)
 
     nextSelections[key] = {
       targetTrackId,
@@ -475,7 +448,9 @@ function toggleAllVisibleGroups() {
     return
   }
 
-  selectedGroupIds.value = Array.from(new Set([...selectedGroupIds.value, ...groups.value.map((group) => groupId(group))]))
+  selectedGroupIds.value = Array.from(
+    new Set([...selectedGroupIds.value, ...groups.value.map((group) => groupId(group))]),
+  )
 }
 
 function selectTarget(group: DuplicateTrackGroupResponse, targetTrackId: number) {
@@ -521,11 +496,7 @@ async function toggleIgnored(group: DuplicateTrackGroupResponse) {
       groups.value = groups.value.filter((item) => groupId(item) !== key)
       syncSelections(groups.value)
     } else {
-      groups.value = groups.value.map((item) => (
-        groupId(item) === key
-          ? { ...item, ignored: !item.ignored }
-          : item
-      ))
+      groups.value = groups.value.map((item) => (groupId(item) === key ? { ...item, ignored: !item.ignored } : item))
     }
 
     feedback.value = {
@@ -590,12 +561,14 @@ async function mergeSelectedGroups() {
       method: 'POST',
       baseURL: config.public.apiBase,
       body: {
-        merges: selectedGroups.map((group) => ({
-          albumId: group.albumId,
-          groupKey: group.groupKey,
-          targetTrackId: selectionFor(group).targetTrackId,
-          sourceTrackIds: selectionFor(group).sourceTrackIds,
-        })).filter((merge) => merge.sourceTrackIds.length > 0),
+        merges: selectedGroups
+          .map((group) => ({
+            albumId: group.albumId,
+            groupKey: group.groupKey,
+            targetTrackId: selectionFor(group).targetTrackId,
+            sourceTrackIds: selectionFor(group).sourceTrackIds,
+          }))
+          .filter((merge) => merge.sourceTrackIds.length > 0),
       },
     })
 
@@ -639,16 +612,18 @@ async function mergeAllFilteredGroups() {
 
   try {
     const allGroups = await fetchAllFilteredGroups()
-    const merges = allGroups.map((group) => {
-      const loaded = groups.value.find((item) => groupId(item) === groupId(group))
-      const selection = loaded ? selectionFor(loaded) : suggestedSelectionFor(group)
-      return {
-        albumId: group.albumId,
-        groupKey: group.groupKey,
-        targetTrackId: selection.targetTrackId,
-        sourceTrackIds: selection.sourceTrackIds,
-      }
-    }).filter((merge) => merge.sourceTrackIds.length > 0)
+    const merges = allGroups
+      .map((group) => {
+        const loaded = groups.value.find((item) => groupId(item) === groupId(group))
+        const selection = loaded ? selectionFor(loaded) : suggestedSelectionFor(group)
+        return {
+          albumId: group.albumId,
+          groupKey: group.groupKey,
+          targetTrackId: selection.targetTrackId,
+          sourceTrackIds: selection.sourceTrackIds,
+        }
+      })
+      .filter((merge) => merge.sourceTrackIds.length > 0)
 
     const response = await $fetch<DuplicateTrackBatchMergeResponse>('/api/music/admin/track-duplicates/merge-batch', {
       method: 'POST',
@@ -778,7 +753,9 @@ async function fetchAllFilteredGroups() {
 function suggestedSelectionFor(group: DuplicateTrackGroupResponse): GroupSelection {
   return {
     targetTrackId: group.suggestedTargetTrackId,
-    sourceTrackIds: group.candidates.map((candidate) => candidate.trackId).filter((trackId) => trackId !== group.suggestedTargetTrackId),
+    sourceTrackIds: group.candidates
+      .map((candidate) => candidate.trackId)
+      .filter((trackId) => trackId !== group.suggestedTargetTrackId),
   }
 }
 
@@ -800,7 +777,7 @@ function confidenceLabel(value: string) {
   }
 }
 
-function formatPosition(candidate: { discNumber: number | null, trackNumber: number | null }) {
+function formatPosition(candidate: { discNumber: number | null; trackNumber: number | null }) {
   if (candidate.discNumber != null && candidate.trackNumber != null) {
     return `Disco ${candidate.discNumber} · Faixa ${candidate.trackNumber}`
   }
@@ -835,7 +812,7 @@ function formatCount(value: number) {
 }
 
 function errorMessage(requestError: unknown, fallback: string) {
-  const statusMessage = (requestError as { data?: { message?: string }, message?: string })?.data?.message
+  const statusMessage = (requestError as { data?: { message?: string }; message?: string })?.data?.message
   return statusMessage || (requestError as { message?: string })?.message || fallback
 }
 
@@ -1168,7 +1145,7 @@ pre {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.9));
 }
 
-.candidate-card[data-target="true"] {
+.candidate-card[data-target='true'] {
   border-color: color-mix(in srgb, var(--base-color-brand-red) 34%, white);
   background: linear-gradient(180deg, rgba(255, 248, 249, 0.96), rgba(247, 241, 236, 0.92));
 }
@@ -1223,17 +1200,17 @@ pre {
   color: #167243;
 }
 
-.confidence-badge[data-confidence="high"] {
+.confidence-badge[data-confidence='high'] {
   background: rgba(29, 185, 84, 0.15);
   color: #167243;
 }
 
-.confidence-badge[data-confidence="medium"] {
+.confidence-badge[data-confidence='medium'] {
   background: rgba(227, 151, 14, 0.16);
   color: #8c5300;
 }
 
-.confidence-badge[data-confidence="low"] {
+.confidence-badge[data-confidence='low'] {
   background: rgba(33, 25, 34, 0.08);
   color: var(--base-color-text-secondary);
 }
@@ -1272,7 +1249,7 @@ pre {
 }
 
 .state-card--error,
-.feedback-banner[data-tone="error"] {
+.feedback-banner[data-tone='error'] {
   color: #7a1414;
 }
 
@@ -1334,7 +1311,7 @@ pre {
   gap: 12px;
 }
 
-.feedback-banner[data-tone="success"] {
+.feedback-banner[data-tone='success'] {
   color: #135c2f;
 }
 

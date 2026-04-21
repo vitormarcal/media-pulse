@@ -1,8 +1,4 @@
-import type {
-  CurrentlyWatchingShowDto,
-  ShowsRecentResponse,
-  ShowsSummaryResponse,
-} from '~/types/home'
+import type { CurrentlyWatchingShowDto, ShowsRecentResponse, ShowsSummaryResponse } from '~/types/home'
 import type { ShowCollectionData } from '~/types/shows'
 import { buildShowCollectionData } from '~/utils/shows'
 

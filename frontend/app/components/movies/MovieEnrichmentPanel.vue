@@ -18,7 +18,7 @@
       <form class="action-form" @submit.prevent="handlePreview">
         <label class="field">
           <span>TMDb ID</span>
-          <input v-model="tmdbId" type="text" placeholder="Ex.: 438631">
+          <input v-model="tmdbId" type="text" placeholder="Ex.: 438631" />
         </label>
 
         <div class="actions">
@@ -48,21 +48,37 @@
 
         <section class="preview-hero">
           <div class="hero-poster">
-            <img v-if="suggestedPosterUrl || currentCoverUrl" :src="suggestedPosterUrl || currentCoverUrl || undefined" alt="Poster sugerido">
+            <img
+              v-if="suggestedPosterUrl || currentCoverUrl"
+              :src="suggestedPosterUrl || currentCoverUrl || undefined"
+              alt="Poster sugerido"
+            />
             <div v-else class="image-fallback hero-fallback">Sem imagem sugerida</div>
           </div>
 
           <div class="hero-summary">
             <article class="summary-card">
               <p class="summary-label">O que chegou</p>
-              <p class="summary-value">{{ availableFieldsCount }} bloco<span v-if="availableFieldsCount !== 1">s</span> com sugestão</p>
-              <p class="summary-note">Incluindo metadados e novas imagens quando houver ganho claro para o detalhe do filme.</p>
+              <p class="summary-value">
+                {{ availableFieldsCount }} bloco<span v-if="availableFieldsCount !== 1">s</span> com sugestão
+              </p>
+              <p class="summary-note">
+                Incluindo metadados e novas imagens quando houver ganho claro para o detalhe do filme.
+              </p>
             </article>
 
             <article class="summary-card">
               <p class="summary-label">Leitura inicial</p>
-              <p class="summary-value">{{ selectedFields.length }} bloco<span v-if="selectedFields.length !== 1">s</span> pronto<span v-if="selectedFields.length !== 1">s</span> para aplicar</p>
-              <p class="summary-note">A seleção padrão privilegia lacunas e o material visual mais útil como nova referência.</p>
+              <p class="summary-value">
+                {{ selectedFields.length }} bloco<span v-if="selectedFields.length !== 1">s</span> pronto<span
+                  v-if="selectedFields.length !== 1"
+                  >s</span
+                >
+                para aplicar
+              </p>
+              <p class="summary-note">
+                A seleção padrão privilegia lacunas e o material visual mais útil como nova referência.
+              </p>
             </article>
           </div>
         </section>
@@ -74,16 +90,13 @@
             class="field-card"
             :class="{ muted: !field.available, selected: selectedFields.includes(field.field) }"
           >
-            <input
-              v-model="selectedFields"
-              type="checkbox"
-              :value="field.field"
-              :disabled="!field.available"
-            >
+            <input v-model="selectedFields" type="checkbox" :value="field.field" :disabled="!field.available" />
             <div class="field-copy">
               <div class="field-head">
                 <strong>{{ field.label }}</strong>
-                <span class="field-state">{{ field.missing ? 'Preenche uma lacuna' : field.changed ? 'Atualiza o que já existe' : 'Sem ganho agora' }}</span>
+                <span class="field-state">{{
+                  field.missing ? 'Preenche uma lacuna' : field.changed ? 'Atualiza o que já existe' : 'Sem ganho agora'
+                }}</span>
               </div>
               <p class="field-current"><strong>Agora</strong> {{ field.currentValue || 'Sem valor registrado' }}</p>
               <p class="field-suggested"><strong>TMDb</strong> {{ field.suggestedValue || 'Sem sugestão útil' }}</p>
@@ -96,28 +109,32 @@
             <div>
               <p class="dialog-eyebrow">Imagens</p>
               <h4>Escolha o que entra no detalhe</h4>
-              <p class="studio-summary">A principal atual fica em contraste com as novas sugestões. Marque o que mantém no filme e promova uma imagem para capa principal.</p>
+              <p class="studio-summary">
+                A principal atual fica em contraste com as novas sugestões. Marque o que mantém no filme e promova uma
+                imagem para capa principal.
+              </p>
             </div>
             <label class="studio-toggle">
-              <input
-                v-model="selectedFields"
-                type="checkbox"
-                value="IMAGES"
-                :disabled="!preview.images.available"
-              >
+              <input v-model="selectedFields" type="checkbox" value="IMAGES" :disabled="!preview.images.available" />
               <span>Aplicar imagens</span>
             </label>
           </div>
 
           <div class="current-frame">
             <div class="current-image">
-              <img v-if="currentCoverUrl" :src="currentCoverUrl" alt="Capa atual">
+              <img v-if="currentCoverUrl" :src="currentCoverUrl" alt="Capa atual" />
               <div v-else class="image-fallback">Sem capa atual</div>
             </div>
             <div class="current-copy">
               <p class="current-kicker">Principal atual</p>
               <p class="current-title">{{ currentPrimaryLabel }}</p>
-              <p class="current-note">{{ preview.images.missing ? 'O filme ainda não tem uma imagem principal definida.' : 'Você pode manter essa referência ou trocar a capa principal abaixo.' }}</p>
+              <p class="current-note">
+                {{
+                  preview.images.missing
+                    ? 'O filme ainda não tem uma imagem principal definida.'
+                    : 'Você pode manter essa referência ou trocar a capa principal abaixo.'
+                }}
+              </p>
             </div>
           </div>
 
@@ -132,7 +149,7 @@
               }"
             >
               <button type="button" class="candidate-visual" @click="toggleCandidate(candidate.key)">
-                <img :src="candidate.imageUrl" :alt="candidate.label">
+                <img :src="candidate.imageUrl" :alt="candidate.label" />
                 <span v-if="selectedImagePrimaryKey === candidate.key" class="pin-badge">Principal</span>
                 <span v-else-if="candidate.suggestedAsPrimary" class="pin-badge muted-badge">Sugestão</span>
               </button>
@@ -142,7 +159,13 @@
                   <strong>{{ candidate.label }}</strong>
                   <span>{{ candidate.kind }}</span>
                 </div>
-                <p class="candidate-note">{{ selectedImageKeys.includes(candidate.key) ? 'Entrará na página do filme.' : 'Fica fora até você decidir incluir.' }}</p>
+                <p class="candidate-note">
+                  {{
+                    selectedImageKeys.includes(candidate.key)
+                      ? 'Entrará na página do filme.'
+                      : 'Fica fora até você decidir incluir.'
+                  }}
+                </p>
 
                 <div class="candidate-actions">
                   <button
@@ -172,7 +195,12 @@
           <button type="button" class="secondary-button" :disabled="applyLoading" @click="applyMissing">
             {{ applyLoading ? 'Aplicando...' : 'Preencher lacunas' }}
           </button>
-          <button type="button" class="primary-button" :disabled="applyLoading || !selectedFields.length" @click="applySelected">
+          <button
+            type="button"
+            class="primary-button"
+            :disabled="applyLoading || !selectedFields.length"
+            @click="applySelected"
+          >
             {{ applyLoading ? 'Aplicando...' : 'Aplicar seleção' }}
           </button>
         </div>
@@ -215,7 +243,9 @@ const errorMessage = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 
 const currentCoverUrl = computed(() => resolveMediaUrl(preview.value?.images.currentCoverUrl ?? null))
-const suggestedPosterUrl = computed(() => preview.value?.images.candidates.find(candidate => candidate.suggestedAsPrimary)?.imageUrl ?? null)
+const suggestedPosterUrl = computed(
+  () => preview.value?.images.candidates.find((candidate) => candidate.suggestedAsPrimary)?.imageUrl ?? null,
+)
 const currentPrimaryLabel = computed(() => {
   if (!preview.value?.images.currentCoverUrl) {
     return 'Sem capa definida'
@@ -226,7 +256,7 @@ const currentPrimaryLabel = computed(() => {
 const availableFieldsCount = computed(() => {
   if (!preview.value) return 0
 
-  return preview.value.fields.filter(field => field.available).length + (preview.value.images.available ? 1 : 0)
+  return preview.value.fields.filter((field) => field.available).length + (preview.value.images.available ? 1 : 0)
 })
 
 function hydrateSelection(payload: MovieEnrichmentPreviewResponse) {
@@ -234,11 +264,15 @@ function hydrateSelection(payload: MovieEnrichmentPreviewResponse) {
   if (payload.images.selectedByDefault) {
     selectedFields.value.push('IMAGES')
   }
-  selectedImageKeys.value = payload.images.candidates.filter(candidate => candidate.selectedByDefault).map(candidate => candidate.key)
+  selectedImageKeys.value = payload.images.candidates
+    .filter((candidate) => candidate.selectedByDefault)
+    .map((candidate) => candidate.key)
   selectedImagePrimaryKey.value =
-    payload.images.candidates.find(candidate => candidate.suggestedAsPrimary && selectedImageKeys.value.includes(candidate.key))?.key
-    ?? selectedImageKeys.value[0]
-    ?? null
+    payload.images.candidates.find(
+      (candidate) => candidate.suggestedAsPrimary && selectedImageKeys.value.includes(candidate.key),
+    )?.key ??
+    selectedImageKeys.value[0] ??
+    null
 }
 
 async function handlePreview() {
@@ -282,12 +316,13 @@ async function apply(mode: 'MISSING' | 'SELECTED', fields: MovieEnrichmentField[
       tmdbId: tmdbId.value.trim() || null,
       mode,
       fields,
-      imageSelection: (fields.includes('IMAGES') || (mode === 'MISSING' && selectedImageKeys.value.length > 0))
-        ? {
-            selectedKeys: selectedImageKeys.value,
-            primaryKey: selectedImagePrimaryKey.value,
-          }
-        : null,
+      imageSelection:
+        fields.includes('IMAGES') || (mode === 'MISSING' && selectedImageKeys.value.length > 0)
+          ? {
+              selectedKeys: selectedImageKeys.value,
+              primaryKey: selectedImagePrimaryKey.value,
+            }
+          : null,
     }
 
     const response = await $fetch<MovieEnrichmentApplyResponse>(`/api/movies/${props.movieId}/enrichment/apply`, {
@@ -316,7 +351,7 @@ function closePreview() {
 
 function toggleCandidate(key: string) {
   if (selectedImageKeys.value.includes(key)) {
-    selectedImageKeys.value = selectedImageKeys.value.filter(value => value !== key)
+    selectedImageKeys.value = selectedImageKeys.value.filter((value) => value !== key)
     return
   }
 
@@ -353,7 +388,7 @@ watch(selectedImageKeys, (keys) => {
   }
 
   if (!keys.length) {
-    selectedFields.value = selectedFields.value.filter(field => field !== 'IMAGES')
+    selectedFields.value = selectedFields.value.filter((field) => field !== 'IMAGES')
     selectedImagePrimaryKey.value = null
     return
   }

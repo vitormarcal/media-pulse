@@ -24,9 +24,7 @@ export async function fetchBooksLibraryPageData(query: BooksLibraryQuery = {}): 
     q
       ? $fetch<BooksSearchResponse>('/api/books/search', { baseURL: apiBase, query: { q, limit: 40 } })
       : Promise.resolve(null),
-    year
-      ? $fetch<YearReadsResponse>(`/api/books/year/${year}`, { baseURL: apiBase })
-      : Promise.resolve(null),
+    year ? $fetch<YearReadsResponse>(`/api/books/year/${year}`, { baseURL: apiBase }) : Promise.resolve(null),
   ])
 
   return buildBookLibraryPageData({

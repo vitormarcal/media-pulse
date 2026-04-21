@@ -27,9 +27,12 @@ const results = ref<GlobalSearchData | null>(null)
 const loading = ref(false)
 const hasError = ref(false)
 
-watch(() => route.fullPath, () => {
-  searchOpen.value = false
-})
+watch(
+  () => route.fullPath,
+  () => {
+    searchOpen.value = false
+  },
+)
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 

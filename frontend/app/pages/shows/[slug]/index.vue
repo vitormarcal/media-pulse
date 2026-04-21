@@ -18,15 +18,9 @@
         :hero-meta="data.heroMeta"
       />
 
-      <ShowProgressPanel
-        :progress="data.progress"
-        :seasons="data.seasons"
-      />
+      <ShowProgressPanel :progress="data.progress" :seasons="data.seasons" />
 
-      <ShowAddWatchPanel
-        :show-id="data.showId"
-        @created="handleWatchCreated"
-      />
+      <ShowAddWatchPanel :show-id="data.showId" @created="handleWatchCreated" />
 
       <ShowWatchTimeline :watches="data.recentWatches" />
     </template>
