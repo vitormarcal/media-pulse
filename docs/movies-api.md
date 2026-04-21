@@ -21,6 +21,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `MoviesByYearResponse` |
 | `GET /api/movies/catalog/suggestions` | `q` | `MovieCatalogSuggestionsResponse` |
 | `POST /api/movies/catalog` | body com `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieCatalogCreateResponse` |
+| `POST /api/movies/collections/backfill` | `limit=50` | `MovieCollectionBackfillResponse` |
 | `POST /api/movies/{movieId}/watches` | body com `watchedAt` | `ManualMovieWatchCreateResponse` |
 | `POST /api/movies/{movieId}/enrichment/preview` | body com `tmdbId?` | `MovieEnrichmentPreviewResponse` |
 | `POST /api/movies/{movieId}/enrichment/apply` | body com `tmdbId?`, `mode`, `fields[]` | `MovieEnrichmentApplyResponse` |
@@ -72,7 +73,7 @@ Resolução do filme:
 Regras importantes:
 
 - deduplicação por `(source, movie_id, watched_at)`
-- quando `tmdbId` existir, o serviço tenta preencher metadados faltantes e baixar imagens do TMDb
+- quando `tmdbId` existir, o serviço tenta preencher metadados faltantes, baixar imagens do TMDb e vincular a coleção oficial do filme quando houver `belongs_to_collection`
 
 ## Catálogo e enriquecimento
 
@@ -90,6 +91,7 @@ Uso esperado:
 - cair para manual apenas quando a busca externa não ajudar
 - consolidar ids externos antes do primeiro watch
 - abrir um detalhe de filme utilizável mesmo sem histórico de sessão
+- vincular automaticamente a coleção/franquia oficial do TMDb quando o filme pertencer a uma
 
 `POST /api/movies/{movieId}/enrichment/preview` compara o estado atual do filme com uma sugestão do TMDb.
 
@@ -110,3 +112,20 @@ Campos suportados no MVP:
 - `TMDB_ID`
 - `IMDB_ID`
 - `IMAGES`
+
+## Coleções oficiais TMDb
+
+Filmes podem ser vinculados a uma coleção oficial do TMDb, como `The Matrix Collection`.
+
+- o schema guarda `movie_collections.tmdb_id` como chave externa estável da coleção
+- `movies.collection_id` aponta para a coleção local
+- o vínculo é preenchido durante criação de catálogo e enriquecimento por TMDb
+- `MovieDetailsResponse.collection` retorna a coleção do filme e os filmes locais já catalogados na mesma coleção
+- coleções oficiais não substituem futuras listas pessoais; elas representam apenas `belongs_to_collection` do TMDb
+
+`POST /api/movies/collections/backfill` atualiza filmes existentes em lote.
+
+- seleciona filmes com identificador `TMDB` e sem `collection_id`
+- marca filmes sem `belongs_to_collection` como verificados para não repetir o mesmo candidato indefinidamente
+- `limit` é normalizado entre `1` e `500`
+- retorna contadores de candidatos, processados, vinculados, sem coleção e falhas

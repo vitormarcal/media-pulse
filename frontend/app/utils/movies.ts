@@ -458,6 +458,7 @@ export function buildMovieLibraryPageData(payload: {
 export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
   const latestWatch = movie.watches[0]?.watchedAt ?? null
   const firstWatch = movie.watches[movie.watches.length - 1]?.watchedAt ?? null
+  const watchedCollectionMovies = movie.collection?.movies.filter((item) => item.watched).length ?? 0
   const orderedGallery = [
     ...(movie.coverUrl ? [movie.coverUrl] : []),
     ...movie.images
@@ -497,6 +498,27 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
       provider: identifier.provider,
       externalId: identifier.externalId,
     })),
+    collection: movie.collection
+      ? {
+          id: String(movie.collection.id),
+          name: movie.collection.name,
+          tmdbId: movie.collection.tmdbId,
+          posterUrl: movie.collection.posterUrl,
+          backdropUrl: movie.collection.backdropUrl,
+          progressLabel: `${watchedCollectionMovies}/${movie.collection.movies.length} assistidos`,
+          movies: movie.collection.movies.map((item) => ({
+            id: String(item.movieId),
+            title: item.title,
+            subtitle: [item.year ? String(item.year) : null, item.watched ? 'Assistido' : 'Na fila']
+              .filter(Boolean)
+              .join(' · '),
+            href: item.slug ? `/movies/${item.slug}` : null,
+            imageUrl: item.coverUrl,
+            watched: item.watched,
+            current: item.current,
+          })),
+        }
+      : null,
     recentWatches: movie.watches.slice(0, 24).map(mapWatch),
   }
 }

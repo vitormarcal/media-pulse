@@ -17,6 +17,26 @@ export interface MovieExternalIdDto {
   externalId: string
 }
 
+export interface MovieCollectionDto {
+  id: number
+  tmdbId: string
+  name: string
+  posterUrl: string | null
+  backdropUrl: string | null
+  movies: MovieCollectionMovieDto[]
+}
+
+export interface MovieCollectionMovieDto {
+  movieId: number
+  title: string
+  originalTitle: string
+  slug: string | null
+  year: number | null
+  coverUrl: string | null
+  watched: boolean
+  current: boolean
+}
+
 export interface MovieDetailsResponse {
   movieId: number
   title: string
@@ -28,6 +48,7 @@ export interface MovieDetailsResponse {
   images: MovieImageDto[]
   watches: MovieWatchDto[]
   externalIds: MovieExternalIdDto[]
+  collection: MovieCollectionDto | null
 }
 
 export type MovieEnrichmentField = 'TITLE' | 'YEAR' | 'DESCRIPTION' | 'TMDB_ID' | 'IMDB_ID' | 'IMAGES'
@@ -156,6 +177,23 @@ export interface MoviePageData {
     provider: string
     externalId: string
   }>
+  collection: {
+    id: string
+    name: string
+    tmdbId: string
+    posterUrl: string | null
+    backdropUrl: string | null
+    progressLabel: string
+    movies: Array<{
+      id: string
+      title: string
+      subtitle: string
+      href: string | null
+      imageUrl: string | null
+      watched: boolean
+      current: boolean
+    }>
+  } | null
   recentWatches: MovieWatchEntryModel[]
 }
 

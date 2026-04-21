@@ -26,6 +26,8 @@
 
       <MovieContextPanel :stats="data.stats" :identifiers="data.identifiers" />
 
+      <MovieCollectionPanel :collection="data.collection" />
+
       <MovieAddWatchPanel :movie-id="data.movieId" @created="handleWatchCreated" />
 
       <MovieWatchTimeline :movie-id="data.movieId" :watches="data.recentWatches" @deleted="handleWatchDeleted" />
@@ -35,6 +37,7 @@
 
 <script setup lang="ts">
 import MovieAddWatchPanel from '~/components/movies/MovieAddWatchPanel.vue'
+import MovieCollectionPanel from '~/components/movies/MovieCollectionPanel.vue'
 import MovieContextPanel from '~/components/movies/MovieContextPanel.vue'
 import MovieEnrichmentPanel from '~/components/movies/MovieEnrichmentPanel.vue'
 import MoviePageHero from '~/components/movies/MoviePageHero.vue'

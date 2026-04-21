@@ -45,6 +45,8 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `V11__create_tv_schema.sql`
 - `V12__add_tv_show_images.sql`
 - `V13__add_tv_episode_season_title.sql`
+- `V14__create_music_duplicate_review_state.sql`
+- `V15__add_movie_collections.sql`
 
 ## Configuração
 

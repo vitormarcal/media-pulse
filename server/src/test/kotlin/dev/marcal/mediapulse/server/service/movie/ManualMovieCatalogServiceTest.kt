@@ -10,6 +10,7 @@ import dev.marcal.mediapulse.server.model.image.ImageContent
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieTitleSource
 import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
+import dev.marcal.mediapulse.server.repository.crud.MovieCollectionCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTitleCrudRepository
@@ -32,6 +33,7 @@ import kotlin.test.assertTrue
 class ManualMovieCatalogServiceTest {
     private lateinit var movieRepository: MovieRepository
     private lateinit var movieTitleCrudRepository: MovieTitleCrudRepository
+    private lateinit var movieCollectionCrudRepository: MovieCollectionCrudRepository
     private lateinit var movieImageCrudRepository: MovieImageCrudRepository
     private lateinit var externalIdentifierRepository: ExternalIdentifierRepository
     private lateinit var tmdbApiClient: TmdbApiClient
@@ -43,6 +45,7 @@ class ManualMovieCatalogServiceTest {
     fun setUp() {
         movieRepository = mockk(relaxed = true)
         movieTitleCrudRepository = mockk(relaxed = true)
+        movieCollectionCrudRepository = mockk(relaxed = true)
         movieImageCrudRepository = mockk(relaxed = true)
         externalIdentifierRepository = mockk(relaxed = true)
         tmdbApiClient = mockk(relaxed = true)
@@ -54,6 +57,7 @@ class ManualMovieCatalogServiceTest {
             ManualMovieCatalogService(
                 movieRepository = movieRepository,
                 movieTitleCrudRepository = movieTitleCrudRepository,
+                movieCollectionCrudRepository = movieCollectionCrudRepository,
                 movieImageCrudRepository = movieImageCrudRepository,
                 externalIdentifierRepository = externalIdentifierRepository,
                 tmdbApiClient = tmdbApiClient,
@@ -236,6 +240,66 @@ class ManualMovieCatalogServiceTest {
                 },
             )
         }
+    }
+
+    @Test
+    fun `vincula colecao oficial tmdb ao criar filme`() {
+        val savedMovie =
+            Movie(
+                id = 91,
+                originalTitle = "The Matrix",
+                year = 1999,
+                description = "A hacker discovers reality.",
+                slug = "the-matrix",
+                coverUrl = null,
+                fingerprint = "fp",
+            )
+        val linkedMovie = savedMovie.copy(collectionId = 12)
+
+        every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
+        every { tmdbApiClient.fetchMovieDetails("603") } returns
+            TmdbApiClient.TmdbMovieDetails(
+                title = "The Matrix",
+                originalTitle = "The Matrix",
+                imdbId = "tt0133093",
+                overview = "A hacker discovers reality.",
+                releaseYear = 1999,
+                posterPath = null,
+                backdropPath = null,
+                collection =
+                    TmdbApiClient.TmdbMovieCollection(
+                        tmdbId = "2344",
+                        name = "The Matrix Collection",
+                        posterPath = "/collection-poster.jpg",
+                        backdropPath = "/collection-backdrop.jpg",
+                    ),
+            )
+        every { movieRepository.findByFingerprint(any()) } returns null
+        every { movieRepository.save(any()) } returnsMany listOf(savedMovie, linkedMovie)
+        every { movieRepository.findById(91) } returns Optional.of(linkedMovie)
+        every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
+        every { movieCollectionCrudRepository.upsertFromTmdb(any(), any(), any(), any()) } returns 12
+        every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
+        every { externalIdentifierRepository.save(any()) } returns mockk()
+
+        val result =
+            service.resolveOrCreate(
+                ManualMovieCatalogService.MovieCatalogUpsertRequest(
+                    title = "The Matrix",
+                    tmdbId = "603",
+                ),
+            )
+
+        assertEquals(12L, result.movie.collectionId)
+        verify(exactly = 1) {
+            movieCollectionCrudRepository.upsertFromTmdb(
+                tmdbId = "2344",
+                name = "The Matrix Collection",
+                posterUrl = "https://image.tmdb.org/t/p/w780/collection-poster.jpg",
+                backdropUrl = "https://image.tmdb.org/t/p/w780/collection-backdrop.jpg",
+            )
+        }
+        verify(exactly = 1) { movieRepository.save(match { it.id == 91L && it.collectionId == 12L }) }
     }
 
     @Test

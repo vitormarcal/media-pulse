@@ -21,6 +21,17 @@ data class TmdbMovieDetailsResponse(
     val posterPath: String? = null,
     @JsonProperty("backdrop_path")
     val backdropPath: String? = null,
+    @JsonProperty("belongs_to_collection")
+    val belongsToCollection: TmdbMovieCollectionResponse? = null,
+)
+
+data class TmdbMovieCollectionResponse(
+    val id: Long? = null,
+    val name: String? = null,
+    @JsonProperty("poster_path")
+    val posterPath: String? = null,
+    @JsonProperty("backdrop_path")
+    val backdropPath: String? = null,
 )
 
 data class TmdbMovieSearchItemResponse(
@@ -120,6 +131,14 @@ class TmdbApiClient(
         val releaseYear: Int?,
         val posterPath: String?,
         val backdropPath: String?,
+        val collection: TmdbMovieCollection? = null,
+    )
+
+    data class TmdbMovieCollection(
+        val tmdbId: String,
+        val name: String,
+        val posterPath: String?,
+        val backdropPath: String?,
     )
 
     data class TmdbShowDetails(
@@ -212,6 +231,17 @@ class TmdbApiClient(
                     releaseYear = parseReleaseYear(response.releaseDate),
                     posterPath = response.posterPath?.trim()?.ifBlank { null },
                     backdropPath = response.backdropPath?.trim()?.ifBlank { null },
+                    collection =
+                        response.belongsToCollection
+                            ?.takeIf { it.id != null && !it.name.isNullOrBlank() }
+                            ?.let { collection ->
+                                TmdbMovieCollection(
+                                    tmdbId = collection.id.toString(),
+                                    name = collection.name!!.trim(),
+                                    posterPath = collection.posterPath?.trim()?.ifBlank { null },
+                                    backdropPath = collection.backdropPath?.trim()?.ifBlank { null },
+                                )
+                            },
                 )
             } catch (ex: WebClientResponseException.NotFound) {
                 return null

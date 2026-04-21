@@ -29,6 +29,26 @@ data class MovieExternalIdDto(
     val externalId: String,
 )
 
+data class MovieCollectionDto(
+    val id: Long,
+    val tmdbId: String,
+    val name: String,
+    val posterUrl: String?,
+    val backdropUrl: String?,
+    val movies: List<MovieCollectionMovieDto>,
+)
+
+data class MovieCollectionMovieDto(
+    val movieId: Long,
+    val title: String,
+    val originalTitle: String,
+    val slug: String?,
+    val year: Int?,
+    val coverUrl: String?,
+    val watched: Boolean,
+    val current: Boolean,
+)
+
 enum class MovieEnrichmentField {
     TITLE,
     YEAR,
@@ -54,6 +74,7 @@ data class MovieDetailsResponse(
     val images: List<MovieImageDto>,
     val watches: List<MovieWatchDto>,
     val externalIds: List<MovieExternalIdDto>,
+    val collection: MovieCollectionDto? = null,
 )
 
 data class ManualMovieCatalogCreateRequest(
@@ -150,6 +171,15 @@ data class MovieEnrichmentApplyResponse(
     val appliedFields: List<MovieEnrichmentField>,
     val coverAssigned: Boolean,
     val externalIds: List<ManualMovieExternalIdView>,
+)
+
+data class MovieCollectionBackfillResponse(
+    val requestedLimit: Int,
+    val candidates: Int,
+    val processed: Int,
+    val linked: Int,
+    val withoutCollection: Int,
+    val failed: Int,
 )
 
 data class MoviesSearchResponse(

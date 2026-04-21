@@ -41,6 +41,10 @@ Accept: application/json
 GET {{baseUrl}}/year/{{year}}?limitWatched=200&limitUnwatched=200
 Accept: application/json
 
+### Backfill de colecoes oficiais TMDb
+POST {{baseUrl}}/collections/backfill?limit=100000
+Accept: application/json
+
 ### Registrar watch manual (item unico)
 POST {{baseUrl}}/watches
 Content-Type: application/json

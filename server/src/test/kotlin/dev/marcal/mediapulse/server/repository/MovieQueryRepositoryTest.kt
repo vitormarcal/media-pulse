@@ -107,6 +107,11 @@ class MovieQueryRepositoryTest {
                         1999,
                         "desc",
                         "/covers/plex/movies/10/poster.jpg",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
                     ),
                 ),
                 emptyList<Any>(),
@@ -117,6 +122,55 @@ class MovieQueryRepositoryTest {
 
         assertEquals(10L, response.movieId)
         verify(exactly = 1) { query.setParameter("slug", "3828") }
+    }
+
+    @Test
+    fun `details should map tmdb collection members`() {
+        every { query.resultList } returnsMany
+            listOf(
+                listOf(
+                    arrayOf(
+                        10L,
+                        "Matrix",
+                        "The Matrix",
+                        "the-matrix",
+                        1999,
+                        "desc",
+                        "/covers/matrix.jpg",
+                        44L,
+                        "2344",
+                        "The Matrix Collection",
+                        "https://image.tmdb.org/t/p/w780/poster.jpg",
+                        "https://image.tmdb.org/t/p/w780/backdrop.jpg",
+                    ),
+                ),
+                emptyList<Any>(),
+                emptyList<Any>(),
+                emptyList<Any>(),
+                listOf(
+                    arrayOf(10L, "Matrix", "The Matrix", "the-matrix", 1999, "/covers/matrix.jpg", true),
+                    arrayOf(11L, "Matrix Reloaded", "The Matrix Reloaded", "matrix-reloaded", 2003, "/covers/reloaded.jpg", false),
+                ),
+            )
+
+        val response = repository.getMovieDetails(10)
+
+        assertEquals("The Matrix Collection", response.collection?.name)
+        assertEquals("2344", response.collection?.tmdbId)
+        assertEquals(2, response.collection?.movies?.size)
+        assertTrue(
+            response.collection!!
+                .movies
+                .first()
+                .current,
+        )
+        assertTrue(
+            response.collection!!
+                .movies
+                .first()
+                .watched,
+        )
+        verify(exactly = 1) { query.setParameter("collectionId", 44L) }
     }
 
     @Test

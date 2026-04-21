@@ -9,6 +9,7 @@ import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieTitleSource
 import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
+import dev.marcal.mediapulse.server.repository.crud.MovieCollectionCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTitleCrudRepository
@@ -25,6 +26,7 @@ import java.time.Instant
 class ManualMovieCatalogService(
     private val movieRepository: MovieRepository,
     private val movieTitleCrudRepository: MovieTitleCrudRepository,
+    private val movieCollectionCrudRepository: MovieCollectionCrudRepository,
     private val movieImageCrudRepository: MovieImageCrudRepository,
     private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val tmdbApiClient: TmdbApiClient,
@@ -72,6 +74,14 @@ class ManualMovieCatalogService(
         val releaseYear: Int?,
         val posterPath: String?,
         val backdropPath: String?,
+        val posterUrl: String?,
+        val backdropUrl: String?,
+        val collection: TmdbMovieCollectionSnapshot? = null,
+    )
+
+    data class TmdbMovieCollectionSnapshot(
+        val tmdbId: String,
+        val name: String,
         val posterUrl: String?,
         val backdropUrl: String?,
     )
@@ -136,9 +146,10 @@ class ManualMovieCatalogService(
 
         normalizedTmdbId?.let { safeLink(movieAfterMetadata.id, Provider.TMDB, it) }
         (normalizedImdbId ?: tmdbSnapshot?.imdbId)?.let { safeLink(movieAfterMetadata.id, Provider.IMDB, it) }
+        val movieAfterCollection = maybeAssignTmdbCollection(movieAfterMetadata, tmdbSnapshot)
 
-        val coverAssigned = maybeAssignTmdbImages(movie = movieAfterMetadata, tmdbSnapshot = tmdbSnapshot).primaryImageUrl != null
-        val refreshedMovie = movieRepository.findById(movieAfterMetadata.id).orElse(movieAfterMetadata)
+        val coverAssigned = maybeAssignTmdbImages(movie = movieAfterCollection, tmdbSnapshot = tmdbSnapshot).primaryImageUrl != null
+        val refreshedMovie = movieRepository.findById(movieAfterCollection.id).orElse(movieAfterCollection)
 
         return MovieCatalogResult(
             movie = refreshedMovie,
@@ -161,6 +172,15 @@ class ManualMovieCatalogService(
             backdropPath = tmdbDetails.backdropPath,
             posterUrl = tmdbDetails.posterPath?.let(::buildTmdbImageUrl),
             backdropUrl = tmdbDetails.backdropPath?.let(::buildTmdbImageUrl),
+            collection =
+                tmdbDetails.collection?.let { collection ->
+                    TmdbMovieCollectionSnapshot(
+                        tmdbId = collection.tmdbId,
+                        name = collection.name,
+                        posterUrl = collection.posterPath?.let(::buildTmdbImageUrl),
+                        backdropUrl = collection.backdropPath?.let(::buildTmdbImageUrl),
+                    )
+                },
         )
     }
 
@@ -222,6 +242,11 @@ class ManualMovieCatalogService(
         tmdbSnapshot: TmdbMovieSnapshot,
         selection: TmdbImageSelection? = null,
     ): TmdbImageAssignmentResult = maybeAssignTmdbImages(movie, tmdbSnapshot, selection)
+
+    fun assignTmdbCollection(
+        movie: Movie,
+        tmdbSnapshot: TmdbMovieSnapshot,
+    ): Movie = maybeAssignTmdbCollection(movie, tmdbSnapshot)
 
     fun resolveMovieSlug(title: String): String? = resolveSlug(title)
 
@@ -358,6 +383,25 @@ class ManualMovieCatalogService(
             insertedCount = savedImages.size,
             primaryImageUrl = if (shouldPromotePrimary) primaryLocalPath else null,
         )
+    }
+
+    private fun maybeAssignTmdbCollection(
+        movie: Movie,
+        tmdbSnapshot: TmdbMovieSnapshot?,
+    ): Movie {
+        val collection = tmdbSnapshot?.collection ?: return movie
+        val collectionId =
+            movieCollectionCrudRepository.upsertFromTmdb(
+                tmdbId = collection.tmdbId,
+                name = collection.name,
+                posterUrl = collection.posterUrl,
+                backdropUrl = collection.backdropUrl,
+            )
+
+        if (movie.collectionId == collectionId && movie.collectionCheckedAt != null) return movie
+
+        val now = Instant.now()
+        return movieRepository.save(movie.copy(collectionId = collectionId, collectionCheckedAt = now, updatedAt = now))
     }
 
     fun buildTmdbImageUrl(posterPath: String): String {

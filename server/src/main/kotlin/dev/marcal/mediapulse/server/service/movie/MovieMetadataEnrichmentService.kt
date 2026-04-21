@@ -175,6 +175,8 @@ class MovieMetadataEnrichmentService(
             mutableMovie = movieRepository.save(mutableMovie)
         }
 
+        mutableMovie = manualMovieCatalogService.assignTmdbCollection(mutableMovie, snapshot)
+
         val imageSelection =
             request.imageSelection?.let {
                 ManualMovieCatalogService.TmdbImageSelection(

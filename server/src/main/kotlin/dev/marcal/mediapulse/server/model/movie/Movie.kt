@@ -23,6 +23,10 @@ data class Movie(
     val coverUrl: String? = null,
     @Column(name = "slug")
     val slug: String? = null,
+    @Column(name = "collection_id")
+    val collectionId: Long? = null,
+    @Column(name = "collection_checked_at")
+    val collectionCheckedAt: Instant? = null,
     @Column(nullable = false, unique = true)
     val fingerprint: String,
     @Column(name = "created_at")

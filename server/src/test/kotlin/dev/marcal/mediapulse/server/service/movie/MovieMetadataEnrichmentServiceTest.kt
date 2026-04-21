@@ -140,6 +140,7 @@ class MovieMetadataEnrichmentServiceTest {
                 any(),
             )
         } returns ManualMovieCatalogService.TmdbImageAssignmentResult(insertedCount = 1, primaryImageUrl = "/covers/tmdb/dune.jpg")
+        every { manualMovieCatalogService.assignTmdbCollection(any(), any()) } answers { firstArg() }
         every { externalIdentifierRepository.findByEntityTypeAndEntityId(EntityType.MOVIE, 9) } returns
             listOf(
                 ExternalIdentifier(entityType = EntityType.MOVIE, entityId = 9, provider = Provider.IMDB, externalId = "tt1160419"),
@@ -173,6 +174,7 @@ class MovieMetadataEnrichmentServiceTest {
         )
         assertTrue(response.coverAssigned)
         verify(exactly = 1) { manualMovieCatalogService.linkExternalIdIfAvailable(9, Provider.IMDB, "tt1160419") }
+        verify(exactly = 1) { manualMovieCatalogService.assignTmdbCollection(any(), any()) }
         verify(exactly = 1) {
             manualMovieCatalogService.assignSelectedTmdbImages(
                 any(),

@@ -1,6 +1,8 @@
 package dev.marcal.mediapulse.server.repository
 
 import dev.marcal.mediapulse.server.api.movies.MovieCardDto
+import dev.marcal.mediapulse.server.api.movies.MovieCollectionDto
+import dev.marcal.mediapulse.server.api.movies.MovieCollectionMovieDto
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieExternalIdDto
 import dev.marcal.mediapulse.server.api.movies.MovieImageDto
@@ -217,8 +219,14 @@ class MovieQueryRepository(
                       m.slug,
                       m.year,
                       m.description,
-                      m.cover_url
+                      m.cover_url,
+                      mc.id AS collection_id,
+                      mc.tmdb_id AS collection_tmdb_id,
+                      mc.name AS collection_name,
+                      mc.poster_url AS collection_poster_url,
+                      mc.backdrop_url AS collection_backdrop_url
                     FROM movies m
+                    LEFT JOIN movie_collections mc ON mc.id = m.collection_id
                     WHERE m.id = :movieId
                     """.trimIndent(),
                 ).setParameter("movieId", movieId)
@@ -287,6 +295,61 @@ class MovieQueryRepository(
                     )
                 }
 
+        val collection =
+            (base[7] as Number?)?.toLong()?.let { collectionId ->
+                val collectionMovies =
+                    entityManager
+                        .createNativeQuery(
+                            """
+                            SELECT
+                              m.id,
+                              COALESCE((
+                                SELECT mt.title
+                                FROM movie_titles mt
+                                WHERE mt.movie_id = m.id
+                                ORDER BY mt.is_primary ASC, mt.id ASC
+                                LIMIT 1
+                              ), m.original_title) AS title,
+                              m.original_title,
+                              m.slug,
+                              m.year,
+                              m.cover_url,
+                              EXISTS (
+                                SELECT 1
+                                FROM movie_watches mw
+                                WHERE mw.movie_id = m.id
+                              ) AS watched
+                            FROM movies m
+                            WHERE m.collection_id = :collectionId
+                            ORDER BY m.year NULLS LAST, title ASC, m.id ASC
+                            """.trimIndent(),
+                        ).setParameter("collectionId", collectionId)
+                        .resultList
+                        .map { row ->
+                            val fields = row as Array<*>
+                            val memberId = (fields[0] as Number).toLong()
+                            MovieCollectionMovieDto(
+                                movieId = memberId,
+                                title = fields[1] as String,
+                                originalTitle = fields[2] as String,
+                                slug = fields[3] as String?,
+                                year = (fields[4] as Number?)?.toInt(),
+                                coverUrl = fields[5] as String?,
+                                watched = fields[6] as Boolean,
+                                current = memberId == movieId,
+                            )
+                        }
+
+                MovieCollectionDto(
+                    id = collectionId,
+                    tmdbId = base[8] as String,
+                    name = base[9] as String,
+                    posterUrl = base[10] as String?,
+                    backdropUrl = base[11] as String?,
+                    movies = collectionMovies,
+                )
+            }
+
         return MovieDetailsResponse(
             movieId = (base[0] as Number).toLong(),
             title = base[1] as String,
@@ -298,6 +361,7 @@ class MovieQueryRepository(
             images = images,
             watches = watches,
             externalIds = externalIds,
+            collection = collection,
         )
     }
 
