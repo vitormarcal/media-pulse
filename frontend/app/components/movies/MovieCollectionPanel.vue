@@ -284,15 +284,15 @@ async function addMember(item: CollectionDisplayItem) {
 }
 
 .collection-load-button {
-  border: 0;
+  border: 2px solid transparent;
   border-radius: 16px;
   background: var(--base-color-surface-strong);
   color: var(--base-color-text-primary);
   cursor: pointer;
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  padding: 8px 14px;
+  padding: 6px 14px;
 }
 
 .collection-load-button:disabled {
@@ -303,28 +303,16 @@ async function addMember(item: CollectionDisplayItem) {
 .movie-rail {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(152px, 1fr));
-  gap: 14px;
+  gap: 18px 14px;
 }
 
 .collection-card {
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
-  padding: 12px;
-  border: 2px solid transparent;
-  border-radius: 24px;
-  background: color-mix(in srgb, var(--base-color-surface-strong) 86%, #ffffff);
   color: inherit;
   text-decoration: none;
-}
-
-.collection-card.current {
-  border-color: var(--base-color-brand-red);
-}
-
-.collection-card:not(.catalogued) {
-  background: color-mix(in srgb, var(--base-color-surface-soft) 70%, #ffffff);
 }
 
 .poster-link {
@@ -335,8 +323,13 @@ async function addMember(item: CollectionDisplayItem) {
 .movie-poster {
   overflow: hidden;
   aspect-ratio: 2 / 3;
-  border-radius: 18px;
-  background: var(--base-color-surface-soft);
+  border: 8px solid #ffffff;
+  border-radius: 24px;
+  background: linear-gradient(160deg, rgba(230, 0, 35, 0.08), rgba(33, 25, 34, 0.05)), var(--base-color-surface-soft);
+}
+
+.collection-card:not(.catalogued) .movie-poster {
+  border-color: color-mix(in srgb, var(--base-color-surface-warm) 74%, #ffffff);
 }
 
 .movie-poster img,
@@ -360,7 +353,6 @@ async function addMember(item: CollectionDisplayItem) {
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
 .collection-card.current .movie-copy span {
@@ -414,19 +406,23 @@ async function addMember(item: CollectionDisplayItem) {
 }
 
 .movie-button {
-  border: 0;
+  border: 2px solid transparent;
   border-radius: 16px;
-  background: var(--base-color-brand-red);
+  background: var(--base-color-surface-strong);
   color: var(--base-color-text-primary);
   cursor: pointer;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 700;
   justify-content: center;
   min-width: 0;
-  padding: 7px 12px;
+  padding: 6px 14px;
   text-align: center;
   text-decoration: none;
+}
+
+.movie-button:hover:not(:disabled) {
+  background: var(--base-color-surface-warm);
 }
 
 .movie-button:disabled {
