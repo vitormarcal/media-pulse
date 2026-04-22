@@ -3,8 +3,8 @@
     <SectionHeading
       eyebrow="Coleção"
       :title="collection.name"
-      description="A franquia oficial do TMDb aparece aqui com os filmes que já estão no seu catálogo."
-      :summary="collection.progressLabel"
+      description="A franquia ao redor deste filme, entre catálogo local e sugestões do TMDb."
+      :summary="collectionSummary"
     />
 
     <div class="collection-grid">
@@ -13,25 +13,56 @@
         <div v-else class="poster-fallback">{{ collection.name.slice(0, 1) }}</div>
       </div>
 
-      <div class="movie-rail">
-        <component
-          :is="movie.href ? NuxtLink : 'article'"
-          v-for="movie in collection.movies"
-          :key="movie.id"
-          class="movie-card"
-          :class="{ current: movie.current, watched: movie.watched }"
-          :to="movie.href || undefined"
-        >
-          <div class="movie-poster">
-            <img v-if="resolveMediaUrl(movie.imageUrl)" :src="resolveMediaUrl(movie.imageUrl)" :alt="movie.title" />
-            <div v-else class="movie-fallback">{{ movie.title.slice(0, 1) }}</div>
-          </div>
-          <div class="movie-copy">
-            <span>{{ movie.current ? 'Este filme' : movie.watched ? 'Assistido' : 'Na fila' }}</span>
-            <strong>{{ movie.title }}</strong>
-            <p>{{ movie.subtitle }}</p>
-          </div>
-        </component>
+      <div class="collection-content">
+        <div class="collection-toolbar">
+          <p class="collection-count">{{ collectionCountLabel }}</p>
+          <button
+            v-if="showLoadButton"
+            type="button"
+            class="collection-load-button"
+            :disabled="loadingMembers"
+            @click="loadMembers"
+          >
+            {{ membersButtonLabel }}
+          </button>
+        </div>
+
+        <p v-if="membersError" class="members-error">{{ membersError }}</p>
+
+        <div class="movie-rail">
+          <article
+            v-for="item in collectionItems"
+            :key="item.id"
+            class="collection-card"
+            :class="{ current: item.current, catalogued: item.inCatalog }"
+          >
+            <component :is="item.href ? NuxtLink : 'div'" class="poster-link" :to="item.href || undefined">
+              <div class="movie-poster">
+                <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title" />
+                <div v-else class="movie-fallback">{{ item.title.slice(0, 1) }}</div>
+              </div>
+            </component>
+
+            <div class="movie-copy">
+              <span>{{ item.statusLabel }}</span>
+              <strong>{{ item.title }}</strong>
+              <p class="movie-year">{{ item.subtitle }}</p>
+            </div>
+
+            <div v-if="item.tmdbUrl || !item.inCatalog" class="movie-actions">
+              <a v-if="item.tmdbUrl" class="tmdb-link" :href="item.tmdbUrl" target="_blank" rel="noreferrer">TMDb</a>
+              <button
+                v-if="!item.inCatalog"
+                type="button"
+                class="movie-button"
+                :disabled="addingTmdbId === item.tmdbId"
+                @click="addMember(item)"
+              >
+                {{ addingTmdbId === item.tmdbId ? 'Adicionando...' : 'Adicionar' }}
+              </button>
+            </div>
+          </article>
+        </div>
       </div>
     </div>
   </section>
@@ -39,7 +70,7 @@
 
 <script setup lang="ts">
 import SectionHeading from '~/components/home/SectionHeading.vue'
-import type { MoviePageData } from '~/types/movies'
+import type { ManualMovieCatalogCreateResponse, MovieCollectionMembersResponse, MoviePageData } from '~/types/movies'
 
 const NuxtLink = resolveComponent('NuxtLink')
 
@@ -47,8 +78,147 @@ const props = defineProps<{
   collection: MoviePageData['collection']
 }>()
 
+const emit = defineEmits<{
+  added: [response: ManualMovieCatalogCreateResponse]
+}>()
+
+const config = useRuntimeConfig()
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedPosterUrl = computed(() => resolveMediaUrl(props.collection?.posterUrl ?? props.collection?.backdropUrl))
+const membersResponse = ref<MovieCollectionMembersResponse | null>(null)
+const loadingMembers = ref(false)
+const membersError = ref<string | null>(null)
+const addingTmdbId = ref<string | null>(null)
+
+interface CollectionDisplayItem {
+  id: string
+  tmdbId: string | null
+  title: string
+  year: number | null
+  subtitle: string
+  imageUrl: string | null
+  href: string | null
+  tmdbUrl: string | null
+  inCatalog: boolean
+  current: boolean
+  statusLabel: string
+}
+
+const collectionSummary = computed(() => {
+  if (!props.collection) return ''
+  if (!membersResponse.value) return props.collection.progressLabel
+
+  return membersCatalogSummary.value
+})
+
+const membersButtonLabel = computed(() => {
+  if (loadingMembers.value) return 'Carregando...'
+  return membersError.value ? 'Tentar novamente' : 'Ver todos'
+})
+
+const showLoadButton = computed(() => !membersResponse.value || membersError.value != null)
+
+const membersCatalogSummary = computed(() => {
+  const members = membersResponse.value?.members ?? []
+  const catalogued = members.filter((member) => member.inCatalog).length
+  return members.length ? `${catalogued}/${members.length} no catálogo` : 'Nenhum membro retornado pelo TMDb'
+})
+
+const collectionItems = computed<CollectionDisplayItem[]>(() => {
+  if (!props.collection) return []
+
+  if (!membersResponse.value) {
+    return props.collection.movies.map((movie) => ({
+      id: `local-${movie.id}`,
+      tmdbId: null,
+      title: movie.title,
+      year: null,
+      subtitle: movie.subtitle,
+      imageUrl: movie.imageUrl,
+      href: movie.href,
+      tmdbUrl: null,
+      inCatalog: true,
+      current: movie.current,
+      statusLabel: movie.current ? 'Este filme' : movie.watched ? 'Assistido' : 'Catálogo',
+    }))
+  }
+
+  return membersResponse.value.members.map((member) => ({
+    id: `tmdb-${member.tmdbId}`,
+    tmdbId: member.tmdbId,
+    title: member.title,
+    year: member.year,
+    subtitle: member.year ? String(member.year) : 'Sem ano',
+    imageUrl: member.posterUrl,
+    href: member.localSlug ? `/movies/${member.localSlug}` : null,
+    tmdbUrl: member.tmdbUrl,
+    inCatalog: member.inCatalog,
+    current: member.localMovieId === props.collection?.movies.find((movie) => movie.current)?.id,
+    statusLabel:
+      member.localMovieId === props.collection?.movies.find((movie) => movie.current)?.id
+        ? 'Este filme'
+        : member.inCatalog
+          ? 'Catálogo'
+          : 'Sugestão TMDb',
+  }))
+})
+
+const collectionCountLabel = computed(() => {
+  if (!membersResponse.value) return `${props.collection?.movies.length ?? 0} no catálogo local`
+  return membersCatalogSummary.value
+})
+
+async function loadMembers() {
+  if (!props.collection || loadingMembers.value) return
+
+  loadingMembers.value = true
+  membersError.value = null
+
+  try {
+    membersResponse.value = await $fetch<MovieCollectionMembersResponse>(
+      `/api/movies/collections/${props.collection.id}/tmdb-members`,
+      {
+        baseURL: config.public.apiBase,
+      },
+    )
+  } catch {
+    membersError.value = 'Não foi possível carregar a coleção completa.'
+  } finally {
+    loadingMembers.value = false
+  }
+}
+
+async function addMember(item: CollectionDisplayItem) {
+  if (addingTmdbId.value || !item.tmdbId) return
+
+  addingTmdbId.value = item.tmdbId
+  membersError.value = null
+
+  try {
+    const response = await $fetch<ManualMovieCatalogCreateResponse>('/api/movies/catalog', {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+      body: {
+        title: item.title,
+        year: item.year,
+        tmdbId: item.tmdbId,
+        imdbId: null,
+      },
+    })
+
+    const member = membersResponse.value?.members.find((candidate) => candidate.tmdbId === item.tmdbId)
+    if (member) {
+      member.inCatalog = true
+      member.localMovieId = response.movieId
+      member.localSlug = response.slug
+    }
+    emit('added', response)
+  } catch {
+    membersError.value = `Não foi possível adicionar "${item.title}".`
+  } finally {
+    addingTmdbId.value = null
+  }
+}
 </script>
 
 <style scoped>
@@ -59,12 +229,14 @@ const resolvedPosterUrl = computed(() => resolveMediaUrl(props.collection?.poste
 
 .collection-grid {
   display: grid;
-  grid-template-columns: minmax(12rem, 0.42fr) minmax(0, 1fr);
+  grid-template-columns: minmax(12rem, 0.36fr) minmax(0, 1fr);
   gap: 22px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .collection-poster {
+  position: sticky;
+  top: 92px;
   overflow: hidden;
   min-height: 320px;
   border: 8px solid #ffffff;
@@ -90,14 +262,53 @@ const resolvedPosterUrl = computed(() => resolveMediaUrl(props.collection?.poste
   background: var(--base-color-surface-strong);
 }
 
-.movie-rail {
+.collection-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
-  gap: 16px;
+  gap: 14px;
+  align-content: start;
 }
 
-.movie-card {
+.collection-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.collection-count {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.collection-load-button {
+  border: 0;
+  border-radius: 16px;
+  background: var(--base-color-surface-strong);
+  color: var(--base-color-text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  padding: 8px 14px;
+}
+
+.collection-load-button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.movie-rail {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(152px, 1fr));
+  gap: 14px;
+}
+
+.collection-card {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   gap: 12px;
   min-width: 0;
   padding: 12px;
@@ -108,8 +319,17 @@ const resolvedPosterUrl = computed(() => resolveMediaUrl(props.collection?.poste
   text-decoration: none;
 }
 
-.movie-card.current {
+.collection-card.current {
   border-color: var(--base-color-brand-red);
+}
+
+.collection-card:not(.catalogued) {
+  background: color-mix(in srgb, var(--base-color-surface-soft) 70%, #ffffff);
+}
+
+.poster-link {
+  color: inherit;
+  text-decoration: none;
 }
 
 .movie-poster {
@@ -136,14 +356,18 @@ const resolvedPosterUrl = computed(() => resolveMediaUrl(props.collection?.poste
 }
 
 .movie-copy span {
-  color: var(--base-color-brand-red);
+  color: var(--base-color-text-secondary);
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
-.movie-card:not(.watched) .movie-copy span {
+.collection-card.current .movie-copy span {
+  color: var(--base-color-brand-red);
+}
+
+.collection-card:not(.catalogued) .movie-copy span {
   color: var(--base-color-text-secondary);
 }
 
@@ -158,12 +382,65 @@ const resolvedPosterUrl = computed(() => resolveMediaUrl(props.collection?.poste
   font-size: 0.88rem;
 }
 
+.members-error {
+  margin: 0;
+  color: #7a1414;
+  font-size: 0.9rem;
+}
+
+.movie-year {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.88rem;
+}
+
+.movie-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tmdb-link {
+  color: var(--base-color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tmdb-link:hover {
+  color: var(--base-color-text-primary);
+}
+
+.movie-button {
+  border: 0;
+  border-radius: 16px;
+  background: var(--base-color-brand-red);
+  color: var(--base-color-text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  justify-content: center;
+  min-width: 0;
+  padding: 7px 12px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.movie-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 @media (max-width: 900px) {
   .collection-grid {
     grid-template-columns: 1fr;
   }
 
   .collection-poster {
+    position: static;
     min-height: 220px;
   }
 

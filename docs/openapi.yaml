@@ -972,6 +972,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieCollectionBackfillResponse"
 
+  /api/movies/collections/{collectionId}/tmdb-members:
+    get:
+      summary: Fetch official TMDb movie collection members
+      tags: [Movies]
+      parameters:
+        - name: collectionId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieCollectionMembersResponse"
+
   /api/movies/{movieId}/enrichment/preview:
     post:
       summary: Preview movie enrichment from TMDb
@@ -2497,6 +2516,64 @@ components:
         failed:
           type: integer
       required: [requestedLimit, candidates, processed, linked, withoutCollection, failed]
+    MovieCollectionMemberDto:
+      type: object
+      properties:
+        tmdbId:
+          type: string
+        title:
+          type: string
+        originalTitle:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        overview:
+          type: string
+          nullable: true
+        posterUrl:
+          type: string
+          nullable: true
+        backdropUrl:
+          type: string
+          nullable: true
+        tmdbUrl:
+          type: string
+        localMovieId:
+          type: integer
+          format: int64
+          nullable: true
+        localSlug:
+          type: string
+          nullable: true
+        inCatalog:
+          type: boolean
+      required: [tmdbId, title, tmdbUrl, inCatalog]
+    MovieCollectionMembersResponse:
+      type: object
+      properties:
+        collectionId:
+          type: integer
+          format: int64
+        tmdbId:
+          type: string
+        name:
+          type: string
+        overview:
+          type: string
+          nullable: true
+        posterUrl:
+          type: string
+          nullable: true
+        backdropUrl:
+          type: string
+          nullable: true
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieCollectionMemberDto"
+      required: [collectionId, tmdbId, name, members]
     ExistingMovieWatchCreateRequest:
       type: object
       properties:

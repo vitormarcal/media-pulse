@@ -20,6 +20,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/stats` | - | `MoviesStatsResponse` |
 | `GET /api/movies/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `MoviesByYearResponse` |
 | `GET /api/movies/catalog/suggestions` | `q` | `MovieCatalogSuggestionsResponse` |
+| `GET /api/movies/collections/{collectionId}/tmdb-members` | `collectionId` | `MovieCollectionMembersResponse` |
 | `POST /api/movies/catalog` | body com `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieCatalogCreateResponse` |
 | `POST /api/movies/collections/backfill` | `limit=50` | `MovieCollectionBackfillResponse` |
 | `POST /api/movies/{movieId}/watches` | body com `watchedAt` | `ManualMovieWatchCreateResponse` |
@@ -122,6 +123,13 @@ Filmes podem ser vinculados a uma coleção oficial do TMDb, como `The Matrix Co
 - o vínculo é preenchido durante criação de catálogo e enriquecimento por TMDb
 - `MovieDetailsResponse.collection` retorna a coleção do filme e os filmes locais já catalogados na mesma coleção
 - coleções oficiais não substituem futuras listas pessoais; elas representam apenas `belongs_to_collection` do TMDb
+
+`GET /api/movies/collections/{collectionId}/tmdb-members` busca os membros da coleção no TMDb sob demanda.
+
+- não persiste snapshot dos membros externos
+- cruza os membros retornados com `external_identifiers` locais por `Provider.TMDB`
+- cada membro informa `inCatalog`, `localMovieId`, `localSlug` e `tmdbUrl`
+- a UI usa esse payload para mostrar filmes ausentes e permitir adição explícita ao catálogo
 
 `POST /api/movies/collections/backfill` atualiza filmes existentes em lote.
 

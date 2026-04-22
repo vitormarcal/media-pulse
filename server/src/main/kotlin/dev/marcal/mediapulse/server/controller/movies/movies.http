@@ -45,6 +45,10 @@ Accept: application/json
 POST {{baseUrl}}/collections/backfill?limit=100000
 Accept: application/json
 
+### Membros TMDb de uma colecao
+GET {{baseUrl}}/collections/1/tmdb-members
+Accept: application/json
+
 ### Registrar watch manual (item unico)
 POST {{baseUrl}}/watches
 Content-Type: application/json

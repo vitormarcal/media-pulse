@@ -26,7 +26,7 @@
 
       <MovieContextPanel :stats="data.stats" :identifiers="data.identifiers" />
 
-      <MovieCollectionPanel :collection="data.collection" />
+      <MovieCollectionPanel :collection="data.collection" @added="handleCatalogAdded" />
 
       <MovieAddWatchPanel :movie-id="data.movieId" @created="handleWatchCreated" />
 
@@ -83,6 +83,10 @@ async function handleWatchCreated(_response: ManualMovieWatchCreateResponse) {
 }
 
 async function handleWatchDeleted() {
+  await refresh()
+}
+
+async function handleCatalogAdded() {
   await refresh()
 }
 </script>

@@ -7,10 +7,73 @@ import org.springframework.stereotype.Repository
 class MovieCollectionCrudRepository(
     private val entityManager: EntityManager,
 ) {
+    data class MovieCollectionRecord(
+        val id: Long,
+        val tmdbId: String,
+        val name: String,
+        val posterUrl: String?,
+        val backdropUrl: String?,
+    )
+
     data class MovieCollectionBackfillCandidate(
         val movieId: Long,
         val tmdbId: String,
     )
+
+    data class LocalMovieByTmdbId(
+        val tmdbId: String,
+        val movieId: Long,
+        val slug: String?,
+    )
+
+    fun findCollection(collectionId: Long): MovieCollectionRecord? =
+        (
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT id, tmdb_id, name, poster_url, backdrop_url
+                    FROM movie_collections
+                    WHERE id = :collectionId
+                    LIMIT 1
+                    """.trimIndent(),
+                ).setParameter("collectionId", collectionId)
+                .resultList
+                .firstOrNull() as Array<*>?
+        )?.let { fields ->
+            MovieCollectionRecord(
+                id = (fields[0] as Number).toLong(),
+                tmdbId = fields[1] as String,
+                name = fields[2] as String,
+                posterUrl = fields[3] as String?,
+                backdropUrl = fields[4] as String?,
+            )
+        }
+
+    fun findLocalMoviesByTmdbIds(tmdbIds: List<String>): Map<String, LocalMovieByTmdbId> {
+        val normalizedIds = tmdbIds.mapNotNull { it.trim().ifBlank { null } }.distinct()
+        if (normalizedIds.isEmpty()) return emptyMap()
+
+        return entityManager
+            .createNativeQuery(
+                """
+                SELECT ei.external_id, m.id, m.slug
+                FROM external_identifiers ei
+                JOIN movies m ON m.id = ei.entity_id
+                WHERE ei.entity_type = 'MOVIE'
+                  AND ei.provider = 'TMDB'
+                  AND ei.external_id IN (:tmdbIds)
+                """.trimIndent(),
+            ).setParameter("tmdbIds", normalizedIds)
+            .resultList
+            .map { row ->
+                val fields = row as Array<*>
+                LocalMovieByTmdbId(
+                    tmdbId = fields[0] as String,
+                    movieId = (fields[1] as Number).toLong(),
+                    slug = fields[2] as String?,
+                )
+            }.associateBy { it.tmdbId }
+    }
 
     fun findBackfillCandidates(limit: Int): List<MovieCollectionBackfillCandidate> =
         entityManager

@@ -182,6 +182,30 @@ data class MovieCollectionBackfillResponse(
     val failed: Int,
 )
 
+data class MovieCollectionMembersResponse(
+    val collectionId: Long,
+    val tmdbId: String,
+    val name: String,
+    val overview: String?,
+    val posterUrl: String?,
+    val backdropUrl: String?,
+    val members: List<MovieCollectionMemberDto>,
+)
+
+data class MovieCollectionMemberDto(
+    val tmdbId: String,
+    val title: String,
+    val originalTitle: String?,
+    val year: Int?,
+    val overview: String?,
+    val posterUrl: String?,
+    val backdropUrl: String?,
+    val tmdbUrl: String,
+    val localMovieId: Long?,
+    val localSlug: String?,
+    val inCatalog: Boolean,
+)
+
 data class MoviesSearchResponse(
     val movies: List<MovieCardDto>,
 )

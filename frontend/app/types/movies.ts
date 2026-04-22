@@ -91,6 +91,30 @@ export interface MovieCatalogSuggestionsResponse {
   suggestions: MovieCatalogSuggestion[]
 }
 
+export interface MovieCollectionMembersResponse {
+  collectionId: number
+  tmdbId: string
+  name: string
+  overview: string | null
+  posterUrl: string | null
+  backdropUrl: string | null
+  members: MovieCollectionMember[]
+}
+
+export interface MovieCollectionMember {
+  tmdbId: string
+  title: string
+  originalTitle: string | null
+  year: number | null
+  overview: string | null
+  posterUrl: string | null
+  backdropUrl: string | null
+  tmdbUrl: string
+  localMovieId: number | null
+  localSlug: string | null
+  inCatalog: boolean
+}
+
 export interface MovieEnrichmentPreviewResponse {
   movieId: number
   resolvedTmdbId: string
