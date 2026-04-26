@@ -25,6 +25,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/collections/backfill` | `limit=50` | `MovieCollectionBackfillResponse` |
 | `POST /api/movies/{movieId}/watches` | body com `watchedAt` | `ManualMovieWatchCreateResponse` |
 | `POST /api/movies/{movieId}/terms/sync-tmdb` | `movieId` | `MovieTermsSyncResponse` |
+| `POST /api/movies/terms/sync-tmdb` | `limit=100` | `MovieTermsBatchSyncResponse` |
 | `POST /api/movies/{movieId}/terms` | body com `name`, `kind=GENRE|TAG` | `MovieTermDto` |
 | `POST /api/movies/{movieId}/terms/{termId}/visibility` | body com `hidden` | `MovieTermDto` |
 | `POST /api/movies/terms/{termId}/visibility` | body com `hidden` | `MovieTermDto` |
@@ -147,6 +148,14 @@ Visibilidade:
 - reaproveita termos existentes por `(kind, normalized_name)`
 - reativa termos/vínculos que estavam ocultos
 - importa `genres` como `GENRE` e `keywords` como `TAG`
+
+`POST /api/movies/terms/sync-tmdb` sincroniza termos do TMDb em lote.
+
+- processa apenas filmes com vínculo `TMDB`
+- considera apenas filmes ainda pendentes de sync em lote (`movies.terms_synced_at IS NULL`)
+- `limit` é normalizado entre `1` e `1000`
+- cada filme roda isoladamente; falha de um item não interrompe o lote
+- a resposta retorna `candidates`, `processed`, `synced` e `failed`
 
 `POST /api/movies/{movieId}/terms` adiciona um termo manualmente ao filme.
 

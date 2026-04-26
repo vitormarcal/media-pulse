@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.service.movie
 import dev.marcal.mediapulse.server.api.movies.MovieTermCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieTermDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermKindDto
+import dev.marcal.mediapulse.server.api.movies.MovieTermsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermsSyncResponse
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieTerm
@@ -12,10 +13,13 @@ import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTermAssignmentRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTermRepository
+import dev.marcal.mediapulse.server.repository.crud.MovieTermsCrudRepository
 import dev.marcal.mediapulse.server.util.SlugTextUtil
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 
@@ -25,10 +29,91 @@ class MovieTermsService(
     private val movieQueryRepository: MovieQueryRepository,
     private val movieTermRepository: MovieTermRepository,
     private val movieTermAssignmentRepository: MovieTermAssignmentRepository,
+    private val movieTermsCrudRepository: MovieTermsCrudRepository,
     private val manualMovieCatalogService: ManualMovieCatalogService,
+    private val transactionTemplate: TransactionTemplate,
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     @Transactional
-    fun syncFromTmdb(movieId: Long): MovieTermsSyncResponse {
+    fun syncFromTmdb(movieId: Long): MovieTermsSyncResponse = syncFromTmdbInternal(movieId)
+
+    @Transactional
+    fun syncFromTmdbIfLinked(movieId: Long) {
+        val hasTmdbLink =
+            movieQueryRepository
+                .getMovieDetails(movieId)
+                .externalIds
+                .any { it.provider == "TMDB" }
+
+        if (hasTmdbLink) {
+            syncFromTmdbInternal(movieId)
+        }
+    }
+
+    fun syncAllFromTmdb(limit: Int = 100): MovieTermsBatchSyncResponse {
+        val requestedLimit = limit.coerceIn(1, 1000)
+        val pendingTotal = movieTermsCrudRepository.countPendingTmdbSyncCandidates()
+        val candidates = movieTermsCrudRepository.findTmdbSyncCandidates(requestedLimit)
+        var synced = 0
+        var failed = 0
+        var processed = 0
+
+        logger.info(
+            "Movie terms TMDb batch sync started | requestedLimit={} | pendingTotal={} | selectedCandidates={}",
+            requestedLimit,
+            pendingTotal,
+            candidates.size,
+        )
+
+        candidates.forEach { candidate ->
+            runCatching {
+                transactionTemplate.execute {
+                    syncFromTmdbInternal(candidate.movieId)
+                } ?: error("Batch sync transaction returned null")
+            }.onSuccess {
+                synced++
+            }.onFailure { ex ->
+                failed++
+                logger.warn(
+                    "Failed to sync movie terms from TMDb in batch | movieId={} tmdbId={}",
+                    candidate.movieId,
+                    candidate.tmdbId,
+                    ex,
+                )
+            }
+
+            processed++
+            logger.info(
+                "Movie terms TMDb batch sync progress | processed={} | synced={} | failed={} | remainingInBatch={} | remainingPendingEstimate={}",
+                processed,
+                synced,
+                failed,
+                (candidates.size - processed).coerceAtLeast(0),
+                (pendingTotal - processed).coerceAtLeast(0),
+            )
+        }
+
+        return MovieTermsBatchSyncResponse(
+            requestedLimit = requestedLimit,
+            candidates = candidates.size,
+            processed = processed,
+            synced = synced,
+            failed = failed,
+        ).also { response ->
+            logger.info(
+                "Movie terms TMDb batch sync finished | requestedLimit={} | pendingTotal={} | candidates={} | processed={} | synced={} | failed={}",
+                requestedLimit,
+                pendingTotal,
+                response.candidates,
+                response.processed,
+                response.synced,
+                response.failed,
+            )
+        }
+    }
+
+    private fun syncFromTmdbInternal(movieId: Long): MovieTermsSyncResponse {
         val movie = requireMovie(movieId)
         val tmdbId =
             movieQueryRepository
@@ -55,19 +140,8 @@ class MovieTermsService(
             movieId = movieId,
             syncedCount = termIds.size,
             visibleCount = movieQueryRepository.getMovieTerms(movieId).count { it.active },
-        )
-    }
-
-    @Transactional
-    fun syncFromTmdbIfLinked(movieId: Long) {
-        val hasTmdbLink =
-            movieQueryRepository
-                .getMovieDetails(movieId)
-                .externalIds
-                .any { it.provider == "TMDB" }
-
-        if (hasTmdbLink) {
-            syncFromTmdb(movieId)
+        ).also {
+            movieTermsCrudRepository.markTermsSynced(movieId)
         }
     }
 
