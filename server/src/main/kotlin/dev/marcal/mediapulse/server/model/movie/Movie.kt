@@ -29,6 +29,8 @@ data class Movie(
     val collectionCheckedAt: Instant? = null,
     @Column(name = "terms_synced_at")
     val termsSyncedAt: Instant? = null,
+    @Column(name = "credits_synced_at")
+    val creditsSyncedAt: Instant? = null,
     @Column(nullable = false, unique = true)
     val fingerprint: String,
     @Column(name = "created_at")

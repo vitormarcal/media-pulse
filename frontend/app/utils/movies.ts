@@ -4,12 +4,14 @@ import type {
   MovieLibraryCardDto,
   MovieLibraryCardModel,
   MovieLibraryMetric,
+  MoviePersonDetailsResponse,
   MovieLibraryPageData,
   MovieDetailsResponse,
   MoviesByYearResponse,
   MoviesLibraryResponse,
   MoviesSearchResponse,
   MoviePageData,
+  MoviePersonCreditDto,
   MoviesStatsResponse,
   MovieWatchEntryModel,
 } from '~/types/movies'
@@ -93,6 +95,15 @@ function buildLibraryCardModel(movie: MovieLibraryCardDto): MovieLibraryCardMode
     aside: movie.watchCount > 1 ? 'Retornou' : movie.watchCount === 1 ? 'Visto' : 'Intocado',
     isDormant: !movie.lastWatchedAt,
   }
+}
+
+function uniquePeopleById(items: MoviePersonCreditDto[]) {
+  const seen = new Set<number>()
+  return items.filter((item) => {
+    if (seen.has(item.personId)) return false
+    seen.add(item.personId)
+    return true
+  })
 }
 
 function buildSearchCardModel(movie: MoviesSearchResponse['movies'][number]): MovieLibraryCardModel {
@@ -459,6 +470,12 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
   const latestWatch = movie.watches[0]?.watchedAt ?? null
   const firstWatch = movie.watches[movie.watches.length - 1]?.watchedAt ?? null
   const watchedCollectionMovies = movie.collection?.movies.filter((item) => item.watched).length ?? 0
+  const directors = uniquePeopleById(movie.people.filter((credit) => credit.job === 'Director'))
+  const writers = uniquePeopleById(
+    movie.people.filter((credit) => ['Writer', 'Screenplay', 'Story'].includes(credit.job ?? '')),
+  )
+  const cast = uniquePeopleById(movie.people.filter((credit) => credit.creditType === 'CAST'))
+  const uniquePeople = uniquePeopleById(movie.people)
   const visibleTerms = movie.terms.filter((term) => term.active)
   const hiddenTerms = movie.terms.filter((term) => !term.active)
   const orderedGallery = [
@@ -500,6 +517,50 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
       provider: identifier.provider,
       externalId: identifier.externalId,
     })),
+    people: {
+      summary: uniquePeople.length
+        ? `${uniquePeople.length} pessoas locais entre direção, roteiro e elenco principal.`
+        : 'Ainda não há créditos locais puxados do TMDb para este filme.',
+      visibleCount: uniquePeople.length,
+      groups: [
+        {
+          id: 'directors',
+          title: 'Direção',
+          items: directors.map((person) => ({
+            id: `person-${person.personId}-director`,
+            personId: person.personId,
+            name: person.name,
+            href: `/movies/people/${person.slug}`,
+            roleLabel: 'Direção',
+            profileUrl: person.profileUrl,
+          })),
+        },
+        {
+          id: 'writers',
+          title: 'Roteiro',
+          items: writers.map((person) => ({
+            id: `person-${person.personId}-writer`,
+            personId: person.personId,
+            name: person.name,
+            href: `/movies/people/${person.slug}`,
+            roleLabel: 'Roteiro',
+            profileUrl: person.profileUrl,
+          })),
+        },
+        {
+          id: 'cast',
+          title: 'Elenco',
+          items: cast.map((person) => ({
+            id: `person-${person.personId}-cast`,
+            personId: person.personId,
+            name: person.name,
+            href: `/movies/people/${person.slug}`,
+            roleLabel: person.characterName || 'Elenco',
+            profileUrl: person.profileUrl,
+          })),
+        },
+      ].filter((group) => group.items.length),
+    },
     terms: {
       summary: visibleTerms.length
         ? `${visibleTerms.length} termos ativos entre classificação ampla e recortes mais pessoais.`
@@ -581,6 +642,25 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
         }
       : null,
     recentWatches: movie.watches.slice(0, 24).map(mapWatch),
+  }
+}
+
+export function buildMoviePersonPageData(
+  person: MoviePersonDetailsResponse,
+): import('~/types/movies').MoviePersonPageData {
+  return {
+    personId: person.personId,
+    tmdbId: person.tmdbId,
+    name: person.name,
+    slug: person.slug,
+    profileUrl: person.profileUrl,
+    heroMeta: [`${person.movieCount} filmes`, `${person.watchedMoviesCount} com sessão`, ...person.roles.slice(0, 3)],
+    roles: person.roles,
+    stats: {
+      movieCount: person.movieCount,
+      watchedMoviesCount: person.watchedMoviesCount,
+    },
+    movies: person.movies.map(buildLibraryCardModel),
   }
 }
 

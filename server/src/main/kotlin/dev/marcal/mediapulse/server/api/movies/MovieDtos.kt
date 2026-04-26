@@ -39,6 +39,11 @@ enum class MovieTermSourceDto {
     USER,
 }
 
+enum class MovieCreditTypeDto {
+    CAST,
+    CREW,
+}
+
 data class MovieTermDto(
     val id: Long,
     val name: String,
@@ -79,6 +84,94 @@ data class MovieCollectionMovieDto(
     val current: Boolean,
 )
 
+data class MoviePersonCreditDto(
+    val personId: Long,
+    val tmdbId: String,
+    val name: String,
+    val slug: String,
+    val profileUrl: String?,
+    val creditType: MovieCreditTypeDto,
+    val department: String?,
+    val job: String?,
+    val characterName: String?,
+    val billingOrder: Int?,
+)
+
+data class MoviePersonSuggestionDto(
+    val personId: Long,
+    val tmdbId: String,
+    val name: String,
+    val slug: String,
+    val profileUrl: String?,
+    val roles: List<String>,
+)
+
+data class MoviePersonLinkRequest(
+    val personId: Long,
+    val group: String,
+    val roleLabel: String? = null,
+)
+
+data class MovieTmdbCreditCandidateDto(
+    val personTmdbId: String,
+    val name: String,
+    val profileUrl: String?,
+    val creditType: MovieCreditTypeDto,
+    val department: String?,
+    val job: String?,
+    val characterName: String?,
+    val billingOrder: Int?,
+    val roleLabel: String,
+)
+
+data class MovieTmdbCreditCandidateGroupDto(
+    val id: String,
+    val title: String,
+    val items: List<MovieTmdbCreditCandidateDto>,
+)
+
+data class MovieTmdbCreditCandidatesResponse(
+    val movieId: Long,
+    val reconciledCount: Int,
+    val candidateCount: Int,
+    val groups: List<MovieTmdbCreditCandidateGroupDto>,
+)
+
+data class MovieTmdbCreditImportRequest(
+    val personTmdbId: String,
+    val creditType: MovieCreditTypeDto,
+    val department: String? = null,
+    val job: String? = null,
+    val characterName: String? = null,
+    val billingOrder: Int? = null,
+)
+
+data class MoviePersonDetailsResponse(
+    val personId: Long,
+    val tmdbId: String,
+    val name: String,
+    val slug: String,
+    val profileUrl: String?,
+    val roles: List<String>,
+    val movieCount: Long,
+    val watchedMoviesCount: Long,
+    val movies: List<MovieLibraryCardDto>,
+)
+
+data class MovieCreditsSyncResponse(
+    val movieId: Long,
+    val syncedCount: Int,
+    val visibleCount: Int,
+)
+
+data class MovieCreditsBatchSyncResponse(
+    val requestedLimit: Int,
+    val candidates: Int,
+    val processed: Int,
+    val synced: Int,
+    val failed: Int,
+)
+
 enum class MovieEnrichmentField {
     TITLE,
     YEAR,
@@ -104,6 +197,7 @@ data class MovieDetailsResponse(
     val images: List<MovieImageDto>,
     val watches: List<MovieWatchDto>,
     val externalIds: List<MovieExternalIdDto>,
+    val people: List<MoviePersonCreditDto> = emptyList(),
     val terms: List<MovieTermDto> = emptyList(),
     val collection: MovieCollectionDto? = null,
 )
@@ -269,6 +363,29 @@ data class MovieCollectionMemberDto(
     val localMovieId: Long?,
     val localSlug: String?,
     val inCatalog: Boolean,
+)
+
+data class MoviePersonFilmographyResponse(
+    val personId: Long,
+    val tmdbId: String,
+    val name: String,
+    val profileUrl: String?,
+    val members: List<MoviePersonFilmographyMemberDto>,
+)
+
+data class MoviePersonFilmographyMemberDto(
+    val tmdbId: String,
+    val title: String,
+    val originalTitle: String?,
+    val year: Int?,
+    val overview: String?,
+    val posterUrl: String?,
+    val backdropUrl: String?,
+    val tmdbUrl: String,
+    val localMovieId: Long?,
+    val localSlug: String?,
+    val inCatalog: Boolean,
+    val roleLabel: String,
 )
 
 data class MoviesSearchResponse(

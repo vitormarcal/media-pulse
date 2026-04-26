@@ -15,6 +15,8 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/recent` | `limit=20`, `cursor?` | `MoviesRecentResponse` |
 | `GET /api/movies/{movieId}` | `movieId` | `MovieDetailsResponse` |
 | `GET /api/movies/slug/{slug}` | `slug` | `MovieDetailsResponse` |
+| `GET /api/movies/people/{slug}` | `slug` | `MoviePersonDetailsResponse` |
+| `GET /api/movies/people/search` | `q`, `limit=8` | `MoviePersonSuggestionDto[]` |
 | `GET /api/movies/terms/{kind}/{slug}` | `kind=genre|tag`, `slug` | `MovieTermDetailsResponse` |
 | `GET /api/movies/terms/search` | `q`, `kind=genre|tag`, `limit=8` | `MovieTermSuggestionDto[]` |
 | `GET /api/movies/search` | `q`, `limit=10` | `MoviesSearchResponse` |
@@ -26,6 +28,11 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/catalog` | body com `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieCatalogCreateResponse` |
 | `POST /api/movies/collections/backfill` | `limit=50` | `MovieCollectionBackfillResponse` |
 | `POST /api/movies/{movieId}/watches` | body com `watchedAt` | `ManualMovieWatchCreateResponse` |
+| `POST /api/movies/{movieId}/credits/sync-tmdb` | `movieId` | `MovieCreditsSyncResponse` |
+| `POST /api/movies/credits/sync-tmdb` | `limit=100` | `MovieCreditsBatchSyncResponse` |
+| `GET /api/movies/{movieId}/credits/tmdb-candidates` | `movieId` | `MovieTmdbCreditCandidatesResponse` |
+| `POST /api/movies/{movieId}/credits/from-tmdb` | body com `personTmdbId`, `creditType`, `department?`, `job?`, `characterName?`, `billingOrder?` | `MoviePersonCreditDto` |
+| `POST /api/movies/{movieId}/people` | body com `personId`, `group`, `roleLabel?` | `MoviePersonCreditDto` |
 | `POST /api/movies/{movieId}/terms/sync-tmdb` | `movieId` | `MovieTermsSyncResponse` |
 | `POST /api/movies/terms/sync-tmdb` | `limit=100` | `MovieTermsBatchSyncResponse` |
 | `POST /api/movies/{movieId}/terms` | body com `name`, `kind=GENRE|TAG` | `MovieTermDto` |
@@ -33,6 +40,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/terms/{termId}/visibility` | body com `hidden` | `MovieTermDto` |
 | `POST /api/movies/{movieId}/enrichment/preview` | body com `tmdbId?` | `MovieEnrichmentPreviewResponse` |
 | `POST /api/movies/{movieId}/enrichment/apply` | body com `tmdbId?`, `mode`, `fields[]` | `MovieEnrichmentApplyResponse` |
+| `GET /api/movies/people/{personId}/tmdb-filmography` | `personId` | `MoviePersonFilmographyResponse` |
 
 ## Paginação e limites
 
@@ -176,6 +184,66 @@ Visibilidade:
 - `kind` aceita `genre` ou `tag`
 - retorna o termo e os filmes ativos ligados a ele
 - o resultado exclui termos ocultos globalmente e vínculos ocultos no filme
+
+## Pessoas e créditos
+
+Cada filme agora pode carregar um recorte controlado de pessoas vindas do TMDb.
+
+Escopo do sync:
+
+- `CAST`: só top billed, limitado aos primeiros nomes por `order`
+- `CREW`: apenas cargos relevantes como `Director`, `Writer`, `Screenplay`, `Story`, `Editor`, `Producer`, `Director of Photography` e `Original Music Composer`
+
+Persistência:
+
+- `movie_people` guarda a pessoa local com `tmdb_id`, `name`, `slug` e `profile_url`
+- `movie_credits` guarda os vínculos filme-pessoa com `credit_type`, `job`, `department`, `character_name` e `billing_order`
+
+`POST /api/movies/{movieId}/credits/sync-tmdb` sincroniza créditos de um filme.
+
+- exige vínculo `TMDB` no filme
+- substitui o recorte local de créditos pelo snapshot atual do TMDb
+- marca `movies.credits_synced_at` ao concluir com sucesso
+
+`POST /api/movies/credits/sync-tmdb` sincroniza créditos em lote.
+
+- processa apenas filmes com vínculo `TMDB`
+- considera apenas pendentes (`movies.credits_synced_at IS NULL`)
+- `limit` é normalizado entre `1` e `1000`
+- falhas individuais não interrompem o lote
+
+`GET /api/movies/{movieId}/credits/tmdb-candidates` expande créditos extras do TMDb para a página do filme.
+
+- olha além do recorte principal já usado no sync automático
+- tenta reconciliar automaticamente pessoas que já existem localmente
+- retorna apenas os créditos que ainda exigem decisão explícita da UI
+
+`POST /api/movies/{movieId}/credits/from-tmdb` incorpora um crédito específico mostrado nessa expansão.
+
+- reaproveita a pessoa local se ela já existir por `tmdb_id`
+- cria a pessoa se ela ainda não estiver persistida
+- salva o vínculo filme-pessoa sem precisar rerodar o sync completo
+
+`GET /api/movies/people/{slug}` abre a página local da pessoa.
+
+- retorna a pessoa, os papéis locais agregados e os filmes do catálogo ligados a ela
+
+`GET /api/movies/people/search` busca pessoas já persistidas localmente.
+
+- usa `movie_people.normalized_name`
+- serve para reaproveitar uma pessoa existente antes de criar ou importar novos créditos
+
+`POST /api/movies/{movieId}/people` vincula uma pessoa já existente ao filme.
+
+- reaproveita `movie_people` local
+- aceita grupos editoriais simples: `DIRECTORS`, `WRITERS`, `CAST`, `OTHER`
+- `roleLabel` é opcional em `WRITERS` e `CAST`, e obrigatório em `OTHER`
+
+`GET /api/movies/people/{personId}/tmdb-filmography` expande a filmografia externa da pessoa.
+
+- cruza a filmografia do TMDb com os filmes já catalogados localmente
+- quando encontra um filme já local, reaproveita essa oportunidade para persistir o vínculo `movie_credits` da pessoa com o filme
+- permite à UI mostrar o que já existe e o que ainda pode ser adicionado explicitamente
 
 ## Coleções oficiais TMDb
 

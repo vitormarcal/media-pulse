@@ -2,7 +2,13 @@ package dev.marcal.mediapulse.server.controller.movies
 
 import dev.marcal.mediapulse.server.api.movies.ExistingMovieWatchCreateRequest
 import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateResponse
+import dev.marcal.mediapulse.server.api.movies.MovieCreditsBatchSyncResponse
+import dev.marcal.mediapulse.server.api.movies.MovieCreditsSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MoviePersonCreditDto
+import dev.marcal.mediapulse.server.api.movies.MoviePersonDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MoviePersonLinkRequest
+import dev.marcal.mediapulse.server.api.movies.MoviePersonSuggestionDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermDto
@@ -10,6 +16,8 @@ import dev.marcal.mediapulse.server.api.movies.MovieTermSuggestionDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermVisibilityRequest
 import dev.marcal.mediapulse.server.api.movies.MovieTermsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermsSyncResponse
+import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditCandidatesResponse
+import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditImportRequest
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesLibraryResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesRecentResponse
@@ -18,6 +26,7 @@ import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
+import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.service.movie.MovieTermsService
 import dev.marcal.mediapulse.server.service.movie.MovieWatchRemovalService
 import org.springframework.http.HttpStatus
@@ -43,6 +52,7 @@ class MoviesController(
     private val existingMovieWatchCreateFlowService: ExistingMovieWatchCreateFlowService,
     private val movieWatchRemovalService: MovieWatchRemovalService,
     private val movieTermsService: MovieTermsService,
+    private val movieCreditsService: MovieCreditsService,
 ) {
     @GetMapping("/library")
     fun library(
@@ -65,6 +75,17 @@ class MoviesController(
     fun detailsBySlug(
         @PathVariable slug: String,
     ): MovieDetailsResponse = repository.getMovieDetailsBySlug(slug)
+
+    @GetMapping("/people/{slug}")
+    fun personDetails(
+        @PathVariable slug: String,
+    ): MoviePersonDetailsResponse = repository.getMoviePersonDetails(slug)
+
+    @GetMapping("/people/search")
+    fun searchPeople(
+        @RequestParam q: String,
+        @RequestParam(defaultValue = "8") limit: Int,
+    ): List<MoviePersonSuggestionDto> = movieCreditsService.searchPeople(q, normalizeLimit("limit", limit))
 
     @GetMapping("/terms/{kind}/{slug}")
     fun termDetails(
@@ -100,6 +121,33 @@ class MoviesController(
     fun syncAllTermsFromTmdb(
         @RequestParam(defaultValue = "100") limit: Int,
     ): MovieTermsBatchSyncResponse = movieTermsService.syncAllFromTmdb(normalizeLimit("limit", limit))
+
+    @PostMapping("/{movieId}/credits/sync-tmdb")
+    fun syncCreditsFromTmdb(
+        @PathVariable movieId: Long,
+    ): MovieCreditsSyncResponse = movieCreditsService.syncFromTmdb(movieId)
+
+    @PostMapping("/credits/sync-tmdb")
+    fun syncAllCreditsFromTmdb(
+        @RequestParam(defaultValue = "100") limit: Int,
+    ): MovieCreditsBatchSyncResponse = movieCreditsService.syncAllFromTmdb(normalizeLimit("limit", limit))
+
+    @GetMapping("/{movieId}/credits/tmdb-candidates")
+    fun movieTmdbCreditCandidates(
+        @PathVariable movieId: Long,
+    ): MovieTmdbCreditCandidatesResponse = movieCreditsService.fetchTmdbCandidates(movieId)
+
+    @PostMapping("/{movieId}/credits/from-tmdb")
+    fun importMovieTmdbCredit(
+        @PathVariable movieId: Long,
+        @RequestBody request: MovieTmdbCreditImportRequest,
+    ): MoviePersonCreditDto = movieCreditsService.importTmdbCredit(movieId, request)
+
+    @PostMapping("/{movieId}/people")
+    fun linkExistingPerson(
+        @PathVariable movieId: Long,
+        @RequestBody request: MoviePersonLinkRequest,
+    ): MoviePersonCreditDto = movieCreditsService.linkExistingPerson(movieId, request)
 
     @PostMapping("/{movieId}/terms")
     fun addTerm(

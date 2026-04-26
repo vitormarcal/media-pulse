@@ -18,6 +18,7 @@ class ManualMovieCatalogCreateFlowServiceTest {
     private val externalIdentifierRepository = mockk<ExternalIdentifierRepository>()
     private val tmdbApiClient = mockk<TmdbApiClient>()
     private val movieTermsService = mockk<MovieTermsService>(relaxed = true)
+    private val movieCreditsService = mockk<MovieCreditsService>(relaxed = true)
 
     private val service =
         ManualMovieCatalogCreateFlowService(
@@ -25,6 +26,7 @@ class ManualMovieCatalogCreateFlowServiceTest {
             externalIdentifierRepository = externalIdentifierRepository,
             tmdbApiClient = tmdbApiClient,
             movieTermsService = movieTermsService,
+            movieCreditsService = movieCreditsService,
         )
 
     @Test

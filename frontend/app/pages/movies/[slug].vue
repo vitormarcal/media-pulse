@@ -33,6 +33,13 @@
 
       <MovieContextPanel :stats="data.stats" />
 
+      <MoviePeoplePanel
+        :movie-id="data.movieId"
+        :people="data.people"
+        :editing="editMode"
+        @changed="handlePeopleChanged"
+      />
+
       <MovieCollectionPanel :collection="data.collection" @added="handleCatalogAdded" />
 
       <MovieAddWatchPanel :movie-id="data.movieId" @created="handleWatchCreated" />
@@ -48,6 +55,7 @@ import MovieCollectionPanel from '~/components/movies/MovieCollectionPanel.vue'
 import MovieContextPanel from '~/components/movies/MovieContextPanel.vue'
 import MovieEnrichmentPanel from '~/components/movies/MovieEnrichmentPanel.vue'
 import MoviePageHero from '~/components/movies/MoviePageHero.vue'
+import MoviePeoplePanel from '~/components/movies/MoviePeoplePanel.vue'
 import MovieWatchTimeline from '~/components/movies/MovieWatchTimeline.vue'
 import { useMoviePageData } from '~/composables/useMoviePageData'
 import type { ManualMovieWatchCreateResponse, MovieEnrichmentApplyResponse } from '~/types/movies'
@@ -99,6 +107,10 @@ async function handleCatalogAdded() {
 }
 
 async function handleTermsChanged() {
+  await refresh()
+}
+
+async function handlePeopleChanged() {
   await refresh()
 }
 

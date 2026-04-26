@@ -17,6 +17,14 @@ Accept: application/json
 GET {{baseUrl}}/slug/eyes-wide-shut
 Accept: application/json
 
+### Detalhes de uma pessoa
+GET {{baseUrl}}/people/quentin-tarantino-138
+Accept: application/json
+
+### Buscar pessoas locais
+GET {{baseUrl}}/people/search?q=quentin&limit=6
+Accept: application/json
+
 ### Detalhes de um termo
 GET {{baseUrl}}/terms/genre/horror
 Accept: application/json
@@ -61,8 +69,49 @@ Accept: application/json
 POST {{baseUrl}}/{{movieId}}/terms/sync-tmdb
 Accept: application/json
 
+### Sincronizar créditos do TMDb para um filme
+POST {{baseUrl}}/{{movieId}}/credits/sync-tmdb
+Accept: application/json
+
+### Trazer pessoas extras do TMDb para um filme
+GET {{baseUrl}}/{{movieId}}/credits/tmdb-candidates
+Accept: application/json
+
+### Incorporar um crédito específico do TMDb
+POST {{baseUrl}}/{{movieId}}/credits/from-tmdb
+Content-Type: application/json
+Accept: application/json
+
+{
+  "personTmdbId": "138",
+  "creditType": "CREW",
+  "department": "Writing",
+  "job": "Writer",
+  "characterName": null,
+  "billingOrder": null
+}
+
+### Vincular pessoa local a um filme
+POST {{baseUrl}}/{{movieId}}/people
+Content-Type: application/json
+Accept: application/json
+
+{
+  "personId": 44,
+  "group": "DIRECTORS",
+  "roleLabel": null
+}
+
 ### Sincronizar termos do TMDb em lote
 POST {{baseUrl}}/terms/sync-tmdb?limit=200
+Accept: application/json
+
+### Sincronizar créditos do TMDb em lote
+POST {{baseUrl}}/credits/sync-tmdb?limit=200
+Accept: application/json
+
+### Filmografia TMDb de uma pessoa
+GET {{baseUrl}}/people/1/tmdb-filmography
 Accept: application/json
 
 ### Adicionar termo manual

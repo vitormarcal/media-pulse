@@ -1,11 +1,17 @@
 package dev.marcal.mediapulse.server.controller.movies
 
+import dev.marcal.mediapulse.server.api.movies.MovieCreditsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MoviePersonDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MoviePersonLinkRequest
+import dev.marcal.mediapulse.server.api.movies.MoviePersonSuggestionDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermKindDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermSourceDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermSuggestionDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermsBatchSyncResponse
+import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditCandidatesResponse
+import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditImportRequest
 import dev.marcal.mediapulse.server.api.movies.MovieYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.movies.MovieYearWatchedDto
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
@@ -18,6 +24,7 @@ import dev.marcal.mediapulse.server.api.movies.MoviesYearStatsDto
 import dev.marcal.mediapulse.server.api.movies.RangeDto
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
+import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.service.movie.MovieTermsService
 import dev.marcal.mediapulse.server.service.movie.MovieWatchRemovalService
 import io.mockk.every
@@ -34,7 +41,15 @@ class MoviesControllerTest {
     private val existingMovieWatchCreateFlowService = mockk<ExistingMovieWatchCreateFlowService>(relaxed = true)
     private val movieWatchRemovalService = mockk<MovieWatchRemovalService>(relaxed = true)
     private val movieTermsService = mockk<MovieTermsService>(relaxed = true)
-    private val controller = MoviesController(repository, existingMovieWatchCreateFlowService, movieWatchRemovalService, movieTermsService)
+    private val movieCreditsService = mockk<MovieCreditsService>(relaxed = true)
+    private val controller =
+        MoviesController(
+            repository,
+            existingMovieWatchCreateFlowService,
+            movieWatchRemovalService,
+            movieTermsService,
+            movieCreditsService,
+        )
 
     @Test
     fun `recent should delegate to repository`() {
@@ -66,6 +81,50 @@ class MoviesControllerTest {
 
         assertEquals(10, response.movieId)
         verify(exactly = 1) { repository.getMovieDetailsBySlug("3828") }
+    }
+
+    @Test
+    fun `person details should delegate to repository`() {
+        val expected =
+            MoviePersonDetailsResponse(
+                personId = 44,
+                tmdbId = "138",
+                name = "Quentin Tarantino",
+                slug = "quentin-tarantino-138",
+                profileUrl = null,
+                roles = listOf("Direção"),
+                movieCount = 4,
+                watchedMoviesCount = 3,
+                movies = emptyList(),
+            )
+        every { repository.getMoviePersonDetails("quentin-tarantino-138") } returns expected
+
+        val response = controller.personDetails("quentin-tarantino-138")
+
+        assertEquals(44, response.personId)
+        verify(exactly = 1) { repository.getMoviePersonDetails("quentin-tarantino-138") }
+    }
+
+    @Test
+    fun `search people should delegate to credits service with capped limit`() {
+        val expected =
+            listOf(
+                MoviePersonSuggestionDto(
+                    personId = 44,
+                    tmdbId = "138",
+                    name = "Quentin Tarantino",
+                    slug = "quentin-tarantino-138",
+                    profileUrl = null,
+                    roles = listOf("Direção", "Roteiro"),
+                ),
+            )
+        every { movieCreditsService.searchPeople("quentin", 1000) } returns expected
+
+        val response = controller.searchPeople(q = "quentin", limit = 9999)
+
+        assertEquals(1, response.size)
+        assertEquals("Quentin Tarantino", response.first().name)
+        verify(exactly = 1) { movieCreditsService.searchPeople("quentin", 1000) }
     }
 
     @Test
@@ -127,6 +186,82 @@ class MoviesControllerTest {
 
         assertEquals(998, response.synced)
         verify(exactly = 1) { movieTermsService.syncAllFromTmdb(1000) }
+    }
+
+    @Test
+    fun `sync all credits should delegate to service with normalized limit`() {
+        val expected = MovieCreditsBatchSyncResponse(requestedLimit = 1000, candidates = 1000, processed = 1000, synced = 996, failed = 4)
+        every { movieCreditsService.syncAllFromTmdb(1000) } returns expected
+
+        val response = controller.syncAllCreditsFromTmdb(limit = 5000)
+
+        assertEquals(996, response.synced)
+        verify(exactly = 1) { movieCreditsService.syncAllFromTmdb(1000) }
+    }
+
+    @Test
+    fun `movie tmdb credit candidates should delegate to credits service`() {
+        val expected = MovieTmdbCreditCandidatesResponse(movieId = 9, reconciledCount = 2, candidateCount = 3, groups = emptyList())
+        every { movieCreditsService.fetchTmdbCandidates(9) } returns expected
+
+        val response = controller.movieTmdbCreditCandidates(9)
+
+        assertEquals(2, response.reconciledCount)
+        verify(exactly = 1) { movieCreditsService.fetchTmdbCandidates(9) }
+    }
+
+    @Test
+    fun `link existing person should delegate to credits service`() {
+        val request = MoviePersonLinkRequest(personId = 44, group = "DIRECTORS", roleLabel = null)
+        val expected =
+            dev.marcal.mediapulse.server.api.movies.MoviePersonCreditDto(
+                personId = 44,
+                tmdbId = "138",
+                name = "Quentin Tarantino",
+                slug = "quentin-tarantino-138",
+                profileUrl = null,
+                creditType = dev.marcal.mediapulse.server.api.movies.MovieCreditTypeDto.CREW,
+                department = "Directing",
+                job = "Director",
+                characterName = null,
+                billingOrder = null,
+            )
+        every { movieCreditsService.linkExistingPerson(9, request) } returns expected
+
+        val response = controller.linkExistingPerson(9, request)
+
+        assertEquals(44, response.personId)
+        verify(exactly = 1) { movieCreditsService.linkExistingPerson(9, request) }
+    }
+
+    @Test
+    fun `import movie tmdb credit should delegate to credits service`() {
+        val request =
+            MovieTmdbCreditImportRequest(
+                personTmdbId = "138",
+                creditType = dev.marcal.mediapulse.server.api.movies.MovieCreditTypeDto.CREW,
+                department = "Writing",
+                job = "Writer",
+            )
+        val expected =
+            dev.marcal.mediapulse.server.api.movies.MoviePersonCreditDto(
+                personId = 44,
+                tmdbId = "138",
+                name = "Quentin Tarantino",
+                slug = "quentin-tarantino-138",
+                profileUrl = null,
+                creditType = dev.marcal.mediapulse.server.api.movies.MovieCreditTypeDto.CREW,
+                department = "Writing",
+                job = "Writer",
+                characterName = null,
+                billingOrder = null,
+            )
+        every { movieCreditsService.importTmdbCredit(9, request) } returns expected
+
+        val response = controller.importMovieTmdbCredit(9, request)
+
+        assertEquals(44, response.personId)
+        verify(exactly = 1) { movieCreditsService.importTmdbCredit(9, request) }
     }
 
     @Test

@@ -19,6 +19,7 @@ export interface MovieExternalIdDto {
 
 export type MovieTermKind = 'GENRE' | 'TAG'
 export type MovieTermSource = 'TMDB' | 'USER'
+export type MovieCreditType = 'CAST' | 'CREW'
 
 export interface MovieTermDto {
   id: number
@@ -71,6 +72,94 @@ export interface MovieCollectionMovieDto {
   current: boolean
 }
 
+export interface MoviePersonCreditDto {
+  personId: number
+  tmdbId: string
+  name: string
+  slug: string
+  profileUrl: string | null
+  creditType: MovieCreditType
+  department: string | null
+  job: string | null
+  characterName: string | null
+  billingOrder: number | null
+}
+
+export interface MoviePersonSuggestionDto {
+  personId: number
+  tmdbId: string
+  name: string
+  slug: string
+  profileUrl: string | null
+  roles: string[]
+}
+
+export interface MoviePersonLinkRequest {
+  personId: number
+  group: string
+  roleLabel: string | null
+}
+
+export interface MovieTmdbCreditCandidate {
+  personTmdbId: string
+  name: string
+  profileUrl: string | null
+  creditType: MovieCreditType
+  department: string | null
+  job: string | null
+  characterName: string | null
+  billingOrder: number | null
+  roleLabel: string
+}
+
+export interface MovieTmdbCreditCandidateGroup {
+  id: string
+  title: string
+  items: MovieTmdbCreditCandidate[]
+}
+
+export interface MovieTmdbCreditCandidatesResponse {
+  movieId: number
+  reconciledCount: number
+  candidateCount: number
+  groups: MovieTmdbCreditCandidateGroup[]
+}
+
+export interface MovieTmdbCreditImportRequest {
+  personTmdbId: string
+  creditType: MovieCreditType
+  department: string | null
+  job: string | null
+  characterName: string | null
+  billingOrder: number | null
+}
+
+export interface MoviePersonDetailsResponse {
+  personId: number
+  tmdbId: string
+  name: string
+  slug: string
+  profileUrl: string | null
+  roles: string[]
+  movieCount: number
+  watchedMoviesCount: number
+  movies: MovieLibraryCardDto[]
+}
+
+export interface MovieCreditsSyncResponse {
+  movieId: number
+  syncedCount: number
+  visibleCount: number
+}
+
+export interface MovieCreditsBatchSyncResponse {
+  requestedLimit: number
+  candidates: number
+  processed: number
+  synced: number
+  failed: number
+}
+
 export interface MovieDetailsResponse {
   movieId: number
   title: string
@@ -82,6 +171,7 @@ export interface MovieDetailsResponse {
   images: MovieImageDto[]
   watches: MovieWatchDto[]
   externalIds: MovieExternalIdDto[]
+  people: MoviePersonCreditDto[]
   terms: MovieTermDto[]
   collection: MovieCollectionDto | null
 }
@@ -163,6 +253,29 @@ export interface MovieCollectionMember {
   localMovieId: number | null
   localSlug: string | null
   inCatalog: boolean
+}
+
+export interface MoviePersonFilmographyResponse {
+  personId: number
+  tmdbId: string
+  name: string
+  profileUrl: string | null
+  members: MoviePersonFilmographyMember[]
+}
+
+export interface MoviePersonFilmographyMember {
+  tmdbId: string
+  title: string
+  originalTitle: string | null
+  year: number | null
+  overview: string | null
+  posterUrl: string | null
+  backdropUrl: string | null
+  tmdbUrl: string
+  localMovieId: number | null
+  localSlug: string | null
+  inCatalog: boolean
+  roleLabel: string
 }
 
 export interface MovieEnrichmentPreviewResponse {
@@ -251,6 +364,22 @@ export interface MoviePageData {
     provider: string
     externalId: string
   }>
+  people: {
+    summary: string
+    visibleCount: number
+    groups: Array<{
+      id: string
+      title: string
+      items: Array<{
+        id: string
+        personId: number
+        name: string
+        href: string
+        roleLabel: string
+        profileUrl: string | null
+      }>
+    }>
+  }
   terms: {
     summary: string
     visibleCount: number
@@ -298,6 +427,21 @@ export interface MovieTermPageData {
   name: string
   slug: string
   heroMeta: string[]
+  stats: {
+    movieCount: number
+    watchedMoviesCount: number
+  }
+  movies: MovieLibraryCardModel[]
+}
+
+export interface MoviePersonPageData {
+  personId: number
+  tmdbId: string
+  name: string
+  slug: string
+  profileUrl: string | null
+  heroMeta: string[]
+  roles: string[]
   stats: {
     movieCount: number
     watchedMoviesCount: number
