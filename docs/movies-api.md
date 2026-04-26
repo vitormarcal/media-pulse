@@ -15,6 +15,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/recent` | `limit=20`, `cursor?` | `MoviesRecentResponse` |
 | `GET /api/movies/{movieId}` | `movieId` | `MovieDetailsResponse` |
 | `GET /api/movies/slug/{slug}` | `slug` | `MovieDetailsResponse` |
+| `GET /api/movies/terms/{kind}/{slug}` | `kind=genre|tag`, `slug` | `MovieTermDetailsResponse` |
 | `GET /api/movies/search` | `q`, `limit=10` | `MoviesSearchResponse` |
 | `GET /api/movies/summary` | `range=month|year|custom`, `start?`, `end?` | `MoviesSummaryResponse` |
 | `GET /api/movies/stats` | - | `MoviesStatsResponse` |
@@ -162,6 +163,12 @@ Visibilidade:
 - cria o termo se ainda não existir para aquele `kind`
 - reaproveita o termo global se ele já existir
 - reativa vínculos ocultos em vez de duplicar
+
+`GET /api/movies/terms/{kind}/{slug}` abre a página de navegação de um termo.
+
+- `kind` aceita `genre` ou `tag`
+- retorna o termo e os filmes ativos ligados a ele
+- o resultado exclui termos ocultos globalmente e vínculos ocultos no filme
 
 ## Coleções oficiais TMDb
 

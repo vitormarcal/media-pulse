@@ -114,6 +114,25 @@ data class MovieTermsSyncResponse(
     val visibleCount: Int,
 )
 
+data class MovieTermsBatchSyncResponse(
+    val requestedLimit: Int,
+    val candidates: Int,
+    val processed: Int,
+    val synced: Int,
+    val failed: Int,
+)
+
+data class MovieTermDetailsResponse(
+    val termId: Long,
+    val name: String,
+    val slug: String,
+    val kind: MovieTermKindDto,
+    val source: MovieTermSourceDto,
+    val movieCount: Long,
+    val watchedMoviesCount: Long,
+    val movies: List<MovieLibraryCardDto>,
+)
+
 data class ManualMovieCatalogCreateRequest(
     val title: String,
     val year: Int? = null,

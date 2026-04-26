@@ -7,6 +7,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieExternalIdDto
 import dev.marcal.mediapulse.server.api.movies.MovieImageDto
 import dev.marcal.mediapulse.server.api.movies.MovieLibraryCardDto
+import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermKindDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermSourceDto
@@ -416,6 +417,101 @@ class MovieQueryRepository(
             .resultList
             .firstOrNull()
             ?.let { toMovieTermDto(it as Array<*>) }
+
+    fun getMovieTermDetails(
+        kind: String,
+        slug: String,
+    ): MovieTermDetailsResponse {
+        val base =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      mt.id,
+                      mt.name,
+                      mt.slug,
+                      mt.kind,
+                      mt.source,
+                      COUNT(mta.id) AS movie_count,
+                      COUNT(CASE WHEN EXISTS (
+                        SELECT 1
+                        FROM movie_watches mw
+                        WHERE mw.movie_id = mta.movie_id
+                      ) THEN 1 END) AS watched_movies_count
+                    FROM movie_terms mt
+                    JOIN movie_term_assignments mta ON mta.term_id = mt.id
+                    WHERE mt.kind = :kind
+                      AND mt.slug = :slug
+                      AND mt.hidden = FALSE
+                      AND mta.hidden = FALSE
+                    GROUP BY mt.id, mt.name, mt.slug, mt.kind, mt.source
+                    LIMIT 1
+                    """.trimIndent(),
+                ).setParameter("kind", kind)
+                .setParameter("slug", slug.trim())
+                .resultList
+                .firstOrNull() as Array<*>?
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Movie term not found")
+
+        val termId = (base[0] as Number).toLong()
+        val movies =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH movie_rollup AS (
+                      SELECT
+                        m.id AS movie_id,
+                        COALESCE((
+                          SELECT mt2.title
+                          FROM movie_titles mt2
+                          WHERE mt2.movie_id = m.id
+                          ORDER BY mt2.is_primary ASC, mt2.id ASC
+                          LIMIT 1
+                        ), m.original_title) AS title,
+                        m.original_title,
+                        m.slug,
+                        m.year,
+                        m.cover_url,
+                        COUNT(mw.id) AS watch_count,
+                        MAX(mw.watched_at) AS last_watched_at
+                      FROM movie_term_assignments mta
+                      JOIN movies m ON m.id = mta.movie_id
+                      LEFT JOIN movie_watches mw ON mw.movie_id = m.id
+                      WHERE mta.term_id = :termId
+                        AND mta.hidden = FALSE
+                      GROUP BY m.id, m.original_title, m.slug, m.year, m.cover_url
+                    )
+                    SELECT movie_id, title, original_title, slug, year, cover_url, watch_count, last_watched_at
+                    FROM movie_rollup
+                    ORDER BY COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') DESC, title ASC
+                    """.trimIndent(),
+                ).setParameter("termId", termId)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    MovieLibraryCardDto(
+                        movieId = (fields[0] as Number).toLong(),
+                        title = fields[1] as String,
+                        originalTitle = fields[2] as String,
+                        slug = fields[3] as String?,
+                        year = (fields[4] as Number?)?.toInt(),
+                        coverUrl = fields[5] as String?,
+                        watchCount = (fields[6] as Number).toLong(),
+                        lastWatchedAt = asInstant(fields[7]),
+                    )
+                }
+
+        return MovieTermDetailsResponse(
+            termId = termId,
+            name = base[1] as String,
+            slug = base[2] as String,
+            kind = MovieTermKindDto.valueOf(base[3] as String),
+            source = MovieTermSourceDto.valueOf(base[4] as String),
+            movieCount = (base[5] as Number).toLong(),
+            watchedMoviesCount = (base[6] as Number).toLong(),
+            movies = movies,
+        )
+    }
 
     fun getMovieDetailsBySlug(slug: String): MovieDetailsResponse {
         val movieId =

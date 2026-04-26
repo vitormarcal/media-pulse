@@ -17,6 +17,10 @@ Accept: application/json
 GET {{baseUrl}}/slug/eyes-wide-shut
 Accept: application/json
 
+### Detalhes de um termo
+GET {{baseUrl}}/terms/genre/horror
+Accept: application/json
+
 ### Busca de filmes
 GET {{baseUrl}}/search?q=matrix&limit=10
 Accept: application/json
@@ -51,6 +55,10 @@ Accept: application/json
 
 ### Sincronizar termos do TMDb para um filme
 POST {{baseUrl}}/{{movieId}}/terms/sync-tmdb
+Accept: application/json
+
+### Sincronizar termos do TMDb em lote
+POST {{baseUrl}}/terms/sync-tmdb?limit=200
 Accept: application/json
 
 ### Adicionar termo manual

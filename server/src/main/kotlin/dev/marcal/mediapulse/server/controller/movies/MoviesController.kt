@@ -4,8 +4,10 @@ import dev.marcal.mediapulse.server.api.movies.ExistingMovieWatchCreateRequest
 import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermCreateRequest
+import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermVisibilityRequest
+import dev.marcal.mediapulse.server.api.movies.MovieTermsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermsSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesLibraryResponse
@@ -63,10 +65,27 @@ class MoviesController(
         @PathVariable slug: String,
     ): MovieDetailsResponse = repository.getMovieDetailsBySlug(slug)
 
+    @GetMapping("/terms/{kind}/{slug}")
+    fun termDetails(
+        @PathVariable kind: String,
+        @PathVariable slug: String,
+    ): MovieTermDetailsResponse {
+        val normalizedKind = kind.trim().uppercase()
+        if (normalizedKind != "GENRE" && normalizedKind != "TAG") {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "kind inválido")
+        }
+        return repository.getMovieTermDetails(normalizedKind, slug)
+    }
+
     @PostMapping("/{movieId}/terms/sync-tmdb")
     fun syncTermsFromTmdb(
         @PathVariable movieId: Long,
     ): MovieTermsSyncResponse = movieTermsService.syncFromTmdb(movieId)
+
+    @PostMapping("/terms/sync-tmdb")
+    fun syncAllTermsFromTmdb(
+        @RequestParam(defaultValue = "100") limit: Int,
+    ): MovieTermsBatchSyncResponse = movieTermsService.syncAllFromTmdb(normalizeLimit("limit", limit))
 
     @PostMapping("/{movieId}/terms")
     fun addTerm(

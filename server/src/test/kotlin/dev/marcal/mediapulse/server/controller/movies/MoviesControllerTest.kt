@@ -1,6 +1,10 @@
 package dev.marcal.mediapulse.server.controller.movies
 
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MovieTermKindDto
+import dev.marcal.mediapulse.server.api.movies.MovieTermSourceDto
+import dev.marcal.mediapulse.server.api.movies.MovieTermsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.movies.MovieYearWatchedDto
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
@@ -68,6 +72,38 @@ class MoviesControllerTest {
         controller.deleteWatch(movieId = 58, watchId = 991)
 
         verify(exactly = 1) { movieWatchRemovalService.remove(movieId = 58, watchId = 991) }
+    }
+
+    @Test
+    fun `term details should delegate to repository with normalized kind`() {
+        val expected =
+            MovieTermDetailsResponse(
+                termId = 5,
+                name = "Horror",
+                slug = "horror",
+                kind = MovieTermKindDto.GENRE,
+                source = MovieTermSourceDto.TMDB,
+                movieCount = 12,
+                watchedMoviesCount = 8,
+                movies = emptyList(),
+            )
+        every { repository.getMovieTermDetails("GENRE", "horror") } returns expected
+
+        val response = controller.termDetails("genre", "horror")
+
+        assertEquals(5, response.termId)
+        verify(exactly = 1) { repository.getMovieTermDetails("GENRE", "horror") }
+    }
+
+    @Test
+    fun `sync all terms should delegate to service with normalized limit`() {
+        val expected = MovieTermsBatchSyncResponse(requestedLimit = 1000, candidates = 1000, processed = 1000, synced = 998, failed = 2)
+        every { movieTermsService.syncAllFromTmdb(1000) } returns expected
+
+        val response = controller.syncAllTermsFromTmdb(limit = 5000)
+
+        assertEquals(998, response.synced)
+        verify(exactly = 1) { movieTermsService.syncAllFromTmdb(1000) }
     }
 
     @Test

@@ -13,9 +13,11 @@
         <p class="group-label">{{ group.title }}</p>
 
         <div class="chip-list">
-          <article
+          <component
             v-for="item in group.items"
             :key="item.id"
+            :is="editingEnabled ? 'article' : NuxtLink"
+            :to="editingEnabled ? undefined : item.href"
             class="term-pill"
             :class="[
               { editing: editingEnabled },
@@ -44,7 +46,7 @@
                 Ocultar geral
               </button>
             </div>
-          </article>
+          </component>
         </div>
       </section>
 
@@ -105,6 +107,7 @@
 </template>
 
 <script setup lang="ts">
+import { NuxtLink } from '#components'
 import type { MoviePageData, MovieTermDto, MovieTermKind, MovieTermsSyncResponse } from '~/types/movies'
 
 const props = defineProps<{

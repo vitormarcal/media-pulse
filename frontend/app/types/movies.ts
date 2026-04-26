@@ -31,6 +31,17 @@ export interface MovieTermDto {
   active: boolean
 }
 
+export interface MovieTermDetailsResponse {
+  termId: number
+  name: string
+  slug: string
+  kind: MovieTermKind
+  source: MovieTermSource
+  movieCount: number
+  watchedMoviesCount: number
+  movies: MovieLibraryCardDto[]
+}
+
 export interface MovieCollectionDto {
   id: number
   tmdbId: string
@@ -243,6 +254,7 @@ export interface MoviePageData {
         id: string
         termId: number
         name: string
+        href: string
         kind: MovieTermKind
         source: MovieTermSource
         hiddenGlobally: boolean
@@ -270,6 +282,18 @@ export interface MoviePageData {
     }>
   } | null
   recentWatches: MovieWatchEntryModel[]
+}
+
+export interface MovieTermPageData {
+  kind: MovieTermKind
+  name: string
+  slug: string
+  heroMeta: string[]
+  stats: {
+    movieCount: number
+    watchedMoviesCount: number
+  }
+  movies: MovieLibraryCardModel[]
 }
 
 export interface MoviesStatsResponse {

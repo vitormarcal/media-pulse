@@ -517,6 +517,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
               id: `term-${term.id}`,
               termId: term.id,
               name: term.name,
+              href: `/movies/terms/${term.kind.toLowerCase()}/${term.slug}`,
               kind: term.kind,
               source: term.source,
               hiddenGlobally: term.hiddenGlobally,
@@ -541,6 +542,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
               id: `term-${term.id}`,
               termId: term.id,
               name: term.name,
+              href: `/movies/terms/${term.kind.toLowerCase()}/${term.slug}`,
               kind: term.kind,
               source: term.source,
               hiddenGlobally: term.hiddenGlobally,
@@ -579,5 +581,25 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
         }
       : null,
     recentWatches: movie.watches.slice(0, 24).map(mapWatch),
+  }
+}
+
+export function buildMovieTermPageData(
+  term: import('~/types/movies').MovieTermDetailsResponse,
+): import('~/types/movies').MovieTermPageData {
+  return {
+    kind: term.kind,
+    name: term.name,
+    slug: term.slug,
+    heroMeta: [
+      term.kind === 'GENRE' ? 'Gênero' : 'Tag',
+      `${term.movieCount} filmes`,
+      `${term.watchedMoviesCount} com sessão`,
+    ],
+    stats: {
+      movieCount: term.movieCount,
+      watchedMoviesCount: term.watchedMoviesCount,
+    },
+    movies: term.movies.map(buildLibraryCardModel),
   }
 }
