@@ -1,6 +1,7 @@
 import type {
   MovieCollectionContextMetric,
   MovieCollectionData,
+  MovieCompanyDetailsResponse,
   MovieLibraryCardDto,
   MovieLibraryCardModel,
   MovieLibraryMetric,
@@ -517,6 +518,21 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
       provider: identifier.provider,
       externalId: identifier.externalId,
     })),
+    companies: {
+      summary: movie.companies.length
+        ? `${movie.companies.length} estúdios ou produtoras ligados a este filme.`
+        : 'Ainda não há empresas locais ligadas a este filme.',
+      visibleCount: movie.companies.length,
+      items: movie.companies.map((company) => ({
+        id: `company-${company.companyId}`,
+        companyId: company.companyId,
+        name: company.name,
+        href: `/movies/companies/${company.slug}`,
+        logoUrl: company.logoUrl,
+        originCountry: company.originCountry,
+        typeLabel: company.companyType === 'PRODUCTION' ? 'Produção' : company.companyType,
+      })),
+    },
     people: {
       summary: uniquePeople.length
         ? `${uniquePeople.length} pessoas locais entre direção, roteiro e elenco principal.`
@@ -661,6 +677,30 @@ export function buildMoviePersonPageData(
       watchedMoviesCount: person.watchedMoviesCount,
     },
     movies: person.movies.map(buildLibraryCardModel),
+  }
+}
+
+export function buildMovieCompanyPageData(
+  company: MovieCompanyDetailsResponse,
+): import('~/types/movies').MovieCompanyPageData {
+  return {
+    companyId: company.companyId,
+    tmdbId: company.tmdbId,
+    name: company.name,
+    slug: company.slug,
+    logoUrl: company.logoUrl,
+    originCountry: company.originCountry,
+    typeLabel: company.companyType === 'PRODUCTION' ? 'Produção' : company.companyType,
+    heroMeta: [
+      `${company.movieCount} filmes`,
+      `${company.watchedMoviesCount} com sessão`,
+      company.originCountry,
+    ].filter(Boolean) as string[],
+    stats: {
+      movieCount: company.movieCount,
+      watchedMoviesCount: company.watchedMoviesCount,
+    },
+    movies: company.movies.map(buildLibraryCardModel),
   }
 }
 

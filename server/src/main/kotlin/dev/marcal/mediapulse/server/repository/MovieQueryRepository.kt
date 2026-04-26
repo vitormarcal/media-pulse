@@ -3,6 +3,9 @@ package dev.marcal.mediapulse.server.repository
 import dev.marcal.mediapulse.server.api.movies.MovieCardDto
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionDto
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionMovieDto
+import dev.marcal.mediapulse.server.api.movies.MovieCompanyDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MovieCompanyDto
+import dev.marcal.mediapulse.server.api.movies.MovieCompanyTypeDto
 import dev.marcal.mediapulse.server.api.movies.MovieCreditTypeDto
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieExternalIdDto
@@ -304,6 +307,7 @@ class MovieQueryRepository(
                     )
                 }
 
+        val companies = getMovieCompanies(movieId)
         val people = getMoviePeople(movieId)
         val terms = getMovieTerms(movieId)
 
@@ -373,11 +377,33 @@ class MovieQueryRepository(
             images = images,
             watches = watches,
             externalIds = externalIds,
+            companies = companies,
             people = people,
             terms = terms,
             collection = collection,
         )
     }
+
+    fun getMovieCompanies(movieId: Long): List<MovieCompanyDto> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT
+                  mc.id,
+                  mc.tmdb_id,
+                  mc.name,
+                  mc.slug,
+                  mc.logo_url,
+                  NULLIF(mc.origin_country, ''),
+                  mca.company_type
+                FROM movie_company_assignments mca
+                JOIN movie_companies mc ON mc.id = mca.company_id
+                WHERE mca.movie_id = :movieId
+                ORDER BY mc.name ASC, mc.id ASC
+                """.trimIndent(),
+            ).setParameter("movieId", movieId)
+            .resultList
+            .map { row -> toMovieCompanyDto(row as Array<*>) }
 
     fun getMoviePeople(movieId: Long): List<MoviePersonCreditDto> =
         entityManager
@@ -606,6 +632,105 @@ class MovieQueryRepository(
             roles = roles,
             movieCount = (base[5] as Number).toLong(),
             watchedMoviesCount = (base[6] as Number).toLong(),
+            movies = movies,
+        )
+    }
+
+    fun getMovieCompanyDetails(slug: String): MovieCompanyDetailsResponse {
+        val base =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      mc.id,
+                      mc.tmdb_id,
+                      mc.name,
+                      mc.slug,
+                      mc.logo_url,
+                      NULLIF(mc.origin_country, ''),
+                      mca.company_type,
+                      COUNT(DISTINCT mca.movie_id) AS movie_count,
+                      COUNT(DISTINCT CASE WHEN EXISTS (
+                        SELECT 1
+                        FROM movie_watches mw
+                        WHERE mw.movie_id = mca.movie_id
+                      ) THEN mca.movie_id END) AS watched_movies_count
+                    FROM movie_companies mc
+                    JOIN movie_company_assignments mca ON mca.company_id = mc.id
+                    WHERE mc.slug = :slug
+                    GROUP BY mc.id, mc.tmdb_id, mc.name, mc.slug, mc.logo_url, mc.origin_country, mca.company_type
+                    LIMIT 1
+                    """.trimIndent(),
+                ).setParameter("slug", slug.trim())
+                .resultList
+                .firstOrNull() as Array<*>?
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Movie company not found")
+
+        val companyId = (base[0] as Number).toLong()
+        val movies =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH movie_rollup AS (
+                      SELECT
+                        m.id AS movie_id,
+                        COALESCE((
+                          SELECT mt.title
+                          FROM movie_titles mt
+                          WHERE mt.movie_id = m.id
+                          ORDER BY mt.is_primary ASC, mt.id ASC
+                          LIMIT 1
+                        ), m.original_title) AS title,
+                        m.original_title,
+                        m.slug,
+                        m.year,
+                        m.cover_url,
+                        COUNT(mw.id) AS watch_count,
+                        MAX(mw.watched_at) AS last_watched_at
+                      FROM movie_company_assignments mca
+                      JOIN movies m ON m.id = mca.movie_id
+                      LEFT JOIN movie_watches mw ON mw.movie_id = m.id
+                      WHERE mca.company_id = :companyId
+                      GROUP BY m.id, m.original_title, m.slug, m.year, m.cover_url
+                    )
+                    SELECT
+                      movie_id,
+                      title,
+                      original_title,
+                      slug,
+                      year,
+                      cover_url,
+                      watch_count,
+                      last_watched_at
+                    FROM movie_rollup
+                    ORDER BY COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') DESC, year DESC NULLS LAST, title ASC
+                    """.trimIndent(),
+                ).setParameter("companyId", companyId)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    MovieLibraryCardDto(
+                        movieId = (fields[0] as Number).toLong(),
+                        title = fields[1] as String,
+                        originalTitle = fields[2] as String,
+                        slug = fields[3] as String?,
+                        year = (fields[4] as Number?)?.toInt(),
+                        coverUrl = fields[5] as String?,
+                        watchCount = (fields[6] as Number).toLong(),
+                        lastWatchedAt = asInstant(fields[7]),
+                    )
+                }
+
+        return MovieCompanyDetailsResponse(
+            companyId = companyId,
+            tmdbId = base[1] as String,
+            name = base[2] as String,
+            slug = base[3] as String,
+            logoUrl = base[4] as String?,
+            originCountry = base[5] as String?,
+            companyType = MovieCompanyTypeDto.valueOf(base[6] as String),
+            movieCount = (base[7] as Number).toLong(),
+            watchedMoviesCount = (base[8] as Number).toLong(),
             movies = movies,
         )
     }
@@ -1122,6 +1247,17 @@ class MovieQueryRepository(
             job = fields[7] as String?,
             characterName = fields[8] as String?,
             billingOrder = (fields[9] as Number?)?.toInt(),
+        )
+
+    private fun toMovieCompanyDto(fields: Array<*>): MovieCompanyDto =
+        MovieCompanyDto(
+            companyId = (fields[0] as Number).toLong(),
+            tmdbId = fields[1] as String,
+            name = fields[2] as String,
+            slug = fields[3] as String,
+            logoUrl = fields[4] as String?,
+            originCountry = fields[5] as String?,
+            companyType = MovieCompanyTypeDto.valueOf(fields[6] as String),
         )
 
     private fun toMovieTermSuggestionDto(fields: Array<*>): MovieTermSuggestionDto =

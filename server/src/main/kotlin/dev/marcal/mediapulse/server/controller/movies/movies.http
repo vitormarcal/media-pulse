@@ -21,6 +21,10 @@ Accept: application/json
 GET {{baseUrl}}/people/quentin-tarantino-138
 Accept: application/json
 
+### Detalhes de uma empresa
+GET {{baseUrl}}/companies/studio-ghibli-10342
+Accept: application/json
+
 ### Buscar pessoas locais
 GET {{baseUrl}}/people/search?q=quentin&limit=6
 Accept: application/json
@@ -65,8 +69,16 @@ Accept: application/json
 GET {{baseUrl}}/collections/1/tmdb-members
 Accept: application/json
 
+### Filmes TMDb de uma empresa
+GET {{baseUrl}}/companies/12/tmdb-members
+Accept: application/json
+
 ### Sincronizar termos do TMDb para um filme
 POST {{baseUrl}}/{{movieId}}/terms/sync-tmdb
+Accept: application/json
+
+### Sincronizar empresas do TMDb para um filme
+POST {{baseUrl}}/{{movieId}}/companies/sync-tmdb
 Accept: application/json
 
 ### Sincronizar créditos do TMDb para um filme
@@ -104,6 +116,10 @@ Accept: application/json
 
 ### Sincronizar termos do TMDb em lote
 POST {{baseUrl}}/terms/sync-tmdb?limit=200
+Accept: application/json
+
+### Sincronizar empresas do TMDb em lote
+POST {{baseUrl}}/companies/sync-tmdb?limit=200
 Accept: application/json
 
 ### Sincronizar créditos do TMDb em lote

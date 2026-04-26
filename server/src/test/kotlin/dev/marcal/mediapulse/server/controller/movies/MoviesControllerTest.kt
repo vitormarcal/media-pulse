@@ -1,5 +1,8 @@
 package dev.marcal.mediapulse.server.controller.movies
 
+import dev.marcal.mediapulse.server.api.movies.MovieCompaniesBatchSyncResponse
+import dev.marcal.mediapulse.server.api.movies.MovieCompanyDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MovieCompanyTypeDto
 import dev.marcal.mediapulse.server.api.movies.MovieCreditsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviePersonDetailsResponse
@@ -24,6 +27,7 @@ import dev.marcal.mediapulse.server.api.movies.MoviesYearStatsDto
 import dev.marcal.mediapulse.server.api.movies.RangeDto
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
+import dev.marcal.mediapulse.server.service.movie.MovieCompaniesService
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.service.movie.MovieTermsService
 import dev.marcal.mediapulse.server.service.movie.MovieWatchRemovalService
@@ -41,6 +45,7 @@ class MoviesControllerTest {
     private val existingMovieWatchCreateFlowService = mockk<ExistingMovieWatchCreateFlowService>(relaxed = true)
     private val movieWatchRemovalService = mockk<MovieWatchRemovalService>(relaxed = true)
     private val movieTermsService = mockk<MovieTermsService>(relaxed = true)
+    private val movieCompaniesService = mockk<MovieCompaniesService>(relaxed = true)
     private val movieCreditsService = mockk<MovieCreditsService>(relaxed = true)
     private val controller =
         MoviesController(
@@ -48,6 +53,7 @@ class MoviesControllerTest {
             existingMovieWatchCreateFlowService,
             movieWatchRemovalService,
             movieTermsService,
+            movieCompaniesService,
             movieCreditsService,
         )
 
@@ -103,6 +109,29 @@ class MoviesControllerTest {
 
         assertEquals(44, response.personId)
         verify(exactly = 1) { repository.getMoviePersonDetails("quentin-tarantino-138") }
+    }
+
+    @Test
+    fun `company details should delegate to repository`() {
+        val expected =
+            MovieCompanyDetailsResponse(
+                companyId = 12,
+                tmdbId = "3",
+                name = "Studio Ghibli",
+                slug = "studio-ghibli-3",
+                logoUrl = null,
+                originCountry = "JP",
+                companyType = MovieCompanyTypeDto.PRODUCTION,
+                movieCount = 5,
+                watchedMoviesCount = 4,
+                movies = emptyList(),
+            )
+        every { repository.getMovieCompanyDetails("studio-ghibli-3") } returns expected
+
+        val response = controller.companyDetails("studio-ghibli-3")
+
+        assertEquals(12, response.companyId)
+        verify(exactly = 1) { repository.getMovieCompanyDetails("studio-ghibli-3") }
     }
 
     @Test
@@ -186,6 +215,17 @@ class MoviesControllerTest {
 
         assertEquals(998, response.synced)
         verify(exactly = 1) { movieTermsService.syncAllFromTmdb(1000) }
+    }
+
+    @Test
+    fun `sync all companies should delegate to service with normalized limit`() {
+        val expected = MovieCompaniesBatchSyncResponse(requestedLimit = 1000, candidates = 1000, processed = 1000, synced = 995, failed = 5)
+        every { movieCompaniesService.syncAllFromTmdb(1000) } returns expected
+
+        val response = controller.syncAllCompaniesFromTmdb(limit = 5000)
+
+        assertEquals(995, response.synced)
+        verify(exactly = 1) { movieCompaniesService.syncAllFromTmdb(1000) }
     }
 
     @Test

@@ -24,6 +24,17 @@ data class TmdbMovieDetailsResponse(
     @JsonProperty("belongs_to_collection")
     val belongsToCollection: TmdbMovieCollectionResponse? = null,
     val genres: List<TmdbNamedItemResponse> = emptyList(),
+    @JsonProperty("production_companies")
+    val productionCompanies: List<TmdbMovieCompanyResponse> = emptyList(),
+)
+
+data class TmdbMovieCompanyResponse(
+    val id: Long? = null,
+    val name: String? = null,
+    @JsonProperty("logo_path")
+    val logoPath: String? = null,
+    @JsonProperty("origin_country")
+    val originCountry: String? = null,
 )
 
 data class TmdbNamedItemResponse(
@@ -82,6 +93,13 @@ data class TmdbMovieSearchItemResponse(
 )
 
 data class TmdbMovieSearchResponse(
+    val results: List<TmdbMovieSearchItemResponse> = emptyList(),
+)
+
+data class TmdbDiscoverMovieResponse(
+    val page: Int? = null,
+    @JsonProperty("total_pages")
+    val totalPages: Int? = null,
     val results: List<TmdbMovieSearchItemResponse> = emptyList(),
 )
 
@@ -230,7 +248,15 @@ class TmdbApiClient(
         val backdropPath: String?,
         val genres: List<String> = emptyList(),
         val keywords: List<String> = emptyList(),
+        val productionCompanies: List<TmdbMovieCompany> = emptyList(),
         val collection: TmdbMovieCollection? = null,
+    )
+
+    data class TmdbMovieCompany(
+        val tmdbId: String,
+        val name: String,
+        val logoPath: String?,
+        val originCountry: String?,
     )
 
     data class TmdbMovieCollection(
@@ -327,6 +353,11 @@ class TmdbApiClient(
         val backdropPath: String?,
     )
 
+    data class TmdbCompanyMovies(
+        val companyTmdbId: String,
+        val movies: List<TmdbMovieSearchItem>,
+    )
+
     data class TmdbPersonMovieCredits(
         val cast: List<TmdbPersonMovieCastCredit>,
         val crew: List<TmdbPersonMovieCrewCredit>,
@@ -403,6 +434,17 @@ class TmdbApiClient(
                     backdropPath = response.backdropPath?.trim()?.ifBlank { null },
                     genres = response.genres.mapNotNull { it.name?.trim()?.ifBlank { null } }.distinct(),
                     keywords = keywords,
+                    productionCompanies =
+                        response.productionCompanies.mapNotNull { item ->
+                            val companyId = item.id?.toString() ?: return@mapNotNull null
+                            val name = item.name?.trim()?.ifBlank { null } ?: return@mapNotNull null
+                            TmdbMovieCompany(
+                                tmdbId = companyId,
+                                name = name,
+                                logoPath = item.logoPath?.trim()?.ifBlank { null },
+                                originCountry = item.originCountry?.trim()?.ifBlank { null },
+                            )
+                        },
                     collection =
                         response.belongsToCollection
                             ?.takeIf { it.id != null && !it.name.isNullOrBlank() }
@@ -899,16 +941,7 @@ class TmdbApiClient(
 
                 return response.results
                     .asSequence()
-                    .map { item ->
-                        TmdbMovieSearchItem(
-                            tmdbId = item.id.toString(),
-                            title = item.title?.trim()?.ifBlank { null },
-                            originalTitle = item.originalTitle?.trim()?.ifBlank { null },
-                            overview = item.overview?.trim()?.ifBlank { null },
-                            releaseYear = parseReleaseYear(item.releaseDate),
-                            posterPath = item.posterPath?.trim()?.ifBlank { null },
-                        )
-                    }.filter { !it.title.isNullOrBlank() }
+                    .mapNotNull(::toTmdbMovieSearchItem)
                     .take(limit.coerceAtLeast(1))
                     .toList()
             } catch (ex: WebClientResponseException.NotFound) {
@@ -931,6 +964,105 @@ class TmdbApiClient(
         }
 
         return emptyList()
+    }
+
+    fun fetchCompanyMovies(tmdbCompanyId: String): TmdbCompanyMovies? {
+        if (!tmdbProperties.enabled) return null
+
+        val normalizedCompanyId = tmdbCompanyId.trim()
+        if (normalizedCompanyId.isBlank()) return null
+
+        val collected = mutableListOf<TmdbMovieSearchItem>()
+        var page = 1
+        var totalPages = 1
+
+        while (page <= totalPages) {
+            val response = fetchDiscoverMoviesPage(normalizedCompanyId, page) ?: return null
+            totalPages = response.totalPages?.coerceAtLeast(1) ?: 1
+            collected += response.results.mapNotNull(::toTmdbMovieSearchItem)
+            page++
+        }
+
+        return TmdbCompanyMovies(
+            companyTmdbId = normalizedCompanyId,
+            movies = collected.distinctBy { it.tmdbId },
+        )
+    }
+
+    private fun fetchDiscoverMoviesPage(
+        tmdbCompanyId: String,
+        page: Int,
+    ): TmdbDiscoverMovieResponse? {
+        val attempts = (tmdbProperties.max429Retries + 1).coerceAtLeast(1)
+        var attempt = 0
+
+        while (attempt < attempts) {
+            attempt++
+            tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
+
+            try {
+                return tmdbWebClient
+                    .get()
+                    .uri { uriBuilder ->
+                        val builder =
+                            uriBuilder
+                                .path("/discover/movie")
+                                .queryParam("with_companies", tmdbCompanyId)
+                                .queryParam("page", page)
+                        if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
+                            builder.queryParam("api_key", tmdbProperties.apiKey)
+                        }
+                        builder.build()
+                    }.retrieve()
+                    .bodyToMono<TmdbDiscoverMovieResponse>()
+                    .block()
+            } catch (ex: WebClientResponseException.NotFound) {
+                return null
+            } catch (ex: WebClientResponseException) {
+                val isTooManyRequests = ex.statusCode.value() == 429
+                val hasRemainingRetry = attempt < attempts
+                if (isTooManyRequests && hasRemainingRetry) {
+                    val waitMs = resolve429WaitMs(ex, attempt)
+                    logger.warn(
+                        "TMDb discover/company rate limited (429). Waiting {}ms before retry {}/{}",
+                        waitMs,
+                        attempt + 1,
+                        attempts,
+                    )
+                    Thread.sleep(waitMs)
+                    continue
+                }
+                logger.warn(
+                    "Failed to discover TMDb movies for company={} page={} status={}",
+                    tmdbCompanyId,
+                    page,
+                    ex.statusCode.value(),
+                    ex,
+                )
+                return null
+            } catch (ex: Exception) {
+                logger.warn("Failed to discover TMDb movies for company={} page={}", tmdbCompanyId, page, ex)
+                return null
+            }
+        }
+
+        return null
+    }
+
+    private fun toTmdbMovieSearchItem(item: TmdbMovieSearchItemResponse): TmdbMovieSearchItem? {
+        val title = item.title?.trim()?.ifBlank { null }
+        return if (title.isNullOrBlank()) {
+            null
+        } else {
+            TmdbMovieSearchItem(
+                tmdbId = item.id.toString(),
+                title = title,
+                originalTitle = item.originalTitle?.trim()?.ifBlank { null },
+                overview = item.overview?.trim()?.ifBlank { null },
+                releaseYear = parseReleaseYear(item.releaseDate),
+                posterPath = item.posterPath?.trim()?.ifBlank { null },
+            )
+        }
     }
 
     fun searchShows(

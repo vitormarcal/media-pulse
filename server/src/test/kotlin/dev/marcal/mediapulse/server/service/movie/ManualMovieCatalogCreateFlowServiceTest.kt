@@ -19,6 +19,7 @@ class ManualMovieCatalogCreateFlowServiceTest {
     private val tmdbApiClient = mockk<TmdbApiClient>()
     private val movieTermsService = mockk<MovieTermsService>(relaxed = true)
     private val movieCreditsService = mockk<MovieCreditsService>(relaxed = true)
+    private val movieCompaniesService = mockk<MovieCompaniesService>(relaxed = true)
 
     private val service =
         ManualMovieCatalogCreateFlowService(
@@ -27,6 +28,7 @@ class ManualMovieCatalogCreateFlowServiceTest {
             tmdbApiClient = tmdbApiClient,
             movieTermsService = movieTermsService,
             movieCreditsService = movieCreditsService,
+            movieCompaniesService = movieCompaniesService,
         )
 
     @Test

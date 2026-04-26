@@ -16,6 +16,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/{movieId}` | `movieId` | `MovieDetailsResponse` |
 | `GET /api/movies/slug/{slug}` | `slug` | `MovieDetailsResponse` |
 | `GET /api/movies/people/{slug}` | `slug` | `MoviePersonDetailsResponse` |
+| `GET /api/movies/companies/{slug}` | `slug` | `MovieCompanyDetailsResponse` |
 | `GET /api/movies/people/search` | `q`, `limit=8` | `MoviePersonSuggestionDto[]` |
 | `GET /api/movies/terms/{kind}/{slug}` | `kind=genre|tag`, `slug` | `MovieTermDetailsResponse` |
 | `GET /api/movies/terms/search` | `q`, `kind=genre|tag`, `limit=8` | `MovieTermSuggestionDto[]` |
@@ -25,9 +26,12 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `MoviesByYearResponse` |
 | `GET /api/movies/catalog/suggestions` | `q` | `MovieCatalogSuggestionsResponse` |
 | `GET /api/movies/collections/{collectionId}/tmdb-members` | `collectionId` | `MovieCollectionMembersResponse` |
+| `GET /api/movies/companies/{companyId}/tmdb-members` | `companyId` | `MovieCompanyMembersResponse` |
 | `POST /api/movies/catalog` | body com `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieCatalogCreateResponse` |
 | `POST /api/movies/collections/backfill` | `limit=50` | `MovieCollectionBackfillResponse` |
 | `POST /api/movies/{movieId}/watches` | body com `watchedAt` | `ManualMovieWatchCreateResponse` |
+| `POST /api/movies/{movieId}/companies/sync-tmdb` | `movieId` | `MovieCompaniesSyncResponse` |
+| `POST /api/movies/companies/sync-tmdb` | `limit=100` | `MovieCompaniesBatchSyncResponse` |
 | `POST /api/movies/{movieId}/credits/sync-tmdb` | `movieId` | `MovieCreditsSyncResponse` |
 | `POST /api/movies/credits/sync-tmdb` | `limit=100` | `MovieCreditsBatchSyncResponse` |
 | `GET /api/movies/{movieId}/credits/tmdb-candidates` | `movieId` | `MovieTmdbCreditCandidatesResponse` |
@@ -184,6 +188,44 @@ Visibilidade:
 - `kind` aceita `genre` ou `tag`
 - retorna o termo e os filmes ativos ligados a ele
 - o resultado exclui termos ocultos globalmente e vínculos ocultos no filme
+
+## Pessoas e créditos
+
+## Empresas
+
+Cada filme agora pode carregar empresas locais vindas do TMDb, começando por produtoras.
+
+Escopo do sync:
+
+- `PRODUCTION`: produtoras/estúdios vindos de `production_companies` do TMDb
+
+Persistência:
+
+- `movie_companies` guarda a empresa local com `tmdb_id`, `name`, `slug`, `logo_url` e `origin_country`
+- `movie_company_assignments` guarda o vínculo filme-empresa com `company_type`
+
+`POST /api/movies/{movieId}/companies/sync-tmdb` sincroniza empresas de um filme.
+
+- exige vínculo `TMDB` no filme
+- substitui o recorte local de empresas pelo snapshot atual do TMDb
+- marca `movies.companies_synced_at` ao concluir com sucesso
+
+`POST /api/movies/companies/sync-tmdb` sincroniza empresas em lote.
+
+- processa apenas filmes com vínculo `TMDB`
+- considera apenas pendentes (`movies.companies_synced_at IS NULL`)
+- `limit` é normalizado entre `1` e `1000`
+- falhas individuais não interrompem o lote
+
+`GET /api/movies/companies/{slug}` abre a página local da empresa.
+
+- retorna a empresa e os filmes do catálogo ligados a ela
+
+`GET /api/movies/companies/{companyId}/tmdb-members` expande o catálogo da empresa no TMDb.
+
+- usa `discover/movie` com `with_companies`
+- cruza o resultado com o catálogo local
+- se um filme já existir localmente, reconcilia o vínculo filme-empresa antes de responder
 
 ## Pessoas e créditos
 

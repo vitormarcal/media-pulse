@@ -18,7 +18,7 @@
           <span v-for="item in heroMeta" :key="item" class="meta-pill">{{ item }}</span>
         </div>
 
-        <div v-if="identifiers.length || terms.visibleCount || editing" class="detail-stack">
+        <div v-if="identifiers.length || companies.visibleCount || terms.visibleCount || editing" class="detail-stack">
           <div v-if="identifiers.length" class="detail-row">
             <p class="detail-label">IDs</p>
             <div class="detail-pills">
@@ -26,6 +26,15 @@
                 {{ identifier.provider }} {{ identifier.externalId }}
               </span>
             </div>
+          </div>
+
+          <div v-if="companies.visibleCount || editing" class="detail-row companies-row">
+            <MovieCompaniesPanel
+              :movie-id="movieId"
+              :companies="companies"
+              :editing="editing"
+              @changed="$emit('companiesChanged')"
+            />
           </div>
 
           <div v-if="terms.visibleCount || editing" class="detail-row terms-row">
@@ -50,6 +59,7 @@
 </template>
 
 <script setup lang="ts">
+import MovieCompaniesPanel from '~/components/movies/MovieCompaniesPanel.vue'
 import MovieTermsPanel from '~/components/movies/MovieTermsPanel.vue'
 import type { MoviePageData } from '~/types/movies'
 
@@ -62,12 +72,14 @@ defineProps<{
   gallery: string[]
   heroMeta: string[]
   identifiers: MoviePageData['identifiers']
+  companies: MoviePageData['companies']
   terms: MoviePageData['terms']
 }>()
 
 const { resolveMediaUrl } = useMediaUrl()
 
 defineEmits<{
+  companiesChanged: []
   termsChanged: []
   toggleEditing: []
 }>()

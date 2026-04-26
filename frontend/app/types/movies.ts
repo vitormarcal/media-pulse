@@ -20,6 +20,7 @@ export interface MovieExternalIdDto {
 export type MovieTermKind = 'GENRE' | 'TAG'
 export type MovieTermSource = 'TMDB' | 'USER'
 export type MovieCreditType = 'CAST' | 'CREW'
+export type MovieCompanyType = 'PRODUCTION'
 
 export interface MovieTermDto {
   id: number
@@ -70,6 +71,16 @@ export interface MovieCollectionMovieDto {
   coverUrl: string | null
   watched: boolean
   current: boolean
+}
+
+export interface MovieCompanyDto {
+  companyId: number
+  tmdbId: string
+  name: string
+  slug: string
+  logoUrl: string | null
+  originCountry: string | null
+  companyType: MovieCompanyType
 }
 
 export interface MoviePersonCreditDto {
@@ -146,6 +157,19 @@ export interface MoviePersonDetailsResponse {
   movies: MovieLibraryCardDto[]
 }
 
+export interface MovieCompanyDetailsResponse {
+  companyId: number
+  tmdbId: string
+  name: string
+  slug: string
+  logoUrl: string | null
+  originCountry: string | null
+  companyType: MovieCompanyType
+  movieCount: number
+  watchedMoviesCount: number
+  movies: MovieLibraryCardDto[]
+}
+
 export interface MovieCreditsSyncResponse {
   movieId: number
   syncedCount: number
@@ -153,6 +177,20 @@ export interface MovieCreditsSyncResponse {
 }
 
 export interface MovieCreditsBatchSyncResponse {
+  requestedLimit: number
+  candidates: number
+  processed: number
+  synced: number
+  failed: number
+}
+
+export interface MovieCompaniesSyncResponse {
+  movieId: number
+  syncedCount: number
+  visibleCount: number
+}
+
+export interface MovieCompaniesBatchSyncResponse {
   requestedLimit: number
   candidates: number
   processed: number
@@ -171,6 +209,7 @@ export interface MovieDetailsResponse {
   images: MovieImageDto[]
   watches: MovieWatchDto[]
   externalIds: MovieExternalIdDto[]
+  companies: MovieCompanyDto[]
   people: MoviePersonCreditDto[]
   terms: MovieTermDto[]
   collection: MovieCollectionDto | null
@@ -278,6 +317,29 @@ export interface MoviePersonFilmographyMember {
   roleLabel: string
 }
 
+export interface MovieCompanyMembersResponse {
+  companyId: number
+  tmdbId: string
+  name: string
+  logoUrl: string | null
+  originCountry: string | null
+  members: MovieCompanyMember[]
+}
+
+export interface MovieCompanyMember {
+  tmdbId: string
+  title: string
+  originalTitle: string | null
+  year: number | null
+  overview: string | null
+  posterUrl: string | null
+  backdropUrl: string | null
+  tmdbUrl: string
+  localMovieId: number | null
+  localSlug: string | null
+  inCatalog: boolean
+}
+
 export interface MovieEnrichmentPreviewResponse {
   movieId: number
   resolvedTmdbId: string
@@ -364,6 +426,19 @@ export interface MoviePageData {
     provider: string
     externalId: string
   }>
+  companies: {
+    summary: string
+    visibleCount: number
+    items: Array<{
+      id: string
+      companyId: number
+      name: string
+      href: string
+      logoUrl: string | null
+      originCountry: string | null
+      typeLabel: string
+    }>
+  }
   people: {
     summary: string
     visibleCount: number
@@ -442,6 +517,22 @@ export interface MoviePersonPageData {
   profileUrl: string | null
   heroMeta: string[]
   roles: string[]
+  stats: {
+    movieCount: number
+    watchedMoviesCount: number
+  }
+  movies: MovieLibraryCardModel[]
+}
+
+export interface MovieCompanyPageData {
+  companyId: number
+  tmdbId: string
+  name: string
+  slug: string
+  logoUrl: string | null
+  originCountry: string | null
+  typeLabel: string
+  heroMeta: string[]
   stats: {
     movieCount: number
     watchedMoviesCount: number

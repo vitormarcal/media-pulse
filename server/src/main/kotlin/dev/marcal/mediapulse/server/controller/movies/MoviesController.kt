@@ -2,6 +2,9 @@ package dev.marcal.mediapulse.server.controller.movies
 
 import dev.marcal.mediapulse.server.api.movies.ExistingMovieWatchCreateRequest
 import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateResponse
+import dev.marcal.mediapulse.server.api.movies.MovieCompaniesBatchSyncResponse
+import dev.marcal.mediapulse.server.api.movies.MovieCompaniesSyncResponse
+import dev.marcal.mediapulse.server.api.movies.MovieCompanyDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCreditsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCreditsSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
@@ -26,6 +29,7 @@ import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
+import dev.marcal.mediapulse.server.service.movie.MovieCompaniesService
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.service.movie.MovieTermsService
 import dev.marcal.mediapulse.server.service.movie.MovieWatchRemovalService
@@ -52,6 +56,7 @@ class MoviesController(
     private val existingMovieWatchCreateFlowService: ExistingMovieWatchCreateFlowService,
     private val movieWatchRemovalService: MovieWatchRemovalService,
     private val movieTermsService: MovieTermsService,
+    private val movieCompaniesService: MovieCompaniesService,
     private val movieCreditsService: MovieCreditsService,
 ) {
     @GetMapping("/library")
@@ -80,6 +85,11 @@ class MoviesController(
     fun personDetails(
         @PathVariable slug: String,
     ): MoviePersonDetailsResponse = repository.getMoviePersonDetails(slug)
+
+    @GetMapping("/companies/{slug}")
+    fun companyDetails(
+        @PathVariable slug: String,
+    ): MovieCompanyDetailsResponse = repository.getMovieCompanyDetails(slug)
 
     @GetMapping("/people/search")
     fun searchPeople(
@@ -121,6 +131,16 @@ class MoviesController(
     fun syncAllTermsFromTmdb(
         @RequestParam(defaultValue = "100") limit: Int,
     ): MovieTermsBatchSyncResponse = movieTermsService.syncAllFromTmdb(normalizeLimit("limit", limit))
+
+    @PostMapping("/{movieId}/companies/sync-tmdb")
+    fun syncCompaniesFromTmdb(
+        @PathVariable movieId: Long,
+    ): MovieCompaniesSyncResponse = movieCompaniesService.syncFromTmdb(movieId)
+
+    @PostMapping("/companies/sync-tmdb")
+    fun syncAllCompaniesFromTmdb(
+        @RequestParam(defaultValue = "100") limit: Int,
+    ): MovieCompaniesBatchSyncResponse = movieCompaniesService.syncAllFromTmdb(normalizeLimit("limit", limit))
 
     @PostMapping("/{movieId}/credits/sync-tmdb")
     fun syncCreditsFromTmdb(

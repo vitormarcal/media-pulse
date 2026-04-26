@@ -97,6 +97,20 @@ data class MoviePersonCreditDto(
     val billingOrder: Int?,
 )
 
+enum class MovieCompanyTypeDto {
+    PRODUCTION,
+}
+
+data class MovieCompanyDto(
+    val companyId: Long,
+    val tmdbId: String,
+    val name: String,
+    val slug: String,
+    val logoUrl: String?,
+    val originCountry: String?,
+    val companyType: MovieCompanyTypeDto,
+)
+
 data class MoviePersonSuggestionDto(
     val personId: Long,
     val tmdbId: String,
@@ -158,6 +172,19 @@ data class MoviePersonDetailsResponse(
     val movies: List<MovieLibraryCardDto>,
 )
 
+data class MovieCompanyDetailsResponse(
+    val companyId: Long,
+    val tmdbId: String,
+    val name: String,
+    val slug: String,
+    val logoUrl: String?,
+    val originCountry: String?,
+    val companyType: MovieCompanyTypeDto,
+    val movieCount: Long,
+    val watchedMoviesCount: Long,
+    val movies: List<MovieLibraryCardDto>,
+)
+
 data class MovieCreditsSyncResponse(
     val movieId: Long,
     val syncedCount: Int,
@@ -165,6 +192,20 @@ data class MovieCreditsSyncResponse(
 )
 
 data class MovieCreditsBatchSyncResponse(
+    val requestedLimit: Int,
+    val candidates: Int,
+    val processed: Int,
+    val synced: Int,
+    val failed: Int,
+)
+
+data class MovieCompaniesSyncResponse(
+    val movieId: Long,
+    val syncedCount: Int,
+    val visibleCount: Int,
+)
+
+data class MovieCompaniesBatchSyncResponse(
     val requestedLimit: Int,
     val candidates: Int,
     val processed: Int,
@@ -197,6 +238,7 @@ data class MovieDetailsResponse(
     val images: List<MovieImageDto>,
     val watches: List<MovieWatchDto>,
     val externalIds: List<MovieExternalIdDto>,
+    val companies: List<MovieCompanyDto> = emptyList(),
     val people: List<MoviePersonCreditDto> = emptyList(),
     val terms: List<MovieTermDto> = emptyList(),
     val collection: MovieCollectionDto? = null,
@@ -386,6 +428,29 @@ data class MoviePersonFilmographyMemberDto(
     val localSlug: String?,
     val inCatalog: Boolean,
     val roleLabel: String,
+)
+
+data class MovieCompanyMembersResponse(
+    val companyId: Long,
+    val tmdbId: String,
+    val name: String,
+    val logoUrl: String?,
+    val originCountry: String?,
+    val members: List<MovieCompanyMemberDto>,
+)
+
+data class MovieCompanyMemberDto(
+    val tmdbId: String,
+    val title: String,
+    val originalTitle: String?,
+    val year: Int?,
+    val overview: String?,
+    val posterUrl: String?,
+    val backdropUrl: String?,
+    val tmdbUrl: String,
+    val localMovieId: Long?,
+    val localSlug: String?,
+    val inCatalog: Boolean,
 )
 
 data class MoviesSearchResponse(
