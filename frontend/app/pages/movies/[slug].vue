@@ -11,20 +11,27 @@
 
     <template v-else-if="data">
       <MoviePageHero
+        :movie-id="data.movieId"
+        :editing="editMode"
         :title="data.title"
         :subtitle="heroSubtitle"
         :description="data.description"
         :gallery="data.gallery"
         :hero-meta="data.heroMeta"
+        :identifiers="data.identifiers"
+        :terms="data.terms"
+        @terms-changed="handleTermsChanged"
+        @toggle-editing="toggleEditing"
       />
 
       <MovieEnrichmentPanel
+        v-if="editMode"
         :movie-id="data.movieId"
         :identifiers="data.identifiers"
         @applied="handleEnrichmentApplied"
       />
 
-      <MovieContextPanel :stats="data.stats" :identifiers="data.identifiers" />
+      <MovieContextPanel :stats="data.stats" />
 
       <MovieCollectionPanel :collection="data.collection" @added="handleCatalogAdded" />
 
@@ -47,6 +54,7 @@ import type { ManualMovieWatchCreateResponse, MovieEnrichmentApplyResponse } fro
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
+const editMode = ref(false)
 
 const { data, error, status, refresh } = await useMoviePageData(slug.value)
 
@@ -88,6 +96,14 @@ async function handleWatchDeleted() {
 
 async function handleCatalogAdded() {
   await refresh()
+}
+
+async function handleTermsChanged() {
+  await refresh()
+}
+
+function toggleEditing() {
+  editMode.value = !editMode.value
 }
 </script>
 

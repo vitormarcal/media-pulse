@@ -29,6 +29,27 @@ data class MovieExternalIdDto(
     val externalId: String,
 )
 
+enum class MovieTermKindDto {
+    GENRE,
+    TAG,
+}
+
+enum class MovieTermSourceDto {
+    TMDB,
+    USER,
+}
+
+data class MovieTermDto(
+    val id: Long,
+    val name: String,
+    val slug: String,
+    val kind: MovieTermKindDto,
+    val source: MovieTermSourceDto,
+    val hiddenGlobally: Boolean,
+    val hiddenForMovie: Boolean,
+    val active: Boolean,
+)
+
 data class MovieCollectionDto(
     val id: Long,
     val tmdbId: String,
@@ -74,7 +95,23 @@ data class MovieDetailsResponse(
     val images: List<MovieImageDto>,
     val watches: List<MovieWatchDto>,
     val externalIds: List<MovieExternalIdDto>,
+    val terms: List<MovieTermDto> = emptyList(),
     val collection: MovieCollectionDto? = null,
+)
+
+data class MovieTermCreateRequest(
+    val name: String,
+    val kind: MovieTermKindDto,
+)
+
+data class MovieTermVisibilityRequest(
+    val hidden: Boolean,
+)
+
+data class MovieTermsSyncResponse(
+    val movieId: Long,
+    val syncedCount: Int,
+    val visibleCount: Int,
 )
 
 data class ManualMovieCatalogCreateRequest(

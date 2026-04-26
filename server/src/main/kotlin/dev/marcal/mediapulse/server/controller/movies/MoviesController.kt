@@ -3,6 +3,10 @@ package dev.marcal.mediapulse.server.controller.movies
 import dev.marcal.mediapulse.server.api.movies.ExistingMovieWatchCreateRequest
 import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MovieTermCreateRequest
+import dev.marcal.mediapulse.server.api.movies.MovieTermDto
+import dev.marcal.mediapulse.server.api.movies.MovieTermVisibilityRequest
+import dev.marcal.mediapulse.server.api.movies.MovieTermsSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesLibraryResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesRecentResponse
@@ -11,6 +15,7 @@ import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
+import dev.marcal.mediapulse.server.service.movie.MovieTermsService
 import dev.marcal.mediapulse.server.service.movie.MovieWatchRemovalService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -34,6 +39,7 @@ class MoviesController(
     private val repository: MovieQueryRepository,
     private val existingMovieWatchCreateFlowService: ExistingMovieWatchCreateFlowService,
     private val movieWatchRemovalService: MovieWatchRemovalService,
+    private val movieTermsService: MovieTermsService,
 ) {
     @GetMapping("/library")
     fun library(
@@ -56,6 +62,30 @@ class MoviesController(
     fun detailsBySlug(
         @PathVariable slug: String,
     ): MovieDetailsResponse = repository.getMovieDetailsBySlug(slug)
+
+    @PostMapping("/{movieId}/terms/sync-tmdb")
+    fun syncTermsFromTmdb(
+        @PathVariable movieId: Long,
+    ): MovieTermsSyncResponse = movieTermsService.syncFromTmdb(movieId)
+
+    @PostMapping("/{movieId}/terms")
+    fun addTerm(
+        @PathVariable movieId: Long,
+        @RequestBody request: MovieTermCreateRequest,
+    ): MovieTermDto = movieTermsService.addTerm(movieId, request)
+
+    @PostMapping("/{movieId}/terms/{termId}/visibility")
+    fun updateMovieTermVisibility(
+        @PathVariable movieId: Long,
+        @PathVariable termId: Long,
+        @RequestBody request: MovieTermVisibilityRequest,
+    ): MovieTermDto = movieTermsService.updateMovieVisibility(movieId, termId, request.hidden)
+
+    @PostMapping("/terms/{termId}/visibility")
+    fun updateGlobalTermVisibility(
+        @PathVariable termId: Long,
+        @RequestBody request: MovieTermVisibilityRequest,
+    ): MovieTermDto = movieTermsService.updateGlobalVisibility(termId, request.hidden)
 
     @PostMapping("/{movieId}/watches")
     fun addWatch(

@@ -17,6 +17,20 @@ export interface MovieExternalIdDto {
   externalId: string
 }
 
+export type MovieTermKind = 'GENRE' | 'TAG'
+export type MovieTermSource = 'TMDB' | 'USER'
+
+export interface MovieTermDto {
+  id: number
+  name: string
+  slug: string
+  kind: MovieTermKind
+  source: MovieTermSource
+  hiddenGlobally: boolean
+  hiddenForMovie: boolean
+  active: boolean
+}
+
 export interface MovieCollectionDto {
   id: number
   tmdbId: string
@@ -48,7 +62,23 @@ export interface MovieDetailsResponse {
   images: MovieImageDto[]
   watches: MovieWatchDto[]
   externalIds: MovieExternalIdDto[]
+  terms: MovieTermDto[]
   collection: MovieCollectionDto | null
+}
+
+export interface MovieTermCreateRequest {
+  name: string
+  kind: MovieTermKind
+}
+
+export interface MovieTermVisibilityRequest {
+  hidden: boolean
+}
+
+export interface MovieTermsSyncResponse {
+  movieId: number
+  syncedCount: number
+  visibleCount: number
 }
 
 export type MovieEnrichmentField = 'TITLE' | 'YEAR' | 'DESCRIPTION' | 'TMDB_ID' | 'IMDB_ID' | 'IMAGES'
@@ -201,6 +231,27 @@ export interface MoviePageData {
     provider: string
     externalId: string
   }>
+  terms: {
+    summary: string
+    visibleCount: number
+    hiddenCount: number
+    groups: Array<{
+      id: string
+      title: string
+      description: string
+      items: Array<{
+        id: string
+        termId: number
+        name: string
+        kind: MovieTermKind
+        source: MovieTermSource
+        hiddenGlobally: boolean
+        hiddenForMovie: boolean
+        active: boolean
+        stateLabel: string
+      }>
+    }>
+  }
   collection: {
     id: string
     name: string

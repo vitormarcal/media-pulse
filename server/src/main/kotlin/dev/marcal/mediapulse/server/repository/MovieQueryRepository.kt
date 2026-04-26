@@ -7,6 +7,9 @@ import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieExternalIdDto
 import dev.marcal.mediapulse.server.api.movies.MovieImageDto
 import dev.marcal.mediapulse.server.api.movies.MovieLibraryCardDto
+import dev.marcal.mediapulse.server.api.movies.MovieTermDto
+import dev.marcal.mediapulse.server.api.movies.MovieTermKindDto
+import dev.marcal.mediapulse.server.api.movies.MovieTermSourceDto
 import dev.marcal.mediapulse.server.api.movies.MovieWatchDto
 import dev.marcal.mediapulse.server.api.movies.MovieYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.movies.MovieYearWatchedDto
@@ -295,6 +298,8 @@ class MovieQueryRepository(
                     )
                 }
 
+        val terms = getMovieTerms(movieId)
+
         val collection =
             (base[7] as Number?)?.toLong()?.let { collectionId ->
                 val collectionMovies =
@@ -361,9 +366,56 @@ class MovieQueryRepository(
             images = images,
             watches = watches,
             externalIds = externalIds,
+            terms = terms,
             collection = collection,
         )
     }
+
+    fun getMovieTerms(movieId: Long): List<MovieTermDto> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT
+                  mt.id,
+                  mt.name,
+                  mt.slug,
+                  mt.kind,
+                  mta.source,
+                  mt.hidden AS hidden_globally,
+                  mta.hidden AS hidden_for_movie
+                FROM movie_term_assignments mta
+                JOIN movie_terms mt ON mt.id = mta.term_id
+                WHERE mta.movie_id = :movieId
+                ORDER BY
+                  CASE mt.kind WHEN 'GENRE' THEN 0 ELSE 1 END,
+                  CASE WHEN mt.hidden OR mta.hidden THEN 1 ELSE 0 END,
+                  mt.name ASC,
+                  mt.id ASC
+                """.trimIndent(),
+            ).setParameter("movieId", movieId)
+            .resultList
+            .map { row -> toMovieTermDto(row as Array<*>) }
+
+    fun findTerm(termId: Long): MovieTermDto? =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT
+                  mt.id,
+                  mt.name,
+                  mt.slug,
+                  mt.kind,
+                  mt.source,
+                  mt.hidden AS hidden_globally,
+                  FALSE AS hidden_for_movie
+                FROM movie_terms mt
+                WHERE mt.id = :termId
+                LIMIT 1
+                """.trimIndent(),
+            ).setParameter("termId", termId)
+            .resultList
+            .firstOrNull()
+            ?.let { toMovieTermDto(it as Array<*>) }
 
     fun getMovieDetailsBySlug(slug: String): MovieDetailsResponse {
         val movieId =
@@ -702,4 +754,19 @@ class MovieQueryRepository(
         watchedAt: Instant?,
         movieId: Long,
     ): String = "ts:${watchedAt?.toEpochMilli() ?: 0}:id:$movieId"
+
+    private fun toMovieTermDto(fields: Array<*>): MovieTermDto {
+        val hiddenGlobally = fields[5] as Boolean
+        val hiddenForMovie = fields[6] as Boolean
+        return MovieTermDto(
+            id = (fields[0] as Number).toLong(),
+            name = fields[1] as String,
+            slug = fields[2] as String,
+            kind = MovieTermKindDto.valueOf(fields[3] as String),
+            source = MovieTermSourceDto.valueOf(fields[4] as String),
+            hiddenGlobally = hiddenGlobally,
+            hiddenForMovie = hiddenForMovie,
+            active = !hiddenGlobally && !hiddenForMovie,
+        )
+    }
 }

@@ -13,6 +13,7 @@ import dev.marcal.mediapulse.server.api.movies.MoviesYearStatsDto
 import dev.marcal.mediapulse.server.api.movies.RangeDto
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
+import dev.marcal.mediapulse.server.service.movie.MovieTermsService
 import dev.marcal.mediapulse.server.service.movie.MovieWatchRemovalService
 import io.mockk.every
 import io.mockk.mockk
@@ -27,7 +28,8 @@ class MoviesControllerTest {
     private val repository = mockk<MovieQueryRepository>(relaxed = true)
     private val existingMovieWatchCreateFlowService = mockk<ExistingMovieWatchCreateFlowService>(relaxed = true)
     private val movieWatchRemovalService = mockk<MovieWatchRemovalService>(relaxed = true)
-    private val controller = MoviesController(repository, existingMovieWatchCreateFlowService, movieWatchRemovalService)
+    private val movieTermsService = mockk<MovieTermsService>(relaxed = true)
+    private val controller = MoviesController(repository, existingMovieWatchCreateFlowService, movieWatchRemovalService, movieTermsService)
 
     @Test
     fun `recent should delegate to repository`() {

@@ -76,6 +76,8 @@ class ManualMovieCatalogService(
         val backdropPath: String?,
         val posterUrl: String?,
         val backdropUrl: String?,
+        val genres: List<String> = emptyList(),
+        val keywords: List<String> = emptyList(),
         val collection: TmdbMovieCollectionSnapshot? = null,
     )
 
@@ -172,6 +174,8 @@ class ManualMovieCatalogService(
             backdropPath = tmdbDetails.backdropPath,
             posterUrl = tmdbDetails.posterPath?.let(::buildTmdbImageUrl),
             backdropUrl = tmdbDetails.backdropPath?.let(::buildTmdbImageUrl),
+            genres = tmdbDetails.genres,
+            keywords = tmdbDetails.keywords,
             collection =
                 tmdbDetails.collection?.let { collection ->
                     TmdbMovieCollectionSnapshot(

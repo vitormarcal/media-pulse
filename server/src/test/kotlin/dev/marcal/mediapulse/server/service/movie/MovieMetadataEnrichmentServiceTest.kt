@@ -29,6 +29,7 @@ class MovieMetadataEnrichmentServiceTest {
     private val movieRepository = mockk<MovieRepository>()
     private val externalIdentifierRepository = mockk<ExternalIdentifierRepository>()
     private val manualMovieCatalogService = mockk<ManualMovieCatalogService>()
+    private val movieTermsService = mockk<MovieTermsService>(relaxed = true)
 
     private val service =
         MovieMetadataEnrichmentService(
@@ -36,6 +37,7 @@ class MovieMetadataEnrichmentServiceTest {
             movieRepository = movieRepository,
             externalIdentifierRepository = externalIdentifierRepository,
             manualMovieCatalogService = manualMovieCatalogService,
+            movieTermsService = movieTermsService,
         )
 
     @Test

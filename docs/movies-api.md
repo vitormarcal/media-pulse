@@ -24,6 +24,10 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/catalog` | body com `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieCatalogCreateResponse` |
 | `POST /api/movies/collections/backfill` | `limit=50` | `MovieCollectionBackfillResponse` |
 | `POST /api/movies/{movieId}/watches` | body com `watchedAt` | `ManualMovieWatchCreateResponse` |
+| `POST /api/movies/{movieId}/terms/sync-tmdb` | `movieId` | `MovieTermsSyncResponse` |
+| `POST /api/movies/{movieId}/terms` | body com `name`, `kind=GENRE|TAG` | `MovieTermDto` |
+| `POST /api/movies/{movieId}/terms/{termId}/visibility` | body com `hidden` | `MovieTermDto` |
+| `POST /api/movies/terms/{termId}/visibility` | body com `hidden` | `MovieTermDto` |
 | `POST /api/movies/{movieId}/enrichment/preview` | body com `tmdbId?` | `MovieEnrichmentPreviewResponse` |
 | `POST /api/movies/{movieId}/enrichment/apply` | body com `tmdbId?`, `mode`, `fields[]` | `MovieEnrichmentApplyResponse` |
 
@@ -113,6 +117,42 @@ Campos suportados no MVP:
 - `TMDB_ID`
 - `IMDB_ID`
 - `IMAGES`
+
+## Termos de filmes
+
+Cada filme agora pode ter termos de classificação editáveis em duas famílias:
+
+- `GENRE`: classificação ampla e relativamente estável
+- `TAG`: recorte mais livre, temático ou pessoal
+
+Persistência:
+
+- `movie_terms` guarda o termo global com `kind`, `source` e `hidden`
+- `movie_term_assignments` vincula termo ao filme com `source` e `hidden` por filme
+
+Fontes:
+
+- `TMDB`: importado a partir de `genres` e `keywords` do TMDb
+- `USER`: criado manualmente pela UI
+
+Visibilidade:
+
+- `hidden` em `movie_terms` oculta o termo globalmente
+- `hidden` em `movie_term_assignments` oculta só naquele filme
+- termos ocultos continuam persistidos e podem ser reativados depois
+
+`POST /api/movies/{movieId}/terms/sync-tmdb` sincroniza termos do TMDb para o filme.
+
+- exige vínculo `TMDB` já presente em `external_identifiers`
+- reaproveita termos existentes por `(kind, normalized_name)`
+- reativa termos/vínculos que estavam ocultos
+- importa `genres` como `GENRE` e `keywords` como `TAG`
+
+`POST /api/movies/{movieId}/terms` adiciona um termo manualmente ao filme.
+
+- cria o termo se ainda não existir para aquele `kind`
+- reaproveita o termo global se ele já existir
+- reativa vínculos ocultos em vez de duplicar
 
 ## Coleções oficiais TMDb
 

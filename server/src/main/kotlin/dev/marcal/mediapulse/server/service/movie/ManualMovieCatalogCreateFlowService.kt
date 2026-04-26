@@ -16,6 +16,7 @@ class ManualMovieCatalogCreateFlowService(
     private val manualMovieCatalogService: ManualMovieCatalogService,
     private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val tmdbApiClient: TmdbApiClient,
+    private val movieTermsService: MovieTermsService,
 ) {
     fun suggest(query: String): MovieCatalogSuggestionsResponse =
         MovieCatalogSuggestionsResponse(
@@ -46,6 +47,8 @@ class ManualMovieCatalogCreateFlowService(
                     imdbId = request.imdbId,
                 ),
             )
+
+        movieTermsService.syncFromTmdbIfLinked(catalogResult.movie.id)
 
         val externalIds =
             externalIdentifierRepository

@@ -3,8 +3,8 @@
     <SectionHeading
       eyebrow="Contexto"
       title="O lugar desse filme no seu histórico"
-      description="Uma leitura curta do quanto ele reapareceu e das referências que já vieram junto."
-      summary="Sem exagerar nos números: só o bastante para recolocar o filme na memória."
+      description="Uma leitura curta do quanto ele reapareceu no seu histórico."
+      summary="Só o bastante para recolocar o filme na memória."
     />
 
     <div class="panel-grid">
@@ -17,17 +17,6 @@
           <span v-if="stats.latestWatch">Última: {{ formatAbsoluteDate(stats.latestWatch) }}</span>
         </div>
       </article>
-
-      <article class="identifiers-card">
-        <p class="identifiers-label">Identificadores</p>
-        <div v-if="identifiers.length" class="identifier-list">
-          <div v-for="identifier in identifiers" :key="identifier.id" class="identifier-row">
-            <span>{{ identifier.provider }}</span>
-            <strong>{{ identifier.externalId }}</strong>
-          </div>
-        </div>
-        <p v-else class="identifiers-empty">Nenhuma referência externa apareceu aqui ainda.</p>
-      </article>
     </div>
   </section>
 </template>
@@ -39,7 +28,6 @@ import { formatAbsoluteDate } from '~/utils/formatting'
 
 defineProps<{
   stats: MoviePageData['stats']
-  identifiers: MoviePageData['identifiers']
 }>()
 </script>
 
@@ -51,12 +39,11 @@ defineProps<{
 
 .panel-grid {
   display: grid;
-  grid-template-columns: minmax(18rem, 0.9fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(18rem, 0.9fr);
   gap: 22px;
 }
 
-.stats-card,
-.identifiers-card {
+.stats-card {
   display: grid;
   gap: 12px;
   padding: 24px;
@@ -64,8 +51,7 @@ defineProps<{
   background: color-mix(in srgb, var(--base-color-surface-strong) 84%, var(--base-color-surface-soft));
 }
 
-.stats-label,
-.identifiers-label {
+.stats-label {
   margin: 0;
   color: var(--base-color-brand-red);
   font-size: 0.76rem;
@@ -81,8 +67,7 @@ defineProps<{
 }
 
 .stats-copy,
-.stats-meta,
-.identifiers-empty {
+.stats-meta {
   margin: 0;
   color: var(--base-color-text-secondary);
 }
@@ -91,26 +76,6 @@ defineProps<{
   display: grid;
   gap: 8px;
   font-size: 0.88rem;
-}
-
-.identifier-list {
-  display: grid;
-  gap: 12px;
-}
-
-.identifier-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: center;
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--base-color-text-secondary);
-}
-
-.identifier-row strong {
-  color: var(--base-color-text-primary);
 }
 
 @media (max-width: 980px) {

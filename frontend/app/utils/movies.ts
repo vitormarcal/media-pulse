@@ -459,6 +459,8 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
   const latestWatch = movie.watches[0]?.watchedAt ?? null
   const firstWatch = movie.watches[movie.watches.length - 1]?.watchedAt ?? null
   const watchedCollectionMovies = movie.collection?.movies.filter((item) => item.watched).length ?? 0
+  const visibleTerms = movie.terms.filter((term) => term.active)
+  const hiddenTerms = movie.terms.filter((term) => !term.active)
   const orderedGallery = [
     ...(movie.coverUrl ? [movie.coverUrl] : []),
     ...movie.images
@@ -498,6 +500,63 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
       provider: identifier.provider,
       externalId: identifier.externalId,
     })),
+    terms: {
+      summary: visibleTerms.length
+        ? `${visibleTerms.length} termos ativos entre classificação ampla e recortes mais pessoais.`
+        : 'Ainda não há termos ativos costurando esse filme.',
+      visibleCount: visibleTerms.length,
+      hiddenCount: hiddenTerms.length,
+      groups: [
+        {
+          id: 'genre',
+          title: 'Gêneros',
+          description: 'A camada mais estável da classificação, boa para filtros e listas inteligentes.',
+          items: movie.terms
+            .filter((term) => term.kind === 'GENRE')
+            .map((term) => ({
+              id: `term-${term.id}`,
+              termId: term.id,
+              name: term.name,
+              kind: term.kind,
+              source: term.source,
+              hiddenGlobally: term.hiddenGlobally,
+              hiddenForMovie: term.hiddenForMovie,
+              active: term.active,
+              stateLabel: term.active
+                ? term.source === 'TMDB'
+                  ? 'TMDb'
+                  : 'Manual'
+                : term.hiddenGlobally
+                  ? 'Oculto globalmente'
+                  : 'Oculto neste filme',
+            })),
+        },
+        {
+          id: 'tag',
+          title: 'Tags',
+          description: 'Recortes mais específicos e livres, vindos do TMDb ou da sua própria curadoria.',
+          items: movie.terms
+            .filter((term) => term.kind === 'TAG')
+            .map((term) => ({
+              id: `term-${term.id}`,
+              termId: term.id,
+              name: term.name,
+              kind: term.kind,
+              source: term.source,
+              hiddenGlobally: term.hiddenGlobally,
+              hiddenForMovie: term.hiddenForMovie,
+              active: term.active,
+              stateLabel: term.active
+                ? term.source === 'TMDB'
+                  ? 'TMDb'
+                  : 'Manual'
+                : term.hiddenGlobally
+                  ? 'Oculto globalmente'
+                  : 'Oculto neste filme',
+            })),
+        },
+      ],
+    },
     collection: movie.collection
       ? {
           id: String(movie.collection.id),

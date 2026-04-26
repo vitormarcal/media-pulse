@@ -1,6 +1,11 @@
 <template>
   <section class="movie-hero">
-    <NuxtLink class="back-link" to="/movies"> Voltar para filmes </NuxtLink>
+    <div class="hero-topbar">
+      <NuxtLink class="back-link" to="/movies"> Voltar para filmes </NuxtLink>
+      <button type="button" class="edit-page-button" :class="{ active: editing }" @click="$emit('toggleEditing')">
+        {{ editing ? 'Fechar ajustes' : 'Ajustar página' }}
+      </button>
+    </div>
 
     <div class="hero-grid">
       <div class="copy">
@@ -11,6 +16,27 @@
 
         <div class="meta-list">
           <span v-for="item in heroMeta" :key="item" class="meta-pill">{{ item }}</span>
+        </div>
+
+        <div v-if="identifiers.length || terms.visibleCount || editing" class="detail-stack">
+          <div v-if="identifiers.length" class="detail-row">
+            <p class="detail-label">IDs</p>
+            <div class="detail-pills">
+              <span v-for="identifier in identifiers" :key="identifier.id" class="detail-pill identifier-pill">
+                {{ identifier.provider }} {{ identifier.externalId }}
+              </span>
+            </div>
+          </div>
+
+          <div v-if="terms.visibleCount || editing" class="detail-row terms-row">
+            <MovieTermsPanel
+              :movie-id="movieId"
+              :terms="terms"
+              :editing="editing"
+              embedded
+              @changed="$emit('termsChanged')"
+            />
+          </div>
         </div>
       </div>
 
@@ -24,21 +50,40 @@
 </template>
 
 <script setup lang="ts">
+import MovieTermsPanel from '~/components/movies/MovieTermsPanel.vue'
+import type { MoviePageData } from '~/types/movies'
+
 defineProps<{
+  movieId: number
+  editing: boolean
   title: string
   subtitle: string | null
   description: string | null
   gallery: string[]
   heroMeta: string[]
+  identifiers: MoviePageData['identifiers']
+  terms: MoviePageData['terms']
 }>()
 
 const { resolveMediaUrl } = useMediaUrl()
+
+defineEmits<{
+  termsChanged: []
+  toggleEditing: []
+}>()
 </script>
 
 <style scoped>
 .movie-hero {
   display: grid;
   gap: 18px;
+}
+
+.hero-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
 }
 
 .back-link {
@@ -48,6 +93,22 @@ const { resolveMediaUrl } = useMediaUrl()
   background: var(--base-color-surface-warm);
   color: var(--base-color-text-primary);
   font-size: 0.8rem;
+}
+
+.edit-page-button {
+  border: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--base-color-text-secondary);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.edit-page-button.active {
+  background: color-mix(in srgb, var(--base-color-surface-warm) 88%, white);
+  color: var(--base-color-text-primary);
 }
 
 .hero-grid {
@@ -104,12 +165,50 @@ h1 {
   margin-top: 4px;
 }
 
+.detail-stack {
+  display: grid;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+.detail-row {
+  display: grid;
+  gap: 8px;
+}
+
+.detail-label {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.detail-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .meta-pill {
   padding: 8px 12px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--base-color-surface-wash) 72%, white);
   color: var(--base-color-text-primary);
   font-size: 0.8rem;
+}
+
+.detail-pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--base-color-text-secondary);
+  font-size: 0.76rem;
+}
+
+.terms-row {
+  padding-top: 2px;
 }
 
 .gallery {
@@ -144,6 +243,11 @@ h1 {
 }
 
 @media (max-width: 980px) {
+  .hero-topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .hero-grid {
     grid-template-columns: 1fr;
   }

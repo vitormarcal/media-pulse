@@ -27,6 +27,7 @@ class MovieMetadataEnrichmentService(
     private val movieRepository: MovieRepository,
     private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val manualMovieCatalogService: ManualMovieCatalogService,
+    private val movieTermsService: MovieTermsService,
 ) {
     @Transactional(readOnly = true)
     fun preview(
@@ -197,6 +198,7 @@ class MovieMetadataEnrichmentService(
             }
 
         val refreshedMovie = movieRepository.findById(movieId).orElse(mutableMovie)
+        movieTermsService.syncFromTmdbIfLinked(movieId)
         val externalIds =
             externalIdentifierRepository
                 .findByEntityTypeAndEntityId(EntityType.MOVIE, movieId)

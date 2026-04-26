@@ -23,6 +23,17 @@ data class TmdbMovieDetailsResponse(
     val backdropPath: String? = null,
     @JsonProperty("belongs_to_collection")
     val belongsToCollection: TmdbMovieCollectionResponse? = null,
+    val genres: List<TmdbNamedItemResponse> = emptyList(),
+)
+
+data class TmdbNamedItemResponse(
+    val id: Long? = null,
+    val name: String? = null,
+)
+
+data class TmdbMovieKeywordsResponse(
+    val id: Long? = null,
+    val keywords: List<TmdbNamedItemResponse> = emptyList(),
 )
 
 data class TmdbMovieCollectionResponse(
@@ -156,6 +167,8 @@ class TmdbApiClient(
         val releaseYear: Int?,
         val posterPath: String?,
         val backdropPath: String?,
+        val genres: List<String> = emptyList(),
+        val keywords: List<String> = emptyList(),
         val collection: TmdbMovieCollection? = null,
     )
 
@@ -267,6 +280,8 @@ class TmdbApiClient(
                         .bodyToMono<TmdbMovieDetailsResponse>()
                         .block() ?: return null
 
+                val keywords = fetchMovieKeywords(tmdbId)
+
                 return TmdbMovieDetails(
                     title = response.title?.trim()?.ifBlank { null },
                     originalTitle = response.originalTitle?.trim()?.ifBlank { null },
@@ -275,6 +290,8 @@ class TmdbApiClient(
                     releaseYear = parseReleaseYear(response.releaseDate),
                     posterPath = response.posterPath?.trim()?.ifBlank { null },
                     backdropPath = response.backdropPath?.trim()?.ifBlank { null },
+                    genres = response.genres.mapNotNull { it.name?.trim()?.ifBlank { null } }.distinct(),
+                    keywords = keywords,
                     collection =
                         response.belongsToCollection
                             ?.takeIf { it.id != null && !it.name.isNullOrBlank() }
@@ -307,6 +324,52 @@ class TmdbApiClient(
         }
 
         return null
+    }
+
+    private fun fetchMovieKeywords(tmdbId: String): List<String> {
+        val attempts = (tmdbProperties.max429Retries + 1).coerceAtLeast(1)
+        var attempt = 0
+
+        while (attempt < attempts) {
+            attempt++
+            tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
+
+            try {
+                val response =
+                    tmdbWebClient
+                        .get()
+                        .uri { uriBuilder ->
+                            val builder = uriBuilder.path("/movie/{id}/keywords")
+                            if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
+                                builder.queryParam("api_key", tmdbProperties.apiKey)
+                            }
+                            builder.build(tmdbId)
+                        }.retrieve()
+                        .bodyToMono<TmdbMovieKeywordsResponse>()
+                        .block()
+                        ?: return emptyList()
+
+                return response.keywords.mapNotNull { it.name?.trim()?.ifBlank { null } }.distinct()
+            } catch (ex: WebClientResponseException.NotFound) {
+                return emptyList()
+            } catch (ex: WebClientResponseException) {
+                val isTooManyRequests = ex.statusCode.value() == 429
+                val hasRemainingRetry = attempt < attempts
+                if (isTooManyRequests && hasRemainingRetry) {
+                    val waitMs = resolve429WaitMs(ex, attempt)
+                    logger.warn("TMDb keywords rate limited (429). Waiting {}ms before retry {}/{}", waitMs, attempt + 1, attempts)
+                    Thread.sleep(waitMs)
+                    continue
+                }
+                logger.warn("Failed to fetch TMDb keywords for id={} status={}", tmdbId, ex.statusCode.value(), ex)
+                return emptyList()
+            } catch (ex: Exception) {
+                logger.warn("Failed to fetch TMDb keywords for id={}", tmdbId, ex)
+                return emptyList()
+            }
+        }
+
+        return emptyList()
     }
 
     fun fetchMovieCollectionDetails(tmdbCollectionId: String): TmdbMovieCollectionDetails? {

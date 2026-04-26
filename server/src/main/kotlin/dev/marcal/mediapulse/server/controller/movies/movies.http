@@ -49,6 +49,38 @@ Accept: application/json
 GET {{baseUrl}}/collections/1/tmdb-members
 Accept: application/json
 
+### Sincronizar termos do TMDb para um filme
+POST {{baseUrl}}/{{movieId}}/terms/sync-tmdb
+Accept: application/json
+
+### Adicionar termo manual
+POST {{baseUrl}}/{{movieId}}/terms
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Vampiros",
+  "kind": "TAG"
+}
+
+### Ocultar termo apenas neste filme
+POST {{baseUrl}}/{{movieId}}/terms/1/visibility
+Content-Type: application/json
+Accept: application/json
+
+{
+  "hidden": true
+}
+
+### Ocultar termo globalmente
+POST {{baseUrl}}/terms/1/visibility
+Content-Type: application/json
+Accept: application/json
+
+{
+  "hidden": true
+}
+
 ### Registrar watch manual (item unico)
 POST {{baseUrl}}/watches
 Content-Type: application/json
