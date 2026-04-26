@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermDto
+import dev.marcal.mediapulse.server.api.movies.MovieTermSuggestionDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermVisibilityRequest
 import dev.marcal.mediapulse.server.api.movies.MovieTermsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermsSyncResponse
@@ -75,6 +76,19 @@ class MoviesController(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "kind inválido")
         }
         return repository.getMovieTermDetails(normalizedKind, slug)
+    }
+
+    @GetMapping("/terms/search")
+    fun searchTerms(
+        @RequestParam q: String,
+        @RequestParam kind: String,
+        @RequestParam(defaultValue = "8") limit: Int,
+    ): List<MovieTermSuggestionDto> {
+        val normalizedKind = kind.trim().uppercase()
+        if (normalizedKind != "GENRE" && normalizedKind != "TAG") {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "kind inválido")
+        }
+        return repository.searchMovieTerms(q, normalizedKind, normalizeLimit("limit", limit))
     }
 
     @PostMapping("/{movieId}/terms/sync-tmdb")

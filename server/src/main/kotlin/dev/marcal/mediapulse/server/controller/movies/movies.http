@@ -21,6 +21,10 @@ Accept: application/json
 GET {{baseUrl}}/terms/genre/horror
 Accept: application/json
 
+### Buscar termos existentes
+GET {{baseUrl}}/terms/search?q=vamp&kind=tag&limit=6
+Accept: application/json
+
 ### Busca de filmes
 GET {{baseUrl}}/search?q=matrix&limit=10
 Accept: application/json

@@ -16,6 +16,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/{movieId}` | `movieId` | `MovieDetailsResponse` |
 | `GET /api/movies/slug/{slug}` | `slug` | `MovieDetailsResponse` |
 | `GET /api/movies/terms/{kind}/{slug}` | `kind=genre|tag`, `slug` | `MovieTermDetailsResponse` |
+| `GET /api/movies/terms/search` | `q`, `kind=genre|tag`, `limit=8` | `MovieTermSuggestionDto[]` |
 | `GET /api/movies/search` | `q`, `limit=10` | `MoviesSearchResponse` |
 | `GET /api/movies/summary` | `range=month|year|custom`, `start?`, `end?` | `MoviesSummaryResponse` |
 | `GET /api/movies/stats` | - | `MoviesStatsResponse` |
@@ -163,6 +164,12 @@ Visibilidade:
 - cria o termo se ainda não existir para aquele `kind`
 - reaproveita o termo global se ele já existir
 - reativa vínculos ocultos em vez de duplicar
+
+`GET /api/movies/terms/search` busca termos já existentes para apoiar a edição.
+
+- filtra por `kind`
+- ordena primeiro por nome exato, depois por termos visíveis
+- serve para a UI sugerir reaproveitamento antes de criar uma nova marcação
 
 `GET /api/movies/terms/{kind}/{slug}` abre a página de navegação de um termo.
 

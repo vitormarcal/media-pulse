@@ -31,6 +31,15 @@ export interface MovieTermDto {
   active: boolean
 }
 
+export interface MovieTermSuggestionDto {
+  id: number
+  name: string
+  slug: string
+  kind: MovieTermKind
+  source: MovieTermSource
+  hiddenGlobally: boolean
+}
+
 export interface MovieTermDetailsResponse {
   termId: number
   name: string

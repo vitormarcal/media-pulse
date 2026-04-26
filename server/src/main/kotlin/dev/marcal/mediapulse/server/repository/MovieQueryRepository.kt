@@ -11,6 +11,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermKindDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermSourceDto
+import dev.marcal.mediapulse.server.api.movies.MovieTermSuggestionDto
 import dev.marcal.mediapulse.server.api.movies.MovieWatchDto
 import dev.marcal.mediapulse.server.api.movies.MovieYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.movies.MovieYearWatchedDto
@@ -417,6 +418,42 @@ class MovieQueryRepository(
             .resultList
             .firstOrNull()
             ?.let { toMovieTermDto(it as Array<*>) }
+
+    fun searchMovieTerms(
+        query: String,
+        kind: String,
+        limit: Int,
+    ): List<MovieTermSuggestionDto> {
+        val normalizedQuery = query.trim().lowercase()
+        if (normalizedQuery.isBlank()) return emptyList()
+
+        return entityManager
+            .createNativeQuery(
+                """
+                SELECT
+                  mt.id,
+                  mt.name,
+                  mt.slug,
+                  mt.kind,
+                  mt.source,
+                  mt.hidden
+                FROM movie_terms mt
+                WHERE mt.kind = :kind
+                  AND mt.normalized_name LIKE :query
+                ORDER BY
+                  CASE WHEN mt.normalized_name = :exactQuery THEN 0 ELSE 1 END,
+                  mt.hidden ASC,
+                  mt.name ASC,
+                  mt.id ASC
+                LIMIT :limit
+                """.trimIndent(),
+            ).setParameter("kind", kind)
+            .setParameter("query", "%$normalizedQuery%")
+            .setParameter("exactQuery", normalizedQuery)
+            .setParameter("limit", limit)
+            .resultList
+            .map { row -> toMovieTermSuggestionDto(row as Array<*>) }
+    }
 
     fun getMovieTermDetails(
         kind: String,
@@ -865,4 +902,14 @@ class MovieQueryRepository(
             active = !hiddenGlobally && !hiddenForMovie,
         )
     }
+
+    private fun toMovieTermSuggestionDto(fields: Array<*>): MovieTermSuggestionDto =
+        MovieTermSuggestionDto(
+            id = (fields[0] as Number).toLong(),
+            name = fields[1] as String,
+            slug = fields[2] as String,
+            kind = MovieTermKindDto.valueOf(fields[3] as String),
+            source = MovieTermSourceDto.valueOf(fields[4] as String),
+            hiddenGlobally = fields[5] as Boolean,
+        )
 }

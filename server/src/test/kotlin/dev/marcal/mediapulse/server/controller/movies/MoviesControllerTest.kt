@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermKindDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermSourceDto
+import dev.marcal.mediapulse.server.api.movies.MovieTermSuggestionDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.movies.MovieYearWatchedDto
@@ -93,6 +94,28 @@ class MoviesControllerTest {
 
         assertEquals(5, response.termId)
         verify(exactly = 1) { repository.getMovieTermDetails("GENRE", "horror") }
+    }
+
+    @Test
+    fun `search terms should delegate to repository with normalized kind and capped limit`() {
+        val expected =
+            listOf(
+                MovieTermSuggestionDto(
+                    id = 9,
+                    name = "Vampiros",
+                    slug = "vampiros",
+                    kind = MovieTermKindDto.TAG,
+                    source = MovieTermSourceDto.USER,
+                    hiddenGlobally = false,
+                ),
+            )
+        every { repository.searchMovieTerms("vamp", "TAG", 1000) } returns expected
+
+        val response = controller.searchTerms(q = "vamp", kind = "tag", limit = 5000)
+
+        assertEquals(1, response.size)
+        assertEquals("Vampiros", response.first().name)
+        verify(exactly = 1) { repository.searchMovieTerms("vamp", "TAG", 1000) }
     }
 
     @Test

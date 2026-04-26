@@ -64,6 +64,26 @@
         <label class="field field-name">
           <span>Nova marcação</span>
           <input v-model="draftName" type="text" placeholder="Ex.: Vampiros, Folk Horror, Giallo" />
+
+          <div v-if="shouldShowSuggestions" class="suggestions-panel">
+            <p v-if="searching" class="suggestions-state">Procurando marcações existentes...</p>
+
+            <div v-else-if="suggestions.length" class="suggestions-list">
+              <button
+                v-for="item in suggestions"
+                :key="item.id"
+                type="button"
+                class="suggestion-item"
+                :disabled="suggestionDisabled(item)"
+                @click="applySuggestion(item)"
+              >
+                <span class="suggestion-name">{{ item.name }}</span>
+                <small class="suggestion-meta">{{ suggestionMeta(item) }}</small>
+              </button>
+            </div>
+
+            <p v-else class="suggestions-state">Nenhuma marcação existente apareceu. Você pode criar uma nova.</p>
+          </div>
         </label>
 
         <label class="field field-kind">
@@ -108,7 +128,13 @@
 
 <script setup lang="ts">
 import { NuxtLink } from '#components'
-import type { MoviePageData, MovieTermDto, MovieTermKind, MovieTermsSyncResponse } from '~/types/movies'
+import type {
+  MoviePageData,
+  MovieTermDto,
+  MovieTermKind,
+  MovieTermSuggestionDto,
+  MovieTermsSyncResponse,
+} from '~/types/movies'
 
 const props = defineProps<{
   movieId: number
@@ -126,9 +152,12 @@ const draftName = ref('')
 const draftKind = ref<MovieTermKind>('TAG')
 const syncing = ref(false)
 const saving = ref(false)
+const searching = ref(false)
 const busyTermId = ref<number | null>(null)
 const feedback = ref<string | null>(null)
+const suggestions = ref<MovieTermSuggestionDto[]>([])
 const editingEnabled = computed(() => props.editing ?? false)
+let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const visibleGroups = computed(() =>
   props.terms.groups
@@ -147,6 +176,15 @@ const hiddenGroups = computed(() =>
     }))
     .filter((group) => group.items.length),
 )
+
+const assignedTermsById = computed(() => {
+  const entries = props.terms.groups.flatMap((group) => group.items.map((item) => [item.termId, item] as const))
+  return new Map(entries)
+})
+
+const normalizedDraftName = computed(() => draftName.value.trim().replace(/\s+/g, ' ').toLowerCase())
+
+const shouldShowSuggestions = computed(() => editingEnabled.value && normalizedDraftName.value.length >= 2)
 
 async function syncFromTmdb() {
   syncing.value = true
@@ -190,6 +228,64 @@ async function addTerm() {
   } finally {
     saving.value = false
   }
+}
+
+async function fetchSuggestions() {
+  if (!shouldShowSuggestions.value) {
+    suggestions.value = []
+    return
+  }
+
+  searching.value = true
+
+  try {
+    suggestions.value = await $fetch<MovieTermSuggestionDto[]>(`/api/movies/terms/search`, {
+      baseURL: config.public.apiBase,
+      query: {
+        q: draftName.value.trim(),
+        kind: draftKind.value,
+        limit: 6,
+      },
+    })
+  } catch {
+    suggestions.value = []
+  } finally {
+    searching.value = false
+  }
+}
+
+function scheduleSuggestionsRefresh() {
+  if (searchTimer) clearTimeout(searchTimer)
+
+  if (!shouldShowSuggestions.value) {
+    suggestions.value = []
+    searching.value = false
+    return
+  }
+
+  searchTimer = setTimeout(() => {
+    void fetchSuggestions()
+  }, 180)
+}
+
+function suggestionMeta(item: MovieTermSuggestionDto) {
+  const assigned = assignedTermsById.value.get(item.id)
+  if (!assigned) return item.source === 'TMDB' ? 'TMDb' : 'Manual'
+  if (assigned.active) return 'Já no filme'
+  return 'Reativar no filme'
+}
+
+function suggestionDisabled(item: MovieTermSuggestionDto) {
+  const assigned = assignedTermsById.value.get(item.id)
+  return !!assigned?.active
+}
+
+async function applySuggestion(item: MovieTermSuggestionDto) {
+  if (suggestionDisabled(item) || saving.value) return
+  draftKind.value = item.kind
+  draftName.value = item.name
+  await addTerm()
+  suggestions.value = []
 }
 
 async function updateMovieVisibility(termId: number, hidden: boolean) {
@@ -236,6 +332,15 @@ function restore(item: MoviePageData['terms']['groups'][number]['items'][number]
 
   updateMovieVisibility(item.termId, false)
 }
+
+watch([draftName, draftKind, editingEnabled], () => {
+  feedback.value = null
+  scheduleSuggestionsRefresh()
+})
+
+onBeforeUnmount(() => {
+  if (searchTimer) clearTimeout(searchTimer)
+})
 </script>
 
 <style scoped>
@@ -433,6 +538,10 @@ h2 {
   gap: 8px;
 }
 
+.field-name {
+  position: relative;
+}
+
 .field input,
 .field select {
   width: 100%;
@@ -441,6 +550,59 @@ h2 {
   border-radius: 16px;
   background: white;
   color: var(--base-color-text-primary);
+}
+
+.suggestions-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 10px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 44%, white);
+}
+
+.suggestions-list {
+  display: grid;
+  gap: 8px;
+}
+
+.suggestions-state {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.82rem;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--base-color-surface-wash) 72%, white);
+  color: var(--base-color-text-primary);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.suggestion-item:disabled {
+  opacity: 0.66;
+  cursor: default;
+}
+
+.suggestion-name {
+  font-weight: 600;
+}
+
+.suggestion-meta {
+  color: var(--base-color-text-secondary);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .hidden-list {

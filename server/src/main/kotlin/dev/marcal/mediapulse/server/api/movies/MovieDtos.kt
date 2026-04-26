@@ -50,6 +50,15 @@ data class MovieTermDto(
     val active: Boolean,
 )
 
+data class MovieTermSuggestionDto(
+    val id: Long,
+    val name: String,
+    val slug: String,
+    val kind: MovieTermKindDto,
+    val source: MovieTermSourceDto,
+    val hiddenGlobally: Boolean,
+)
+
 data class MovieCollectionDto(
     val id: Long,
     val tmdbId: String,
