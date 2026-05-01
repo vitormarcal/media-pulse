@@ -25,6 +25,14 @@ Accept: application/json
 GET {{baseUrl}}/companies/studio-ghibli-10342
 Accept: application/json
 
+### Detalhes de uma lista
+GET {{baseUrl}}/lists/favoritos
+Accept: application/json
+
+### Listar listas
+GET {{baseUrl}}/lists
+Accept: application/json
+
 ### Buscar pessoas locais
 GET {{baseUrl}}/people/search?q=quentin&limit=6
 Accept: application/json
@@ -113,6 +121,42 @@ Accept: application/json
   "group": "DIRECTORS",
   "roleLabel": null
 }
+
+### Criar lista manual
+POST {{baseUrl}}/lists
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Favoritos",
+  "description": "Filmes que sempre quero ter por perto."
+}
+
+### Adicionar filme a lista existente
+POST {{baseUrl}}/{{movieId}}/lists
+Content-Type: application/json
+Accept: application/json
+
+{
+  "listId": 1,
+  "name": null,
+  "description": null
+}
+
+### Criar lista e adicionar o filme atual
+POST {{baseUrl}}/{{movieId}}/lists
+Content-Type: application/json
+Accept: application/json
+
+{
+  "listId": null,
+  "name": "Oscar 2025",
+  "description": "Candidatos e vencedores para revisar."
+}
+
+### Remover filme de uma lista
+DELETE {{baseUrl}}/{{movieId}}/lists/1
+Accept: application/json
 
 ### Sincronizar termos do TMDb em lote
 POST {{baseUrl}}/terms/sync-tmdb?limit=200

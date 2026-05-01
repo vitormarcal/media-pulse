@@ -5,6 +5,7 @@ import type {
   MovieLibraryCardDto,
   MovieLibraryCardModel,
   MovieLibraryMetric,
+  MovieListDetailsResponse,
   MoviePersonDetailsResponse,
   MovieLibraryPageData,
   MovieDetailsResponse,
@@ -518,6 +519,19 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
       provider: identifier.provider,
       externalId: identifier.externalId,
     })),
+    lists: {
+      summary: movie.lists.length
+        ? `${movie.lists.length} listas manuais já incluem este filme.`
+        : 'Este filme ainda não entrou em nenhuma lista manual.',
+      visibleCount: movie.lists.length,
+      items: movie.lists.map((list) => ({
+        id: `list-${list.listId}`,
+        listId: list.listId,
+        name: list.name,
+        href: `/movies/lists/${list.slug}`,
+        itemCount: list.itemCount,
+      })),
+    },
     companies: {
       summary: movie.companies.length
         ? `${movie.companies.length} estúdios ou produtoras ligados a este filme.`
@@ -701,6 +715,21 @@ export function buildMovieCompanyPageData(
       watchedMoviesCount: company.watchedMoviesCount,
     },
     movies: company.movies.map(buildLibraryCardModel),
+  }
+}
+
+export function buildMovieListPageData(list: MovieListDetailsResponse): import('~/types/movies').MovieListPageData {
+  return {
+    listId: list.listId,
+    name: list.name,
+    slug: list.slug,
+    description: list.description,
+    heroMeta: [`${list.movieCount} filmes`, `${list.watchedMoviesCount} com sessão`],
+    stats: {
+      movieCount: list.movieCount,
+      watchedMoviesCount: list.watchedMoviesCount,
+    },
+    movies: list.movies.map(buildLibraryCardModel),
   }
 }
 

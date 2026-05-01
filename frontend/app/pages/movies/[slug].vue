@@ -19,8 +19,10 @@
         :gallery="data.gallery"
         :hero-meta="data.heroMeta"
         :identifiers="data.identifiers"
+        :lists="data.lists"
         :companies="data.companies"
         :terms="data.terms"
+        @lists-changed="handleListsChanged"
         @companies-changed="handleCompaniesChanged"
         @terms-changed="handleTermsChanged"
         @toggle-editing="toggleEditing"
@@ -109,6 +111,10 @@ async function handleCatalogAdded() {
 }
 
 async function handleTermsChanged() {
+  await refresh()
+}
+
+async function handleListsChanged() {
   await refresh()
 }
 

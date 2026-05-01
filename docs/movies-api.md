@@ -17,6 +17,8 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/slug/{slug}` | `slug` | `MovieDetailsResponse` |
 | `GET /api/movies/people/{slug}` | `slug` | `MoviePersonDetailsResponse` |
 | `GET /api/movies/companies/{slug}` | `slug` | `MovieCompanyDetailsResponse` |
+| `GET /api/movies/lists` | - | `MovieListSummaryDto[]` |
+| `GET /api/movies/lists/{slug}` | `slug` | `MovieListDetailsResponse` |
 | `GET /api/movies/people/search` | `q`, `limit=8` | `MoviePersonSuggestionDto[]` |
 | `GET /api/movies/terms/{kind}/{slug}` | `kind=genre|tag`, `slug` | `MovieTermDetailsResponse` |
 | `GET /api/movies/terms/search` | `q`, `kind=genre|tag`, `limit=8` | `MovieTermSuggestionDto[]` |
@@ -30,6 +32,9 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/catalog` | body com `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieCatalogCreateResponse` |
 | `POST /api/movies/collections/backfill` | `limit=50` | `MovieCollectionBackfillResponse` |
 | `POST /api/movies/{movieId}/watches` | body com `watchedAt` | `ManualMovieWatchCreateResponse` |
+| `POST /api/movies/lists` | body com `name`, `description?` | `MovieListSummaryDto` |
+| `POST /api/movies/{movieId}/lists` | body com `listId?`, `name?`, `description?` | `MovieListSummaryDto` |
+| `DELETE /api/movies/{movieId}/lists/{listId}` | `movieId`, `listId` | `204 No Content` |
 | `POST /api/movies/{movieId}/companies/sync-tmdb` | `movieId` | `MovieCompaniesSyncResponse` |
 | `POST /api/movies/companies/sync-tmdb` | `limit=100` | `MovieCompaniesBatchSyncResponse` |
 | `POST /api/movies/{movieId}/credits/sync-tmdb` | `movieId` | `MovieCreditsSyncResponse` |
@@ -226,6 +231,36 @@ Persistência:
 - usa `discover/movie` com `with_companies`
 - cruza o resultado com o catálogo local
 - se um filme já existir localmente, reconcilia o vínculo filme-empresa antes de responder
+
+## Listas manuais
+
+Listas manuais são o primeiro nível de curadoria própria do catálogo.
+
+Persistência:
+
+- `movie_lists` guarda nome, `slug` e descrição opcional
+- `movie_list_items` guarda os filmes ligados à lista e a posição explícita
+
+`GET /api/movies/lists` retorna as listas já criadas.
+
+- inclui contagem de filmes por lista
+- serve para a UI oferecer anexação rápida a partir da página do filme
+
+`GET /api/movies/lists/{slug}` abre a página de um recorte manual.
+
+- retorna a lista e os filmes na ordem salva
+
+`POST /api/movies/lists` cria uma nova lista manual.
+
+- exige `name`
+- `description` é opcional
+
+`POST /api/movies/{movieId}/lists` adiciona o filme a uma lista.
+
+- se `listId` vier preenchido, anexa a uma lista existente
+- se `listId` vier nulo, cria uma nova lista com `name` e já anexa o filme
+
+`DELETE /api/movies/{movieId}/lists/{listId}` remove o filme da lista.
 
 ## Pessoas e créditos
 

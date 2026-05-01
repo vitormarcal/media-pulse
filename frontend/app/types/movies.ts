@@ -83,6 +83,14 @@ export interface MovieCompanyDto {
   companyType: MovieCompanyType
 }
 
+export interface MovieListSummaryDto {
+  listId: number
+  name: string
+  slug: string
+  description: string | null
+  itemCount: number
+}
+
 export interface MoviePersonCreditDto {
   personId: number
   tmdbId: string
@@ -170,6 +178,16 @@ export interface MovieCompanyDetailsResponse {
   movies: MovieLibraryCardDto[]
 }
 
+export interface MovieListDetailsResponse {
+  listId: number
+  name: string
+  slug: string
+  description: string | null
+  movieCount: number
+  watchedMoviesCount: number
+  movies: MovieLibraryCardDto[]
+}
+
 export interface MovieCreditsSyncResponse {
   movieId: number
   syncedCount: number
@@ -198,6 +216,17 @@ export interface MovieCompaniesBatchSyncResponse {
   failed: number
 }
 
+export interface MovieListCreateRequest {
+  name: string
+  description: string | null
+}
+
+export interface MovieListAttachRequest {
+  listId: number | null
+  name: string | null
+  description: string | null
+}
+
 export interface MovieDetailsResponse {
   movieId: number
   title: string
@@ -209,6 +238,7 @@ export interface MovieDetailsResponse {
   images: MovieImageDto[]
   watches: MovieWatchDto[]
   externalIds: MovieExternalIdDto[]
+  lists: MovieListSummaryDto[]
   companies: MovieCompanyDto[]
   people: MoviePersonCreditDto[]
   terms: MovieTermDto[]
@@ -426,6 +456,17 @@ export interface MoviePageData {
     provider: string
     externalId: string
   }>
+  lists: {
+    summary: string
+    visibleCount: number
+    items: Array<{
+      id: string
+      listId: number
+      name: string
+      href: string
+      itemCount: number
+    }>
+  }
   companies: {
     summary: string
     visibleCount: number
@@ -532,6 +573,19 @@ export interface MovieCompanyPageData {
   logoUrl: string | null
   originCountry: string | null
   typeLabel: string
+  heroMeta: string[]
+  stats: {
+    movieCount: number
+    watchedMoviesCount: number
+  }
+  movies: MovieLibraryCardModel[]
+}
+
+export interface MovieListPageData {
+  listId: number
+  name: string
+  slug: string
+  description: string | null
   heroMeta: string[]
   stats: {
     movieCount: number

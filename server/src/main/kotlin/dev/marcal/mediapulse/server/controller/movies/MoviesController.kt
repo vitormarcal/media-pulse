@@ -8,6 +8,10 @@ import dev.marcal.mediapulse.server.api.movies.MovieCompanyDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCreditsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCreditsSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
 import dev.marcal.mediapulse.server.api.movies.MoviePersonCreditDto
 import dev.marcal.mediapulse.server.api.movies.MoviePersonDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviePersonLinkRequest
@@ -31,6 +35,7 @@ import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
 import dev.marcal.mediapulse.server.service.movie.MovieCompaniesService
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
+import dev.marcal.mediapulse.server.service.movie.MovieListsService
 import dev.marcal.mediapulse.server.service.movie.MovieTermsService
 import dev.marcal.mediapulse.server.service.movie.MovieWatchRemovalService
 import org.springframework.http.HttpStatus
@@ -58,6 +63,7 @@ class MoviesController(
     private val movieTermsService: MovieTermsService,
     private val movieCompaniesService: MovieCompaniesService,
     private val movieCreditsService: MovieCreditsService,
+    private val movieListsService: MovieListsService,
 ) {
     @GetMapping("/library")
     fun library(
@@ -90,6 +96,14 @@ class MoviesController(
     fun companyDetails(
         @PathVariable slug: String,
     ): MovieCompanyDetailsResponse = repository.getMovieCompanyDetails(slug)
+
+    @GetMapping("/lists")
+    fun lists(): List<MovieListSummaryDto> = movieListsService.listAll()
+
+    @GetMapping("/lists/{slug}")
+    fun listDetails(
+        @PathVariable slug: String,
+    ): MovieListDetailsResponse = repository.getMovieListDetails(slug)
 
     @GetMapping("/people/search")
     fun searchPeople(
@@ -168,6 +182,25 @@ class MoviesController(
         @PathVariable movieId: Long,
         @RequestBody request: MoviePersonLinkRequest,
     ): MoviePersonCreditDto = movieCreditsService.linkExistingPerson(movieId, request)
+
+    @PostMapping("/lists")
+    fun createList(
+        @RequestBody request: MovieListCreateRequest,
+    ): MovieListSummaryDto = movieListsService.create(request)
+
+    @PostMapping("/{movieId}/lists")
+    fun attachMovieToList(
+        @PathVariable movieId: Long,
+        @RequestBody request: MovieListAttachRequest,
+    ): MovieListSummaryDto = movieListsService.attachMovie(movieId, request)
+
+    @DeleteMapping("/{movieId}/lists/{listId}")
+    fun removeMovieFromList(
+        @PathVariable movieId: Long,
+        @PathVariable listId: Long,
+    ) {
+        movieListsService.removeMovie(movieId, listId)
+    }
 
     @PostMapping("/{movieId}/terms")
     fun addTerm(

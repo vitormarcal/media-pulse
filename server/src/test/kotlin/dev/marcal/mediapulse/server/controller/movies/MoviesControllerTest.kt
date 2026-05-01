@@ -5,6 +5,10 @@ import dev.marcal.mediapulse.server.api.movies.MovieCompanyDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCompanyTypeDto
 import dev.marcal.mediapulse.server.api.movies.MovieCreditsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
 import dev.marcal.mediapulse.server.api.movies.MoviePersonDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviePersonLinkRequest
 import dev.marcal.mediapulse.server.api.movies.MoviePersonSuggestionDto
@@ -29,6 +33,7 @@ import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
 import dev.marcal.mediapulse.server.service.movie.MovieCompaniesService
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
+import dev.marcal.mediapulse.server.service.movie.MovieListsService
 import dev.marcal.mediapulse.server.service.movie.MovieTermsService
 import dev.marcal.mediapulse.server.service.movie.MovieWatchRemovalService
 import io.mockk.every
@@ -47,6 +52,7 @@ class MoviesControllerTest {
     private val movieTermsService = mockk<MovieTermsService>(relaxed = true)
     private val movieCompaniesService = mockk<MovieCompaniesService>(relaxed = true)
     private val movieCreditsService = mockk<MovieCreditsService>(relaxed = true)
+    private val movieListsService = mockk<MovieListsService>(relaxed = true)
     private val controller =
         MoviesController(
             repository,
@@ -55,6 +61,7 @@ class MoviesControllerTest {
             movieTermsService,
             movieCompaniesService,
             movieCreditsService,
+            movieListsService,
         )
 
     @Test
@@ -132,6 +139,45 @@ class MoviesControllerTest {
 
         assertEquals(12, response.companyId)
         verify(exactly = 1) { repository.getMovieCompanyDetails("studio-ghibli-3") }
+    }
+
+    @Test
+    fun `list details should delegate to repository`() {
+        val expected =
+            MovieListDetailsResponse(
+                listId = 9,
+                name = "Favoritos",
+                slug = "favoritos",
+                description = "Filmes que sempre voltam.",
+                movieCount = 3,
+                watchedMoviesCount = 3,
+                movies = emptyList(),
+            )
+        every { repository.getMovieListDetails("favoritos") } returns expected
+
+        val response = controller.listDetails("favoritos")
+
+        assertEquals(9, response.listId)
+        verify(exactly = 1) { repository.getMovieListDetails("favoritos") }
+    }
+
+    @Test
+    fun `lists should delegate to lists service`() {
+        every { movieListsService.listAll() } returns
+            listOf(
+                MovieListSummaryDto(
+                    listId = 3,
+                    name = "Oscar 2025",
+                    slug = "oscar-2025",
+                    description = null,
+                    itemCount = 6,
+                ),
+            )
+
+        val response = controller.lists()
+
+        assertEquals(1, response.size)
+        verify(exactly = 1) { movieListsService.listAll() }
     }
 
     @Test
@@ -302,6 +348,44 @@ class MoviesControllerTest {
 
         assertEquals(44, response.personId)
         verify(exactly = 1) { movieCreditsService.importTmdbCredit(9, request) }
+    }
+
+    @Test
+    fun `create list should delegate to lists service`() {
+        val request = MovieListCreateRequest(name = "Favoritos", description = null)
+        val expected =
+            MovieListSummaryDto(
+                listId = 1,
+                name = "Favoritos",
+                slug = "favoritos",
+                description = null,
+                itemCount = 0,
+            )
+        every { movieListsService.create(request) } returns expected
+
+        val response = controller.createList(request)
+
+        assertEquals(1, response.listId)
+        verify(exactly = 1) { movieListsService.create(request) }
+    }
+
+    @Test
+    fun `attach movie to list should delegate to lists service`() {
+        val request = MovieListAttachRequest(listId = 1, name = null, description = null)
+        val expected =
+            MovieListSummaryDto(
+                listId = 1,
+                name = "Favoritos",
+                slug = "favoritos",
+                description = null,
+                itemCount = 4,
+            )
+        every { movieListsService.attachMovie(9, request) } returns expected
+
+        val response = controller.attachMovieToList(9, request)
+
+        assertEquals(1, response.listId)
+        verify(exactly = 1) { movieListsService.attachMovie(9, request) }
     }
 
     @Test

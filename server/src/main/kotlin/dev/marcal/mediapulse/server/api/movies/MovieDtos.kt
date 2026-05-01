@@ -111,6 +111,14 @@ data class MovieCompanyDto(
     val companyType: MovieCompanyTypeDto,
 )
 
+data class MovieListSummaryDto(
+    val listId: Long,
+    val name: String,
+    val slug: String,
+    val description: String?,
+    val itemCount: Long,
+)
+
 data class MoviePersonSuggestionDto(
     val personId: Long,
     val tmdbId: String,
@@ -185,6 +193,16 @@ data class MovieCompanyDetailsResponse(
     val movies: List<MovieLibraryCardDto>,
 )
 
+data class MovieListDetailsResponse(
+    val listId: Long,
+    val name: String,
+    val slug: String,
+    val description: String?,
+    val movieCount: Long,
+    val watchedMoviesCount: Long,
+    val movies: List<MovieLibraryCardDto>,
+)
+
 data class MovieCreditsSyncResponse(
     val movieId: Long,
     val syncedCount: Int,
@@ -213,6 +231,17 @@ data class MovieCompaniesBatchSyncResponse(
     val failed: Int,
 )
 
+data class MovieListCreateRequest(
+    val name: String,
+    val description: String? = null,
+)
+
+data class MovieListAttachRequest(
+    val listId: Long? = null,
+    val name: String? = null,
+    val description: String? = null,
+)
+
 enum class MovieEnrichmentField {
     TITLE,
     YEAR,
@@ -238,6 +267,7 @@ data class MovieDetailsResponse(
     val images: List<MovieImageDto>,
     val watches: List<MovieWatchDto>,
     val externalIds: List<MovieExternalIdDto>,
+    val lists: List<MovieListSummaryDto> = emptyList(),
     val companies: List<MovieCompanyDto> = emptyList(),
     val people: List<MoviePersonCreditDto> = emptyList(),
     val terms: List<MovieTermDto> = emptyList(),
