@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.service.movie
 
 import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
 import dev.marcal.mediapulse.server.model.movie.MovieList
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
@@ -69,6 +70,35 @@ class MovieListsService(
         if (removed > 0) {
             touchList(listId)
         }
+    }
+
+    @Transactional
+    fun updateOrder(
+        listId: Long,
+        request: MovieListOrderUpdateRequest,
+    ) {
+        movieListRepository.findById(listId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Movie list not found")
+        }
+
+        val items = movieListItemCrudRepository.listPositions(listId)
+        if (items.isEmpty()) return
+
+        val currentMovieIds = items.map { it.movieId }
+        val requestedMovieIds = request.movieIds
+
+        if (requestedMovieIds.size != currentMovieIds.size || requestedMovieIds.toSet() != currentMovieIds.toSet()) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "movieIds inválidos para esta lista")
+        }
+
+        val currentPositionsByMovieId = items.associate { it.movieId to it.position }
+        requestedMovieIds.forEachIndexed { index, movieId ->
+            val desiredPosition = index + 1
+            if (currentPositionsByMovieId[movieId] != desiredPosition) {
+                movieListItemCrudRepository.updatePosition(listId, movieId, desiredPosition)
+            }
+        }
+        touchList(listId)
     }
 
     private fun requireMovie(movieId: Long) {

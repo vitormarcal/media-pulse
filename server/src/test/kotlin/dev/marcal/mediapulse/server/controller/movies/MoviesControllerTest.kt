@@ -8,6 +8,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
 import dev.marcal.mediapulse.server.api.movies.MoviePersonDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviePersonLinkRequest
@@ -386,6 +387,15 @@ class MoviesControllerTest {
 
         assertEquals(1, response.listId)
         verify(exactly = 1) { movieListsService.attachMovie(9, request) }
+    }
+
+    @Test
+    fun `update movie list order should delegate to lists service`() {
+        val request = MovieListOrderUpdateRequest(movieIds = listOf(9, 4, 7))
+
+        controller.updateMovieListOrder(2, request)
+
+        verify(exactly = 1) { movieListsService.updateOrder(2, request) }
     }
 
     @Test

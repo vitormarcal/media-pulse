@@ -10,36 +10,115 @@
     </div>
 
     <template v-else-if="data">
-      <section class="list-hero">
-        <div class="copy">
-          <NuxtLink class="back-link" to="/movies/library"> Voltar para biblioteca </NuxtLink>
+      <section class="list-hero-shell" :style="heroShellStyle">
+        <div class="list-hero">
+          <div class="copy">
+            <div class="topbar">
+              <NuxtLink class="back-link" to="/movies/lists"> Voltar para listas </NuxtLink>
+              <button
+                type="button"
+                class="edit-order-button"
+                :class="{ active: reorderMode }"
+                @click="toggleReorderMode"
+              >
+                {{ reorderMode ? 'Fechar ajustes' : 'Ajustar ordem' }}
+              </button>
+            </div>
 
-          <p class="eyebrow">Lista manual</p>
-          <h1>{{ data.name }}</h1>
-          <p class="intro">{{ heroIntro }}</p>
+            <p class="eyebrow">Lista manual</p>
+            <h1>{{ data.name }}</h1>
+            <p class="intro">{{ heroIntro }}</p>
 
-          <div class="meta-list">
-            <span v-for="item in data.heroMeta" :key="item" class="meta-pill">{{ item }}</span>
+            <div class="meta-list">
+              <span v-for="item in data.heroMeta" :key="item" class="meta-pill">{{ item }}</span>
+            </div>
+          </div>
+
+          <component :is="spotlightWrapper" :to="spotlightMovie?.href || undefined" class="spotlight-link">
+            <article class="spotlight-card">
+              <div class="spotlight-poster">
+                <img v-if="spotlightImageUrl" :src="spotlightImageUrl" :alt="spotlightMovie?.title || data.name" />
+                <div v-else class="spotlight-fallback">{{ (spotlightMovie?.title || data.name).slice(0, 1) }}</div>
+              </div>
+
+              <div class="spotlight-body">
+                <p class="spotlight-kicker">Primeiro da ordem</p>
+                <h2>{{ spotlightMovie?.title || data.name }}</h2>
+                <p v-if="spotlightMovie" class="spotlight-subtitle">{{ spotlightMovie.subtitle }}</p>
+                <p v-if="spotlightMovie" class="spotlight-meta">{{ spotlightMovie.sessionsLabel }}</p>
+                <p v-if="spotlightMovie" class="spotlight-note">{{ spotlightMovie.activityLabel }}</p>
+                <p v-else class="spotlight-note">Esta lista ainda não recebeu filmes.</p>
+              </div>
+            </article>
+          </component>
+        </div>
+      </section>
+
+      <section v-if="reorderMode && data.movies.length" class="order-panel">
+        <div class="order-copy">
+          <p class="eyebrow">Sequência manual</p>
+          <h2>Ajuste a ordem do recorte</h2>
+          <p class="order-description">
+            Arraste os cards para remontar o recorte. A sequência salva muda o destaque principal desta página e a ordem
+            editorial da lista.
+          </p>
+        </div>
+
+        <div class="order-toolbar">
+          <p class="order-status">
+            {{ orderDirty ? 'Há uma nova ordem pronta para salvar.' : 'A ordem atual já está salva.' }}
+          </p>
+          <div class="order-toolbar__actions">
+            <button
+              type="button"
+              class="order-toolbar__button"
+              :disabled="savingOrder || !orderDirty"
+              @click="resetOrder"
+            >
+              Desfazer
+            </button>
+            <button
+              type="button"
+              class="order-toolbar__button order-toolbar__button--primary"
+              :disabled="savingOrder || !orderDirty"
+              @click="saveOrder"
+            >
+              {{ savingOrder ? 'Salvando...' : 'Salvar ordem' }}
+            </button>
           </div>
         </div>
 
-        <component :is="spotlightWrapper" :to="spotlightMovie?.href || undefined" class="spotlight-link">
-          <article class="spotlight-card">
-            <div class="spotlight-poster">
-              <img v-if="spotlightImageUrl" :src="spotlightImageUrl" :alt="spotlightMovie?.title || data.name" />
-              <div v-else class="spotlight-fallback">{{ (spotlightMovie?.title || data.name).slice(0, 1) }}</div>
+        <div class="order-stack">
+          <article
+            v-for="(movie, index) in orderedMovies"
+            :key="movie.id"
+            class="order-card"
+            :class="{
+              'order-card--dragging': draggingMovieId === movie.movieId,
+              'order-card--drop-target': dropTargetMovieId === movie.movieId,
+            }"
+            :draggable="savingOrder ? 'false' : 'true'"
+            @dragstart="handleDragStart(movie.movieId)"
+            @dragend="handleDragEnd"
+            @dragover.prevent="handleDragOver(movie.movieId)"
+            @drop.prevent="handleDrop(movie.movieId)"
+          >
+            <div class="order-card__poster">
+              <img v-if="resolveMediaUrl(movie.imageUrl)" :src="resolveMediaUrl(movie.imageUrl)" :alt="movie.title" />
+              <div v-else class="order-card__fallback">{{ movie.title.slice(0, 1) }}</div>
             </div>
 
-            <div class="spotlight-body">
-              <p class="spotlight-kicker">Primeiro da ordem</p>
-              <h2>{{ spotlightMovie?.title || data.name }}</h2>
-              <p v-if="spotlightMovie" class="spotlight-subtitle">{{ spotlightMovie.subtitle }}</p>
-              <p v-if="spotlightMovie" class="spotlight-meta">{{ spotlightMovie.sessionsLabel }}</p>
-              <p v-if="spotlightMovie" class="spotlight-note">{{ spotlightMovie.activityLabel }}</p>
-              <p v-else class="spotlight-note">Esta lista ainda não recebeu filmes.</p>
+            <div class="order-card__copy">
+              <p class="order-card__index">Posição {{ index + 1 }}</p>
+              <strong>{{ movie.title }}</strong>
+              <p>{{ movie.subtitle }}</p>
+            </div>
+
+            <div class="order-card__actions">
+              <span class="drag-hint">Arraste para mover</span>
             </div>
           </article>
-        </component>
+        </div>
       </section>
 
       <MoviesLibraryGrid
@@ -47,7 +126,7 @@
         :title="gridTitle"
         :description="gridDescription"
         :summary="gridSummary"
-        :items="data.movies"
+        :items="displayMovies"
         layout="aligned"
         empty-message="Nenhum filme entrou nesta lista ainda."
       />
@@ -59,15 +138,38 @@
 import { NuxtLink } from '#components'
 import MoviesLibraryGrid from '~/components/movies/MoviesLibraryGrid.vue'
 import { useMovieListPageData } from '~/composables/useMovieListPageData'
+import type { MovieLibraryCardModel, MovieListOrderUpdateRequest } from '~/types/movies'
 
 const route = useRoute()
+const config = useRuntimeConfig()
 const { resolveMediaUrl } = useMediaUrl()
 const slug = computed(() => String(route.params.slug))
+const reorderMode = ref(false)
+const orderedMovies = ref<MovieLibraryCardModel[]>([])
+const draggingMovieId = ref<number | null>(null)
+const dropTargetMovieId = ref<number | null>(null)
+const savingOrder = ref(false)
 
-const { data, error, status } = await useMovieListPageData(slug.value)
+const { data, error, status, refresh } = await useMovieListPageData(slug.value)
 
-const spotlightMovie = computed(() => data.value?.movies[0] ?? null)
+watch(
+  data,
+  (value) => {
+    orderedMovies.value = value?.movies.map((movie) => ({ ...movie })) ?? []
+  },
+  { immediate: true },
+)
+
+const displayMovies = computed(() => (orderedMovies.value.length ? orderedMovies.value : (data.value?.movies ?? [])))
+const spotlightMovie = computed(() => displayMovies.value[0] ?? null)
 const spotlightImageUrl = computed(() => resolveMediaUrl(spotlightMovie.value?.imageUrl ?? null))
+const heroShellStyle = computed(() =>
+  spotlightImageUrl.value
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${spotlightImageUrl.value}")`,
+      }
+    : undefined,
+)
 const spotlightWrapper = computed(() => (spotlightMovie.value?.href ? NuxtLink : 'div'))
 const heroIntro = computed(() => {
   if (!data.value) return ''
@@ -80,6 +182,76 @@ const gridSummary = computed(() =>
     ? `${data.value.stats.movieCount} filmes no recorte e ${data.value.stats.watchedMoviesCount} com sessão registrada.`
     : 'Uma nova porta de entrada para a biblioteca.',
 )
+const persistedMovieIds = computed(() => data.value?.movies.map((movie) => movie.movieId) ?? [])
+const orderedMovieIds = computed(() => orderedMovies.value.map((movie) => movie.movieId))
+const orderDirty = computed(() => persistedMovieIds.value.join(',') !== orderedMovieIds.value.join(','))
+
+function toggleReorderMode() {
+  reorderMode.value = !reorderMode.value
+  if (!reorderMode.value) {
+    resetOrder()
+  }
+}
+
+function resetOrder() {
+  orderedMovies.value = data.value?.movies.map((movie) => ({ ...movie })) ?? []
+  draggingMovieId.value = null
+  dropTargetMovieId.value = null
+}
+
+function handleDragStart(movieId: number) {
+  if (savingOrder.value) return
+  draggingMovieId.value = movieId
+  dropTargetMovieId.value = movieId
+}
+
+function handleDragOver(movieId: number) {
+  if (!draggingMovieId.value || draggingMovieId.value === movieId) return
+  dropTargetMovieId.value = movieId
+}
+
+function handleDrop(targetMovieId: number) {
+  if (!draggingMovieId.value || draggingMovieId.value === targetMovieId) {
+    handleDragEnd()
+    return
+  }
+
+  const nextItems = [...orderedMovies.value]
+  const sourceIndex = nextItems.findIndex((movie) => movie.movieId === draggingMovieId.value)
+  const targetIndex = nextItems.findIndex((movie) => movie.movieId === targetMovieId)
+  if (sourceIndex < 0 || targetIndex < 0) {
+    handleDragEnd()
+    return
+  }
+
+  const [moved] = nextItems.splice(sourceIndex, 1)
+  nextItems.splice(targetIndex, 0, moved)
+  orderedMovies.value = nextItems
+  handleDragEnd()
+}
+
+function handleDragEnd() {
+  draggingMovieId.value = null
+  dropTargetMovieId.value = null
+}
+
+async function saveOrder() {
+  if (!data.value || savingOrder.value || !orderDirty.value) return
+
+  savingOrder.value = true
+  try {
+    await $fetch(`/api/movies/lists/${data.value.listId}/order`, {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+      body: {
+        movieIds: orderedMovieIds.value,
+      } satisfies MovieListOrderUpdateRequest,
+    })
+    await refresh()
+  } finally {
+    savingOrder.value = false
+  }
+}
 
 useHead(() => ({
   title: data.value ? `${data.value.name} · Filmes · Media Pulse` : 'Lista · Filmes · Media Pulse',
@@ -119,6 +291,17 @@ pre {
   white-space: pre-wrap;
 }
 
+.list-hero-shell {
+  padding: clamp(24px, 4vw, 36px);
+  border-radius: 40px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98)),
+    radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
+}
+
 .list-hero {
   display: grid;
   gap: 24px;
@@ -132,6 +315,13 @@ pre {
   align-content: end;
 }
 
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
 .back-link {
   width: fit-content;
   padding: 8px 14px;
@@ -139,6 +329,22 @@ pre {
   background: var(--base-color-surface-warm);
   color: var(--base-color-text-primary);
   font-size: 0.8rem;
+}
+
+.edit-order-button {
+  border: 0;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--base-color-text-secondary);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.edit-order-button.active {
+  background: color-mix(in srgb, var(--base-color-surface-warm) 88%, white);
+  color: var(--base-color-text-primary);
 }
 
 .eyebrow,
@@ -192,8 +398,9 @@ h1 {
   border-radius: 40px;
   background:
     radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 243, 238, 0.98));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(246, 243, 238, 0.96));
   border: 1px solid color-mix(in srgb, var(--base-color-border) 52%, white);
+  backdrop-filter: blur(6px);
 }
 
 .spotlight-poster {
@@ -248,8 +455,157 @@ h2 {
   font-size: 0.88rem;
 }
 
+.order-panel,
+.order-copy,
+.order-stack {
+  display: grid;
+  gap: 20px;
+}
+
+.order-description,
+.order-card__copy p,
+.order-card__index,
+.order-status,
+.drag-hint {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+}
+
+.order-panel {
+  padding: 24px;
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at top right, rgba(230, 0, 35, 0.06), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 243, 238, 0.98));
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 52%, white);
+}
+
+.order-description {
+  line-height: 1.58;
+}
+
+.order-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.order-status {
+  font-size: 0.88rem;
+}
+
+.order-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.order-toolbar__button {
+  border: 0;
+  padding: 8px 14px;
+  border-radius: 16px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.order-toolbar__button--primary {
+  background: var(--base-color-brand-red);
+  color: #fff;
+}
+
+.order-toolbar__button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.order-stack {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.order-card {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.84);
+  cursor: grab;
+}
+
+.order-card--dragging {
+  opacity: 0.48;
+}
+
+.order-card--drop-target {
+  outline: 2px solid color-mix(in srgb, var(--base-color-brand-red) 55%, white);
+  outline-offset: 2px;
+}
+
+.order-card__poster {
+  overflow: hidden;
+  aspect-ratio: 0.78;
+  border-radius: 20px;
+  border: 6px solid #fff;
+  background: var(--base-color-surface-soft);
+}
+
+.order-card__poster img,
+.order-card__fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.order-card__fallback {
+  display: grid;
+  place-items: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--base-color-text-secondary);
+}
+
+.order-card__copy {
+  display: grid;
+  gap: 6px;
+}
+
+.order-card__copy strong {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.order-card__index {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.order-card__actions {
+  display: grid;
+  justify-items: end;
+}
+
+.drag-hint {
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--base-color-surface-wash) 72%, white);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
 @media (max-width: 980px) {
   .list-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .order-stack {
     grid-template-columns: 1fr;
   }
 }
@@ -258,6 +614,20 @@ h2 {
   .list-page {
     width: min(100vw - 20px, 1480px);
     padding: 20px 0 64px;
+  }
+
+  .topbar,
+  .order-card {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    display: grid;
+    justify-content: start;
+  }
+
+  .order-card__actions {
+    justify-items: start;
   }
 }
 </style>

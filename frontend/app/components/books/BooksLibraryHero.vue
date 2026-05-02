@@ -1,5 +1,5 @@
 <template>
-  <section class="library-hero">
+  <section class="library-hero" :style="heroShellStyle">
     <div class="copy">
       <NuxtLink class="back-link" :to="backLink">
         {{ backLabel }}
@@ -58,6 +58,13 @@ const props = defineProps<{
 const { resolveMediaUrl } = useMediaUrl()
 const spotlightImageUrl = computed(() => (props.spotlight ? resolveMediaUrl(props.spotlight.imageUrl) : null))
 const spotlightWrapper = computed(() => (props.spotlight?.href ? NuxtLink : 'div'))
+const heroShellStyle = computed(() =>
+  spotlightImageUrl.value
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${spotlightImageUrl.value}")`,
+      }
+    : undefined,
+)
 </script>
 
 <style scoped>
@@ -66,6 +73,14 @@ const spotlightWrapper = computed(() => (props.spotlight?.href ? NuxtLink : 'div
   gap: 24px;
   grid-template-columns: minmax(0, 0.92fr) minmax(20rem, 1.08fr);
   align-items: end;
+  padding: clamp(24px, 4vw, 36px);
+  border-radius: 40px;
+  background-image:
+    radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
+  background-size: cover;
+  background-position: center;
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
 }
 
 .copy {

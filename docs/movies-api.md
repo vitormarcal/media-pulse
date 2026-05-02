@@ -35,6 +35,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/lists` | body com `name`, `description?` | `MovieListSummaryDto` |
 | `POST /api/movies/{movieId}/lists` | body com `listId?`, `name?`, `description?` | `MovieListSummaryDto` |
 | `DELETE /api/movies/{movieId}/lists/{listId}` | `movieId`, `listId` | `204 No Content` |
+| `POST /api/movies/lists/{listId}/order` | `listId`, body com `movieIds[]` | `204 No Content` |
 | `POST /api/movies/{movieId}/companies/sync-tmdb` | `movieId` | `MovieCompaniesSyncResponse` |
 | `POST /api/movies/companies/sync-tmdb` | `limit=100` | `MovieCompaniesBatchSyncResponse` |
 | `POST /api/movies/{movieId}/credits/sync-tmdb` | `movieId` | `MovieCreditsSyncResponse` |
@@ -261,6 +262,11 @@ Persistência:
 - se `listId` vier nulo, cria uma nova lista com `name` e já anexa o filme
 
 `DELETE /api/movies/{movieId}/lists/{listId}` remove o filme da lista.
+
+`POST /api/movies/lists/{listId}/order` atualiza a ordem manual completa da lista.
+
+- exige `movieIds[]` com exatamente os mesmos filmes já ligados à lista
+- a ordem persistida passa a valer tanto na página da lista quanto no destaque principal do recorte
 
 ## Pessoas e créditos
 

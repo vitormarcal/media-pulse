@@ -11,6 +11,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
 import dev.marcal.mediapulse.server.api.movies.MoviePersonCreditDto
 import dev.marcal.mediapulse.server.api.movies.MoviePersonDetailsResponse
@@ -200,6 +201,14 @@ class MoviesController(
         @PathVariable listId: Long,
     ) {
         movieListsService.removeMovie(movieId, listId)
+    }
+
+    @PostMapping("/lists/{listId}/order")
+    fun updateMovieListOrder(
+        @PathVariable listId: Long,
+        @RequestBody request: MovieListOrderUpdateRequest,
+    ) {
+        movieListsService.updateOrder(listId, request)
     }
 
     @PostMapping("/{movieId}/terms")

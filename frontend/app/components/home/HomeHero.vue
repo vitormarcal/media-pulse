@@ -1,5 +1,5 @@
 <template>
-  <section class="hero">
+  <section class="hero" :style="heroShellStyle">
     <div class="hero-copy">
       <p class="eyebrow">Página inicial</p>
       <h2>{{ title }}</h2>
@@ -84,6 +84,13 @@ const props = defineProps<{
 
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedLeadImageUrl = computed(() => resolveMediaUrl(props.lead?.imageUrl))
+const heroShellStyle = computed(() =>
+  resolvedLeadImageUrl.value
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${resolvedLeadImageUrl.value}")`,
+      }
+    : undefined,
+)
 </script>
 
 <style scoped>
@@ -97,9 +104,11 @@ const resolvedLeadImageUrl = computed(() => resolveMediaUrl(props.lead?.imageUrl
   gap: clamp(22px, 3vw, 34px);
   padding: clamp(26px, 4vw, 44px);
   border-radius: 40px;
-  background:
+  background-image:
     radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(246, 243, 238, 0.98));
+  background-size: cover;
+  background-position: center;
   border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
 }
 

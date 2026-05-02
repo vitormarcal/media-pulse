@@ -233,6 +233,10 @@ export interface MovieListAttachRequest {
   description: string | null
 }
 
+export interface MovieListOrderUpdateRequest {
+  movieIds: number[]
+}
+
 export interface MovieDetailsResponse {
   movieId: number
   title: string
@@ -607,6 +611,40 @@ export interface MovieListPageData {
   movies: MovieLibraryCardModel[]
 }
 
+export interface MovieListsIndexPageData {
+  hero: {
+    title: string
+    intro: string
+    backLink: string
+    backLabel: string
+    accentLink: string
+    accentLabel: string
+    spotlight: {
+      title: string
+      subtitle: string
+      imageUrl: string | null
+      href: string | null
+      meta: string
+      note: string
+    } | null
+  }
+  summary: string
+  items: Array<{
+    id: string
+    listId: number
+    name: string
+    href: string
+    description: string | null
+    itemCount: number
+    previewMovies: Array<{
+      id: string
+      title: string
+      href: string | null
+      imageUrl: string | null
+    }>
+  }>
+}
+
 export interface MoviesStatsResponse {
   total: {
     watchesCount: number
@@ -724,6 +762,7 @@ export interface MovieLibraryYearChip {
 
 export interface MovieLibraryCardModel {
   id: string
+  movieId: number
   title: string
   subtitle: string
   href: string | null

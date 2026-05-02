@@ -10,7 +10,7 @@
     </div>
 
     <template v-else-if="data">
-      <section class="company-hero">
+      <section class="company-hero" :style="heroShellStyle">
         <div class="copy">
           <NuxtLink class="back-link" to="/movies/library"> Voltar para biblioteca </NuxtLink>
 
@@ -56,6 +56,14 @@ const { resolveMediaUrl } = useMediaUrl()
 const slug = computed(() => String(route.params.slug))
 
 const { data, error, status, refresh } = await useMovieCompanyPageData(slug.value)
+const heroImageUrl = computed(() => resolveMediaUrl(data.value?.movies[0]?.imageUrl ?? data.value?.logoUrl ?? null))
+const heroShellStyle = computed(() =>
+  heroImageUrl.value
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${heroImageUrl.value}")`,
+      }
+    : undefined,
+)
 
 const heroIntro = computed(() => {
   if (!data.value) return ''
@@ -119,6 +127,14 @@ pre {
   gap: 24px;
   grid-template-columns: minmax(0, 0.9fr) minmax(20rem, 0.7fr);
   align-items: end;
+  padding: clamp(24px, 4vw, 36px);
+  border-radius: 40px;
+  background-image:
+    radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
+  background-size: cover;
+  background-position: center;
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
 }
 
 .copy {

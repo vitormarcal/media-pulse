@@ -158,6 +158,15 @@ Accept: application/json
 DELETE {{baseUrl}}/{{movieId}}/lists/1
 Accept: application/json
 
+### Atualizar ordem completa de uma lista manual
+POST {{baseUrl}}/lists/1/order
+Content-Type: application/json
+Accept: application/json
+
+{
+  "movieIds": [3, 1, 2]
+}
+
 ### Sincronizar termos do TMDb em lote
 POST {{baseUrl}}/terms/sync-tmdb?limit=200
 Accept: application/json

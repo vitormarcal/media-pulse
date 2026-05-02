@@ -6,6 +6,8 @@ import type {
   MovieLibraryCardModel,
   MovieLibraryMetric,
   MovieListDetailsResponse,
+  MovieListSummaryDto,
+  MovieListsIndexPageData,
   MoviePersonDetailsResponse,
   MovieLibraryPageData,
   MovieDetailsResponse,
@@ -86,6 +88,7 @@ function formatMovieSubtitle(title: string, originalTitle: string, year: number 
 function buildLibraryCardModel(movie: MovieLibraryCardDto): MovieLibraryCardModel {
   return {
     id: `library-${movie.movieId}`,
+    movieId: movie.movieId,
     title: movie.title,
     subtitle: formatMovieSubtitle(movie.title, movie.originalTitle, movie.year),
     href: movieHref(movie.slug),
@@ -737,6 +740,51 @@ export function buildMovieListPageData(list: MovieListDetailsResponse): import('
       watchedMoviesCount: list.watchedMoviesCount,
     },
     movies: list.movies.map(buildLibraryCardModel),
+  }
+}
+
+export function buildMovieListsIndexPageData(lists: MovieListSummaryDto[]): MovieListsIndexPageData {
+  const items = lists.map((list) => ({
+    id: `list-${list.listId}`,
+    listId: list.listId,
+    name: list.name,
+    href: `/movies/lists/${list.slug}`,
+    description: list.description,
+    itemCount: list.itemCount,
+    previewMovies: list.previewMovies.map((preview) => ({
+      id: `list-${list.listId}-preview-${preview.movieId}`,
+      title: preview.title,
+      href: movieHref(preview.slug),
+      imageUrl: preview.coverUrl,
+    })),
+  }))
+
+  const spotlight = items[0]
+
+  return {
+    hero: {
+      title: 'Os recortes manuais da filmoteca',
+      intro:
+        'Uma estante de listas feitas à mão para quando a biblioteca inteira é grande demais e você quer entrar por afinidade, ocasião ou obsessão.',
+      backLink: '/movies/library',
+      backLabel: 'Voltar para biblioteca',
+      accentLink: '/movies/library?add=1',
+      accentLabel: 'Adicionar filme',
+      spotlight: spotlight
+        ? {
+            title: spotlight.name,
+            subtitle: spotlight.description || `${spotlight.itemCount} filmes ligados a este recorte.`,
+            imageUrl: spotlight.previewMovies[0]?.imageUrl ?? null,
+            href: spotlight.href,
+            meta: `${spotlight.itemCount} filmes`,
+            note: 'O recorte mais recentemente atualizado vira a primeira entrada visual da estante.',
+          }
+        : null,
+    },
+    summary: items.length
+      ? `${formatShortNumber(items.length)} listas manuais ativas somando portas de entrada próprias para a biblioteca.`
+      : 'Nenhuma lista manual foi criada ainda.',
+    items,
   }
 }
 

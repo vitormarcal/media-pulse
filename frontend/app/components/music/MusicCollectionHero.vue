@@ -1,5 +1,5 @@
 <template>
-  <section class="music-collection-hero">
+  <section class="music-collection-hero" :style="heroShellStyle">
     <div class="top-actions">
       <NuxtLink class="back-link" to="/"> Voltar para a capa </NuxtLink>
 
@@ -81,12 +81,27 @@ const { resolveMediaUrl } = useMediaUrl()
 
 const leadImageUrl = computed(() => (props.lead ? resolveMediaUrl(props.lead.imageUrl) : null))
 const leadWrapper = computed(() => (props.lead?.href ? NuxtLink : 'div'))
+const heroShellStyle = computed(() =>
+  leadImageUrl.value
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${leadImageUrl.value}")`,
+      }
+    : undefined,
+)
 </script>
 
 <style scoped>
 .music-collection-hero {
   display: grid;
   gap: 18px;
+  padding: clamp(24px, 4vw, 36px);
+  border-radius: 40px;
+  background-image:
+    radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
+  background-size: cover;
+  background-position: center;
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
 }
 
 .top-actions {

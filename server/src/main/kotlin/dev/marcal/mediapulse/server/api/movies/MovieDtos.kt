@@ -250,6 +250,10 @@ data class MovieListAttachRequest(
     val description: String? = null,
 )
 
+data class MovieListOrderUpdateRequest(
+    val movieIds: List<Long>,
+)
+
 enum class MovieEnrichmentField {
     TITLE,
     YEAR,

@@ -28,6 +28,19 @@
         :years="data.filters.years"
       />
 
+      <section v-if="data.mode === 'library'" class="manual-lists-hint">
+        <div class="manual-lists-hint__copy">
+          <p class="manual-lists-hint__eyebrow">Curadoria manual</p>
+          <h2>Prefere entrar por recortes?</h2>
+          <p>
+            As listas manuais funcionam como pequenas estantes temáticas para quando a biblioteca inteira é ampla demais
+            e você quer começar por afinidade, ocasião ou humor.
+          </p>
+        </div>
+
+        <NuxtLink class="manual-lists-hint__action" to="/movies/lists"> Ver listas manuais </NuxtLink>
+      </section>
+
       <MovieManualAddCard v-if="showManualAddCard" :initial-title="queryText" />
 
       <section v-else-if="showManualEntryHint" class="manual-entry-hint">
@@ -257,6 +270,7 @@ useHead(() => ({
   justify-content: center;
 }
 
+.manual-lists-hint,
 .manual-entry-hint {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -268,11 +282,13 @@ useHead(() => ({
   border: 1px solid color-mix(in srgb, var(--base-color-border) 48%, white);
 }
 
+.manual-lists-hint__copy,
 .manual-entry-hint__copy {
   display: grid;
   gap: 8px;
 }
 
+.manual-lists-hint__eyebrow,
 .manual-entry-hint__eyebrow {
   margin: 0;
   color: var(--base-color-brand-red);
@@ -282,22 +298,27 @@ useHead(() => ({
   letter-spacing: 0.09em;
 }
 
+.manual-lists-hint__copy h2,
+.manual-lists-hint__copy p,
 .manual-entry-hint__copy h2,
 .manual-entry-hint__copy p {
   margin: 0;
 }
 
+.manual-lists-hint__copy h2,
 .manual-entry-hint__copy h2 {
   font-size: clamp(1.65rem, 3vw, 2.2rem);
   line-height: 0.98;
   letter-spacing: -0.045em;
 }
 
+.manual-lists-hint__copy p,
 .manual-entry-hint__copy p {
   color: var(--base-color-text-secondary);
   line-height: 1.56;
 }
 
+.manual-lists-hint__action,
 .manual-entry-hint__action {
   padding: 10px 16px;
   border-radius: 16px;
@@ -342,6 +363,7 @@ pre {
     padding: 20px 0 64px;
   }
 
+  .manual-lists-hint,
   .manual-entry-hint {
     grid-template-columns: 1fr;
   }

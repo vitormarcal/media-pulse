@@ -7,7 +7,7 @@
       </button>
     </div>
 
-    <div class="hero-grid">
+    <div class="hero-grid" :style="heroShellStyle">
       <div class="copy">
         <p class="eyebrow">Filme</p>
         <h1>{{ title }}</h1>
@@ -63,7 +63,7 @@ import MovieCompaniesPanel from '~/components/movies/MovieCompaniesPanel.vue'
 import MovieTermsPanel from '~/components/movies/MovieTermsPanel.vue'
 import type { MoviePageData } from '~/types/movies'
 
-defineProps<{
+const props = defineProps<{
   movieId: number
   editing: boolean
   title: string
@@ -77,6 +77,14 @@ defineProps<{
 }>()
 
 const { resolveMediaUrl } = useMediaUrl()
+const heroImageUrl = computed(() => props.gallery.map((image) => resolveMediaUrl(image)).find(Boolean) ?? null)
+const heroShellStyle = computed(() =>
+  heroImageUrl.value
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${heroImageUrl.value}")`,
+      }
+    : undefined,
+)
 
 defineEmits<{
   companiesChanged: []
@@ -129,9 +137,11 @@ defineEmits<{
   gap: 24px;
   padding: clamp(24px, 4vw, 42px);
   border-radius: 40px;
-  background:
+  background-image:
     radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
+  background-size: cover;
+  background-position: center;
   border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
 }
 

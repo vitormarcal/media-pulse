@@ -10,7 +10,7 @@
     </div>
 
     <template v-else-if="data">
-      <section class="term-hero">
+      <section class="term-hero" :style="heroShellStyle">
         <div class="copy">
           <NuxtLink class="back-link" to="/movies/library"> Voltar para biblioteca </NuxtLink>
 
@@ -70,6 +70,13 @@ const { data, error, status } = await useMovieTermPageData(kind.value, slug.valu
 const spotlightMovie = computed(() => data.value?.movies[0] ?? null)
 const spotlightImageUrl = computed(() => resolveMediaUrl(spotlightMovie.value?.imageUrl ?? null))
 const spotlightWrapper = computed(() => (spotlightMovie.value?.href ? NuxtLink : 'div'))
+const heroShellStyle = computed(() =>
+  spotlightImageUrl.value
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${spotlightImageUrl.value}")`,
+      }
+    : undefined,
+)
 const heroIntro = computed(() => {
   if (!data.value) return ''
 
@@ -132,6 +139,14 @@ pre {
   gap: 24px;
   grid-template-columns: minmax(0, 0.9fr) minmax(20rem, 1.1fr);
   align-items: end;
+  padding: clamp(24px, 4vw, 36px);
+  border-radius: 40px;
+  background-image:
+    radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
+  background-size: cover;
+  background-position: center;
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
 }
 
 .copy {

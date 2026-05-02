@@ -7,6 +7,11 @@ import org.springframework.stereotype.Repository
 class MovieListItemCrudRepository(
     private val entityManager: EntityManager,
 ) {
+    data class MovieListPositionRecord(
+        val movieId: Long,
+        val position: Int,
+    )
+
     fun nextPosition(listId: Long): Int =
         (
             entityManager
@@ -59,6 +64,44 @@ class MovieListItemCrudRepository(
                   AND movie_id = :movieId
                 """.trimIndent(),
             ).setParameter("listId", listId)
+            .setParameter("movieId", movieId)
+            .executeUpdate()
+
+    fun listPositions(listId: Long): List<MovieListPositionRecord> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT movie_id, position
+                FROM movie_list_items
+                WHERE list_id = :listId
+                ORDER BY position ASC, id ASC
+                """.trimIndent(),
+            ).setParameter("listId", listId)
+            .resultList
+            .map { row ->
+                val fields = row as Array<*>
+                MovieListPositionRecord(
+                    movieId = (fields[0] as Number).toLong(),
+                    position = (fields[1] as Number).toInt(),
+                )
+            }
+
+    fun updatePosition(
+        listId: Long,
+        movieId: Long,
+        position: Int,
+    ): Int =
+        entityManager
+            .createNativeQuery(
+                """
+                UPDATE movie_list_items
+                SET position = :position,
+                    updated_at = NOW()
+                WHERE list_id = :listId
+                  AND movie_id = :movieId
+                """.trimIndent(),
+            ).setParameter("position", position)
+            .setParameter("listId", listId)
             .setParameter("movieId", movieId)
             .executeUpdate()
 }

@@ -2,7 +2,7 @@
   <section class="author-hero">
     <NuxtLink class="back-link" to="/books"> Voltar para livros </NuxtLink>
 
-    <div class="hero-grid">
+    <div class="hero-grid" :style="heroShellStyle">
       <div class="copy">
         <p class="eyebrow">Autor</p>
         <h1>{{ title }}</h1>
@@ -29,6 +29,13 @@ const props = defineProps<{
 
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedCoverUrl = computed(() => resolveMediaUrl(props.coverUrl))
+const heroShellStyle = computed(() =>
+  resolvedCoverUrl.value
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${resolvedCoverUrl.value}")`,
+      }
+    : undefined,
+)
 </script>
 
 <style scoped>
@@ -52,9 +59,11 @@ const resolvedCoverUrl = computed(() => resolveMediaUrl(props.coverUrl))
   gap: 28px;
   padding: clamp(24px, 4vw, 42px);
   border-radius: 40px;
-  background:
+  background-image:
     radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
+  background-size: cover;
+  background-position: center;
   border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
 }
 

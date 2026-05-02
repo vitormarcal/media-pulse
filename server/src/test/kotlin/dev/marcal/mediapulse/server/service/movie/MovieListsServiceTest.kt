@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.service.movie
 
 import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieList
@@ -88,5 +89,28 @@ class MovieListsServiceTest {
 
         assertEquals(9, response.listId)
         verify(exactly = 0) { movieListRepository.save(any()) }
+    }
+
+    @Test
+    fun `update order should rewrite persisted positions`() {
+        every { movieListRepository.findById(2) } returns
+            Optional.of(MovieList(id = 2, name = "Oscar 2025", normalizedName = "oscar 2025", slug = "oscar-2025"))
+        every { movieListItemCrudRepository.listPositions(2) } returns
+            listOf(
+                MovieListItemCrudRepository.MovieListPositionRecord(movieId = 10, position = 1),
+                MovieListItemCrudRepository.MovieListPositionRecord(movieId = 11, position = 2),
+                MovieListItemCrudRepository.MovieListPositionRecord(movieId = 12, position = 3),
+            )
+        every { movieListRepository.save(any()) } answers { firstArg<MovieList>() }
+
+        service.updateOrder(
+            listId = 2,
+            request = MovieListOrderUpdateRequest(movieIds = listOf(12, 10, 11)),
+        )
+
+        verify(exactly = 1) { movieListItemCrudRepository.updatePosition(2, 12, 1) }
+        verify(exactly = 1) { movieListItemCrudRepository.updatePosition(2, 10, 2) }
+        verify(exactly = 1) { movieListItemCrudRepository.updatePosition(2, 11, 3) }
+        verify(exactly = 1) { movieListRepository.save(any()) }
     }
 }
