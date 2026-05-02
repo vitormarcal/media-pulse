@@ -8,7 +8,7 @@
     />
 
     <div v-if="lists.items.length" class="lists-masonry">
-      <article v-for="item in lists.items" :key="item.id" class="list-card">
+      <article v-for="item in lists.items" :key="item.id" class="list-card" :style="cardShellStyle(item)">
         <component
           :is="editingEnabled ? 'div' : NuxtLink"
           class="card-link"
@@ -166,6 +166,15 @@ function posterTone(listId: number) {
   return `poster-mosaic--tone-${listId % 4}`
 }
 
+function cardShellStyle(item: MoviePageData['lists']['items'][number]) {
+  const heroImageUrl = resolveMediaUrl(item.coverImageUrl ?? item.previewMovies[0]?.imageUrl ?? null)
+  if (!heroImageUrl) return undefined
+
+  return {
+    backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 30%), url("${heroImageUrl}")`,
+  }
+}
+
 function fallbackDescription(itemCount: number) {
   return itemCount > 1
     ? `Um recorte manual com ${itemCount} filmes para navegar fora da biblioteca geral.`
@@ -294,9 +303,11 @@ watch(
 .empty-state,
 .editor-panel {
   border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
-  background:
+  background-image:
     radial-gradient(circle at top right, rgba(230, 0, 35, 0.06), transparent 30%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(246, 243, 238, 0.98));
+  background-size: cover;
+  background-position: center;
 }
 
 .list-card,

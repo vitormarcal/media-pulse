@@ -124,6 +124,8 @@ data class MovieListSummaryDto(
     val slug: String,
     val description: String?,
     val itemCount: Long,
+    val coverMovieId: Long? = null,
+    val coverUrl: String? = null,
     val previewMovies: List<MovieListPreviewMovieDto> = emptyList(),
 )
 
@@ -206,6 +208,8 @@ data class MovieListDetailsResponse(
     val name: String,
     val slug: String,
     val description: String?,
+    val coverMovieId: Long? = null,
+    val coverUrl: String? = null,
     val movieCount: Long,
     val watchedMoviesCount: Long,
     val movies: List<MovieLibraryCardDto>,
@@ -252,6 +256,10 @@ data class MovieListAttachRequest(
 
 data class MovieListOrderUpdateRequest(
     val movieIds: List<Long>,
+)
+
+data class MovieListCoverUpdateRequest(
+    val coverMovieId: Long? = null,
 )
 
 enum class MovieEnrichmentField {

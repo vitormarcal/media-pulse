@@ -21,6 +21,8 @@ data class MovieList(
     val slug: String,
     @Column(columnDefinition = "TEXT")
     val description: String? = null,
+    @Column(name = "cover_movie_id")
+    val coverMovieId: Long? = null,
     @Column(name = "created_at")
     val createdAt: Instant = Instant.now(),
     @Column(name = "updated_at")

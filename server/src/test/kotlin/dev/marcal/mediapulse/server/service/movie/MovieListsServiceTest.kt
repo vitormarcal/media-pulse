@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.service.movie
 
 import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListCoverUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
@@ -112,5 +113,31 @@ class MovieListsServiceTest {
         verify(exactly = 1) { movieListItemCrudRepository.updatePosition(2, 10, 2) }
         verify(exactly = 1) { movieListItemCrudRepository.updatePosition(2, 11, 3) }
         verify(exactly = 1) { movieListRepository.save(any()) }
+    }
+
+    @Test
+    fun `update cover should persist selected movie from list`() {
+        every { movieListRepository.findById(2) } returns
+            Optional.of(MovieList(id = 2, name = "Oscar 2025", normalizedName = "oscar 2025", slug = "oscar-2025"))
+        every { movieListItemCrudRepository.listPositions(2) } returns
+            listOf(
+                MovieListItemCrudRepository.MovieListPositionRecord(movieId = 10, position = 1),
+                MovieListItemCrudRepository.MovieListPositionRecord(movieId = 11, position = 2),
+            )
+        every { movieListRepository.save(any()) } answers { firstArg<MovieList>() }
+        every { movieQueryRepository.getMovieListSummary(2) } returns
+            MovieListSummaryDto(
+                listId = 2,
+                name = "Oscar 2025",
+                slug = "oscar-2025",
+                description = null,
+                itemCount = 2,
+                coverMovieId = 11,
+            )
+
+        val response = service.updateCover(listId = 2, request = MovieListCoverUpdateRequest(coverMovieId = 11))
+
+        assertEquals(11, response.coverMovieId)
+        verify(exactly = 1) { movieListRepository.save(match { it.coverMovieId == 11L }) }
     }
 }

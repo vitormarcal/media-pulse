@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.service.movie
 
 import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListCoverUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
@@ -63,12 +64,17 @@ class MovieListsService(
         listId: Long,
     ) {
         requireMovie(movieId)
-        movieListRepository.findById(listId).orElseThrow {
-            ResponseStatusException(HttpStatus.NOT_FOUND, "Movie list not found")
-        }
+        val list =
+            movieListRepository.findById(listId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Movie list not found")
+            }
         val removed = movieListItemCrudRepository.removeItem(listId, movieId)
         if (removed > 0) {
-            touchList(listId)
+            if (list.coverMovieId == movieId) {
+                movieListRepository.save(list.copy(coverMovieId = null, updatedAt = Instant.now()))
+            } else {
+                touchList(listId)
+            }
         }
     }
 
@@ -99,6 +105,35 @@ class MovieListsService(
             }
         }
         touchList(listId)
+    }
+
+    @Transactional
+    fun updateCover(
+        listId: Long,
+        request: MovieListCoverUpdateRequest,
+    ): MovieListSummaryDto {
+        val list =
+            movieListRepository.findById(listId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Movie list not found")
+            }
+
+        val coverMovieId = request.coverMovieId
+        if (coverMovieId != null) {
+            val belongsToList = movieListItemCrudRepository.listPositions(listId).any { it.movieId == coverMovieId }
+            if (!belongsToList) {
+                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "coverMovieId inválido para esta lista")
+            }
+        }
+
+        movieListRepository.save(
+            list.copy(
+                coverMovieId = coverMovieId,
+                updatedAt = Instant.now(),
+            ),
+        )
+
+        return movieQueryRepository.getMovieListSummary(listId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Movie list not found")
     }
 
     private fun requireMovie(movieId: Long) {

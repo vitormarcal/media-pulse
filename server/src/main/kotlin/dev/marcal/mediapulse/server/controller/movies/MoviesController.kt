@@ -9,6 +9,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieCreditsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCreditsSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListCoverUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
@@ -43,6 +44,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -210,6 +212,12 @@ class MoviesController(
     ) {
         movieListsService.updateOrder(listId, request)
     }
+
+    @PatchMapping("/lists/{listId}/cover")
+    fun updateMovieListCover(
+        @PathVariable listId: Long,
+        @RequestBody request: MovieListCoverUpdateRequest,
+    ): MovieListSummaryDto = movieListsService.updateCover(listId, request)
 
     @PostMapping("/{movieId}/terms")
     fun addTerm(

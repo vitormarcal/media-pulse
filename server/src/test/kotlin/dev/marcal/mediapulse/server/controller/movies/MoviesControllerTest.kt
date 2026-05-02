@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieCompanyTypeDto
 import dev.marcal.mediapulse.server.api.movies.MovieCreditsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListCoverUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
@@ -179,6 +180,24 @@ class MoviesControllerTest {
 
         assertEquals(1, response.size)
         verify(exactly = 1) { movieListsService.listAll() }
+    }
+
+    @Test
+    fun `update list cover should delegate to lists service`() {
+        every { movieListsService.updateCover(3, MovieListCoverUpdateRequest(coverMovieId = 10)) } returns
+            MovieListSummaryDto(
+                listId = 3,
+                name = "DCEU",
+                slug = "dceu",
+                description = null,
+                itemCount = 4,
+                coverMovieId = 10,
+            )
+
+        val response = controller.updateMovieListCover(3, MovieListCoverUpdateRequest(coverMovieId = 10))
+
+        assertEquals(10, response.coverMovieId)
+        verify(exactly = 1) { movieListsService.updateCover(3, MovieListCoverUpdateRequest(coverMovieId = 10)) }
     }
 
     @Test

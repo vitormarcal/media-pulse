@@ -54,6 +54,57 @@
         </div>
       </section>
 
+      <section v-if="reorderMode && data.movies.length" class="cover-panel">
+        <div class="cover-panel__copy">
+          <p class="eyebrow">Imagem do recorte</p>
+          <h2>Escolha a capa da lista</h2>
+          <p class="cover-panel__description">
+            Se nada for escolhido, a lista usa a capa do primeiro filme da ordem. Quando você fixa uma capa, o hero e os
+            cards desta lista passam a respeitar essa escolha.
+          </p>
+        </div>
+
+        <div class="cover-panel__toolbar">
+          <p class="cover-panel__status">
+            {{
+              coverDraftMovieId
+                ? `Capa fixa em ${selectedCoverMovie?.title || 'um filme desta lista'}.`
+                : 'Sem capa fixa. O primeiro filme da ordem segue como imagem padrão.'
+            }}
+          </p>
+          <button
+            type="button"
+            class="cover-panel__reset"
+            :disabled="savingCover || coverDraftMovieId == null"
+            @click="updateCoverMovie(null)"
+          >
+            {{ savingCover && coverPendingMovieId == null ? 'Salvando...' : 'Usar primeiro da ordem' }}
+          </button>
+        </div>
+
+        <div class="cover-grid">
+          <button
+            v-for="movie in orderedMovies"
+            :key="`cover-${movie.id}`"
+            type="button"
+            class="cover-option"
+            :class="{ 'cover-option--active': coverDraftMovieId === movie.movieId }"
+            :disabled="savingCover"
+            @click="updateCoverMovie(movie.movieId)"
+          >
+            <div class="cover-option__poster">
+              <img v-if="resolveMediaUrl(movie.imageUrl)" :src="resolveMediaUrl(movie.imageUrl)" :alt="movie.title" />
+              <div v-else class="cover-option__fallback">{{ movie.title.slice(0, 1) }}</div>
+            </div>
+            <div class="cover-option__copy">
+              <strong>{{ movie.title }}</strong>
+              <p>{{ movie.subtitle }}</p>
+              <span>{{ coverDraftMovieId === movie.movieId ? 'Capa atual' : 'Usar como capa' }}</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
       <section v-if="reorderMode && data.movies.length" class="order-panel">
         <div class="order-copy">
           <p class="eyebrow">Sequência manual</p>
@@ -138,7 +189,7 @@
 import { NuxtLink } from '#components'
 import MoviesLibraryGrid from '~/components/movies/MoviesLibraryGrid.vue'
 import { useMovieListPageData } from '~/composables/useMovieListPageData'
-import type { MovieLibraryCardModel, MovieListOrderUpdateRequest } from '~/types/movies'
+import type { MovieLibraryCardModel, MovieListCoverUpdateRequest, MovieListOrderUpdateRequest } from '~/types/movies'
 
 const route = useRoute()
 const config = useRuntimeConfig()
@@ -149,6 +200,9 @@ const orderedMovies = ref<MovieLibraryCardModel[]>([])
 const draggingMovieId = ref<number | null>(null)
 const dropTargetMovieId = ref<number | null>(null)
 const savingOrder = ref(false)
+const savingCover = ref(false)
+const coverPendingMovieId = ref<number | null>(null)
+const coverDraftMovieId = ref<number | null>(null)
 
 const { data, error, status, refresh } = await useMovieListPageData(slug.value)
 
@@ -156,17 +210,26 @@ watch(
   data,
   (value) => {
     orderedMovies.value = value?.movies.map((movie) => ({ ...movie })) ?? []
+    coverDraftMovieId.value = value?.coverMovieId ?? null
   },
   { immediate: true },
 )
 
 const displayMovies = computed(() => (orderedMovies.value.length ? orderedMovies.value : (data.value?.movies ?? [])))
 const spotlightMovie = computed(() => displayMovies.value[0] ?? null)
+const selectedCoverMovie = computed(
+  () => displayMovies.value.find((movie) => movie.movieId === coverDraftMovieId.value) ?? null,
+)
+const heroCoverImageUrl = computed(() =>
+  resolveMediaUrl(
+    selectedCoverMovie.value?.imageUrl ?? data.value?.coverImageUrl ?? spotlightMovie.value?.imageUrl ?? null,
+  ),
+)
 const spotlightImageUrl = computed(() => resolveMediaUrl(spotlightMovie.value?.imageUrl ?? null))
 const heroShellStyle = computed(() =>
-  spotlightImageUrl.value
+  heroCoverImageUrl.value
     ? {
-        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${spotlightImageUrl.value}")`,
+        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${heroCoverImageUrl.value}")`,
       }
     : undefined,
 )
@@ -250,6 +313,31 @@ async function saveOrder() {
     await refresh()
   } finally {
     savingOrder.value = false
+  }
+}
+
+async function updateCoverMovie(movieId: number | null) {
+  if (!data.value || savingCover.value || coverDraftMovieId.value === movieId) return
+
+  const previousMovieId = coverDraftMovieId.value
+  coverDraftMovieId.value = movieId
+  coverPendingMovieId.value = movieId
+  savingCover.value = true
+
+  try {
+    await $fetch(`/api/movies/lists/${data.value.listId}/cover`, {
+      baseURL: config.public.apiBase,
+      method: 'PATCH',
+      body: {
+        coverMovieId: movieId,
+      } satisfies MovieListCoverUpdateRequest,
+    })
+    await refresh()
+  } catch {
+    coverDraftMovieId.value = previousMovieId
+  } finally {
+    savingCover.value = false
+    coverPendingMovieId.value = null
   }
 }
 
@@ -455,22 +543,29 @@ h2 {
   font-size: 0.88rem;
 }
 
+.cover-panel,
 .order-panel,
 .order-copy,
-.order-stack {
+.order-stack,
+.cover-panel__copy {
   display: grid;
   gap: 20px;
 }
 
+.cover-panel__description,
 .order-description,
 .order-card__copy p,
 .order-card__index,
 .order-status,
-.drag-hint {
+.drag-hint,
+.cover-panel__status,
+.cover-option__copy p,
+.cover-option__copy span {
   margin: 0;
   color: var(--base-color-text-secondary);
 }
 
+.cover-panel,
 .order-panel {
   padding: 24px;
   border-radius: 32px;
@@ -478,6 +573,92 @@ h2 {
     radial-gradient(circle at top right, rgba(230, 0, 35, 0.06), transparent 32%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 243, 238, 0.98));
   border: 1px solid color-mix(in srgb, var(--base-color-border) 52%, white);
+}
+
+.cover-panel__description {
+  line-height: 1.58;
+}
+
+.cover-panel__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cover-panel__status {
+  font-size: 0.88rem;
+}
+
+.cover-panel__reset {
+  border: 0;
+  padding: 8px 14px;
+  border-radius: 16px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.cover-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 14px;
+}
+
+.cover-option {
+  display: grid;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 52%, white);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.86);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cover-option--active {
+  border-color: color-mix(in srgb, var(--base-color-brand-red) 38%, white);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(249, 241, 235, 0.98));
+}
+
+.cover-option__poster {
+  aspect-ratio: 1.12;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 6px solid #fff;
+  background: var(--base-color-surface-soft);
+}
+
+.cover-option__poster img,
+.cover-option__fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cover-option__fallback {
+  display: grid;
+  place-items: center;
+  color: var(--base-color-text-secondary);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.cover-option__copy {
+  display: grid;
+  gap: 6px;
+}
+
+.cover-option__copy strong,
+.cover-option__copy span {
+  line-height: 1.2;
+}
+
+.cover-option__copy span {
+  font-size: 0.76rem;
 }
 
 .order-description {

@@ -398,12 +398,15 @@ class MovieQueryRepository(
                   ml.name,
                   ml.slug,
                   ml.description,
+                  ml.cover_movie_id,
+                  cm.cover_url,
                   COUNT(mli2.id) AS item_count
                 FROM movie_list_items mli
                 JOIN movie_lists ml ON ml.id = mli.list_id
+                LEFT JOIN movies cm ON cm.id = ml.cover_movie_id
                 LEFT JOIN movie_list_items mli2 ON mli2.list_id = ml.id
                 WHERE mli.movie_id = :movieId
-                GROUP BY ml.id, ml.name, ml.slug, ml.description
+                GROUP BY ml.id, ml.name, ml.slug, ml.description, ml.cover_movie_id, cm.cover_url
                 ORDER BY ml.name ASC, ml.id ASC
                 """.trimIndent(),
             ).setParameter("movieId", movieId)
@@ -420,7 +423,9 @@ class MovieQueryRepository(
                         name = fields[1] as String,
                         slug = fields[2] as String,
                         description = fields[3] as String?,
-                        itemCount = (fields[4] as Number).toLong(),
+                        coverMovieId = (fields[4] as Number?)?.toLong(),
+                        coverUrl = fields[5] as String?,
+                        itemCount = (fields[6] as Number).toLong(),
                         previewMovies = previewsByListId[listId].orEmpty(),
                     )
                 }
@@ -435,14 +440,28 @@ class MovieQueryRepository(
                   ml.name,
                   ml.slug,
                   ml.description,
+                  ml.cover_movie_id,
+                  cm.cover_url,
                   COUNT(mli.id) AS item_count
                 FROM movie_lists ml
+                LEFT JOIN movies cm ON cm.id = ml.cover_movie_id
                 LEFT JOIN movie_list_items mli ON mli.list_id = ml.id
-                GROUP BY ml.id, ml.name, ml.slug, ml.description
+                GROUP BY ml.id, ml.name, ml.slug, ml.description, ml.cover_movie_id, cm.cover_url
                 ORDER BY COALESCE(ml.updated_at, ml.created_at) DESC, ml.name ASC
                 """.trimIndent(),
             ).resultList
-            .map { row -> toMovieListSummaryDto(row as Array<*>) }
+            .let { rows ->
+                val listIds = rows.map { ((it as Array<*>)[0] as Number).toLong() }
+                val previewsByListId = getMovieListPreviewMovies(listIds)
+
+                rows.map { row ->
+                    val fields = row as Array<*>
+                    toMovieListSummaryDto(
+                        fields = fields,
+                        previewMovies = previewsByListId[(fields[0] as Number).toLong()].orEmpty(),
+                    )
+                }
+            }
 
     fun getMovieListSummary(listId: Long): MovieListSummaryDto? =
         entityManager
@@ -453,17 +472,25 @@ class MovieQueryRepository(
                   ml.name,
                   ml.slug,
                   ml.description,
+                  ml.cover_movie_id,
+                  cm.cover_url,
                   COUNT(mli.id) AS item_count
                 FROM movie_lists ml
+                LEFT JOIN movies cm ON cm.id = ml.cover_movie_id
                 LEFT JOIN movie_list_items mli ON mli.list_id = ml.id
                 WHERE ml.id = :listId
-                GROUP BY ml.id, ml.name, ml.slug, ml.description
+                GROUP BY ml.id, ml.name, ml.slug, ml.description, ml.cover_movie_id, cm.cover_url
                 LIMIT 1
                 """.trimIndent(),
             ).setParameter("listId", listId)
             .resultList
             .firstOrNull()
-            ?.let { toMovieListSummaryDto(it as Array<*>) }
+            ?.let { row ->
+                toMovieListSummaryDto(
+                    fields = row as Array<*>,
+                    previewMovies = getMovieListPreviewMovies(listOf(listId))[listId].orEmpty(),
+                )
+            }
 
     fun getMovieCompanies(movieId: Long): List<MovieCompanyDto> =
         entityManager
@@ -826,6 +853,8 @@ class MovieQueryRepository(
                       ml.name,
                       ml.slug,
                       ml.description,
+                      ml.cover_movie_id,
+                      cm.cover_url,
                       COUNT(DISTINCT mli.movie_id) AS movie_count,
                       COUNT(DISTINCT CASE WHEN EXISTS (
                         SELECT 1
@@ -833,9 +862,10 @@ class MovieQueryRepository(
                         WHERE mw.movie_id = mli.movie_id
                       ) THEN mli.movie_id END) AS watched_movies_count
                     FROM movie_lists ml
+                    LEFT JOIN movies cm ON cm.id = ml.cover_movie_id
                     LEFT JOIN movie_list_items mli ON mli.list_id = ml.id
                     WHERE ml.slug = :slug
-                    GROUP BY ml.id, ml.name, ml.slug, ml.description
+                    GROUP BY ml.id, ml.name, ml.slug, ml.description, ml.cover_movie_id, cm.cover_url
                     LIMIT 1
                     """.trimIndent(),
                 ).setParameter("slug", slug.trim())
@@ -896,8 +926,10 @@ class MovieQueryRepository(
             name = base[1] as String,
             slug = base[2] as String,
             description = base[3] as String?,
-            movieCount = (base[4] as Number).toLong(),
-            watchedMoviesCount = (base[5] as Number).toLong(),
+            coverMovieId = (base[4] as Number?)?.toLong(),
+            coverUrl = base[5] as String?,
+            movieCount = (base[6] as Number).toLong(),
+            watchedMoviesCount = (base[7] as Number).toLong(),
             movies = movies,
         )
     }
@@ -1427,13 +1459,19 @@ class MovieQueryRepository(
             companyType = MovieCompanyTypeDto.valueOf(fields[6] as String),
         )
 
-    private fun toMovieListSummaryDto(fields: Array<*>): MovieListSummaryDto =
+    private fun toMovieListSummaryDto(
+        fields: Array<*>,
+        previewMovies: List<MovieListPreviewMovieDto> = emptyList(),
+    ): MovieListSummaryDto =
         MovieListSummaryDto(
             listId = (fields[0] as Number).toLong(),
             name = fields[1] as String,
             slug = fields[2] as String,
             description = fields[3] as String?,
-            itemCount = (fields[4] as Number).toLong(),
+            coverMovieId = (fields[4] as Number?)?.toLong(),
+            coverUrl = fields[5] as String?,
+            itemCount = (fields[6] as Number).toLong(),
+            previewMovies = previewMovies,
         )
 
     private fun getMovieListPreviewMovies(

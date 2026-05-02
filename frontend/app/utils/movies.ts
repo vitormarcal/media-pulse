@@ -533,6 +533,8 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
         name: list.name,
         href: `/movies/lists/${list.slug}`,
         description: list.description,
+        coverMovieId: list.coverMovieId,
+        coverImageUrl: list.coverUrl,
         itemCount: list.itemCount,
         previewMovies: list.previewMovies.map((preview) => ({
           id: `list-${list.listId}-preview-${preview.movieId}`,
@@ -734,6 +736,8 @@ export function buildMovieListPageData(list: MovieListDetailsResponse): import('
     name: list.name,
     slug: list.slug,
     description: list.description,
+    coverMovieId: list.coverMovieId,
+    coverImageUrl: list.coverUrl,
     heroMeta: [`${list.movieCount} filmes`, `${list.watchedMoviesCount} com sessão`],
     stats: {
       movieCount: list.movieCount,
@@ -750,6 +754,8 @@ export function buildMovieListsIndexPageData(lists: MovieListSummaryDto[]): Movi
     name: list.name,
     href: `/movies/lists/${list.slug}`,
     description: list.description,
+    coverMovieId: list.coverMovieId,
+    coverImageUrl: list.coverUrl,
     itemCount: list.itemCount,
     previewMovies: list.previewMovies.map((preview) => ({
       id: `list-${list.listId}-preview-${preview.movieId}`,
@@ -774,7 +780,7 @@ export function buildMovieListsIndexPageData(lists: MovieListSummaryDto[]): Movi
         ? {
             title: spotlight.name,
             subtitle: spotlight.description || `${spotlight.itemCount} filmes ligados a este recorte.`,
-            imageUrl: spotlight.previewMovies[0]?.imageUrl ?? null,
+            imageUrl: spotlight.coverImageUrl ?? spotlight.previewMovies[0]?.imageUrl ?? null,
             href: spotlight.href,
             meta: `${spotlight.itemCount} filmes`,
             note: 'O recorte mais recentemente atualizado vira a primeira entrada visual da estante.',

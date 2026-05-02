@@ -88,6 +88,8 @@ export interface MovieListSummaryDto {
   name: string
   slug: string
   description: string | null
+  coverMovieId: number | null
+  coverUrl: string | null
   itemCount: number
   previewMovies: Array<{
     movieId: number
@@ -189,6 +191,8 @@ export interface MovieListDetailsResponse {
   name: string
   slug: string
   description: string | null
+  coverMovieId: number | null
+  coverUrl: string | null
   movieCount: number
   watchedMoviesCount: number
   movies: MovieLibraryCardDto[]
@@ -235,6 +239,10 @@ export interface MovieListAttachRequest {
 
 export interface MovieListOrderUpdateRequest {
   movieIds: number[]
+}
+
+export interface MovieListCoverUpdateRequest {
+  coverMovieId: number | null
 }
 
 export interface MovieDetailsResponse {
@@ -475,6 +483,8 @@ export interface MoviePageData {
       name: string
       href: string
       description: string | null
+      coverMovieId: number | null
+      coverImageUrl: string | null
       itemCount: number
       previewMovies: Array<{
         id: string
@@ -603,6 +613,8 @@ export interface MovieListPageData {
   name: string
   slug: string
   description: string | null
+  coverMovieId: number | null
+  coverImageUrl: string | null
   heroMeta: string[]
   stats: {
     movieCount: number
@@ -635,6 +647,8 @@ export interface MovieListsIndexPageData {
     name: string
     href: string
     description: string | null
+    coverMovieId: number | null
+    coverImageUrl: string | null
     itemCount: number
     previewMovies: Array<{
       id: string
