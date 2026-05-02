@@ -12,6 +12,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieExternalIdDto
 import dev.marcal.mediapulse.server.api.movies.MovieImageDto
 import dev.marcal.mediapulse.server.api.movies.MovieLibraryCardDto
 import dev.marcal.mediapulse.server.api.movies.MovieListDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.MovieListPreviewMovieDto
 import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
 import dev.marcal.mediapulse.server.api.movies.MoviePersonCreditDto
 import dev.marcal.mediapulse.server.api.movies.MoviePersonDetailsResponse
@@ -407,7 +408,23 @@ class MovieQueryRepository(
                 """.trimIndent(),
             ).setParameter("movieId", movieId)
             .resultList
-            .map { row -> toMovieListSummaryDto(row as Array<*>) }
+            .let { rows ->
+                val listIds = rows.map { ((it as Array<*>)[0] as Number).toLong() }
+                val previewsByListId = getMovieListPreviewMovies(listIds)
+
+                rows.map { row ->
+                    val fields = row as Array<*>
+                    val listId = (fields[0] as Number).toLong()
+                    MovieListSummaryDto(
+                        listId = listId,
+                        name = fields[1] as String,
+                        slug = fields[2] as String,
+                        description = fields[3] as String?,
+                        itemCount = (fields[4] as Number).toLong(),
+                        previewMovies = previewsByListId[listId].orEmpty(),
+                    )
+                }
+            }
 
     fun listMovieLists(): List<MovieListSummaryDto> =
         entityManager
@@ -1418,6 +1435,63 @@ class MovieQueryRepository(
             description = fields[3] as String?,
             itemCount = (fields[4] as Number).toLong(),
         )
+
+    private fun getMovieListPreviewMovies(
+        listIds: List<Long>,
+        limit: Int = 3,
+    ): Map<Long, List<MovieListPreviewMovieDto>> {
+        if (listIds.isEmpty()) return emptyMap()
+
+        val rows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH ranked_items AS (
+                      SELECT
+                        mli.list_id,
+                        m.id AS movie_id,
+                        COALESCE((
+                          SELECT mt.title
+                          FROM movie_titles mt
+                          WHERE mt.movie_id = m.id
+                          ORDER BY mt.is_primary ASC, mt.id ASC
+                          LIMIT 1
+                        ), m.original_title) AS title,
+                        m.slug,
+                        m.cover_url,
+                        ROW_NUMBER() OVER (
+                          PARTITION BY mli.list_id
+                          ORDER BY mli.position ASC, m.id ASC
+                        ) AS item_rank
+                      FROM movie_list_items mli
+                      JOIN movies m ON m.id = mli.movie_id
+                      WHERE mli.list_id IN (:listIds)
+                    )
+                    SELECT list_id, movie_id, title, slug, cover_url
+                    FROM ranked_items
+                    WHERE item_rank <= :limit
+                    ORDER BY list_id ASC, item_rank ASC
+                    """.trimIndent(),
+                ).setParameter("listIds", listIds)
+                .setParameter("limit", limit)
+                .resultList
+
+        val previewsByListId = linkedMapOf<Long, MutableList<MovieListPreviewMovieDto>>()
+        rows.forEach { row ->
+            val fields = row as Array<*>
+            val listId = (fields[0] as Number).toLong()
+            previewsByListId.getOrPut(listId) { mutableListOf() }.add(
+                MovieListPreviewMovieDto(
+                    movieId = (fields[1] as Number).toLong(),
+                    title = fields[2] as String,
+                    slug = fields[3] as String?,
+                    coverUrl = fields[4] as String?,
+                ),
+            )
+        }
+
+        return previewsByListId
+    }
 
     private fun toMovieTermSuggestionDto(fields: Array<*>): MovieTermSuggestionDto =
         MovieTermSuggestionDto(

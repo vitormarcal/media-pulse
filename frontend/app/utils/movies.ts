@@ -529,7 +529,14 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
         listId: list.listId,
         name: list.name,
         href: `/movies/lists/${list.slug}`,
+        description: list.description,
         itemCount: list.itemCount,
+        previewMovies: list.previewMovies.map((preview) => ({
+          id: `list-${list.listId}-preview-${preview.movieId}`,
+          title: preview.title,
+          href: movieHref(preview.slug),
+          imageUrl: preview.coverUrl,
+        })),
       })),
     },
     companies: {

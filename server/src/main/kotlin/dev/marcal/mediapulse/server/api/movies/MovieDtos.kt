@@ -111,12 +111,20 @@ data class MovieCompanyDto(
     val companyType: MovieCompanyTypeDto,
 )
 
+data class MovieListPreviewMovieDto(
+    val movieId: Long,
+    val title: String,
+    val slug: String?,
+    val coverUrl: String?,
+)
+
 data class MovieListSummaryDto(
     val listId: Long,
     val name: String,
     val slug: String,
     val description: String?,
     val itemCount: Long,
+    val previewMovies: List<MovieListPreviewMovieDto> = emptyList(),
 )
 
 data class MoviePersonSuggestionDto(

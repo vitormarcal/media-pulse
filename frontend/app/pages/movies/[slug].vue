@@ -19,10 +19,8 @@
         :gallery="data.gallery"
         :hero-meta="data.heroMeta"
         :identifiers="data.identifiers"
-        :lists="data.lists"
         :companies="data.companies"
         :terms="data.terms"
-        @lists-changed="handleListsChanged"
         @companies-changed="handleCompaniesChanged"
         @terms-changed="handleTermsChanged"
         @toggle-editing="toggleEditing"
@@ -46,6 +44,8 @@
 
       <MovieCollectionPanel :collection="data.collection" @added="handleCatalogAdded" />
 
+      <MovieListsPanel :movie-id="data.movieId" :lists="data.lists" :editing="editMode" @changed="handleListsChanged" />
+
       <MovieAddWatchPanel :movie-id="data.movieId" @created="handleWatchCreated" />
 
       <MovieWatchTimeline :movie-id="data.movieId" :watches="data.recentWatches" @deleted="handleWatchDeleted" />
@@ -58,6 +58,7 @@ import MovieAddWatchPanel from '~/components/movies/MovieAddWatchPanel.vue'
 import MovieCollectionPanel from '~/components/movies/MovieCollectionPanel.vue'
 import MovieContextPanel from '~/components/movies/MovieContextPanel.vue'
 import MovieEnrichmentPanel from '~/components/movies/MovieEnrichmentPanel.vue'
+import MovieListsPanel from '~/components/movies/MovieListsPanel.vue'
 import MoviePageHero from '~/components/movies/MoviePageHero.vue'
 import MoviePeoplePanel from '~/components/movies/MoviePeoplePanel.vue'
 import MovieWatchTimeline from '~/components/movies/MovieWatchTimeline.vue'

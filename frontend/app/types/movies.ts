@@ -89,6 +89,12 @@ export interface MovieListSummaryDto {
   slug: string
   description: string | null
   itemCount: number
+  previewMovies: Array<{
+    movieId: number
+    title: string
+    slug: string | null
+    coverUrl: string | null
+  }>
 }
 
 export interface MoviePersonCreditDto {
@@ -464,7 +470,14 @@ export interface MoviePageData {
       listId: number
       name: string
       href: string
+      description: string | null
       itemCount: number
+      previewMovies: Array<{
+        id: string
+        title: string
+        href: string | null
+        imageUrl: string | null
+      }>
     }>
   }
   companies: {
