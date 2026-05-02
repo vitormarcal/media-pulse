@@ -40,7 +40,8 @@ class ShowsController(
     fun library(
         @RequestParam(defaultValue = "20") limit: Int,
         @RequestParam(required = false) cursor: String?,
-    ): ShowsLibraryResponse = repository.library(limit, cursor)
+        @RequestParam(defaultValue = "false") unwatched: Boolean,
+    ): ShowsLibraryResponse = repository.library(limit, cursor, unwatched)
 
     @GetMapping("/recent")
     fun recent(

@@ -12,7 +12,7 @@
 
       <nav class="admin-subheader__nav" aria-label="Navegação administrativa de música">
         <NuxtLink class="admin-nav-link" to="/music"> Música </NuxtLink>
-        <NuxtLink class="admin-nav-link" to="/music/library"> Biblioteca </NuxtLink>
+        <NuxtLink class="admin-nav-link" to="/music?view=archive&kind=albums"> Arquivo </NuxtLink>
         <span class="admin-nav-link admin-nav-link--active"> Revisão de duplicatas </span>
       </nav>
     </section>
@@ -28,7 +28,7 @@
       </div>
 
       <div class="review-hero__actions">
-        <NuxtLink class="secondary-link" to="/music/library"> Voltar para a biblioteca </NuxtLink>
+        <NuxtLink class="secondary-link" to="/music?view=archive&kind=albums"> Voltar para o arquivo </NuxtLink>
 
         <label class="toggle-card">
           <input v-model="includeIgnored" type="checkbox" />

@@ -237,25 +237,25 @@ function buildLibraryMetrics(stats: BooksStatsResponse): BookLibraryMetric[] {
       id: 'books',
       label: 'Livros no arquivo',
       value: formatShortNumber(stats.total.booksCount),
-      note: 'o tamanho bruto da estante já incorporada ao arquivo',
+      note: 'tamanho da estante',
     },
     {
       id: 'reads',
       label: 'Registros acumulados',
       value: formatShortNumber(stats.total.readsCount),
-      note: 'toda passagem de leitura já anotada, sem depender do recorte recente',
+      note: 'passagens anotadas',
     },
     {
       id: 'finished',
       label: 'Concluídos acumulados',
       value: formatShortNumber(stats.total.completedCount),
-      note: 'o que realmente fechou ao longo do arquivo inteiro',
+      note: 'fechamentos no arquivo',
     },
     {
       id: 'dormant',
-      label: 'Ainda quietos',
+      label: 'Sem leitura ainda',
       value: formatShortNumber(stats.unreadCount),
-      note: 'o pedaço da biblioteca que já existe, mas ainda não virou leitura',
+      note: 'catálogo ainda intacto',
     },
   ]
 }
@@ -298,27 +298,25 @@ function buildContextMetrics(payload: {
       id: 'reading',
       label: 'Leituras em curso',
       value: formatShortNumber(payload.summary.counts.reading),
-      note: 'o pedaço da estante que ainda está pedindo retorno',
+      note: 'o que segue aberto',
     },
     {
       id: 'finished',
       label: 'Concluídos no recorte',
       value: formatShortNumber(payload.summary.counts.finished),
-      note: 'o que realmente saiu da pilha mental nesse período',
+      note: 'o que saiu da pilha',
     },
     {
       id: 'paused',
       label: 'Pausados agora',
       value: formatShortNumber(payload.summary.counts.paused),
-      note: 'leituras que seguem por perto, mas perderam ritmo por enquanto',
+      note: 'ritmo suspenso',
     },
     {
       id: 'author',
       label: 'Autor mais presente',
       value: topAuthor ? topAuthor.authorName : 'Sem destaque',
-      note: topAuthor
-        ? `${formatShortNumber(topAuthor.finishedCount)} fechamentos no recorte`
-        : 'ainda sem concentração suficiente para destacar alguém',
+      note: topAuthor ? `${formatShortNumber(topAuthor.finishedCount)} fechamentos` : '',
     },
   ]
 }
@@ -351,9 +349,8 @@ export function buildBookCollectionData(payload: {
     context: {
       eyebrow: 'Recorte do mês',
       title: 'O tamanho dessa mesa de leitura',
-      description:
-        'Não para resumir a estante inteira, só para situar o volume e lembrar o que ainda continua em volta.',
-      summary: `${formatShortNumber(payload.summary.counts.reading)} leituras em curso e ${formatShortNumber(payload.summary.counts.finished)} livros concluídos formam o recorte recente.`,
+      description: 'Um recorte rápido do que ainda está aberto e do que acabou de fechar.',
+      summary: '',
       metrics: buildContextMetrics(payload),
     },
   }
@@ -383,13 +380,12 @@ export function buildBookLibraryPageData(payload: {
 
     return {
       hero: {
-        title: `A biblioteca de livros em ${payload.selectedYear}`,
-        intro:
-          'Um corte anual da estante para ver o que realmente andou, fechou, pausou ou apenas entrou na pilha durante esse período.',
+        title: `Livros em ${payload.selectedYear}`,
+        intro: 'Um recorte anual da estante para ver o que andou, fechou ou ficou em suspenso.',
         backLink: '/books',
         backLabel: 'Voltar ao recorte',
-        accentLink: '/books/library',
-        accentLabel: 'Ver biblioteca inteira',
+        accentLink: '/books?view=archive',
+        accentLabel: 'Ver arquivo inteiro',
         spotlight: buildSpotlightFromCard(
           currentItems[0] ?? finishedItems[0] ?? pausedItems[0] ?? wantItems[0] ?? dnfItems[0],
           `A biblioteca de livros em ${payload.selectedYear}`,
@@ -404,26 +400,26 @@ export function buildBookLibraryPageData(payload: {
       context: {
         eyebrow: 'Ano',
         title: `O que ${payload.selectedYear} concentrou`,
-        description: 'Uma leitura do ano como memória de estante, não como relatório frio.',
-        summary: `${formatShortNumber(payload.yearResults.stats.finishedCount)} concluídos e ${formatShortNumber(payload.yearResults.stats.currentlyReadingCount)} leituras em curso apareceram nesse recorte.`,
+        description: 'O ano lido como memória de estante.',
+        summary: '',
         metrics: [
           {
             id: 'year-finished',
             label: 'Concluídos no ano',
             value: formatShortNumber(payload.yearResults.stats.finishedCount),
-            note: 'o que de fato saiu da pilha naquele período',
+            note: 'saíram da pilha',
           },
           {
             id: 'year-reading',
             label: 'Em leitura no ano',
             value: formatShortNumber(payload.yearResults.stats.currentlyReadingCount),
-            note: 'livros que passaram pelo ano sem necessariamente fechar',
+            note: 'seguiram abertos',
           },
           {
             id: 'year-paused',
             label: 'Pausados no ano',
             value: formatShortNumber(payload.yearResults.stats.pausedCount),
-            note: 'leituras que perderam ritmo naquele recorte',
+            note: 'perderam ritmo',
           },
           {
             id: 'year-pages',
@@ -432,7 +428,7 @@ export function buildBookLibraryPageData(payload: {
               payload.yearResults.stats.pagesFinished != null
                 ? formatShortNumber(payload.yearResults.stats.pagesFinished)
                 : 'Sem total',
-            note: 'uma medida bruta do volume concluído quando as edições permitiram contar',
+            note: 'volume bruto',
           },
         ],
       },
@@ -441,8 +437,8 @@ export function buildBookLibraryPageData(payload: {
           id: 'year-current',
           eyebrow: 'Em curso',
           title: 'Os que seguiram abertos nesse ano',
-          description: 'Leituras que permaneceram na mesa em algum ponto do recorte.',
-          summary: 'Mais permanência do que fechamento.',
+          description: '',
+          summary: '',
           items: currentItems,
           emptyMessage: 'Nenhuma leitura em curso apareceu nesse ano.',
         },
@@ -450,8 +446,8 @@ export function buildBookLibraryPageData(payload: {
           id: 'year-finished',
           eyebrow: 'Concluídos',
           title: 'Os que realmente fecharam no período',
-          description: 'O miolo do recorte anual quando a pergunta é o que saiu da pilha.',
-          summary: 'Fechamento antes de catálogo.',
+          description: '',
+          summary: '',
           items: finishedItems,
           emptyMessage: 'Nenhum livro foi concluído nesse ano.',
         },
@@ -459,8 +455,8 @@ export function buildBookLibraryPageData(payload: {
           id: 'year-paused',
           eyebrow: 'Pausados e interrompidos',
           title: 'O que perdeu ritmo no caminho',
-          description: 'Leituras que ficaram em suspenso ou foram abandonadas nesse recorte.',
-          summary: 'Ausência também conta a história do ano.',
+          description: '',
+          summary: '',
           items: [...pausedItems, ...dnfItems],
           emptyMessage: 'Nada ficou em suspenso nesse ano.',
         },
@@ -468,8 +464,8 @@ export function buildBookLibraryPageData(payload: {
           id: 'year-want',
           eyebrow: 'Entrou na pilha',
           title: 'O que apareceu como intenção de leitura',
-          description: 'Livros que passaram a existir na estante mental mesmo sem terem sido abertos.',
-          summary: 'Catálogo e desejo também entram no retrato anual.',
+          description: '',
+          summary: '',
           items: wantItems,
           emptyMessage: 'Nenhum título entrou na pilha nesse ano.',
         },
@@ -484,12 +480,11 @@ export function buildBookLibraryPageData(payload: {
 
     return {
       hero: {
-        title: 'A biblioteca de livros, puxada pela busca',
-        intro:
-          'Quando você já sabe o que está tentando reencontrar, a página vira arquivo de consulta sem perder a mesma superfície editorial.',
+        title: 'Busca de livros',
+        intro: 'Quando você já sabe o que quer reencontrar, a página vira arquivo de consulta.',
         backLink: '/books',
         backLabel: 'Voltar ao recorte',
-        accentLink: '/books/library',
+        accentLink: '/books?view=archive',
         accentLabel: 'Limpar busca',
         spotlight: buildSpotlightFromCard(
           searchItems[0],
@@ -504,9 +499,9 @@ export function buildBookLibraryPageData(payload: {
       },
       context: {
         eyebrow: 'Busca',
-        title: 'A estante inteira, afunilada pelo título',
-        description: 'Sem esconder o resto da biblioteca; só aproximando o que você quer achar agora.',
-        summary: `${formatShortNumber(payload.searchResults.books.length)} livros encontrados para "${payload.query}".`,
+        title: 'A estante afunilada pelo título',
+        description: `${formatShortNumber(payload.searchResults.books.length)} livros encontrados para "${payload.query}".`,
+        summary: '',
         metrics: buildLibraryMetrics(payload.stats),
       },
       sections: [
@@ -514,8 +509,8 @@ export function buildBookLibraryPageData(payload: {
           id: 'search-results',
           eyebrow: 'Resultados',
           title: 'O que respondeu à busca',
-          description: 'Uma prateleira curta para ir direto ao que interessa.',
-          summary: 'Busca primeiro, contexto depois.',
+          description: '',
+          summary: '',
           items: searchItems,
           emptyMessage: 'Nada apareceu para essa busca.',
         },
@@ -531,12 +526,11 @@ export function buildBookLibraryPageData(payload: {
 
   return {
     hero: {
-      title: 'A biblioteca inteira de livros',
-      intro:
-        'O arquivo completo para quando a mesa do momento já não basta e você quer atravessar a estante inteira com mais calma.',
+      title: 'Todos os livros',
+      intro: 'O arquivo completo para atravessar a estante inteira com mais calma.',
       backLink: '/books',
       backLabel: 'Voltar ao recorte',
-      accentLink: `/books/library?year=${featuredYear}`,
+      accentLink: `/books?year=${featuredYear}`,
       accentLabel: 'Abrir um recorte por ano',
       spotlight: buildSpotlightFromCard(
         activeItems[0] ?? dormantItems[0],
@@ -551,29 +545,20 @@ export function buildBookLibraryPageData(payload: {
     },
     context: {
       eyebrow: 'Arquivo',
-      title: 'A estante inteira vista pelo estado atual',
-      description: 'Uma visão larga da biblioteca, agora ancorada no arquivo inteiro e não só no recorte recente.',
-      summary: `${formatShortNumber(payload.stats.total.booksCount)} livros no arquivo, ${formatShortNumber(payload.stats.total.readsCount)} registros acumulados e ${formatShortNumber(payload.stats.unreadCount)} ainda esperando a primeira leitura.`,
+      title: 'A estante inteira em uso agora',
+      description: `${formatShortNumber(payload.stats.total.booksCount)} livros no arquivo e ${formatShortNumber(payload.stats.total.readsCount)} registros acumulados.`,
+      summary: '',
       metrics: buildLibraryMetrics(payload.stats),
     },
     sections: [
       {
-        id: 'active-library',
-        eyebrow: 'Com rastro',
-        title: 'Os livros que já deixaram marca',
-        description: 'Os que já têm algum histórico e por isso funcionam melhor como entrada para a estante.',
-        summary: 'É o arquivo inteiro, mas começando pelos que já têm memória associada.',
-        items: activeItems,
-        emptyMessage: 'Ainda não há livros com atividade registrada.',
-      },
-      {
-        id: 'dormant-library',
-        eyebrow: 'Ainda quietos',
-        title: 'O que ainda espera a primeira leitura',
-        description: 'Parte da biblioteca que já existe no arquivo, mas ainda não virou passagem de leitura.',
-        summary: 'Mais catálogo do que hábito, por enquanto.',
-        items: dormantItems,
-        emptyMessage: 'Nada ficou sem leitura na biblioteca atual.',
+        id: 'library-catalog',
+        eyebrow: 'Arquivo',
+        title: 'Toda a estante',
+        description: '',
+        summary: '',
+        items: [...activeItems, ...dormantItems],
+        emptyMessage: 'Ainda não há livros no arquivo.',
       },
     ],
     libraryCursor: payload.library.nextCursor,

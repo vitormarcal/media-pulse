@@ -8,10 +8,8 @@ class SpaForwardController {
     @GetMapping(
         "/",
         "/music",
-        "/music/library",
         "/music/artists/{id}",
         "/shows",
-        "/shows/library",
         "/shows/{slug}",
         "/shows/{slug}/seasons/{seasonNumber}",
         "/movies",
@@ -24,7 +22,6 @@ class SpaForwardController {
         "/movies/companies/{slug}",
         "/movies/terms/{kind}/{slug}",
         "/books",
-        "/books/library",
         "/books/authors/{id}",
         "/books/{slug}",
         "/music/albums/{id}",

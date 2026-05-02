@@ -2,9 +2,22 @@
 @baseUrl = {{host}}/api/books
 @bookId = 9
 @bookSlug = 9_book
+@authorId = 1
 @year = 2026
 @start = 2026-01-01T00:00:00Z
 @end = 2026-12-31T23:59:59Z
+
+### Biblioteca de livros
+GET {{baseUrl}}/library?limit=24
+Accept: application/json
+
+### Biblioteca de livros (pagina seguinte)
+GET {{baseUrl}}/library?limit=24&cursor=id:123
+Accept: application/json
+
+### Stats globais
+GET {{baseUrl}}/stats
+Accept: application/json
 
 ### Leituras do ano (UTC)
 GET {{baseUrl}}/year/{{year}}
@@ -16,6 +29,10 @@ Accept: application/json
 
 ### Detalhes do livro por slug
 GET {{baseUrl}}/slug/{{bookSlug}}
+Accept: application/json
+
+### Detalhes do autor
+GET {{baseUrl}}/authors/{{authorId}}
 Accept: application/json
 
 ### Lista de leituras (paginado)

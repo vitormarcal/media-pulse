@@ -422,6 +422,7 @@ export interface ShowLibraryPageData {
   filters: {
     query: string
     selectedYear: number | null
+    selectedUnwatched: boolean
     years: ShowLibraryYearChip[]
   }
   context: {

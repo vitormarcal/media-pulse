@@ -6,7 +6,7 @@
       <article v-for="metric in metrics" :key="metric.id" class="metric-card">
         <p class="metric-label">{{ metric.label }}</p>
         <div class="metric-value">{{ metric.value }}</div>
-        <p class="metric-note">{{ metric.note }}</p>
+        <p v-if="metric.note" class="metric-note">{{ metric.note }}</p>
       </article>
     </div>
   </section>

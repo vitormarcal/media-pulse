@@ -219,7 +219,7 @@ async function createCatalogEntry(body: {
     feedback.value = response.createdShow
       ? `Série adicionada com ${response.episodesImported} episódio(s).`
       : 'Série existente reaproveitada e consolidada.'
-    await router.push(response.slug ? `/shows/${response.slug}` : `/shows/library?q=${encodeURIComponent(body.title)}`)
+    await router.push(response.slug ? `/shows/${response.slug}` : `/shows?q=${encodeURIComponent(body.title)}`)
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'Não foi possível adicionar a série agora.'
     feedbackError.value = true

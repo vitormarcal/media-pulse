@@ -37,20 +37,32 @@ class TvShowQueryRepository(
     fun library(
         limit: Int,
         cursor: String?,
+        unwatched: Boolean,
     ): ShowsLibraryResponse {
         val resolvedLimit = limit.coerceAtLeast(1)
         val (cursorWatchedAt, cursorShowId) = parseRecentCursor(cursor)
+        val filters =
+            buildList {
+                if (unwatched) {
+                    add("watched_episodes_count = 0")
+                }
+                if (cursorWatchedAt != null && cursorShowId != null) {
+                    add(
+                        """
+                        (
+                          COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') < :cursorWatchedAt
+                          OR (
+                            COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') = :cursorWatchedAt
+                            AND show_id < :cursorShowId
+                          )
+                        )
+                        """.trimIndent(),
+                    )
+                }
+            }
         val whereClause =
-            if (cursorWatchedAt != null && cursorShowId != null) {
-                """
-                WHERE (
-                  COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') < :cursorWatchedAt
-                  OR (
-                    COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') = :cursorWatchedAt
-                    AND show_id < :cursorShowId
-                  )
-                )
-                """.trimIndent()
+            if (filters.isNotEmpty()) {
+                "WHERE " + filters.joinToString("\nAND ")
             } else {
                 ""
             }

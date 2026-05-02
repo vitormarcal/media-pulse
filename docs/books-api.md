@@ -30,6 +30,9 @@ As leituras são armazenadas como sessões consolidadas, não como eventos bruto
 
 Lista a biblioteca de livros em ordem paginada, com `nextCursor` retornado pela API.
 
+- este endpoint alimenta o arquivo principal em `/books?view=archive`
+- busca em `/books?q=...` e recorte anual em `/books?year=...` continuam combinando `library`, `search`, `stats` e `year`
+
 ### `/api/books/stats`
 
 Retorna agregados do arquivo inteiro para uso de biblioteca e navegação anual.

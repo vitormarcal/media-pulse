@@ -1,7 +1,7 @@
 <template>
   <section class="library-filters">
     <form class="search-form" @submit.prevent="submitSearch">
-      <label class="search-label" for="books-library-query">Buscar na biblioteca</label>
+      <label class="search-label" for="books-library-query">Buscar livros</label>
       <div class="search-row">
         <input
           id="books-library-query"
@@ -15,7 +15,7 @@
     </form>
 
     <div class="years">
-      <NuxtLink class="year-chip" :class="{ active: selectedYear == null && !query }" to="/books/library">
+      <NuxtLink class="year-chip" :class="{ active: selectedYear == null && !query }" to="/books?view=archive">
         <span>Tudo</span>
         <strong>arquivo</strong>
       </NuxtLink>
@@ -25,7 +25,7 @@
         :key="year.year"
         class="year-chip"
         :class="{ active: selectedYear === year.year }"
-        :to="`/books/library?year=${year.year}`"
+        :to="`/books?year=${year.year}`"
       >
         <span>{{ year.label }}</span>
         <strong>{{ year.detail }}</strong>
@@ -56,11 +56,11 @@ function submitSearch() {
   const trimmed = localQuery.value.trim()
 
   if (!trimmed) {
-    navigateTo('/books/library')
+    navigateTo('/books?view=archive')
     return
   }
 
-  navigateTo(`/books/library?q=${encodeURIComponent(trimmed)}`)
+  navigateTo(`/books?view=archive&q=${encodeURIComponent(trimmed)}`)
 }
 </script>
 

@@ -2,8 +2,8 @@
   <div class="section-heading">
     <p class="eyebrow">{{ eyebrow }}</p>
     <h2>{{ title }}</h2>
-    <p class="description">{{ description }}</p>
-    <p class="summary">{{ summary }}</p>
+    <p v-if="description" class="description">{{ description }}</p>
+    <p v-if="summary" class="summary">{{ summary }}</p>
   </div>
 </template>
 

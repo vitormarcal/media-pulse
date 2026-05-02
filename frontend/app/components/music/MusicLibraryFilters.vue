@@ -1,7 +1,7 @@
 <template>
   <section class="library-filters">
     <form class="search-form" @submit.prevent="submitSearch">
-      <label class="search-label" for="music-library-query">Buscar na biblioteca</label>
+      <label class="search-label" for="music-library-query">Buscar música</label>
       <div class="search-row">
         <input
           id="music-library-query"
@@ -18,7 +18,11 @@
       <p class="group-label">Recortes anuais</p>
 
       <div class="years">
-        <NuxtLink class="year-chip" :class="{ active: selectedYear == null && !query }" to="/music/library?kind=albums">
+        <NuxtLink
+          class="year-chip"
+          :class="{ active: selectedYear == null && !query }"
+          to="/music?view=archive&kind=albums"
+        >
           <span>Tudo</span>
           <strong>arquivo</strong>
         </NuxtLink>
@@ -28,7 +32,7 @@
           :key="year.year"
           class="year-chip"
           :class="{ active: selectedYear === year.year }"
-          :to="`/music/library?year=${year.year}`"
+          :to="`/music?year=${year.year}`"
         >
           <span>{{ year.label }}</span>
           <strong>{{ year.detail }}</strong>
@@ -77,23 +81,23 @@ watch(
 
 function tabLink(kind: MusicLibraryKind) {
   if (props.selectedYear) {
-    return `/music/library?year=${props.selectedYear}&kind=${kind}`
+    return `/music?year=${props.selectedYear}&kind=${kind}`
   }
 
   return props.query
-    ? `/music/library?kind=${kind}&q=${encodeURIComponent(props.query)}`
-    : `/music/library?kind=${kind}`
+    ? `/music?view=archive&kind=${kind}&q=${encodeURIComponent(props.query)}`
+    : `/music?view=archive&kind=${kind}`
 }
 
 function submitSearch() {
   const trimmed = localQuery.value.trim()
 
   if (!trimmed) {
-    navigateTo(`/music/library?kind=${props.selectedKind}`)
+    navigateTo(`/music?view=archive&kind=${props.selectedKind}`)
     return
   }
 
-  navigateTo(`/music/library?kind=${props.selectedKind}&q=${encodeURIComponent(trimmed)}`)
+  navigateTo(`/music?view=archive&kind=${props.selectedKind}&q=${encodeURIComponent(trimmed)}`)
 }
 </script>
 

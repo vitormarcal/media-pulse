@@ -438,6 +438,7 @@ export function buildShowLibraryPageData(payload: {
   library: ShowsLibraryResponse
   query: string
   selectedYear: number | null
+  selectedUnwatched: boolean
   searchResults: ShowsSearchResponse | null
   yearResults: ShowsByYearResponse | null
 }): ShowLibraryPageData {
@@ -457,28 +458,28 @@ export function buildShowLibraryPageData(payload: {
 
     return {
       hero: {
-        title: `A biblioteca de séries em ${payload.selectedYear}`,
-        intro:
-          'Um corte do arquivo completo para ver o que realmente passou por esse ano e o que ficou apenas no catálogo.',
+        title: `As séries em ${payload.selectedYear}`,
+        intro: 'Um corte anual para ver o que realmente passou por esse ano e o que ficou fora dele.',
         backLink: '/shows',
         backLabel: 'Voltar ao recorte',
-        accentLink: '/shows/library',
-        accentLabel: 'Ver biblioteca inteira',
+        accentLink: '/shows',
+        accentLabel: 'Ver todas as séries',
         spotlight: buildSpotlightFromCard(
           watchedItems[0] ?? unwatchedItems[0],
-          `A biblioteca de séries em ${payload.selectedYear}`,
+          `As séries em ${payload.selectedYear}`,
           'O primeiro ponto de entrada para esse recorte anual.',
         ),
       },
       filters: {
         query: payload.query,
         selectedYear: payload.selectedYear,
+        selectedUnwatched: false,
         years,
       },
       context: {
         eyebrow: 'Ano',
         title: `O que ${payload.selectedYear} concentrou`,
-        description: 'Uma leitura do ano como memória de consumo, não como relatório.',
+        description: '',
         summary: `${formatShortNumber(payload.yearResults.stats.uniqueShowsCount)} séries e ${formatShortNumber(payload.yearResults.stats.watchesCount)} registros apareceram neste recorte.`,
         metrics: [
           {
@@ -512,8 +513,8 @@ export function buildShowLibraryPageData(payload: {
           id: 'watched',
           eyebrow: 'Vistas',
           title: 'As que realmente passaram pelo ano',
-          description: 'O miolo do recorte anual, em vez de uma lista seca.',
-          summary: 'Aqui vale mais a lembrança de presença do que a ideia de completude.',
+          description: '',
+          summary: '',
           items: watchedItems,
           emptyMessage: 'Nenhuma série foi marcada nesse ano.',
         },
@@ -521,8 +522,8 @@ export function buildShowLibraryPageData(payload: {
           id: 'unwatched',
           eyebrow: 'Fora da rotação',
           title: 'O que ficou de fora nesse período',
-          description: 'Ainda parte da biblioteca, mas sem ter entrado no ritmo do ano.',
-          summary: 'Esse bloco serve para situar ausência, não para cobrar retomada.',
+          description: '',
+          summary: '',
           items: unwatchedItems,
           emptyMessage: 'Tudo entrou no recorte desse ano.',
         },
@@ -533,16 +534,19 @@ export function buildShowLibraryPageData(payload: {
   }
 
   if (payload.query && payload.searchResults) {
-    const searchItems = payload.searchResults.shows.map(buildSearchCardModel)
+    const searchItems = payload.searchResults.shows
+      .filter((show) => !payload.selectedUnwatched || !show.watchedAt)
+      .map(buildSearchCardModel)
 
     return {
       hero: {
-        title: 'A biblioteca de séries, puxada pela busca',
-        intro:
-          'Quando você já sabe o que está tentando reencontrar, a página vira arquivo de consulta sem perder a mesma superfície editorial.',
+        title: payload.selectedUnwatched ? 'Séries não vistas pela busca' : 'Séries encontradas pela busca',
+        intro: payload.selectedUnwatched
+          ? 'A busca agora mostra só o que já está no catálogo, mas ainda não teve episódios vistos.'
+          : 'Quando você já sabe o nome, a página encurta o caminho e puxa o recorte certo.',
         backLink: '/shows',
         backLabel: 'Voltar ao recorte',
-        accentLink: '/shows/library',
+        accentLink: '/shows',
         accentLabel: 'Limpar busca',
         spotlight: buildSpotlightFromCard(
           searchItems[0],
@@ -553,22 +557,25 @@ export function buildShowLibraryPageData(payload: {
       filters: {
         query: payload.query,
         selectedYear: payload.selectedYear,
+        selectedUnwatched: payload.selectedUnwatched,
         years,
       },
       context: {
-        eyebrow: 'Busca',
-        title: 'O arquivo inteiro, afunilado pelo nome',
-        description: 'Sem esconder o resto da biblioteca; só aproximando o que você quer achar agora.',
-        summary: `${formatShortNumber(payload.searchResults.shows.length)} séries encontradas para "${payload.query}".`,
+        eyebrow: payload.selectedUnwatched ? 'Busca + não vistas' : 'Busca',
+        title: payload.selectedUnwatched
+          ? 'As séries sem episódios vistos que responderam à busca'
+          : 'O arquivo inteiro, afunilado pelo nome',
+        description: '',
+        summary: `${formatShortNumber(searchItems.length)} séries encontradas para "${payload.query}".`,
         metrics: buildStatsMetrics(payload.stats),
       },
       sections: [
         {
           id: 'search-results',
           eyebrow: 'Resultados',
-          title: 'O que respondeu à busca',
-          description: 'Uma prateleira curta para ir direto ao que interessa.',
-          summary: 'Busca primeiro, contexto depois.',
+          title: payload.selectedUnwatched ? 'As não vistas que responderam à busca' : 'O que respondeu à busca',
+          description: '',
+          summary: '',
           items: searchItems,
           emptyMessage: 'Nada apareceu para essa busca.',
         },
@@ -584,49 +591,48 @@ export function buildShowLibraryPageData(payload: {
 
   return {
     hero: {
-      title: 'A biblioteca inteira de séries',
-      intro:
-        'O arquivo completo para quando a memória curta já não basta e você quer percorrer o acervo todo com mais calma.',
+      title: payload.selectedUnwatched ? 'Séries ainda não vistas' : 'Todas as séries',
+      intro: payload.selectedUnwatched
+        ? 'Um corte do catálogo para ver só o que já entrou no arquivo, mas ainda não teve episódios vistos.'
+        : 'O arquivo completo para quando você quer atravessar o acervo inteiro de uma vez.',
       backLink: '/shows',
       backLabel: 'Voltar ao recorte',
-      accentLink: '/shows/library?year=' + (years[0]?.year ?? new Date().getFullYear()),
-      accentLabel: 'Abrir um recorte por ano',
+      accentLink: payload.selectedUnwatched ? '/shows' : '/shows?year=' + (years[0]?.year ?? new Date().getFullYear()),
+      accentLabel: payload.selectedUnwatched ? 'Ver todas as séries' : 'Abrir um recorte por ano',
       spotlight: buildSpotlightFromCard(
         activeItems[0] ?? dormantItems[0],
-        'A biblioteca inteira de séries',
+        payload.selectedUnwatched ? 'Séries ainda não vistas' : 'Todas as séries',
         'Um ponto de entrada imagético para atravessar o arquivo.',
       ),
     },
     filters: {
       query: payload.query,
       selectedYear: payload.selectedYear,
+      selectedUnwatched: payload.selectedUnwatched,
       years,
     },
     context: {
-      eyebrow: 'Arquivo',
-      title: 'O tamanho do catálogo e do hábito',
-      description: 'Uma visão larga do que já entrou nessa biblioteca, ainda sem perder a leitura pessoal do conjunto.',
-      summary: `${formatShortNumber(payload.stats.total.uniqueShowsCount)} séries no arquivo e ${formatShortNumber(payload.stats.total.watchesCount)} registros acumulados até aqui.`,
+      eyebrow: payload.selectedUnwatched ? 'Não vistas' : 'Arquivo',
+      title: payload.selectedUnwatched ? 'O que ainda não teve episódios vistos' : 'O tamanho do catálogo e do hábito',
+      description: '',
+      summary: payload.selectedUnwatched
+        ? `${formatShortNumber(dormantItems.length)} séries já estão no catálogo sem episódios vistos ainda.`
+        : `${formatShortNumber(payload.stats.total.uniqueShowsCount)} séries no arquivo e ${formatShortNumber(payload.stats.total.watchesCount)} registros acumulados até aqui.`,
       metrics: buildStatsMetrics(payload.stats),
     },
     sections: [
       {
-        id: 'active-library',
-        eyebrow: 'Com rastro',
-        title: 'As séries que já deixaram marca',
-        description: 'As que já têm algum ponto de contato e por isso funcionam melhor como entrada para o catálogo.',
-        summary: 'É o arquivo inteiro, mas começando pelas que já têm memória associada.',
-        items: activeItems,
-        emptyMessage: 'Nenhuma série com watch consolidado apareceu nesta faixa.',
-      },
-      {
-        id: 'dormant-library',
-        eyebrow: 'Mais silenciosas',
-        title: 'O que ainda existe mais como estante',
-        description: 'Parte do catálogo que ainda não ganhou vida no histórico.',
-        summary: 'Isso continua sendo útil como mapa do que está disponível, não como pendência.',
-        items: dormantItems,
-        emptyMessage: 'Nenhuma série silenciosa nesta página.',
+        id: 'library-catalog',
+        eyebrow: payload.selectedUnwatched ? 'Não vistas' : 'Arquivo',
+        title: payload.selectedUnwatched
+          ? 'As séries que ainda esperam o primeiro episódio visto'
+          : 'A parede completa do catálogo',
+        description: '',
+        summary: '',
+        items: payload.selectedUnwatched ? dormantItems : [...activeItems, ...dormantItems],
+        emptyMessage: payload.selectedUnwatched
+          ? 'Nada ficou sem episódios vistos no catálogo atual.'
+          : 'Ainda não há séries no catálogo.',
       },
     ],
     libraryCursor: payload.library.nextCursor,

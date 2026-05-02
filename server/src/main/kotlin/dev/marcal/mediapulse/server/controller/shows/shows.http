@@ -1,9 +1,18 @@
 ### Variables
 @baseUrl = {{host}}/api/shows
 @showId = 1
+@seasonNumber = 1
 @year = 2026
 @start = 2026-01-01T00:00:00Z
 @end = 2026-12-31T23:59:59Z
+
+### Biblioteca de series
+GET {{baseUrl}}/library?limit=20
+Accept: application/json
+
+### Biblioteca de series nao vistas
+GET {{baseUrl}}/library?limit=20&unwatched=true
+Accept: application/json
 
 ### Series recentes
 GET {{baseUrl}}/recent?limit=20
@@ -19,6 +28,10 @@ Accept: application/json
 
 ### Detalhes da serie por slug
 GET {{baseUrl}}/slug/severance
+Accept: application/json
+
+### Detalhes da temporada por slug
+GET {{baseUrl}}/slug/severance/seasons/{{seasonNumber}}
 Accept: application/json
 
 ### Busca de series
@@ -61,6 +74,29 @@ Accept: application/json
 GET {{baseUrl}}/year/{{year}}?limitWatched=200&limitUnwatched=200
 Accept: application/json
 
+### Preview de enriquecimento de temporada
+POST {{baseUrl}}/{{showId}}/seasons/{{seasonNumber}}/enrichment/preview
+Content-Type: application/json
+Accept: application/json
+
+{
+  "tmdbId": "95396"
+}
+
+### Aplicar enriquecimento de temporada
+POST {{baseUrl}}/{{showId}}/seasons/{{seasonNumber}}/enrichment/apply
+Content-Type: application/json
+Accept: application/json
+
+{
+  "tmdbId": "95396",
+  "mode": "MISSING",
+  "seasonFields": [
+    "SEASON_TITLE"
+  ],
+  "episodeFields": []
+}
+
 ### Registrar watch manual (item unico)
 POST {{baseUrl}}/watches
 Content-Type: application/json
@@ -75,4 +111,17 @@ Accept: application/json
   "episodeNumber": 1,
   "tmdbId": "95396",
   "tvdbId": "371980"
+}
+
+### Registrar watch manual em serie existente
+POST {{baseUrl}}/{{showId}}/watches
+Content-Type: application/json
+Accept: application/json
+
+{
+  "watchedAt": "2026-03-01T10:00:00Z",
+  "episodeTitle": "Good News About Hell",
+  "seasonNumber": 1,
+  "episodeNumber": 1,
+  "originallyAvailableAt": "2022-02-18"
 }

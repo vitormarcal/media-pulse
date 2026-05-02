@@ -2,6 +2,12 @@
 
 A Music API expõe exploração read-only da biblioteca, escuta recente, rankings, cobertura e páginas de detalhe.
 
+No frontend atual, `/music` concentra tanto o recorte editorial quanto o arquivo completo:
+
+- `/music` mantém a capa editorial recente
+- `/music?view=archive&kind=albums|artists|tracks` abre o arquivo principal
+- `/music?q=...&kind=...` e `/music?year=...` reutilizam os mesmos endpoints read-only abaixo
+
 ## Endpoints
 
 | Path | Params | Retorna |
@@ -17,6 +23,10 @@ A Music API expõe exploração read-only da biblioteca, escuta recente, ranking
 | `GET /api/music/albums/{albumId}` | `albumId` | `AlbumPageResponse` |
 | `GET /api/music/artists/{artistId}` | `artistId` | `ArtistPageResponse` |
 | `GET /api/music/tracks/{trackId}` | `trackId` | `TrackPageResponse` |
+| `GET /api/music/admin/track-duplicates` | `limit=20`, `cursor?`, `includeIgnored=false`, `artist?`, `album?` | `DuplicateTrackReviewPageResponse` |
+| `POST /api/music/admin/track-duplicates/ignore` | body com `albumId`, `groupKey`, `ignored=true` | vazio |
+| `POST /api/music/admin/track-duplicates/merge` | body com `albumId`, `groupKey`, `targetTrackId`, `sourceTrackIds[]` | `DuplicateTrackMergeResponse` |
+| `POST /api/music/admin/track-duplicates/merge-batch` | body com `merges[]` | `DuplicateTrackBatchMergeResponse` |
 | `GET /api/music/tops/artists` | `start`, `end`, `limit=20` | lista de artistas |
 | `GET /api/music/tops/albums` | `start`, `end`, `limit=20` | lista de álbuns |
 | `GET /api/music/tops/tracks` | `start`, `end`, `limit=20` | lista de faixas |
@@ -37,6 +47,7 @@ Os endpoints abaixo usam paginação por cursor retornado no payload:
 - `GET /api/music/library/artists`
 - `GET /api/music/library/albums`
 - `GET /api/music/library/tracks`
+- `GET /api/music/admin/track-duplicates`
 
 ## Range temporal
 

@@ -12,7 +12,7 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 
 | Path | Params | Retorna |
 | --- | --- | --- |
-| `GET /api/shows/library` | `limit=20`, `cursor?` | `ShowsLibraryResponse` |
+| `GET /api/shows/library` | `limit=20`, `cursor?`, `unwatched=false` | `ShowsLibraryResponse` |
 | `GET /api/shows/recent` | `limit=20`, `cursor?` | `ShowsRecentResponse` |
 | `GET /api/shows/currently-watching` | `limit=20`, `activeWithinDays=90` | lista de `CurrentlyWatchingShowDto` |
 | `GET /api/shows/{showId}` | `showId` | `ShowDetailsResponse` |
@@ -32,6 +32,7 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 ## Paginação e limites
 
 - `library` e `recent` são paginados por cursor retornado no payload
+- `library?unwatched=true` retorna apenas séries sem nenhum episódio assistido
 - `currently-watching` exige `limit >= 1` e `activeWithinDays >= 1`
 - `limitWatched` e `limitUnwatched` são truncados para no máximo `1000`
 

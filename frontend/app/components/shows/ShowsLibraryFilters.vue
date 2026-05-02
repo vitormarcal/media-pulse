@@ -1,7 +1,7 @@
 <template>
   <section class="library-filters">
     <form class="search-form" @submit.prevent="submitSearch">
-      <label class="search-label" for="shows-library-query">Buscar na biblioteca</label>
+      <label class="search-label" for="shows-library-query">Buscar séries</label>
       <div class="search-row">
         <input
           id="shows-library-query"
@@ -15,8 +15,17 @@
     </form>
 
     <div class="years">
-      <NuxtLink class="year-chip" :class="{ active: selectedYear == null && !query }" to="/shows/library">
+      <NuxtLink class="year-chip" :class="{ active: selectedYear == null && !query && !selectedUnwatched }" to="/shows">
         Tudo
+      </NuxtLink>
+
+      <NuxtLink
+        class="year-chip"
+        :class="{ active: selectedUnwatched }"
+        :to="query ? `/shows?q=${encodeURIComponent(query)}&unwatched=1` : '/shows?unwatched=1'"
+      >
+        <span>Não vistas</span>
+        <strong>sem episódios vistos</strong>
       </NuxtLink>
 
       <NuxtLink
@@ -24,7 +33,7 @@
         :key="year.year"
         class="year-chip"
         :class="{ active: selectedYear === year.year }"
-        :to="`/shows/library?year=${year.year}`"
+        :to="query ? `/shows?q=${encodeURIComponent(query)}&year=${year.year}` : `/shows?year=${year.year}`"
       >
         <span>{{ year.label }}</span>
         <strong>{{ year.watches }}</strong>
@@ -39,6 +48,7 @@ import type { ShowLibraryYearChip } from '~/types/shows'
 const props = defineProps<{
   query: string
   selectedYear: number | null
+  selectedUnwatched: boolean
   years: ShowLibraryYearChip[]
 }>()
 
@@ -53,13 +63,14 @@ watch(
 
 function submitSearch() {
   const trimmed = localQuery.value.trim()
+  const suffix = props.selectedUnwatched ? '&unwatched=1' : ''
 
   if (!trimmed) {
-    navigateTo('/shows/library')
+    navigateTo(props.selectedUnwatched ? '/shows?unwatched=1' : '/shows')
     return
   }
 
-  navigateTo(`/shows/library?q=${encodeURIComponent(trimmed)}`)
+  navigateTo(`/shows?q=${encodeURIComponent(trimmed)}${suffix}`)
 }
 </script>
 

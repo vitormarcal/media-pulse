@@ -161,6 +161,10 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `GET /api/music/genres/recent`
 - `GET /api/music/genres/underplayed`
 - `GET /api/music/genres/top-by-source`
+- `GET /api/music/admin/track-duplicates`
+- `POST /api/music/admin/track-duplicates/ignore`
+- `POST /api/music/admin/track-duplicates/merge`
+- `POST /api/music/admin/track-duplicates/merge-batch`
 
 ### Movies
 
@@ -189,13 +193,17 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `GET /api/shows/currently-watching`
 - `GET /api/shows/{showId}`
 - `GET /api/shows/slug/{slug}`
+- `GET /api/shows/slug/{slug}/seasons/{seasonNumber}`
 - `GET /api/shows/search`
 - `GET /api/shows/summary`
 - `GET /api/shows/stats`
 - `GET /api/shows/year/{year}`
 - `GET /api/shows/catalog/suggestions`
 - `POST /api/shows/catalog`
+- `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview`
+- `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/apply`
 - `POST /api/shows/watches`
+- `POST /api/shows/{showId}/watches`
 
 ## Endpoints operacionais
 

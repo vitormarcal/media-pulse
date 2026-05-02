@@ -5,7 +5,7 @@
         {{ backLabel }}
       </NuxtLink>
 
-      <p class="eyebrow">Biblioteca de música</p>
+      <p class="eyebrow">Música</p>
       <h1>{{ title }}</h1>
       <p class="intro">{{ intro }}</p>
 
@@ -28,7 +28,7 @@
         </div>
 
         <div class="spotlight-body">
-          <p class="spotlight-kicker">Entrada de arquivo</p>
+          <p class="spotlight-kicker">Entrada do recorte</p>
           <h2>{{ spotlight?.title || title }}</h2>
           <p v-if="spotlight" class="spotlight-subtitle">{{ spotlight.subtitle }}</p>
           <p v-if="spotlight" class="spotlight-meta">{{ spotlight.meta }}</p>

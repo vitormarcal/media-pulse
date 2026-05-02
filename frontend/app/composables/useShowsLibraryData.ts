@@ -10,6 +10,7 @@ import { buildShowLibraryPageData } from '~/utils/shows'
 export interface ShowsLibraryQuery {
   q?: string
   year?: number | null
+  unwatched?: boolean
 }
 
 export async function fetchShowsLibraryPageData(query: ShowsLibraryQuery = {}): Promise<ShowLibraryPageData> {
@@ -17,10 +18,11 @@ export async function fetchShowsLibraryPageData(query: ShowsLibraryQuery = {}): 
   const apiBase = config.public.apiBase
   const q = query.q?.trim() || ''
   const year = query.year ?? null
+  const unwatched = query.unwatched ?? false
 
   const [stats, library, searchResults, yearResults] = await Promise.all([
     $fetch<ShowsStatsResponse>('/api/shows/stats', { baseURL: apiBase }),
-    $fetch<ShowsLibraryResponse>('/api/shows/library', { baseURL: apiBase, query: { limit: 24 } }),
+    $fetch<ShowsLibraryResponse>('/api/shows/library', { baseURL: apiBase, query: { limit: 24, unwatched } }),
     q
       ? $fetch<ShowsSearchResponse>('/api/shows/search', { baseURL: apiBase, query: { q, limit: 40 } })
       : Promise.resolve(null),
@@ -37,21 +39,22 @@ export async function fetchShowsLibraryPageData(query: ShowsLibraryQuery = {}): 
     library,
     query: q,
     selectedYear: year,
+    selectedUnwatched: unwatched,
     searchResults,
     yearResults,
   })
 }
 
-export async function fetchShowsLibraryNextPage(cursor: string): Promise<ShowsLibraryResponse> {
+export async function fetchShowsLibraryNextPage(cursor: string, unwatched = false): Promise<ShowsLibraryResponse> {
   const config = useRuntimeConfig()
 
   return $fetch<ShowsLibraryResponse>('/api/shows/library', {
     baseURL: config.public.apiBase,
-    query: { limit: 24, cursor },
+    query: { limit: 24, cursor, unwatched },
   })
 }
 
 export function useShowsLibraryData(query: ShowsLibraryQuery = {}) {
-  const key = `shows-library-${query.q ?? ''}-${query.year ?? 'all'}`
+  const key = `shows-library-${query.q ?? ''}-${query.year ?? 'all'}-${query.unwatched ? 'unwatched' : 'all-status'}`
   return useAsyncData(key, () => fetchShowsLibraryPageData(query))
 }
