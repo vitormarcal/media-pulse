@@ -894,6 +894,7 @@ export interface MovieLibraryPageData {
   filters: {
     query: string
     selectedYear: number | null
+    selectedUnwatched: boolean
     years: MovieLibraryYearChip[]
   }
   context: {

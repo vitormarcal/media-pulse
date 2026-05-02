@@ -1,7 +1,7 @@
 <template>
   <section class="library-filters">
     <form class="search-form" @submit.prevent="submitSearch">
-      <label class="search-label" for="movies-library-query">Buscar na biblioteca</label>
+      <label class="search-label" for="movies-library-query">Buscar filmes</label>
       <div class="search-row">
         <input
           id="movies-library-query"
@@ -15,8 +15,21 @@
     </form>
 
     <div class="years">
-      <NuxtLink class="year-chip" :class="{ active: selectedYear == null && !query }" to="/movies/library">
+      <NuxtLink
+        class="year-chip"
+        :class="{ active: selectedYear == null && !query && !selectedUnwatched }"
+        to="/movies"
+      >
         Tudo
+      </NuxtLink>
+
+      <NuxtLink
+        class="year-chip"
+        :class="{ active: selectedUnwatched }"
+        :to="query ? `/movies?q=${encodeURIComponent(query)}&unwatched=1` : '/movies?unwatched=1'"
+      >
+        <span>Não vistos</span>
+        <strong>sem sessão</strong>
       </NuxtLink>
 
       <NuxtLink
@@ -24,7 +37,7 @@
         :key="year.year"
         class="year-chip"
         :class="{ active: selectedYear === year.year }"
-        :to="`/movies/library?year=${year.year}`"
+        :to="query ? `/movies?q=${encodeURIComponent(query)}&year=${year.year}` : `/movies?year=${year.year}`"
       >
         <span>{{ year.label }}</span>
         <strong>{{ year.watches }}</strong>
@@ -39,6 +52,7 @@ import type { MovieLibraryYearChip } from '~/types/movies'
 const props = defineProps<{
   query: string
   selectedYear: number | null
+  selectedUnwatched: boolean
   years: MovieLibraryYearChip[]
 }>()
 
@@ -53,13 +67,14 @@ watch(
 
 function submitSearch() {
   const trimmed = localQuery.value.trim()
+  const suffix = props.selectedUnwatched ? '&unwatched=1' : ''
 
   if (!trimmed) {
-    navigateTo('/movies/library')
+    navigateTo(props.selectedUnwatched ? '/movies?unwatched=1' : '/movies')
     return
   }
 
-  navigateTo(`/movies/library?q=${encodeURIComponent(trimmed)}`)
+  navigateTo(`/movies?q=${encodeURIComponent(trimmed)}${suffix}`)
 }
 </script>
 

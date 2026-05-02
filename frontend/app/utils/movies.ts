@@ -312,8 +312,8 @@ export function buildMovieCollectionPageData(
       intro:
         payload.overview ||
         'Uma página própria para percorrer a coleção inteira sem depender de entrar primeiro por um filme específico.',
-      backLink: '/movies/library',
-      backLabel: 'Voltar para biblioteca',
+      backLink: '/movies',
+      backLabel: 'Voltar para filmes',
       accentLink: '/movies',
       accentLabel: 'Abrir filmes',
       lead: leadMember
@@ -398,8 +398,8 @@ export function buildMovieCollectionsIndexPageData(
       title: 'As coleções já abertas na filmoteca',
       intro:
         'Franquias e conjuntos que já têm presença local suficiente para virar uma navegação própria, sem depender de começar por um título solto.',
-      backLink: '/movies/library',
-      backLabel: 'Voltar para biblioteca',
+      backLink: '/movies',
+      backLabel: 'Voltar para filmes',
       accentLink: '/movies/lists',
       accentLabel: 'Ver listas manuais',
       lead: lead
@@ -443,6 +443,7 @@ export function buildMovieLibraryPageData(payload: {
   library: MoviesLibraryResponse
   query: string
   selectedYear: number | null
+  selectedUnwatched: boolean
   searchResults: MoviesSearchResponse | null
   yearResults: MoviesByYearResponse | null
 }): MovieLibraryPageData {
@@ -462,13 +463,12 @@ export function buildMovieLibraryPageData(payload: {
 
     return {
       hero: {
-        title: `A biblioteca de filmes em ${payload.selectedYear}`,
-        intro:
-          'Um corte do arquivo completo para ver o que realmente voltou à tela nesse ano e o que ficou apenas como parte do catálogo.',
+        title: `Os filmes em ${payload.selectedYear}`,
+        intro: 'Um corte anual para ver o que realmente voltou à tela e o que ficou fora desse período.',
         backLink: '/movies',
         backLabel: 'Voltar ao recorte',
-        accentLink: '/movies/library',
-        accentLabel: 'Ver biblioteca inteira',
+        accentLink: '/movies',
+        accentLabel: 'Ver todos os filmes',
         spotlight: buildSpotlightFromCard(
           watchedItems[0] ?? unwatchedItems[0],
           `A biblioteca de filmes em ${payload.selectedYear}`,
@@ -478,12 +478,13 @@ export function buildMovieLibraryPageData(payload: {
       filters: {
         query: payload.query,
         selectedYear: payload.selectedYear,
+        selectedUnwatched: false,
         years,
       },
       context: {
         eyebrow: 'Ano',
         title: `O que ${payload.selectedYear} concentrou`,
-        description: 'Uma leitura do ano como memória de sessões, não como relatório frio.',
+        description: '',
         summary: `${formatShortNumber(payload.yearResults.stats.uniqueMoviesCount)} filmes e ${formatShortNumber(payload.yearResults.stats.watchesCount)} sessões apareceram neste recorte.`,
         metrics: [
           {
@@ -517,8 +518,8 @@ export function buildMovieLibraryPageData(payload: {
           id: 'watched',
           eyebrow: 'Vistos',
           title: 'Os que realmente passaram por esse ano',
-          description: 'O miolo do recorte anual, em vez de uma lista seca.',
-          summary: 'Aqui vale mais a lembrança de presença do que a ideia de completude.',
+          description: '',
+          summary: '',
           items: watchedItems,
           emptyMessage: 'Nenhum filme foi marcado nesse ano.',
         },
@@ -526,8 +527,8 @@ export function buildMovieLibraryPageData(payload: {
           id: 'unwatched',
           eyebrow: 'Fora da rotação',
           title: 'O que ficou fora desse período',
-          description: 'Ainda parte da biblioteca, mas sem ter entrado no ritmo do ano.',
-          summary: 'Esse bloco serve para situar ausência, não para cobrar retorno.',
+          description: '',
+          summary: '',
           items: unwatchedItems,
           emptyMessage: 'Tudo entrou no recorte desse ano.',
         },
@@ -538,20 +539,23 @@ export function buildMovieLibraryPageData(payload: {
   }
 
   if (payload.query && payload.searchResults) {
-    const searchItems = payload.searchResults.movies.map(buildSearchCardModel)
+    const searchItems = payload.searchResults.movies
+      .filter((movie) => !payload.selectedUnwatched || !movie.watchedAt)
+      .map(buildSearchCardModel)
 
     return {
       hero: {
-        title: 'A biblioteca de filmes, puxada pela busca',
-        intro:
-          'Quando você já sabe o que está tentando reencontrar, a página vira arquivo de consulta sem perder a mesma superfície editorial.',
+        title: payload.selectedUnwatched ? 'Filmes não vistos pela busca' : 'Filmes encontrados pela busca',
+        intro: payload.selectedUnwatched
+          ? 'A busca agora mostra só o que já está no catálogo, mas ainda não teve nenhuma sessão.'
+          : 'Quando você já sabe o nome, a página encurta o caminho e puxa o recorte certo.',
         backLink: '/movies',
         backLabel: 'Voltar ao recorte',
-        accentLink: '/movies/library',
+        accentLink: '/movies',
         accentLabel: 'Limpar busca',
         utilityLink: payload.query
-          ? `/movies/library?q=${encodeURIComponent(payload.query)}&add=1`
-          : '/movies/library?add=1',
+          ? `/movies?q=${encodeURIComponent(payload.query)}${payload.selectedUnwatched ? '&unwatched=1' : ''}&add=1`
+          : `/movies?${payload.selectedUnwatched ? 'unwatched=1&' : ''}add=1`,
         utilityLabel: 'Adicionar filme',
         spotlight: buildSpotlightFromCard(
           searchItems[0],
@@ -562,22 +566,25 @@ export function buildMovieLibraryPageData(payload: {
       filters: {
         query: payload.query,
         selectedYear: payload.selectedYear,
+        selectedUnwatched: payload.selectedUnwatched,
         years,
       },
       context: {
-        eyebrow: 'Busca',
-        title: 'O arquivo inteiro, afunilado pelo nome',
-        description: 'Sem esconder o resto da biblioteca; só aproximando o que você quer achar agora.',
-        summary: `${formatShortNumber(payload.searchResults.movies.length)} filmes encontrados para "${payload.query}".`,
+        eyebrow: payload.selectedUnwatched ? 'Busca + não vistos' : 'Busca',
+        title: payload.selectedUnwatched
+          ? 'Os filmes sem sessão que responderam à busca'
+          : 'O arquivo inteiro, afunilado pelo nome',
+        description: '',
+        summary: `${formatShortNumber(searchItems.length)} filmes encontrados para "${payload.query}".`,
         metrics: buildStatsMetrics(payload.stats),
       },
       sections: [
         {
           id: 'search-results',
           eyebrow: 'Resultados',
-          title: 'O que respondeu à busca',
-          description: 'Uma prateleira curta para ir direto ao que interessa.',
-          summary: 'Busca primeiro, contexto depois.',
+          title: payload.selectedUnwatched ? 'Os não vistos que responderam à busca' : 'O que respondeu à busca',
+          description: '',
+          summary: '',
           items: searchItems,
           emptyMessage: 'Nada apareceu para essa busca.',
         },
@@ -593,14 +600,17 @@ export function buildMovieLibraryPageData(payload: {
 
   return {
     hero: {
-      title: 'A biblioteca inteira de filmes',
-      intro:
-        'O arquivo completo para quando a memória curta já não basta e você quer percorrer a filmoteca toda com mais calma.',
+      title: payload.selectedUnwatched ? 'Filmes ainda não vistos' : 'Todos os filmes',
+      intro: payload.selectedUnwatched
+        ? 'Um corte do catálogo para ver só o que já entrou no arquivo, mas ainda não passou pela tela.'
+        : 'O arquivo completo para quando você quer atravessar a filmoteca inteira de uma vez.',
       backLink: '/movies',
       backLabel: 'Voltar ao recorte',
-      accentLink: '/movies/library?year=' + (years[0]?.year ?? new Date().getFullYear()),
-      accentLabel: 'Abrir um recorte por ano',
-      utilityLink: '/movies/library?add=1',
+      accentLink: payload.selectedUnwatched
+        ? '/movies'
+        : '/movies?year=' + (years[0]?.year ?? new Date().getFullYear()),
+      accentLabel: payload.selectedUnwatched ? 'Ver todos os filmes' : 'Abrir um recorte por ano',
+      utilityLink: payload.selectedUnwatched ? '/movies?unwatched=1&add=1' : '/movies?add=1',
       utilityLabel: 'Adicionar filme',
       spotlight: buildSpotlightFromCard(
         activeItems[0] ?? dormantItems[0],
@@ -611,33 +621,31 @@ export function buildMovieLibraryPageData(payload: {
     filters: {
       query: payload.query,
       selectedYear: payload.selectedYear,
+      selectedUnwatched: payload.selectedUnwatched,
       years,
     },
     context: {
-      eyebrow: 'Arquivo',
-      title: 'O tamanho do catálogo e do hábito',
-      description: 'Uma visão larga do que já entrou nessa filmoteca, sem perder a leitura pessoal do conjunto.',
-      summary: `${formatShortNumber(payload.stats.total.uniqueMoviesCount)} filmes no arquivo e ${formatShortNumber(payload.stats.total.watchesCount)} sessões acumuladas até aqui.`,
+      eyebrow: payload.selectedUnwatched ? 'Não vistos' : 'Arquivo',
+      title: payload.selectedUnwatched ? 'O que ainda não ganhou sessão' : 'O tamanho do catálogo e do hábito',
+      description: '',
+      summary: payload.selectedUnwatched
+        ? `${formatShortNumber(dormantItems.length)} filmes já estão no catálogo sem nenhuma sessão registrada.`
+        : `${formatShortNumber(payload.stats.total.uniqueMoviesCount)} filmes no arquivo e ${formatShortNumber(payload.stats.total.watchesCount)} sessões acumuladas até aqui.`,
       metrics: buildStatsMetrics(payload.stats),
     },
     sections: [
       {
-        id: 'active-library',
-        eyebrow: 'Com rastro',
-        title: 'Os filmes que já deixaram marca',
-        description: 'Os que já têm alguma sessão e por isso funcionam melhor como entrada para o catálogo.',
-        summary: 'É o arquivo inteiro, mas começando pelos que já têm memória associada.',
-        items: activeItems,
-        emptyMessage: 'Ainda não há filmes com sessão registrada.',
-      },
-      {
-        id: 'dormant-library',
-        eyebrow: 'Ainda quietos',
-        title: 'O que ainda espera a primeira sessão',
-        description: 'Parte da biblioteca que já existe no arquivo, mas ainda sem ter virado lembrança de tela.',
-        summary: 'Mais catálogo do que hábito, por enquanto.',
-        items: dormantItems,
-        emptyMessage: 'Nada ficou sem sessão na biblioteca atual.',
+        id: 'library-catalog',
+        eyebrow: payload.selectedUnwatched ? 'Não vistos' : 'Arquivo',
+        title: payload.selectedUnwatched
+          ? 'Os filmes que ainda esperam a primeira sessão'
+          : 'A parede completa do catálogo',
+        description: '',
+        summary: '',
+        items: payload.selectedUnwatched ? dormantItems : [...activeItems, ...dormantItems],
+        emptyMessage: payload.selectedUnwatched
+          ? 'Nada ficou sem sessão no catálogo atual.'
+          : 'Ainda não há filmes no catálogo.',
       },
     ],
     libraryCursor: payload.library.nextCursor,
@@ -946,9 +954,9 @@ export function buildMovieListsIndexPageData(lists: MovieListSummaryDto[]): Movi
       title: 'Os recortes manuais da filmoteca',
       intro:
         'Uma estante de listas feitas à mão para quando a biblioteca inteira é grande demais e você quer entrar por afinidade, ocasião ou obsessão.',
-      backLink: '/movies/library',
-      backLabel: 'Voltar para biblioteca',
-      accentLink: '/movies/library?add=1',
+      backLink: '/movies',
+      backLabel: 'Voltar para filmes',
+      accentLink: '/movies?add=1',
       accentLabel: 'Adicionar filme',
       spotlight: spotlight
         ? {

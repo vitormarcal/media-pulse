@@ -84,7 +84,7 @@ const props = withDefaults(
   {
     backLink: '/',
     backLabel: 'Voltar para a capa',
-    accentLink: '/movies/library',
+    accentLink: '/movies',
     accentLabel: 'Abrir biblioteca inteira',
   },
 )

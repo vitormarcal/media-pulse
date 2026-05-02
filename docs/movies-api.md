@@ -11,7 +11,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 
 | Path | Params | Retorna |
 | --- | --- | --- |
-| `GET /api/movies/library` | `limit=20`, `cursor?` | `MoviesLibraryResponse` |
+| `GET /api/movies/library` | `limit=20`, `cursor?`, `unwatched=false` | `MoviesLibraryResponse` |
 | `GET /api/movies/recent` | `limit=20`, `cursor?` | `MoviesRecentResponse` |
 | `GET /api/movies/{movieId}` | `movieId` | `MovieDetailsResponse` |
 | `GET /api/movies/slug/{slug}` | `slug` | `MovieDetailsResponse` |
@@ -19,6 +19,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/companies/{slug}` | `slug` | `MovieCompanyDetailsResponse` |
 | `GET /api/movies/lists` | - | `MovieListSummaryDto[]` |
 | `GET /api/movies/lists/{slug}` | `slug` | `MovieListDetailsResponse` |
+| `GET /api/movies/collections` | - | `MovieCollectionSummaryDto[]` |
 | `GET /api/movies/people/search` | `q`, `limit=8` | `MoviePersonSuggestionDto[]` |
 | `GET /api/movies/terms/{kind}/{slug}` | `kind=genre|tag`, `slug` | `MovieTermDetailsResponse` |
 | `GET /api/movies/terms/search` | `q`, `kind=genre|tag`, `limit=8` | `MovieTermSuggestionDto[]` |
@@ -36,6 +37,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/{movieId}/lists` | body com `listId?`, `name?`, `description?` | `MovieListSummaryDto` |
 | `DELETE /api/movies/{movieId}/lists/{listId}` | `movieId`, `listId` | `204 No Content` |
 | `POST /api/movies/lists/{listId}/order` | `listId`, body com `movieIds[]` | `204 No Content` |
+| `PATCH /api/movies/lists/{listId}/cover` | `listId`, body com `coverMovieId?` | `MovieListSummaryDto` |
 | `POST /api/movies/{movieId}/companies/sync-tmdb` | `movieId` | `MovieCompaniesSyncResponse` |
 | `POST /api/movies/companies/sync-tmdb` | `limit=100` | `MovieCompaniesBatchSyncResponse` |
 | `POST /api/movies/{movieId}/credits/sync-tmdb` | `movieId` | `MovieCreditsSyncResponse` |
@@ -245,11 +247,12 @@ Persistência:
 `GET /api/movies/lists` retorna as listas já criadas.
 
 - inclui contagem de filmes por lista
+- inclui `coverMovieId`, `coverUrl` e um preview curto de filmes para a UI
 - serve para a UI oferecer anexação rápida a partir da página do filme
 
 `GET /api/movies/lists/{slug}` abre a página de um recorte manual.
 
-- retorna a lista e os filmes na ordem salva
+- retorna a lista, a capa escolhida quando houver e os filmes na ordem salva
 
 `POST /api/movies/lists` cria uma nova lista manual.
 
@@ -267,6 +270,12 @@ Persistência:
 
 - exige `movieIds[]` com exatamente os mesmos filmes já ligados à lista
 - a ordem persistida passa a valer tanto na página da lista quanto no destaque principal do recorte
+
+`PATCH /api/movies/lists/{listId}/cover` fixa manualmente a imagem principal da lista.
+
+- aceita `coverMovieId` nulo para voltar ao padrão automático
+- quando nenhum filme é escolhido, a UI usa a imagem do primeiro item da ordem
+- se o filme escolhido sair da lista, a capa fixa é limpa automaticamente
 
 ## Pessoas e créditos
 
@@ -337,6 +346,11 @@ Filmes podem ser vinculados a uma coleção oficial do TMDb, como `The Matrix Co
 - o vínculo é preenchido durante criação de catálogo e enriquecimento por TMDb
 - `MovieDetailsResponse.collection` retorna a coleção do filme e os filmes locais já catalogados na mesma coleção
 - coleções oficiais não substituem futuras listas pessoais; elas representam apenas `belongs_to_collection` do TMDb
+
+`GET /api/movies/collections` retorna as coleções já consolidadas no catálogo local.
+
+- inclui contagem de filmes e quantos já têm sessão
+- inclui preview curto de posters para páginas editoriais e cards de navegação
 
 `GET /api/movies/collections/{collectionId}/tmdb-members` busca os membros da coleção no TMDb sob demanda.
 

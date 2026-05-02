@@ -2,9 +2,9 @@ package dev.marcal.mediapulse.server.repository
 
 import dev.marcal.mediapulse.server.api.movies.MovieCardDto
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionDto
+import dev.marcal.mediapulse.server.api.movies.MovieCollectionMovieDto
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionPreviewMovieDto
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionSummaryDto
-import dev.marcal.mediapulse.server.api.movies.MovieCollectionMovieDto
 import dev.marcal.mediapulse.server.api.movies.MovieCompanyDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCompanyDto
 import dev.marcal.mediapulse.server.api.movies.MovieCompanyTypeDto
@@ -51,20 +51,32 @@ class MovieQueryRepository(
     fun library(
         limit: Int,
         cursor: String?,
+        unwatched: Boolean,
     ): MoviesLibraryResponse {
         val resolvedLimit = limit.coerceAtLeast(1)
         val (cursorWatchedAt, cursorMovieId) = parseRecentCursor(cursor)
+        val filters =
+            buildList {
+                if (unwatched) {
+                    add("watch_count = 0")
+                }
+                if (cursorWatchedAt != null && cursorMovieId != null) {
+                    add(
+                        """
+                        (
+                          COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') < :cursorWatchedAt
+                          OR (
+                            COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') = :cursorWatchedAt
+                            AND movie_id < :cursorMovieId
+                          )
+                        )
+                        """.trimIndent(),
+                    )
+                }
+            }
         val whereClause =
-            if (cursorWatchedAt != null && cursorMovieId != null) {
-                """
-                WHERE (
-                  COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') < :cursorWatchedAt
-                  OR (
-                    COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') = :cursorWatchedAt
-                    AND movie_id < :cursorMovieId
-                  )
-                )
-                """.trimIndent()
+            if (filters.isNotEmpty()) {
+                "WHERE " + filters.joinToString("\nAND ")
             } else {
                 ""
             }

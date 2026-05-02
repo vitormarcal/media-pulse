@@ -12,7 +12,7 @@
     <template v-else-if="data">
       <section class="term-hero" :style="heroShellStyle">
         <div class="copy">
-          <NuxtLink class="back-link" to="/movies/library"> Voltar para biblioteca </NuxtLink>
+          <NuxtLink class="back-link" to="/movies"> Voltar para filmes </NuxtLink>
 
           <p class="eyebrow">{{ data.kind === 'GENRE' ? 'Gênero' : 'Tag' }}</p>
           <h1>{{ data.name }}</h1>

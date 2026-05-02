@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.58
+  version: 1.0.0-beta.59
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -872,15 +872,19 @@ paths:
           schema:
             type: integer
             default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/MovieCardDto"
+                $ref: "#/components/schemas/MoviesRecentResponse"
 
   /api/movies/{movieId}:
     get:
@@ -919,7 +923,352 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieDetailsResponse"
 
-  /api/movies/catalog:
+  /api/movies/library:
+    get:
+      summary: Movies library
+      tags: [Movies]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            nullable: true
+        - name: unwatched
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoviesLibraryResponse"
+
+  /api/movies/people/{slug}:
+    get:
+      summary: Movie person details by slug
+      tags: [Movies]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoviePersonDetailsResponse"
+
+  /api/movies/companies/{slug}:
+    get:
+      summary: Movie company details by slug
+      tags: [Movies]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieCompanyDetailsResponse"
+
+  /api/movies/lists:
+    get:
+      summary: List manual movie lists
+      tags: [Movies]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MovieListSummaryDto"
+    post:
+      summary: Create manual movie list
+      tags: [Movies]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieListCreateRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieListSummaryDto"
+
+  /api/movies/lists/{slug}:
+    get:
+      summary: Manual movie list details
+      tags: [Movies]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieListDetailsResponse"
+
+  /api/movies/lists/{listId}/order:
+    post:
+      summary: Update manual movie list order
+      tags: [Movies]
+      parameters:
+        - name: listId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieListOrderUpdateRequest"
+      responses:
+        "200":
+          description: OK
+
+  /api/movies/lists/{listId}/cover:
+    patch:
+      summary: Update manual movie list cover
+      tags: [Movies]
+      parameters:
+        - name: listId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieListCoverUpdateRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieListSummaryDto"
+
+  /api/movies/{movieId}/lists:
+    post:
+      summary: Attach movie to manual list
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieListAttachRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieListSummaryDto"
+
+  /api/movies/{movieId}/lists/{listId}:
+    delete:
+      summary: Remove movie from manual list
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: listId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+
+  /api/movies/people/search:
+    get:
+      summary: Search local movie people
+      tags: [Movies]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 8
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MoviePersonSuggestionDto"
+
+  /api/movies/terms/{kind}/{slug}:
+    get:
+      summary: Movie term details by kind and slug
+      tags: [Movies]
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [genre, tag, GENRE, TAG]
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieTermDetailsResponse"
+
+  /api/movies/terms/search:
+    get:
+      summary: Search local movie terms
+      tags: [Movies]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: kind
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [genre, tag, GENRE, TAG]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 8
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MovieTermSuggestionDto"
+
+  /api/movies/stats:
+    get:
+      summary: Movies stats
+      tags: [Movies]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoviesStatsResponse"
+
+  /api/movies/year/{year}:
+    get:
+      summary: Movies by year
+      tags: [Movies]
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limitWatched
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 200
+        - name: limitUnwatched
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 200
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoviesByYearResponse"
+
+  /api/movies/collections:
+    get:
+      summary: List local movie collections
+      tags: [Movies]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MovieCollectionSummaryDto"
+
+  /api/movies/catalog/suggestions:
     get:
       summary: Suggest movie catalog matches from TMDb
       tags: [Movies]
@@ -936,6 +1285,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MovieCatalogSuggestionsResponse"
+
+  /api/movies/catalog:
     post:
       summary: Create or reuse movie catalog entry
       tags: [Movies]
@@ -990,6 +1341,308 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MovieCollectionMembersResponse"
+
+  /api/movies/companies/{companyId}/tmdb-members:
+    get:
+      summary: Fetch TMDb members for a movie company
+      tags: [Movies]
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieCompanyMembersResponse"
+
+  /api/movies/people/{personId}/tmdb-filmography:
+    get:
+      summary: Fetch TMDb filmography for a local movie person
+      tags: [Movies]
+      parameters:
+        - name: personId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoviePersonFilmographyResponse"
+
+  /api/movies/{movieId}/terms/sync-tmdb:
+    post:
+      summary: Sync movie terms from TMDb
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieTermsSyncResponse"
+
+  /api/movies/terms/sync-tmdb:
+    post:
+      summary: Batch sync movie terms from TMDb
+      tags: [Movies]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieTermsBatchSyncResponse"
+
+  /api/movies/{movieId}/companies/sync-tmdb:
+    post:
+      summary: Sync movie companies from TMDb
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieCompaniesSyncResponse"
+
+  /api/movies/companies/sync-tmdb:
+    post:
+      summary: Batch sync movie companies from TMDb
+      tags: [Movies]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieCompaniesBatchSyncResponse"
+
+  /api/movies/{movieId}/credits/sync-tmdb:
+    post:
+      summary: Sync movie credits from TMDb
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieCreditsSyncResponse"
+
+  /api/movies/credits/sync-tmdb:
+    post:
+      summary: Batch sync movie credits from TMDb
+      tags: [Movies]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieCreditsBatchSyncResponse"
+
+  /api/movies/{movieId}/credits/tmdb-candidates:
+    get:
+      summary: Fetch extra TMDb credit candidates for a movie
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieTmdbCreditCandidatesResponse"
+
+  /api/movies/{movieId}/credits/from-tmdb:
+    post:
+      summary: Import a specific TMDb credit into a movie
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieTmdbCreditImportRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoviePersonCreditDto"
+
+  /api/movies/{movieId}/people:
+    post:
+      summary: Link existing local person to movie
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoviePersonLinkRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoviePersonCreditDto"
+
+  /api/movies/{movieId}/terms:
+    post:
+      summary: Create manual movie term
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieTermCreateRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieTermDto"
+
+  /api/movies/{movieId}/terms/{termId}/visibility:
+    post:
+      summary: Update movie-local term visibility
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: termId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieTermVisibilityRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieTermDto"
+
+  /api/movies/terms/{termId}/visibility:
+    post:
+      summary: Update global term visibility
+      tags: [Movies]
+      parameters:
+        - name: termId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieTermVisibilityRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieTermDto"
 
   /api/movies/{movieId}/enrichment/preview:
     post:
@@ -1065,6 +1718,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ManualMovieWatchCreateResponse"
+
+  /api/movies/{movieId}/watches/{watchId}:
+    delete:
+      summary: Delete movie watch
+      tags: [Movies]
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: watchId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
 
   /api/movies/search:
     get:
@@ -2283,6 +2957,270 @@ components:
           items:
             $ref: "#/components/schemas/MovieCollectionMovieDto"
       required: [id, tmdbId, name, movies]
+    MovieCollectionPreviewMovieDto:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        slug:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+      required: [movieId, title]
+    MovieCollectionSummaryDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        tmdbId:
+          type: string
+        name:
+          type: string
+        posterUrl:
+          type: string
+          nullable: true
+        backdropUrl:
+          type: string
+          nullable: true
+        movieCount:
+          type: integer
+          format: int64
+        watchedMoviesCount:
+          type: integer
+          format: int64
+        previewMovies:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieCollectionPreviewMovieDto"
+      required: [id, tmdbId, name, movieCount, watchedMoviesCount, previewMovies]
+    MovieCreditTypeDto:
+      type: string
+      enum: [CAST, CREW]
+    MovieTermKindDto:
+      type: string
+      enum: [GENRE, TAG]
+    MovieTermSourceDto:
+      type: string
+      enum: [TMDB, USER]
+    MovieCompanyTypeDto:
+      type: string
+      enum: [PRODUCTION]
+    MoviePersonCreditDto:
+      type: object
+      properties:
+        personId:
+          type: integer
+          format: int64
+        tmdbId:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        profileUrl:
+          type: string
+          nullable: true
+        creditType:
+          $ref: "#/components/schemas/MovieCreditTypeDto"
+        department:
+          type: string
+          nullable: true
+        job:
+          type: string
+          nullable: true
+        characterName:
+          type: string
+          nullable: true
+        billingOrder:
+          type: integer
+          nullable: true
+      required: [personId, tmdbId, name, slug, creditType]
+    MoviePersonLinkRequest:
+      type: object
+      properties:
+        personId:
+          type: integer
+          format: int64
+        group:
+          type: string
+        roleLabel:
+          type: string
+          nullable: true
+      required: [personId, group]
+    MovieCompanyDto:
+      type: object
+      properties:
+        companyId:
+          type: integer
+          format: int64
+        tmdbId:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        originCountry:
+          type: string
+          nullable: true
+        companyType:
+          $ref: "#/components/schemas/MovieCompanyTypeDto"
+      required: [companyId, tmdbId, name, slug, companyType]
+    MovieTermDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        slug:
+          type: string
+        kind:
+          $ref: "#/components/schemas/MovieTermKindDto"
+        source:
+          $ref: "#/components/schemas/MovieTermSourceDto"
+        hiddenGlobally:
+          type: boolean
+        hiddenForMovie:
+          type: boolean
+        active:
+          type: boolean
+      required: [id, name, slug, kind, source, hiddenGlobally, hiddenForMovie, active]
+    MovieTermCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        kind:
+          $ref: "#/components/schemas/MovieTermKindDto"
+      required: [name, kind]
+    MovieTermVisibilityRequest:
+      type: object
+      properties:
+        hidden:
+          type: boolean
+      required: [hidden]
+    MovieListPreviewMovieDto:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        slug:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+      required: [movieId, title]
+    MovieListSummaryDto:
+      type: object
+      properties:
+        listId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        itemCount:
+          type: integer
+          format: int64
+        coverMovieId:
+          type: integer
+          format: int64
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        previewMovies:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieListPreviewMovieDto"
+      required: [listId, name, slug, itemCount, previewMovies]
+    MovieListDetailsResponse:
+      type: object
+      properties:
+        listId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        coverMovieId:
+          type: integer
+          format: int64
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        movieCount:
+          type: integer
+          format: int64
+        watchedMoviesCount:
+          type: integer
+          format: int64
+        movies:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieLibraryCardDto"
+      required: [listId, name, slug, movieCount, watchedMoviesCount, movies]
+    MovieListCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+      required: [name]
+    MovieListAttachRequest:
+      type: object
+      properties:
+        listId:
+          type: integer
+          format: int64
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+    MovieListOrderUpdateRequest:
+      type: object
+      properties:
+        movieIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+      required: [movieIds]
+    MovieListCoverUpdateRequest:
+      type: object
+      properties:
+        coverMovieId:
+          type: integer
+          format: int64
+          nullable: true
     MovieDetailsResponse:
       type: object
       properties:
@@ -2317,11 +3255,150 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MovieExternalIdDto"
+        lists:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieListSummaryDto"
+        companies:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieCompanyDto"
+        people:
+          type: array
+          items:
+            $ref: "#/components/schemas/MoviePersonCreditDto"
+        terms:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieTermDto"
         collection:
           allOf:
             - $ref: "#/components/schemas/MovieCollectionDto"
           nullable: true
-      required: [movieId, title, originalTitle, images, watches, externalIds]
+      required: [movieId, title, originalTitle, images, watches, externalIds, lists, companies, people, terms]
+    MoviePersonSuggestionDto:
+      type: object
+      properties:
+        personId:
+          type: integer
+          format: int64
+        tmdbId:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        profileUrl:
+          type: string
+          nullable: true
+        roles:
+          type: array
+          items:
+            type: string
+      required: [personId, tmdbId, name, slug, roles]
+    MoviePersonDetailsResponse:
+      type: object
+      properties:
+        personId:
+          type: integer
+          format: int64
+        tmdbId:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        profileUrl:
+          type: string
+          nullable: true
+        roles:
+          type: array
+          items:
+            type: string
+        movieCount:
+          type: integer
+          format: int64
+        watchedMoviesCount:
+          type: integer
+          format: int64
+        movies:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieLibraryCardDto"
+      required: [personId, tmdbId, name, slug, roles, movieCount, watchedMoviesCount, movies]
+    MovieCompanyDetailsResponse:
+      type: object
+      properties:
+        companyId:
+          type: integer
+          format: int64
+        tmdbId:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        originCountry:
+          type: string
+          nullable: true
+        companyType:
+          $ref: "#/components/schemas/MovieCompanyTypeDto"
+        movieCount:
+          type: integer
+          format: int64
+        watchedMoviesCount:
+          type: integer
+          format: int64
+        movies:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieLibraryCardDto"
+      required: [companyId, tmdbId, name, slug, companyType, movieCount, watchedMoviesCount, movies]
+    MovieTermSuggestionDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        slug:
+          type: string
+        kind:
+          $ref: "#/components/schemas/MovieTermKindDto"
+        source:
+          $ref: "#/components/schemas/MovieTermSourceDto"
+        hiddenGlobally:
+          type: boolean
+      required: [id, name, slug, kind, source, hiddenGlobally]
+    MovieTermDetailsResponse:
+      type: object
+      properties:
+        termId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        slug:
+          type: string
+        kind:
+          $ref: "#/components/schemas/MovieTermKindDto"
+        source:
+          $ref: "#/components/schemas/MovieTermSourceDto"
+        movieCount:
+          type: integer
+          format: int64
+        watchedMoviesCount:
+          type: integer
+          format: int64
+        movies:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieLibraryCardDto"
+      required: [termId, name, slug, kind, source, movieCount, watchedMoviesCount, movies]
     ManualMovieCatalogCreateRequest:
       type: object
       properties:
@@ -2574,6 +3651,275 @@ components:
           items:
             $ref: "#/components/schemas/MovieCollectionMemberDto"
       required: [collectionId, tmdbId, name, members]
+    MovieCompanyMemberDto:
+      type: object
+      properties:
+        tmdbId:
+          type: string
+        title:
+          type: string
+        originalTitle:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        overview:
+          type: string
+          nullable: true
+        posterUrl:
+          type: string
+          nullable: true
+        backdropUrl:
+          type: string
+          nullable: true
+        tmdbUrl:
+          type: string
+        localMovieId:
+          type: integer
+          format: int64
+          nullable: true
+        localSlug:
+          type: string
+          nullable: true
+        inCatalog:
+          type: boolean
+      required: [tmdbId, title, tmdbUrl, inCatalog]
+    MovieCompanyMembersResponse:
+      type: object
+      properties:
+        companyId:
+          type: integer
+          format: int64
+        tmdbId:
+          type: string
+        name:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        originCountry:
+          type: string
+          nullable: true
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieCompanyMemberDto"
+      required: [companyId, tmdbId, name, members]
+    MoviePersonFilmographyMemberDto:
+      type: object
+      properties:
+        tmdbId:
+          type: string
+        title:
+          type: string
+        originalTitle:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        overview:
+          type: string
+          nullable: true
+        posterUrl:
+          type: string
+          nullable: true
+        backdropUrl:
+          type: string
+          nullable: true
+        tmdbUrl:
+          type: string
+        localMovieId:
+          type: integer
+          format: int64
+          nullable: true
+        localSlug:
+          type: string
+          nullable: true
+        inCatalog:
+          type: boolean
+        roleLabel:
+          type: string
+      required: [tmdbId, title, tmdbUrl, inCatalog, roleLabel]
+    MoviePersonFilmographyResponse:
+      type: object
+      properties:
+        personId:
+          type: integer
+          format: int64
+        tmdbId:
+          type: string
+        name:
+          type: string
+        profileUrl:
+          type: string
+          nullable: true
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/MoviePersonFilmographyMemberDto"
+      required: [personId, tmdbId, name, members]
+    MovieCompaniesSyncResponse:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        syncedCount:
+          type: integer
+        visibleCount:
+          type: integer
+      required: [movieId, syncedCount, visibleCount]
+    MovieCompaniesBatchSyncResponse:
+      type: object
+      properties:
+        requestedLimit:
+          type: integer
+        candidates:
+          type: integer
+        processed:
+          type: integer
+        synced:
+          type: integer
+        failed:
+          type: integer
+      required: [requestedLimit, candidates, processed, synced, failed]
+    MovieCreditsSyncResponse:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        syncedCount:
+          type: integer
+        visibleCount:
+          type: integer
+      required: [movieId, syncedCount, visibleCount]
+    MovieCreditsBatchSyncResponse:
+      type: object
+      properties:
+        requestedLimit:
+          type: integer
+        candidates:
+          type: integer
+        processed:
+          type: integer
+        synced:
+          type: integer
+        failed:
+          type: integer
+      required: [requestedLimit, candidates, processed, synced, failed]
+    MovieTermsSyncResponse:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        syncedCount:
+          type: integer
+        visibleCount:
+          type: integer
+      required: [movieId, syncedCount, visibleCount]
+    MovieTermsBatchSyncResponse:
+      type: object
+      properties:
+        requestedLimit:
+          type: integer
+        candidates:
+          type: integer
+        processed:
+          type: integer
+        synced:
+          type: integer
+        failed:
+          type: integer
+      required: [requestedLimit, candidates, processed, synced, failed]
+    MovieTmdbCreditCandidateDto:
+      type: object
+      properties:
+        personTmdbId:
+          type: string
+        name:
+          type: string
+        profileUrl:
+          type: string
+          nullable: true
+        creditType:
+          $ref: "#/components/schemas/MovieCreditTypeDto"
+        department:
+          type: string
+          nullable: true
+        job:
+          type: string
+          nullable: true
+        characterName:
+          type: string
+          nullable: true
+        billingOrder:
+          type: integer
+          nullable: true
+        roleLabel:
+          type: string
+      required: [personTmdbId, name, creditType, roleLabel]
+    MovieTmdbCreditCandidateGroupDto:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieTmdbCreditCandidateDto"
+      required: [id, title, items]
+    MovieTmdbCreditCandidatesResponse:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        reconciledCount:
+          type: integer
+        candidateCount:
+          type: integer
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieTmdbCreditCandidateGroupDto"
+      required: [movieId, reconciledCount, candidateCount, groups]
+    MovieTmdbCreditImportRequest:
+      type: object
+      properties:
+        personTmdbId:
+          type: string
+        creditType:
+          $ref: "#/components/schemas/MovieCreditTypeDto"
+        department:
+          type: string
+          nullable: true
+        job:
+          type: string
+          nullable: true
+        characterName:
+          type: string
+          nullable: true
+        billingOrder:
+          type: integer
+          nullable: true
+      required: [personTmdbId, creditType]
+    MoviesRecentResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieCardDto"
+        nextCursor:
+          type: string
+          nullable: true
+      required: [items]
     ExistingMovieWatchCreateRequest:
       type: object
       properties:
@@ -2597,6 +3943,44 @@ components:
           items:
             $ref: "#/components/schemas/MovieCardDto"
       required: [movies]
+    MovieLibraryCardDto:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        originalTitle:
+          type: string
+        slug:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        watchCount:
+          type: integer
+          format: int64
+        lastWatchedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [movieId, title, originalTitle, watchCount]
+    MoviesLibraryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieLibraryCardDto"
+        nextCursor:
+          type: string
+          nullable: true
+      required: [items]
     MoviesRangeDto:
       type: object
       properties:
@@ -2619,6 +4003,132 @@ components:
           type: integer
           format: int64
       required: [range, watchesCount, uniqueMoviesCount]
+    MoviesByYearStatsDto:
+      type: object
+      properties:
+        watchesCount:
+          type: integer
+          format: int64
+        uniqueMoviesCount:
+          type: integer
+          format: int64
+        rewatchesCount:
+          type: integer
+          format: int64
+      required: [watchesCount, uniqueMoviesCount, rewatchesCount]
+    MovieYearWatchedDto:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        slug:
+          type: string
+          nullable: true
+        title:
+          type: string
+        originalTitle:
+          type: string
+        year:
+          type: integer
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        watchCountInYear:
+          type: integer
+          format: int64
+        firstWatchedAt:
+          type: string
+          format: date-time
+        lastWatchedAt:
+          type: string
+          format: date-time
+      required: [movieId, title, originalTitle, watchCountInYear, firstWatchedAt, lastWatchedAt]
+    MovieYearUnwatchedDto:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        slug:
+          type: string
+          nullable: true
+        title:
+          type: string
+        originalTitle:
+          type: string
+        year:
+          type: integer
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+      required: [movieId, title, originalTitle]
+    MoviesByYearResponse:
+      type: object
+      properties:
+        year:
+          type: integer
+        range:
+          $ref: "#/components/schemas/MoviesRangeDto"
+        stats:
+          $ref: "#/components/schemas/MoviesByYearStatsDto"
+        watched:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieYearWatchedDto"
+        unwatched:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovieYearUnwatchedDto"
+      required: [year, range, stats, watched, unwatched]
+    MoviesTotalStatsDto:
+      type: object
+      properties:
+        watchesCount:
+          type: integer
+          format: int64
+        uniqueMoviesCount:
+          type: integer
+          format: int64
+      required: [watchesCount, uniqueMoviesCount]
+    MoviesYearStatsDto:
+      type: object
+      properties:
+        year:
+          type: integer
+        watchesCount:
+          type: integer
+          format: int64
+        uniqueMoviesCount:
+          type: integer
+          format: int64
+        rewatchesCount:
+          type: integer
+          format: int64
+      required: [year, watchesCount, uniqueMoviesCount, rewatchesCount]
+    MoviesStatsResponse:
+      type: object
+      properties:
+        total:
+          $ref: "#/components/schemas/MoviesTotalStatsDto"
+        unwatchedCount:
+          type: integer
+          format: int64
+        years:
+          type: array
+          items:
+            $ref: "#/components/schemas/MoviesYearStatsDto"
+        latestWatchAt:
+          type: string
+          format: date-time
+          nullable: true
+        firstWatchAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [total, unwatchedCount, years]
 
     ReprocessRequest:
       type: object

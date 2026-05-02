@@ -168,11 +168,19 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `GET /api/movies/recent`
 - `GET /api/movies/{movieId}`
 - `GET /api/movies/slug/{slug}`
+- `GET /api/movies/people/{slug}`
+- `GET /api/movies/companies/{slug}`
+- `GET /api/movies/terms/{kind}/{slug}`
+- `GET /api/movies/lists`
+- `GET /api/movies/lists/{slug}`
+- `GET /api/movies/collections`
 - `GET /api/movies/search`
 - `GET /api/movies/summary`
 - `GET /api/movies/stats`
 - `GET /api/movies/year/{year}`
-- `POST /api/movies/watches`
+- `GET /api/movies/catalog/suggestions`
+- `POST /api/movies/catalog`
+- `POST /api/movies/{movieId}/watches`
 
 ### Shows
 

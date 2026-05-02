@@ -210,9 +210,7 @@ async function createCatalogEntry(body: {
     feedback.value = response.createdMovie
       ? 'Filme adicionado ao catálogo.'
       : 'Filme existente reaproveitado e consolidado.'
-    await router.push(
-      response.slug ? `/movies/${response.slug}` : `/movies/library?q=${encodeURIComponent(body.title)}`,
-    )
+    await router.push(response.slug ? `/movies/${response.slug}` : `/movies?q=${encodeURIComponent(body.title)}`)
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'Não foi possível adicionar o filme agora.'
     feedbackError.value = true

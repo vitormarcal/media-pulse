@@ -10,6 +10,7 @@ import { buildMovieLibraryPageData } from '~/utils/movies'
 export interface MoviesLibraryQuery {
   q?: string
   year?: number | null
+  unwatched?: boolean
 }
 
 export async function fetchMoviesLibraryPageData(query: MoviesLibraryQuery = {}): Promise<MovieLibraryPageData> {
@@ -17,10 +18,11 @@ export async function fetchMoviesLibraryPageData(query: MoviesLibraryQuery = {})
   const apiBase = config.public.apiBase
   const q = query.q?.trim() || ''
   const year = query.year ?? null
+  const unwatched = query.unwatched ?? false
 
   const [stats, library, searchResults, yearResults] = await Promise.all([
     $fetch<MoviesStatsResponse>('/api/movies/stats', { baseURL: apiBase }),
-    $fetch<MoviesLibraryResponse>('/api/movies/library', { baseURL: apiBase, query: { limit: 24 } }),
+    $fetch<MoviesLibraryResponse>('/api/movies/library', { baseURL: apiBase, query: { limit: 24, unwatched } }),
     q
       ? $fetch<MoviesSearchResponse>('/api/movies/search', { baseURL: apiBase, query: { q, limit: 40 } })
       : Promise.resolve(null),
@@ -37,21 +39,22 @@ export async function fetchMoviesLibraryPageData(query: MoviesLibraryQuery = {})
     library,
     query: q,
     selectedYear: year,
+    selectedUnwatched: unwatched,
     searchResults,
     yearResults,
   })
 }
 
-export async function fetchMoviesLibraryNextPage(cursor: string): Promise<MoviesLibraryResponse> {
+export async function fetchMoviesLibraryNextPage(cursor: string, unwatched = false): Promise<MoviesLibraryResponse> {
   const config = useRuntimeConfig()
 
   return $fetch<MoviesLibraryResponse>('/api/movies/library', {
     baseURL: config.public.apiBase,
-    query: { limit: 24, cursor },
+    query: { limit: 24, cursor, unwatched },
   })
 }
 
 export function useMoviesLibraryData(query: MoviesLibraryQuery = {}) {
-  const key = `movies-library-${query.q ?? ''}-${query.year ?? 'all'}`
+  const key = `movies-library-${query.q ?? ''}-${query.year ?? 'all'}-${query.unwatched ? 'unwatched' : 'all-status'}`
   return useAsyncData(key, () => fetchMoviesLibraryPageData(query))
 }
