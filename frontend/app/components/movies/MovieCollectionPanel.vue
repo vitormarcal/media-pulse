@@ -16,15 +16,18 @@
       <div class="collection-content">
         <div class="collection-toolbar">
           <p class="collection-count">{{ collectionCountLabel }}</p>
-          <button
-            v-if="showLoadButton"
-            type="button"
-            class="collection-load-button"
-            :disabled="loadingMembers"
-            @click="loadMembers"
-          >
-            {{ membersButtonLabel }}
-          </button>
+          <div class="collection-toolbar__actions">
+            <NuxtLink class="collection-open-link" :to="`/movies/collections/${collection.id}`">Abrir coleção</NuxtLink>
+            <button
+              v-if="showLoadButton"
+              type="button"
+              class="collection-load-button"
+              :disabled="loadingMembers"
+              @click="loadMembers"
+            >
+              {{ membersButtonLabel }}
+            </button>
+          </div>
         </div>
 
         <p v-if="membersError" class="members-error">{{ membersError }}</p>
@@ -276,6 +279,13 @@ async function addMember(item: CollectionDisplayItem) {
   justify-content: space-between;
 }
 
+.collection-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .collection-count {
   margin: 0;
   color: var(--base-color-text-secondary);
@@ -283,6 +293,7 @@ async function addMember(item: CollectionDisplayItem) {
   font-weight: 700;
 }
 
+.collection-open-link,
 .collection-load-button {
   border: 2px solid transparent;
   border-radius: 16px;
@@ -293,6 +304,10 @@ async function addMember(item: CollectionDisplayItem) {
   font-size: 0.75rem;
   font-weight: 700;
   padding: 6px 14px;
+}
+
+.collection-open-link {
+  text-decoration: none;
 }
 
 .collection-load-button:disabled {

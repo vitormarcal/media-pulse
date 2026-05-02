@@ -27,7 +27,7 @@
 
             <p class="eyebrow">Lista manual</p>
             <h1>{{ data.name }}</h1>
-            <p class="intro">{{ heroIntro }}</p>
+            <p v-if="heroIntro" class="intro">{{ heroIntro }}</p>
 
             <div class="meta-list">
               <span v-for="item in data.heroMeta" :key="item" class="meta-pill">{{ item }}</span>
@@ -44,10 +44,7 @@
               <div class="spotlight-body">
                 <p class="spotlight-kicker">Primeiro da ordem</p>
                 <h2>{{ spotlightMovie?.title || data.name }}</h2>
-                <p v-if="spotlightMovie" class="spotlight-subtitle">{{ spotlightMovie.subtitle }}</p>
                 <p v-if="spotlightMovie" class="spotlight-meta">{{ spotlightMovie.sessionsLabel }}</p>
-                <p v-if="spotlightMovie" class="spotlight-note">{{ spotlightMovie.activityLabel }}</p>
-                <p v-else class="spotlight-note">Esta lista ainda não recebeu filmes.</p>
               </div>
             </article>
           </component>
@@ -58,10 +55,7 @@
         <div class="cover-panel__copy">
           <p class="eyebrow">Imagem do recorte</p>
           <h2>Escolha a capa da lista</h2>
-          <p class="cover-panel__description">
-            Se nada for escolhido, a lista usa a capa do primeiro filme da ordem. Quando você fixa uma capa, o hero e os
-            cards desta lista passam a respeitar essa escolha.
-          </p>
+          <p class="cover-panel__description">Sem escolha manual, a capa segue o primeiro filme da ordem.</p>
         </div>
 
         <div class="cover-panel__toolbar">
@@ -109,10 +103,7 @@
         <div class="order-copy">
           <p class="eyebrow">Sequência manual</p>
           <h2>Ajuste a ordem do recorte</h2>
-          <p class="order-description">
-            Arraste os cards para remontar o recorte. A sequência salva muda o destaque principal desta página e a ordem
-            editorial da lista.
-          </p>
+          <p class="order-description">Arraste para remontar a sequência da lista.</p>
         </div>
 
         <div class="order-toolbar">
@@ -178,7 +169,7 @@
         :description="gridDescription"
         :summary="gridSummary"
         :items="displayMovies"
-        layout="aligned"
+        layout="masonry"
         empty-message="Nenhum filme entrou nesta lista ainda."
       />
     </template>
@@ -236,10 +227,10 @@ const heroShellStyle = computed(() =>
 const spotlightWrapper = computed(() => (spotlightMovie.value?.href ? NuxtLink : 'div'))
 const heroIntro = computed(() => {
   if (!data.value) return ''
-  return data.value.description || 'Um recorte manual da biblioteca.'
+  return data.value.description || ''
 })
 const gridTitle = computed(() => (data.value ? `Filmes de ${data.value.name}` : 'Os filmes desta lista'))
-const gridDescription = computed(() => 'A ordem abaixo preserva a sequência definida manualmente.')
+const gridDescription = computed(() => '')
 const gridSummary = computed(() =>
   data.value
     ? `${data.value.stats.movieCount} filmes no recorte e ${data.value.stats.watchedMoviesCount} com sessão registrada.`

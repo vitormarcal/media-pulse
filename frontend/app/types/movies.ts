@@ -62,6 +62,22 @@ export interface MovieCollectionDto {
   movies: MovieCollectionMovieDto[]
 }
 
+export interface MovieCollectionSummaryDto {
+  id: number
+  tmdbId: string
+  name: string
+  posterUrl: string | null
+  backdropUrl: string | null
+  movieCount: number
+  watchedMoviesCount: number
+  previewMovies: Array<{
+    movieId: number
+    title: string
+    slug: string | null
+    coverUrl: string | null
+  }>
+}
+
 export interface MovieCollectionMovieDto {
   movieId: number
   title: string
@@ -699,6 +715,75 @@ export interface MovieCollectionData {
     summary: string
     metrics: MovieCollectionContextMetric[]
   }
+}
+
+export interface MovieCollectionPageData {
+  collectionId: number
+  tmdbId: string
+  name: string
+  overview: string | null
+  posterUrl: string | null
+  backdropUrl: string | null
+  hero: {
+    title: string
+    intro: string
+    backLink: string
+    backLabel: string
+    accentLink: string
+    accentLabel: string
+    lead: EditorialHighlight | null
+    supporting: EditorialHighlight[]
+  }
+  context: {
+    eyebrow: string
+    title: string
+    description: string
+    summary: string
+    metrics: MovieCollectionContextMetric[]
+  }
+  members: Array<{
+    id: string
+    tmdbId: string
+    title: string
+    subtitle: string
+    overview: string | null
+    imageUrl: string | null
+    href: string | null
+    tmdbUrl: string
+    inCatalog: boolean
+    statusLabel: string
+    meta: string
+  }>
+}
+
+export interface MovieCollectionsIndexPageData {
+  hero: {
+    title: string
+    intro: string
+    backLink: string
+    backLabel: string
+    accentLink: string
+    accentLabel: string
+    lead: EditorialHighlight | null
+    supporting: EditorialHighlight[]
+  }
+  summary: string
+  items: Array<{
+    id: string
+    collectionId: number
+    name: string
+    href: string
+    posterUrl: string | null
+    backdropUrl: string | null
+    movieCount: number
+    watchedMoviesCount: number
+    previewMovies: Array<{
+      id: string
+      title: string
+      href: string | null
+      imageUrl: string | null
+    }>
+  }>
 }
 
 export interface MovieLibraryCardDto {

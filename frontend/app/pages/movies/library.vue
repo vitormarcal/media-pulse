@@ -41,6 +41,19 @@
         <NuxtLink class="manual-lists-hint__action" to="/movies/lists"> Ver listas manuais </NuxtLink>
       </section>
 
+      <section v-if="data.mode === 'library'" class="manual-lists-hint collections-hint">
+        <div class="manual-lists-hint__copy">
+          <p class="manual-lists-hint__eyebrow">Coleções</p>
+          <h2>Quer entrar por franquias?</h2>
+          <p>
+            As coleções reúnem sagas e conjuntos já presentes no catálogo local, para navegar por continuidade,
+            recorrência e cobertura sem depender de abrir um filme primeiro.
+          </p>
+        </div>
+
+        <NuxtLink class="manual-lists-hint__action" to="/movies/collections"> Ver coleções </NuxtLink>
+      </section>
+
       <MovieManualAddCard v-if="showManualAddCard" :initial-title="queryText" />
 
       <section v-else-if="showManualEntryHint" class="manual-entry-hint">

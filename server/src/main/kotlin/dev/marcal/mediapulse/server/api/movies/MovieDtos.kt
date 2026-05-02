@@ -84,6 +84,24 @@ data class MovieCollectionMovieDto(
     val current: Boolean,
 )
 
+data class MovieCollectionPreviewMovieDto(
+    val movieId: Long,
+    val title: String,
+    val slug: String?,
+    val coverUrl: String?,
+)
+
+data class MovieCollectionSummaryDto(
+    val id: Long,
+    val tmdbId: String,
+    val name: String,
+    val posterUrl: String?,
+    val backdropUrl: String?,
+    val movieCount: Long,
+    val watchedMoviesCount: Long,
+    val previewMovies: List<MovieCollectionPreviewMovieDto> = emptyList(),
+)
+
 data class MoviePersonCreditDto(
     val personId: Long,
     val tmdbId: String,

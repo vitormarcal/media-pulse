@@ -1,9 +1,9 @@
 <template>
   <section class="movies-collection-hero" :style="heroShellStyle">
     <div class="top-actions">
-      <NuxtLink class="back-link" to="/"> Voltar para a capa </NuxtLink>
+      <NuxtLink class="back-link" :to="backLink"> {{ backLabel }} </NuxtLink>
 
-      <NuxtLink class="recent-link" to="/movies/library"> Abrir biblioteca inteira </NuxtLink>
+      <NuxtLink class="recent-link" :to="accentLink"> {{ accentLabel }} </NuxtLink>
     </div>
 
     <div class="hero-grid">
@@ -70,12 +70,24 @@
 import { NuxtLink } from '#components'
 import type { EditorialHighlight } from '~/types/home'
 
-const props = defineProps<{
-  title: string
-  intro: string
-  lead: EditorialHighlight | null
-  supporting: EditorialHighlight[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    title: string
+    intro: string
+    lead: EditorialHighlight | null
+    supporting: EditorialHighlight[]
+    backLink?: string
+    backLabel?: string
+    accentLink?: string
+    accentLabel?: string
+  }>(),
+  {
+    backLink: '/',
+    backLabel: 'Voltar para a capa',
+    accentLink: '/movies/library',
+    accentLabel: 'Abrir biblioteca inteira',
+  },
+)
 
 const { resolveMediaUrl } = useMediaUrl()
 

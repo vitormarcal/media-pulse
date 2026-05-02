@@ -1,39 +1,43 @@
 <template>
-  <main class="lists-index-page">
+  <main class="collections-index-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a estante de listas...</p>
+      <p>Montando a estante de coleções...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
-      <p>Não foi possível carregar as listas manuais.</p>
+      <p>Não foi possível carregar as coleções.</p>
       <pre>{{ error.message }}</pre>
     </div>
 
     <template v-else-if="data">
-      <MoviesLibraryHero
+      <MoviesCollectionHero
         :title="data.hero.title"
         :intro="data.hero.intro"
+        :lead="data.hero.lead"
+        :supporting="data.hero.supporting"
         :back-link="data.hero.backLink"
         :back-label="data.hero.backLabel"
         :accent-link="data.hero.accentLink"
         :accent-label="data.hero.accentLabel"
-        :spotlight="data.hero.spotlight"
       />
 
-      <section class="lists-section">
+      <section class="collections-section">
         <SectionHeading
-          eyebrow="Estante manual"
-          title="Todos os recortes já abertos"
-          description="Cada lista manual funciona como uma porta de entrada menor, mais intencional e menos enciclopédica para a filmoteca."
+          eyebrow="Estante de coleções"
+          title="Franquias e conjuntos já presentes"
+          description="Cada coleção concentra o que já entrou no catálogo local e transforma continuidade de franquia em navegação direta, sem depender de lembrar qual filme era o ponto de partida."
           :summary="data.summary"
         />
 
-        <p v-if="!data.items.length" class="quiet-empty">Nenhuma lista manual foi criada ainda.</p>
+        <p v-if="!data.items.length" class="quiet-empty">Nenhuma coleção local apareceu ainda.</p>
 
-        <div v-else class="lists-masonry">
-          <article v-for="item in data.items" :key="item.id" class="list-card" :style="cardShellStyle(item)">
+        <div v-else class="collections-masonry">
+          <article v-for="item in data.items" :key="item.id" class="collection-card" :style="cardShellStyle(item)">
             <NuxtLink class="card-link" :to="item.href">
-              <div class="poster-mosaic" :class="[previewClass(item.previewMovies.length), posterTone(item.listId)]">
+              <div
+                class="poster-mosaic"
+                :class="[previewClass(item.previewMovies.length), posterTone(item.collectionId)]"
+              >
                 <template v-if="item.previewMovies.length">
                   <div v-for="preview in item.previewMovies.slice(0, 3)" :key="preview.id" class="poster-tile">
                     <img
@@ -49,13 +53,13 @@
               </div>
 
               <div class="card-copy">
-                <p class="card-kicker">Lista manual</p>
+                <p class="card-kicker">Coleção</p>
                 <h2>{{ item.name }}</h2>
               </div>
 
               <div class="card-footer">
-                <span class="meta-pill">{{ item.itemCount }} filmes</span>
-                <span class="meta-pill meta-pill--muted">Curadoria própria</span>
+                <span class="meta-pill">{{ item.movieCount }} filmes</span>
+                <span class="meta-pill meta-pill--muted">{{ item.watchedMoviesCount }} com sessão</span>
                 <span class="open-note">Abrir recorte</span>
               </div>
             </NuxtLink>
@@ -69,11 +73,11 @@
 <script setup lang="ts">
 import { NuxtLink } from '#components'
 import SectionHeading from '~/components/home/SectionHeading.vue'
-import MoviesLibraryHero from '~/components/movies/MoviesLibraryHero.vue'
-import { useMovieListsIndexPageData } from '~/composables/useMovieListPageData'
+import MoviesCollectionHero from '~/components/movies/MoviesCollectionHero.vue'
+import { useMovieCollectionsIndexPageData } from '~/composables/useMovieCollectionsIndexPageData'
 
 const { resolveMediaUrl } = useMediaUrl()
-const { data, error, status } = await useMovieListsIndexPageData()
+const { data, error, status } = await useMovieCollectionsIndexPageData()
 
 function previewClass(count: number) {
   if (count <= 0) return 'poster-mosaic--empty'
@@ -82,12 +86,12 @@ function previewClass(count: number) {
   return 'poster-mosaic--triple'
 }
 
-function posterTone(listId: number) {
-  return `poster-mosaic--tone-${listId % 4}`
+function posterTone(collectionId: number) {
+  return `poster-mosaic--tone-${collectionId % 4}`
 }
 
 function cardShellStyle(item: (typeof data.value.items)[number]) {
-  const heroImageUrl = resolveMediaUrl(item.coverImageUrl ?? item.previewMovies[0]?.imageUrl ?? null)
+  const heroImageUrl = resolveMediaUrl(item.posterUrl ?? item.backdropUrl ?? item.previewMovies[0]?.imageUrl ?? null)
   if (!heroImageUrl) return undefined
 
   return {
@@ -96,18 +100,18 @@ function cardShellStyle(item: (typeof data.value.items)[number]) {
 }
 
 useHead(() => ({
-  title: 'Listas manuais · Filmes · Media Pulse',
+  title: 'Coleções · Filmes · Media Pulse',
   meta: [
     {
       name: 'description',
-      content: 'Estante de listas manuais de filmes no Media Pulse.',
+      content: 'Estante de coleções de filmes no Media Pulse.',
     },
   ],
 }))
 </script>
 
 <style scoped>
-.lists-index-page {
+.collections-index-page {
   display: grid;
   gap: var(--sema-space-section);
   width: min(1480px, calc(100vw - 32px));
@@ -131,17 +135,17 @@ pre {
   white-space: pre-wrap;
 }
 
-.lists-section {
+.collections-section {
   display: grid;
   gap: 24px;
 }
 
-.lists-masonry {
+.collections-masonry {
   column-count: 3;
   column-gap: 20px;
 }
 
-.list-card {
+.collection-card {
   break-inside: avoid;
   margin-bottom: 20px;
   border-radius: 32px;
@@ -261,15 +265,20 @@ h2 {
 
 .quiet-empty {
   color: var(--base-color-text-secondary);
-  line-height: 1.55;
+  line-height: 1.58;
+}
+
+.quiet-empty {
+  font-size: 0.95rem;
 }
 
 .card-footer {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
-  padding-bottom: 22px;
+  justify-content: space-between;
+  padding-bottom: 20px;
 }
 
 .meta-pill {
@@ -277,44 +286,33 @@ h2 {
   border-radius: 16px;
   background: color-mix(in srgb, var(--base-color-surface-wash) 72%, white);
   color: var(--base-color-text-primary);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
 }
 
-.meta-pill--muted {
+.meta-pill--muted,
+.open-note {
   color: var(--base-color-text-secondary);
 }
 
 .open-note {
-  margin-left: auto;
-  color: var(--base-color-text-secondary);
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 700;
 }
 
-.quiet-empty {
-  font-size: 0.92rem;
-}
-
-@media (max-width: 1180px) {
-  .lists-masonry {
+@media (max-width: 1120px) {
+  .collections-masonry {
     column-count: 2;
   }
 }
 
 @media (max-width: 720px) {
-  .lists-index-page {
+  .collections-index-page {
     width: min(100vw - 20px, 1480px);
     padding: 20px 0 64px;
   }
 
-  .lists-masonry {
+  .collections-masonry {
     column-count: 1;
-  }
-}
-
-@media (max-width: 560px) {
-  .open-note {
-    margin-left: 0;
   }
 }
 </style>

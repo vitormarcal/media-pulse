@@ -2,6 +2,8 @@ package dev.marcal.mediapulse.server.repository
 
 import dev.marcal.mediapulse.server.api.movies.MovieCardDto
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionDto
+import dev.marcal.mediapulse.server.api.movies.MovieCollectionPreviewMovieDto
+import dev.marcal.mediapulse.server.api.movies.MovieCollectionSummaryDto
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionMovieDto
 import dev.marcal.mediapulse.server.api.movies.MovieCompanyDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCompanyDto
@@ -427,6 +429,48 @@ class MovieQueryRepository(
                         coverUrl = fields[5] as String?,
                         itemCount = (fields[6] as Number).toLong(),
                         previewMovies = previewsByListId[listId].orEmpty(),
+                    )
+                }
+            }
+
+    fun listMovieCollections(): List<MovieCollectionSummaryDto> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT
+                  mc.id,
+                  mc.tmdb_id,
+                  mc.name,
+                  mc.poster_url,
+                  mc.backdrop_url,
+                  COUNT(DISTINCT m.id) AS movie_count,
+                  COUNT(DISTINCT CASE WHEN EXISTS (
+                    SELECT 1
+                    FROM movie_watches mw
+                    WHERE mw.movie_id = m.id
+                  ) THEN m.id END) AS watched_movies_count
+                FROM movie_collections mc
+                JOIN movies m ON m.collection_id = mc.id
+                GROUP BY mc.id, mc.tmdb_id, mc.name, mc.poster_url, mc.backdrop_url
+                ORDER BY watched_movies_count DESC, movie_count DESC, mc.name ASC
+                """.trimIndent(),
+            ).resultList
+            .let { rows ->
+                val collectionIds = rows.map { ((it as Array<*>)[0] as Number).toLong() }
+                val previewsByCollectionId = getMovieCollectionPreviewMovies(collectionIds)
+
+                rows.map { row ->
+                    val fields = row as Array<*>
+                    val collectionId = (fields[0] as Number).toLong()
+                    MovieCollectionSummaryDto(
+                        id = collectionId,
+                        tmdbId = fields[1] as String,
+                        name = fields[2] as String,
+                        posterUrl = fields[3] as String?,
+                        backdropUrl = fields[4] as String?,
+                        movieCount = (fields[5] as Number).toLong(),
+                        watchedMoviesCount = (fields[6] as Number).toLong(),
+                        previewMovies = previewsByCollectionId[collectionId].orEmpty(),
                     )
                 }
             }
@@ -1529,6 +1573,66 @@ class MovieQueryRepository(
         }
 
         return previewsByListId
+    }
+
+    private fun getMovieCollectionPreviewMovies(
+        collectionIds: List<Long>,
+        limit: Int = 3,
+    ): Map<Long, List<MovieCollectionPreviewMovieDto>> {
+        if (collectionIds.isEmpty()) return emptyMap()
+
+        val rows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH ranked_items AS (
+                      SELECT
+                        m.collection_id,
+                        m.id AS movie_id,
+                        COALESCE((
+                          SELECT mt.title
+                          FROM movie_titles mt
+                          WHERE mt.movie_id = m.id
+                          ORDER BY mt.is_primary ASC, mt.id ASC
+                          LIMIT 1
+                        ), m.original_title) AS title,
+                        m.slug,
+                        m.cover_url,
+                        ROW_NUMBER() OVER (
+                          PARTITION BY m.collection_id
+                          ORDER BY EXISTS (
+                            SELECT 1
+                            FROM movie_watches mw
+                            WHERE mw.movie_id = m.id
+                          ) DESC, m.year ASC NULLS LAST, m.id ASC
+                        ) AS item_rank
+                      FROM movies m
+                      WHERE m.collection_id IN (:collectionIds)
+                    )
+                    SELECT collection_id, movie_id, title, slug, cover_url
+                    FROM ranked_items
+                    WHERE item_rank <= :limit
+                    ORDER BY collection_id ASC, item_rank ASC
+                    """.trimIndent(),
+                ).setParameter("collectionIds", collectionIds)
+                .setParameter("limit", limit)
+                .resultList
+
+        val previewsByCollectionId = linkedMapOf<Long, MutableList<MovieCollectionPreviewMovieDto>>()
+        rows.forEach { row ->
+            val fields = row as Array<*>
+            val collectionId = (fields[0] as Number).toLong()
+            previewsByCollectionId.getOrPut(collectionId) { mutableListOf() }.add(
+                MovieCollectionPreviewMovieDto(
+                    movieId = (fields[1] as Number).toLong(),
+                    title = fields[2] as String,
+                    slug = fields[3] as String?,
+                    coverUrl = fields[4] as String?,
+                ),
+            )
+        }
+
+        return previewsByCollectionId
     }
 
     private fun toMovieTermSuggestionDto(fields: Array<*>): MovieTermSuggestionDto =

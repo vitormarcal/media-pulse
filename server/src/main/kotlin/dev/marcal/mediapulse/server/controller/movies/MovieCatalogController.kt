@@ -5,12 +5,14 @@ import dev.marcal.mediapulse.server.api.movies.ManualMovieCatalogCreateResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCatalogSuggestionsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionBackfillResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionMembersResponse
+import dev.marcal.mediapulse.server.api.movies.MovieCollectionSummaryDto
 import dev.marcal.mediapulse.server.api.movies.MovieCompanyMembersResponse
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentApplyRequest
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentApplyResponse
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentPreviewRequest
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentPreviewResponse
 import dev.marcal.mediapulse.server.api.movies.MoviePersonFilmographyResponse
+import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ManualMovieCatalogCreateFlowService
 import dev.marcal.mediapulse.server.service.movie.MovieCollectionBackfillService
 import dev.marcal.mediapulse.server.service.movie.MovieCollectionMembersService
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/movies")
 class MovieCatalogController(
+    private val repository: MovieQueryRepository,
     private val manualMovieCatalogCreateFlowService: ManualMovieCatalogCreateFlowService,
     private val movieMetadataEnrichmentService: MovieMetadataEnrichmentService,
     private val movieCollectionBackfillService: MovieCollectionBackfillService,
@@ -66,6 +69,9 @@ class MovieCatalogController(
     fun collectionTmdbMembers(
         @PathVariable collectionId: Long,
     ): MovieCollectionMembersResponse = movieCollectionMembersService.fetchMembers(collectionId)
+
+    @GetMapping("/collections")
+    fun collections(): List<MovieCollectionSummaryDto> = repository.listMovieCollections()
 
     @GetMapping("/companies/{companyId}/tmdb-members")
     fun companyTmdbMembers(

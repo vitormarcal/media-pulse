@@ -1,6 +1,8 @@
 import type {
   MovieCollectionContextMetric,
   MovieCollectionData,
+  MovieCollectionsIndexPageData,
+  MovieCollectionSummaryDto,
   MovieCompanyDetailsResponse,
   MovieLibraryCardDto,
   MovieLibraryCardModel,
@@ -257,6 +259,178 @@ export function buildMovieCollectionData(payload: {
       summary: `${formatShortNumber(payload.summary.uniqueMoviesCount)} filmes circularam no recorte recente e ${formatShortNumber(payload.stats.total.watchesCount)} sessões já ficaram registradas no histórico total`,
       metrics: buildContextMetrics(payload),
     },
+  }
+}
+
+export function buildMovieCollectionPageData(
+  payload: import('~/types/movies').MovieCollectionMembersResponse,
+): import('~/types/movies').MovieCollectionPageData {
+  const members = payload.members.map((member) => ({
+    id: `collection-${payload.collectionId}-${member.tmdbId}`,
+    tmdbId: member.tmdbId,
+    title: member.title,
+    subtitle: member.year ? String(member.year) : 'Sem ano',
+    overview: member.overview,
+    imageUrl: member.posterUrl ?? member.backdropUrl,
+    href: member.localSlug ? movieHref(member.localSlug) : null,
+    tmdbUrl: member.tmdbUrl,
+    inCatalog: member.inCatalog,
+    statusLabel: member.inCatalog ? 'Catálogo local' : 'Sugestão TMDb',
+    meta: member.inCatalog ? 'Já existe no arquivo' : 'Ainda fora do catálogo',
+  }))
+
+  const leadMember = members.find((member) => member.inCatalog) ?? members[0] ?? null
+  const supporting = members
+    .filter((member) => member.id !== leadMember?.id)
+    .slice(0, 4)
+    .map((member) => ({
+      id: member.id,
+      type: 'movie' as const,
+      title: member.title,
+      subtitle: member.subtitle,
+      eyebrow: member.inCatalog ? 'Catálogo' : 'TMDb',
+      imageUrl: member.imageUrl,
+      href: member.href,
+      timestamp: '',
+      meta: member.meta,
+    }))
+
+  const cataloguedCount = members.filter((member) => member.inCatalog).length
+  const missingCount = members.length - cataloguedCount
+  const imagedCount = members.filter((member) => member.imageUrl).length
+  const coveragePct = members.length ? Math.round((cataloguedCount / members.length) * 100) : 0
+
+  return {
+    collectionId: payload.collectionId,
+    tmdbId: payload.tmdbId,
+    name: payload.name,
+    overview: payload.overview,
+    posterUrl: payload.posterUrl,
+    backdropUrl: payload.backdropUrl,
+    hero: {
+      title: payload.name,
+      intro:
+        payload.overview ||
+        'Uma página própria para percorrer a coleção inteira sem depender de entrar primeiro por um filme específico.',
+      backLink: '/movies/library',
+      backLabel: 'Voltar para biblioteca',
+      accentLink: '/movies',
+      accentLabel: 'Abrir filmes',
+      lead: leadMember
+        ? {
+            id: leadMember.id,
+            type: 'movie',
+            title: leadMember.title,
+            subtitle: leadMember.subtitle,
+            eyebrow: leadMember.inCatalog ? 'Catálogo local' : 'Entrada da coleção',
+            imageUrl: leadMember.imageUrl,
+            href: leadMember.href,
+            timestamp: '',
+            meta: leadMember.meta,
+          }
+        : null,
+      supporting,
+    },
+    context: {
+      eyebrow: 'Coleção',
+      title: 'O estado atual desse recorte',
+      description:
+        'Uma leitura curta do tamanho da franquia, do que já entrou no catálogo e do que ainda existe só como referência externa.',
+      summary: members.length
+        ? `${formatShortNumber(members.length)} filmes na coleção, ${formatShortNumber(cataloguedCount)} já presentes no catálogo local e ${formatShortNumber(missingCount)} ainda fora dele.`
+        : 'Ainda não há membros retornados para esta coleção.',
+      metrics: [
+        {
+          id: 'collection-total',
+          label: 'Filmes na coleção',
+          value: formatShortNumber(members.length),
+          note: 'o tamanho completo do recorte vindo do TMDb',
+        },
+        {
+          id: 'collection-catalogued',
+          label: 'No catálogo',
+          value: formatShortNumber(cataloguedCount),
+          note: 'o quanto da coleção já entrou de fato no arquivo',
+        },
+        {
+          id: 'collection-missing',
+          label: 'Fora do catálogo',
+          value: formatShortNumber(missingCount),
+          note: 'o que ainda aparece só como referência externa',
+        },
+        {
+          id: 'collection-coverage',
+          label: 'Cobertura local',
+          value: `${coveragePct}%`,
+          note: `${formatShortNumber(imagedCount)} entradas com imagem útil para navegação visual`,
+        },
+      ],
+    },
+    members,
+  }
+}
+
+export function buildMovieCollectionsIndexPageData(
+  collections: MovieCollectionSummaryDto[],
+): MovieCollectionsIndexPageData {
+  const items = collections.map((collection) => ({
+    id: `collection-${collection.id}`,
+    collectionId: collection.id,
+    name: collection.name,
+    href: `/movies/collections/${collection.id}`,
+    posterUrl: collection.posterUrl,
+    backdropUrl: collection.backdropUrl,
+    movieCount: collection.movieCount,
+    watchedMoviesCount: collection.watchedMoviesCount,
+    previewMovies: collection.previewMovies.map((preview) => ({
+      id: `collection-${collection.id}-preview-${preview.movieId}`,
+      title: preview.title,
+      href: movieHref(preview.slug),
+      imageUrl: preview.coverUrl,
+    })),
+  }))
+
+  const lead = items[0]
+  const supporting = items.slice(1, 5)
+
+  return {
+    hero: {
+      title: 'As coleções já abertas na filmoteca',
+      intro:
+        'Franquias e conjuntos que já têm presença local suficiente para virar uma navegação própria, sem depender de começar por um título solto.',
+      backLink: '/movies/library',
+      backLabel: 'Voltar para biblioteca',
+      accentLink: '/movies/lists',
+      accentLabel: 'Ver listas manuais',
+      lead: lead
+        ? {
+            id: lead.id,
+            type: 'movie',
+            title: lead.name,
+            subtitle: `${lead.movieCount} filmes`,
+            eyebrow: 'Coleção',
+            imageUrl: lead.posterUrl ?? lead.backdropUrl ?? lead.previewMovies[0]?.imageUrl ?? null,
+            href: lead.href,
+            timestamp: '',
+            meta: `${lead.watchedMoviesCount} com sessão`,
+          }
+        : null,
+      supporting: supporting.map((item) => ({
+        id: item.id,
+        type: 'movie' as const,
+        title: item.name,
+        subtitle: `${item.movieCount} filmes`,
+        eyebrow: 'Coleção',
+        imageUrl: item.posterUrl ?? item.backdropUrl ?? item.previewMovies[0]?.imageUrl ?? null,
+        href: item.href,
+        timestamp: '',
+        meta: `${item.watchedMoviesCount} com sessão`,
+      })),
+    },
+    summary: items.length
+      ? `${formatShortNumber(items.length)} coleções locais já funcionam como porta de entrada para a filmoteca.`
+      : 'Nenhuma coleção local foi consolidada ainda.',
+    items,
   }
 }
 
