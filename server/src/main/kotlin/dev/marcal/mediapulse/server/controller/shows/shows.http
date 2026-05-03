@@ -34,6 +34,14 @@ Accept: application/json
 GET {{baseUrl}}/slug/severance/seasons/{{seasonNumber}}
 Accept: application/json
 
+### Sync de pessoas TMDb em lote
+POST {{baseUrl}}/credits/sync-tmdb?limit=200
+Accept: application/json
+
+### Sync de pessoas TMDb por serie
+POST {{baseUrl}}/{{showId}}/credits/sync-tmdb
+Accept: application/json
+
 ### Busca de series
 GET {{baseUrl}}/search?q=dark&limit=10
 Accept: application/json

@@ -172,9 +172,9 @@
 import type {
   MovieCreditsSyncResponse,
   MoviePageData,
-  MoviePersonCreditDto,
-  MoviePersonLinkRequest,
-  MoviePersonSuggestionDto,
+  PersonCreditDto,
+  PersonLinkRequest,
+  PersonSuggestionDto,
   MovieTmdbCreditCandidate,
   MovieTmdbCreditCandidatesResponse,
   MovieTmdbCreditImportRequest,
@@ -203,7 +203,7 @@ const feedback = ref<string | null>(null)
 const searchQuery = ref('')
 const linkGroup = ref<'DIRECTORS' | 'WRITERS' | 'CAST' | 'OTHER'>('DIRECTORS')
 const linkRoleLabel = ref('')
-const suggestions = ref<MoviePersonSuggestionDto[]>([])
+const suggestions = ref<PersonSuggestionDto[]>([])
 const editingEnabled = computed(() => props.editing ?? false)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -288,7 +288,7 @@ async function importCandidate(item: MovieTmdbCreditCandidate) {
   feedback.value = null
 
   try {
-    await $fetch<MoviePersonCreditDto>(`/api/movies/${props.movieId}/credits/from-tmdb`, {
+    await $fetch<PersonCreditDto>(`/api/movies/${props.movieId}/credits/from-tmdb`, {
       baseURL: config.public.apiBase,
       method: 'POST',
       body: buildImportRequest(item),
@@ -312,7 +312,7 @@ async function fetchSuggestions() {
   searching.value = true
 
   try {
-    suggestions.value = await $fetch<MoviePersonSuggestionDto[]>(`/api/movies/people/search`, {
+    suggestions.value = await $fetch<PersonSuggestionDto[]>(`/api/people/search`, {
       baseURL: config.public.apiBase,
       query: {
         q: searchQuery.value.trim(),
@@ -347,7 +347,7 @@ function normalizeGroupForLookup(group: string) {
   return 'other'
 }
 
-function suggestionMeta(item: MoviePersonSuggestionDto) {
+function suggestionMeta(item: PersonSuggestionDto) {
   const assigned = assignedPeople.value.get(`${normalizeGroupForLookup(linkGroup.value)}:${item.personId}`)
   if (assigned) {
     return 'Já neste grupo'
@@ -356,7 +356,7 @@ function suggestionMeta(item: MoviePersonSuggestionDto) {
   return item.roles.length ? item.roles.slice(0, 2).join(' · ') : 'Pessoa já presente na base'
 }
 
-function buildLinkRequest(item: MoviePersonSuggestionDto): MoviePersonLinkRequest {
+function buildLinkRequest(item: PersonSuggestionDto): PersonLinkRequest {
   return {
     personId: item.personId,
     group: linkGroup.value,
@@ -364,7 +364,7 @@ function buildLinkRequest(item: MoviePersonSuggestionDto): MoviePersonLinkReques
   }
 }
 
-async function linkPerson(item: MoviePersonSuggestionDto) {
+async function linkPerson(item: PersonSuggestionDto) {
   if (linkingPersonId.value) return
   if (requiresRoleLabel.value && !linkRoleLabel.value.trim()) {
     feedback.value =
@@ -376,7 +376,7 @@ async function linkPerson(item: MoviePersonSuggestionDto) {
   feedback.value = null
 
   try {
-    await $fetch<MoviePersonCreditDto>(`/api/movies/${props.movieId}/people`, {
+    await $fetch<PersonCreditDto>(`/api/movies/${props.movieId}/people`, {
       baseURL: config.public.apiBase,
       method: 'POST',
       body: buildLinkRequest(item),

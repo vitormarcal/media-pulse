@@ -312,6 +312,13 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
     formatProgressStatus(show),
   ].filter(Boolean) as string[]
 
+  const uniquePeople = [...new Map(show.people.map((person) => [person.personId, person])).values()]
+  const directors = show.people.filter((person) => person.creditType === 'CREW' && person.job === 'Director')
+  const writers = show.people.filter(
+    (person) => person.creditType === 'CREW' && ['Writer', 'Screenplay', 'Story Editor'].includes(person.job ?? ''),
+  )
+  const cast = show.people.filter((person) => person.creditType === 'CAST')
+
   return {
     showId: show.showId,
     slug: show.slug ?? String(show.showId),
@@ -332,6 +339,50 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
       statusText: formatProgressStatus(show),
     },
     heroMeta,
+    people: {
+      summary: uniquePeople.length
+        ? `${uniquePeople.length} pessoas locais entre criação, direção e elenco principal.`
+        : 'Ainda não há pessoas locais ligadas a esta série.',
+      visibleCount: uniquePeople.length,
+      groups: [
+        {
+          id: 'directors',
+          title: 'Direção',
+          items: directors.map((person) => ({
+            id: `show-person-${person.personId}-director`,
+            personId: person.personId,
+            name: person.name,
+            href: `/people/${person.slug}`,
+            roleLabel: 'Direção',
+            profileUrl: person.profileUrl,
+          })),
+        },
+        {
+          id: 'writers',
+          title: 'Roteiro',
+          items: writers.map((person) => ({
+            id: `show-person-${person.personId}-writer`,
+            personId: person.personId,
+            name: person.name,
+            href: `/people/${person.slug}`,
+            roleLabel: person.job || 'Roteiro',
+            profileUrl: person.profileUrl,
+          })),
+        },
+        {
+          id: 'cast',
+          title: 'Elenco',
+          items: cast.map((person) => ({
+            id: `show-person-${person.personId}-cast`,
+            personId: person.personId,
+            name: person.name,
+            href: `/people/${person.slug}`,
+            roleLabel: person.characterName || 'Elenco',
+            profileUrl: person.profileUrl,
+          })),
+        },
+      ].filter((group) => group.items.length),
+    },
     seasons: show.seasons.map((season) => mapSeason(season, show.slug)),
     recentWatches: show.watches.slice(0, 24).map(mapWatch),
   }

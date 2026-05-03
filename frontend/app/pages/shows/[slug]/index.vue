@@ -18,6 +18,8 @@
         :hero-meta="data.heroMeta"
       />
 
+      <ShowPeoplePanel :show-id="data.showId" :people="data.people" @changed="handlePeopleChanged" />
+
       <ShowProgressPanel :progress="data.progress" :seasons="data.seasons" />
 
       <ShowAddWatchPanel :show-id="data.showId" @created="handleWatchCreated" />
@@ -30,6 +32,7 @@
 <script setup lang="ts">
 import ShowAddWatchPanel from '~/components/shows/ShowAddWatchPanel.vue'
 import ShowPageHero from '~/components/shows/ShowPageHero.vue'
+import ShowPeoplePanel from '~/components/shows/ShowPeoplePanel.vue'
 import ShowProgressPanel from '~/components/shows/ShowProgressPanel.vue'
 import ShowWatchTimeline from '~/components/shows/ShowWatchTimeline.vue'
 import { useShowPageData } from '~/composables/useShowPageData'
@@ -65,6 +68,10 @@ useHead(() => ({
 }))
 
 async function handleWatchCreated(_response: ManualShowWatchCreateResponse) {
+  await refresh()
+}
+
+async function handlePeopleChanged() {
   await refresh()
 }
 </script>

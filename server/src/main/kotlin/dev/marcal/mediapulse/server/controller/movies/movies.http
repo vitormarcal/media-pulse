@@ -1,5 +1,6 @@
 ### Variables
 @baseUrl = {{host}}/api/movies
+@peopleBaseUrl = {{host}}/api/people
 @movieId = 1
 @year = 2026
 @start = 2026-01-01T00:00:00Z
@@ -18,7 +19,7 @@ GET {{baseUrl}}/slug/eyes-wide-shut
 Accept: application/json
 
 ### Detalhes de uma pessoa
-GET {{baseUrl}}/people/quentin-tarantino-138
+GET {{peopleBaseUrl}}/quentin-tarantino-138
 Accept: application/json
 
 ### Detalhes de uma empresa
@@ -38,7 +39,7 @@ GET {{baseUrl}}/collections
 Accept: application/json
 
 ### Buscar pessoas locais
-GET {{baseUrl}}/people/search?q=quentin&limit=6
+GET {{peopleBaseUrl}}/search?q=quentin&limit=6
 Accept: application/json
 
 ### Detalhes de um termo
@@ -202,7 +203,7 @@ POST {{baseUrl}}/credits/sync-tmdb?limit=200
 Accept: application/json
 
 ### Filmografia TMDb de uma pessoa
-GET {{baseUrl}}/people/1/tmdb-filmography
+GET {{peopleBaseUrl}}/1/tmdb-filmography
 Accept: application/json
 
 ### Adicionar termo manual

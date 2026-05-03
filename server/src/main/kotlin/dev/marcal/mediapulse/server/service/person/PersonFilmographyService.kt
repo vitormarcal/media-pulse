@@ -1,20 +1,21 @@
-package dev.marcal.mediapulse.server.service.movie
+package dev.marcal.mediapulse.server.service.person
 
-import dev.marcal.mediapulse.server.api.movies.MoviePersonFilmographyMemberDto
-import dev.marcal.mediapulse.server.api.movies.MoviePersonFilmographyResponse
+import dev.marcal.mediapulse.server.api.movies.PersonFilmographyMemberDto
+import dev.marcal.mediapulse.server.api.movies.PersonFilmographyResponse
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.model.movie.MovieCreditType
 import dev.marcal.mediapulse.server.repository.crud.MovieCreditAssignmentRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieCreditsCrudRepository
-import dev.marcal.mediapulse.server.repository.crud.MoviePersonRepository
+import dev.marcal.mediapulse.server.repository.crud.PersonRepository
+import dev.marcal.mediapulse.server.service.movie.ManualMovieCatalogService
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 
 @Service
-class MoviePersonFilmographyService(
-    private val moviePersonRepository: MoviePersonRepository,
+class PersonFilmographyService(
+    private val personRepository: PersonRepository,
     private val movieCreditAssignmentRepository: MovieCreditAssignmentRepository,
     private val movieCreditsCrudRepository: MovieCreditsCrudRepository,
     private val tmdbApiClient: TmdbApiClient,
@@ -33,10 +34,10 @@ class MoviePersonFilmographyService(
         )
 
     @Transactional
-    fun fetchFilmography(personId: Long): MoviePersonFilmographyResponse {
+    fun fetchFilmography(personId: Long): PersonFilmographyResponse {
         val person =
-            moviePersonRepository.findById(personId).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "Movie person not found")
+            personRepository.findById(personId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Person not found")
             }
 
         val filmography =
@@ -133,7 +134,7 @@ class MoviePersonFilmographyService(
                 )
             }
 
-        return MoviePersonFilmographyResponse(
+        return PersonFilmographyResponse(
             personId = person.id,
             tmdbId = person.tmdbId,
             name = person.name,
@@ -141,7 +142,7 @@ class MoviePersonFilmographyService(
             members =
                 items.map { item ->
                     val localMovie = localMoviesByTmdbId[item.tmdbId]
-                    MoviePersonFilmographyMemberDto(
+                    PersonFilmographyMemberDto(
                         tmdbId = item.tmdbId,
                         title = item.title,
                         originalTitle = item.originalTitle,

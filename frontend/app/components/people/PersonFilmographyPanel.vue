@@ -77,15 +77,15 @@
 import SectionHeading from '~/components/home/SectionHeading.vue'
 import type {
   ManualMovieCatalogCreateResponse,
-  MoviePersonFilmographyMember,
-  MoviePersonFilmographyResponse,
-  MoviePersonPageData,
+  PersonFilmographyMember,
+  PersonFilmographyResponse,
+  PersonPageData,
 } from '~/types/movies'
 
 const NuxtLink = resolveComponent('NuxtLink')
 
 const props = defineProps<{
-  person: MoviePersonPageData
+  person: PersonPageData
 }>()
 
 const emit = defineEmits<{
@@ -95,7 +95,7 @@ const emit = defineEmits<{
 const config = useRuntimeConfig()
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedProfileUrl = computed(() => resolveMediaUrl(props.person.profileUrl))
-const filmography = ref<MoviePersonFilmographyResponse | null>(null)
+const filmography = ref<PersonFilmographyResponse | null>(null)
 const loading = ref(false)
 const errorMessage = ref<string | null>(null)
 const addingTmdbId = ref<string | null>(null)
@@ -125,8 +125,8 @@ async function loadFilmography() {
   errorMessage.value = null
 
   try {
-    filmography.value = await $fetch<MoviePersonFilmographyResponse>(
-      `/api/movies/people/${props.person.personId}/tmdb-filmography`,
+    filmography.value = await $fetch<PersonFilmographyResponse>(
+      `/api/people/${props.person.personId}/tmdb-filmography`,
       {
         baseURL: config.public.apiBase,
       },
@@ -138,7 +138,7 @@ async function loadFilmography() {
   }
 }
 
-async function addMember(item: MoviePersonFilmographyMember) {
+async function addMember(item: PersonFilmographyMember) {
   if (addingTmdbId.value || !item.tmdbId) return
 
   addingTmdbId.value = item.tmdbId

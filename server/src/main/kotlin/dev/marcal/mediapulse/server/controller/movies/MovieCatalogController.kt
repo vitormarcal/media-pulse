@@ -11,14 +11,12 @@ import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentApplyRequest
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentApplyResponse
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentPreviewRequest
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentPreviewResponse
-import dev.marcal.mediapulse.server.api.movies.MoviePersonFilmographyResponse
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ManualMovieCatalogCreateFlowService
 import dev.marcal.mediapulse.server.service.movie.MovieCollectionBackfillService
 import dev.marcal.mediapulse.server.service.movie.MovieCollectionMembersService
 import dev.marcal.mediapulse.server.service.movie.MovieCompanyMembersService
 import dev.marcal.mediapulse.server.service.movie.MovieMetadataEnrichmentService
-import dev.marcal.mediapulse.server.service.movie.MoviePersonFilmographyService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -36,7 +34,6 @@ class MovieCatalogController(
     private val movieCollectionBackfillService: MovieCollectionBackfillService,
     private val movieCollectionMembersService: MovieCollectionMembersService,
     private val movieCompanyMembersService: MovieCompanyMembersService,
-    private val moviePersonFilmographyService: MoviePersonFilmographyService,
 ) {
     @GetMapping("/catalog/suggestions")
     fun suggestCatalogEntry(
@@ -77,9 +74,4 @@ class MovieCatalogController(
     fun companyTmdbMembers(
         @PathVariable companyId: Long,
     ): MovieCompanyMembersResponse = movieCompanyMembersService.fetchMembers(companyId)
-
-    @GetMapping("/people/{personId}/tmdb-filmography")
-    fun personTmdbFilmography(
-        @PathVariable personId: Long,
-    ): MoviePersonFilmographyResponse = moviePersonFilmographyService.fetchFilmography(personId)
 }

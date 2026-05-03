@@ -1,4 +1,5 @@
 import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
+import type { ShowLibraryCardDto, ShowLibraryCardModel } from '~/types/shows'
 
 export interface MovieImageDto {
   id: number
@@ -115,7 +116,7 @@ export interface MovieListSummaryDto {
   }>
 }
 
-export interface MoviePersonCreditDto {
+export interface PersonCreditDto {
   personId: number
   tmdbId: string
   name: string
@@ -128,7 +129,7 @@ export interface MoviePersonCreditDto {
   billingOrder: number | null
 }
 
-export interface MoviePersonSuggestionDto {
+export interface PersonSuggestionDto {
   personId: number
   tmdbId: string
   name: string
@@ -137,7 +138,7 @@ export interface MoviePersonSuggestionDto {
   roles: string[]
 }
 
-export interface MoviePersonLinkRequest {
+export interface PersonLinkRequest {
   personId: number
   group: string
   roleLabel: string | null
@@ -177,7 +178,7 @@ export interface MovieTmdbCreditImportRequest {
   billingOrder: number | null
 }
 
-export interface MoviePersonDetailsResponse {
+export interface PersonDetailsResponse {
   personId: number
   tmdbId: string
   name: string
@@ -187,6 +188,23 @@ export interface MoviePersonDetailsResponse {
   movieCount: number
   watchedMoviesCount: number
   movies: MovieLibraryCardDto[]
+  showCount: number
+  watchedShowsCount: number
+  shows: ShowLibraryCardDto[]
+  tmdbProfile: PersonTmdbProfileDto | null
+}
+
+export interface PersonTmdbProfileDto {
+  biography: string | null
+  birthday: string | null
+  deathday: string | null
+  placeOfBirth: string | null
+  knownForDepartment: string | null
+  aliases: string[]
+  homepage: string | null
+  imdbId: string | null
+  popularity: number | null
+  profileUrl: string | null
 }
 
 export interface MovieCompanyDetailsResponse {
@@ -274,7 +292,7 @@ export interface MovieDetailsResponse {
   externalIds: MovieExternalIdDto[]
   lists: MovieListSummaryDto[]
   companies: MovieCompanyDto[]
-  people: MoviePersonCreditDto[]
+  people: PersonCreditDto[]
   terms: MovieTermDto[]
   collection: MovieCollectionDto | null
 }
@@ -358,15 +376,15 @@ export interface MovieCollectionMember {
   inCatalog: boolean
 }
 
-export interface MoviePersonFilmographyResponse {
+export interface PersonFilmographyResponse {
   personId: number
   tmdbId: string
   name: string
   profileUrl: string | null
-  members: MoviePersonFilmographyMember[]
+  members: PersonFilmographyMember[]
 }
 
-export interface MoviePersonFilmographyMember {
+export interface PersonFilmographyMember {
   tmdbId: string
   title: string
   originalTitle: string | null
@@ -593,7 +611,7 @@ export interface MovieTermPageData {
   movies: MovieLibraryCardModel[]
 }
 
-export interface MoviePersonPageData {
+export interface PersonPageData {
   personId: number
   tmdbId: string
   name: string
@@ -601,11 +619,15 @@ export interface MoviePersonPageData {
   profileUrl: string | null
   heroMeta: string[]
   roles: string[]
+  tmdbProfile: PersonTmdbProfileDto | null
   stats: {
     movieCount: number
     watchedMoviesCount: number
+    showCount: number
+    watchedShowsCount: number
   }
   movies: MovieLibraryCardModel[]
+  shows: ShowLibraryCardModel[]
 }
 
 export interface MovieCompanyPageData {

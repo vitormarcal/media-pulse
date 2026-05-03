@@ -59,6 +59,21 @@ export interface ShowExternalIdDto {
   externalId: string
 }
 
+export type ShowCreditType = 'CAST' | 'CREW'
+
+export interface ShowPersonCreditDto {
+  personId: number
+  tmdbId: string
+  name: string
+  slug: string
+  profileUrl: string | null
+  creditType: ShowCreditType
+  department: string | null
+  job: string | null
+  characterName: string | null
+  billingOrder: number | null
+}
+
 export interface ShowDetailsResponse {
   showId: number
   title: string
@@ -72,6 +87,13 @@ export interface ShowDetailsResponse {
   progress: ShowProgressDto | null
   watches: ShowWatchDto[]
   externalIds: ShowExternalIdDto[]
+  people: ShowPersonCreditDto[]
+}
+
+export interface ShowCreditsSyncResponse {
+  showId: number
+  syncedCount: number
+  visibleCount: number
 }
 
 export interface ExistingShowWatchCreateRequest {
@@ -236,6 +258,22 @@ export interface ShowPageData {
     statusText: string
   }
   heroMeta: string[]
+  people: {
+    summary: string
+    visibleCount: number
+    groups: Array<{
+      id: string
+      title: string
+      items: Array<{
+        id: string
+        personId: number
+        name: string
+        href: string
+        roleLabel: string
+        profileUrl: string | null
+      }>
+    }>
+  }
   seasons: ShowSeasonCardModel[]
   recentWatches: ShowWatchEntryModel[]
 }

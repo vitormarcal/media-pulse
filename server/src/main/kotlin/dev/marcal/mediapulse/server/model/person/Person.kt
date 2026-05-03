@@ -1,4 +1,4 @@
-package dev.marcal.mediapulse.server.model.movie
+package dev.marcal.mediapulse.server.model.person
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -9,8 +9,8 @@ import jakarta.persistence.Table
 import java.time.Instant
 
 @Entity
-@Table(name = "movie_people")
-data class MoviePerson(
+@Table(name = "people")
+data class Person(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
     @Column(name = "tmdb_id", nullable = false, unique = true)

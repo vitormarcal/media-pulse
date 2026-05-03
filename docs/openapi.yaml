@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.60
+  version: 1.0.0-beta.61
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -1124,9 +1124,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/MoviesLibraryResponse"
 
-  /api/movies/people/{slug}:
+  /api/people/{slug}:
     get:
-      summary: Movie person details by slug
+      summary: Person details by slug
       tags: [Movies]
       parameters:
         - name: slug
@@ -1140,7 +1140,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MoviePersonDetailsResponse"
+                $ref: "#/components/schemas/PersonDetailsResponse"
 
   /api/movies/companies/{slug}:
     get:
@@ -1300,9 +1300,9 @@ paths:
         "200":
           description: OK
 
-  /api/movies/people/search:
+  /api/people/search:
     get:
-      summary: Search local movie people
+      summary: Search local people
       tags: [Movies]
       parameters:
         - name: q
@@ -1324,7 +1324,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/MoviePersonSuggestionDto"
+                  $ref: "#/components/schemas/PersonSuggestionDto"
 
   /api/movies/terms/{kind}/{slug}:
     get:
@@ -1531,9 +1531,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieCompanyMembersResponse"
 
-  /api/movies/people/{personId}/tmdb-filmography:
+  /api/people/{personId}/tmdb-filmography:
     get:
-      summary: Fetch TMDb filmography for a local movie person
+      summary: Fetch TMDb filmography for a local person
       tags: [Movies]
       parameters:
         - name: personId
@@ -1548,7 +1548,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MoviePersonFilmographyResponse"
+                $ref: "#/components/schemas/PersonFilmographyResponse"
 
   /api/movies/{movieId}/terms/sync-tmdb:
     post:
@@ -1706,7 +1706,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MoviePersonCreditDto"
+                $ref: "#/components/schemas/PersonCreditDto"
 
   /api/movies/{movieId}/people:
     post:
@@ -1724,14 +1724,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MoviePersonLinkRequest"
+              $ref: "#/components/schemas/PersonLinkRequest"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MoviePersonCreditDto"
+                $ref: "#/components/schemas/PersonCreditDto"
 
   /api/movies/{movieId}/terms:
     post:
@@ -2108,6 +2108,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ShowSeasonDetailsResponse"
+
+  /api/shows/credits/sync-tmdb:
+    post:
+      summary: Batch sync show people from TMDb
+      tags: [Shows]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShowCreditsBatchSyncResponse"
+
+  /api/shows/{showId}/credits/sync-tmdb:
+    post:
+      summary: Sync show people from TMDb
+      tags: [Shows]
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShowCreditsSyncResponse"
 
   /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview:
     post:
@@ -3879,7 +3917,7 @@ components:
     MovieCompanyTypeDto:
       type: string
       enum: [PRODUCTION]
-    MoviePersonCreditDto:
+    PersonCreditDto:
       type: object
       properties:
         personId:
@@ -3909,7 +3947,7 @@ components:
           type: integer
           nullable: true
       required: [personId, tmdbId, name, slug, creditType]
-    MoviePersonLinkRequest:
+    PersonLinkRequest:
       type: object
       properties:
         personId:
@@ -4134,7 +4172,7 @@ components:
         people:
           type: array
           items:
-            $ref: "#/components/schemas/MoviePersonCreditDto"
+            $ref: "#/components/schemas/PersonCreditDto"
         terms:
           type: array
           items:
@@ -4144,7 +4182,7 @@ components:
             - $ref: "#/components/schemas/MovieCollectionDto"
           nullable: true
       required: [movieId, title, originalTitle, images, watches, externalIds, lists, companies, people, terms]
-    MoviePersonSuggestionDto:
+    PersonSuggestionDto:
       type: object
       properties:
         personId:
@@ -4164,7 +4202,7 @@ components:
           items:
             type: string
       required: [personId, tmdbId, name, slug, roles]
-    MoviePersonDetailsResponse:
+    PersonDetailsResponse:
       type: object
       properties:
         personId:
@@ -4193,7 +4231,47 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MovieLibraryCardDto"
+        tmdbProfile:
+          allOf:
+            - $ref: "#/components/schemas/PersonTmdbProfileDto"
+          nullable: true
       required: [personId, tmdbId, name, slug, roles, movieCount, watchedMoviesCount, movies]
+    PersonTmdbProfileDto:
+      type: object
+      properties:
+        biography:
+          type: string
+          nullable: true
+        birthday:
+          type: string
+          nullable: true
+        deathday:
+          type: string
+          nullable: true
+        placeOfBirth:
+          type: string
+          nullable: true
+        knownForDepartment:
+          type: string
+          nullable: true
+        aliases:
+          type: array
+          items:
+            type: string
+        homepage:
+          type: string
+          nullable: true
+        imdbId:
+          type: string
+          nullable: true
+        popularity:
+          type: number
+          format: double
+          nullable: true
+        profileUrl:
+          type: string
+          nullable: true
+      required: [aliases]
     MovieCompanyDetailsResponse:
       type: object
       properties:
@@ -4574,7 +4652,7 @@ components:
           items:
             $ref: "#/components/schemas/MovieCompanyMemberDto"
       required: [companyId, tmdbId, name, members]
-    MoviePersonFilmographyMemberDto:
+    PersonFilmographyMemberDto:
       type: object
       properties:
         tmdbId:
@@ -4610,7 +4688,7 @@ components:
         roleLabel:
           type: string
       required: [tmdbId, title, tmdbUrl, inCatalog, roleLabel]
-    MoviePersonFilmographyResponse:
+    PersonFilmographyResponse:
       type: object
       properties:
         personId:
@@ -4626,7 +4704,7 @@ components:
         members:
           type: array
           items:
-            $ref: "#/components/schemas/MoviePersonFilmographyMemberDto"
+            $ref: "#/components/schemas/PersonFilmographyMemberDto"
       required: [personId, tmdbId, name, members]
     MovieCompaniesSyncResponse:
       type: object
@@ -5182,6 +5260,37 @@ components:
         externalId:
           type: string
       required: [provider, externalId]
+    ShowPersonCreditDto:
+      type: object
+      properties:
+        personId:
+          type: integer
+          format: int64
+        tmdbId:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        profileUrl:
+          type: string
+          nullable: true
+        creditType:
+          type: string
+          enum: [CAST, CREW]
+        department:
+          type: string
+          nullable: true
+        job:
+          type: string
+          nullable: true
+        characterName:
+          type: string
+          nullable: true
+        billingOrder:
+          type: integer
+          nullable: true
+      required: [personId, tmdbId, name, slug, creditType]
     ShowDetailsResponse:
       type: object
       properties:
@@ -5224,7 +5333,36 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShowExternalIdDto"
-      required: [showId, title, originalTitle, images, watches, externalIds]
+        people:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShowPersonCreditDto"
+      required: [showId, title, originalTitle, images, watches, externalIds, people]
+    ShowCreditsSyncResponse:
+      type: object
+      properties:
+        showId:
+          type: integer
+          format: int64
+        syncedCount:
+          type: integer
+        visibleCount:
+          type: integer
+      required: [showId, syncedCount, visibleCount]
+    ShowCreditsBatchSyncResponse:
+      type: object
+      properties:
+        requestedLimit:
+          type: integer
+        candidates:
+          type: integer
+        processed:
+          type: integer
+        synced:
+          type: integer
+        failed:
+          type: integer
+      required: [requestedLimit, candidates, processed, synced, failed]
     ShowLibraryCardDto:
       type: object
       properties:

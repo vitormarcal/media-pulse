@@ -23,6 +23,8 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 | `GET /api/shows/stats` | - | `ShowsStatsResponse` |
 | `GET /api/shows/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `ShowsByYearResponse` |
 | `GET /api/shows/catalog/suggestions` | `q` | `ShowCatalogSuggestionsResponse` |
+| `POST /api/shows/credits/sync-tmdb` | `limit=100` | `ShowCreditsBatchSyncResponse` |
+| `POST /api/shows/{showId}/credits/sync-tmdb` | `showId` | `ShowCreditsSyncResponse` |
 | `POST /api/shows/catalog` | body com `title`, `year?`, `tmdbId?`, `tvdbId?`, `importEpisodes=true` | `ManualShowCatalogCreateResponse` |
 | `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview` | body com `tmdbId?` | `ShowSeasonEnrichmentPreviewResponse` |
 | `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/apply` | body com `tmdbId?`, `mode`, `seasonFields`, `episodeFields` | `ShowSeasonEnrichmentApplyResponse` |
@@ -59,6 +61,24 @@ O range anual é:
 - `currently-watching` considera séries com atividade recente e retorna progresso agregado
 
 ## Enriquecimento de temporada
+
+## Pessoas e créditos
+
+`POST /api/shows/{showId}/credits/sync-tmdb` sincroniza as pessoas principais da série a partir do TMDb.
+
+- exige vínculo `TMDB` salvo na série
+- traz o recorte principal de elenco e equipe relevante
+- persiste os vínculos em `show_credits`, reutilizando `people` por `tmdb_id`
+- a página da série passa a navegar para `/people/{slug}`
+- a página da pessoa agrega esses créditos de série ao lado dos créditos de filme
+
+`POST /api/shows/credits/sync-tmdb?limit=100` faz o backfill em lote para séries já existentes.
+
+- considera apenas séries com vínculo `TMDB`
+- considera apenas pendentes (`tv_shows.credits_synced_at IS NULL`)
+- processa no máximo `limit`, truncado em `1000`
+- executa cada série em transação isolada, contabilizando `synced` e `failed`
+- marca `tv_shows.credits_synced_at` ao concluir com sucesso
 
 `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview` compara os episódios existentes da temporada com o TMDb.
 

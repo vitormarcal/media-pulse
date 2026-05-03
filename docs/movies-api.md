@@ -15,12 +15,12 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/recent` | `limit=20`, `cursor?` | `MoviesRecentResponse` |
 | `GET /api/movies/{movieId}` | `movieId` | `MovieDetailsResponse` |
 | `GET /api/movies/slug/{slug}` | `slug` | `MovieDetailsResponse` |
-| `GET /api/movies/people/{slug}` | `slug` | `MoviePersonDetailsResponse` |
+| `GET /api/people/{slug}` | `slug` | `PersonDetailsResponse` |
 | `GET /api/movies/companies/{slug}` | `slug` | `MovieCompanyDetailsResponse` |
 | `GET /api/movies/lists` | - | `MovieListSummaryDto[]` |
 | `GET /api/movies/lists/{slug}` | `slug` | `MovieListDetailsResponse` |
 | `GET /api/movies/collections` | - | `MovieCollectionSummaryDto[]` |
-| `GET /api/movies/people/search` | `q`, `limit=8` | `MoviePersonSuggestionDto[]` |
+| `GET /api/people/search` | `q`, `limit=8` | `PersonSuggestionDto[]` |
 | `GET /api/movies/terms/{kind}/{slug}` | `kind=genre|tag`, `slug` | `MovieTermDetailsResponse` |
 | `GET /api/movies/terms/search` | `q`, `kind=genre|tag`, `limit=8` | `MovieTermSuggestionDto[]` |
 | `GET /api/movies/search` | `q`, `limit=10` | `MoviesSearchResponse` |
@@ -43,8 +43,8 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/{movieId}/credits/sync-tmdb` | `movieId` | `MovieCreditsSyncResponse` |
 | `POST /api/movies/credits/sync-tmdb` | `limit=100` | `MovieCreditsBatchSyncResponse` |
 | `GET /api/movies/{movieId}/credits/tmdb-candidates` | `movieId` | `MovieTmdbCreditCandidatesResponse` |
-| `POST /api/movies/{movieId}/credits/from-tmdb` | body com `personTmdbId`, `creditType`, `department?`, `job?`, `characterName?`, `billingOrder?` | `MoviePersonCreditDto` |
-| `POST /api/movies/{movieId}/people` | body com `personId`, `group`, `roleLabel?` | `MoviePersonCreditDto` |
+| `POST /api/movies/{movieId}/credits/from-tmdb` | body com `personTmdbId`, `creditType`, `department?`, `job?`, `characterName?`, `billingOrder?` | `PersonCreditDto` |
+| `POST /api/movies/{movieId}/people` | body com `personId`, `group`, `roleLabel?` | `PersonCreditDto` |
 | `POST /api/movies/{movieId}/terms/sync-tmdb` | `movieId` | `MovieTermsSyncResponse` |
 | `POST /api/movies/terms/sync-tmdb` | `limit=100` | `MovieTermsBatchSyncResponse` |
 | `POST /api/movies/{movieId}/terms` | body com `name`, `kind=GENRE|TAG` | `MovieTermDto` |
@@ -52,7 +52,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/terms/{termId}/visibility` | body com `hidden` | `MovieTermDto` |
 | `POST /api/movies/{movieId}/enrichment/preview` | body com `tmdbId?` | `MovieEnrichmentPreviewResponse` |
 | `POST /api/movies/{movieId}/enrichment/apply` | body com `tmdbId?`, `mode`, `fields[]` | `MovieEnrichmentApplyResponse` |
-| `GET /api/movies/people/{personId}/tmdb-filmography` | `personId` | `MoviePersonFilmographyResponse` |
+| `GET /api/people/{personId}/tmdb-filmography` | `personId` | `PersonFilmographyResponse` |
 
 ## Paginação e limites
 
@@ -288,7 +288,7 @@ Escopo do sync:
 
 Persistência:
 
-- `movie_people` guarda a pessoa local com `tmdb_id`, `name`, `slug` e `profile_url`
+- `people` guarda a pessoa local com `tmdb_id`, `name`, `slug` e `profile_url`
 - `movie_credits` guarda os vínculos filme-pessoa com `credit_type`, `job`, `department`, `character_name` e `billing_order`
 
 `POST /api/movies/{movieId}/credits/sync-tmdb` sincroniza créditos de um filme.
@@ -316,22 +316,22 @@ Persistência:
 - cria a pessoa se ela ainda não estiver persistida
 - salva o vínculo filme-pessoa sem precisar rerodar o sync completo
 
-`GET /api/movies/people/{slug}` abre a página local da pessoa.
+`GET /api/people/{slug}` abre a página local da pessoa.
 
-- retorna a pessoa, os papéis locais agregados e os filmes do catálogo ligados a ela
+- retorna a pessoa, os papéis locais agregados, os filmes do catálogo ligados a ela e um bloco `tmdbProfile` com biografia e metadados editoriais quando o TMDb responder
 
-`GET /api/movies/people/search` busca pessoas já persistidas localmente.
+`GET /api/people/search` busca pessoas já persistidas localmente.
 
-- usa `movie_people.normalized_name`
+- usa `people.normalized_name`
 - serve para reaproveitar uma pessoa existente antes de criar ou importar novos créditos
 
 `POST /api/movies/{movieId}/people` vincula uma pessoa já existente ao filme.
 
-- reaproveita `movie_people` local
+- reaproveita `people` local
 - aceita grupos editoriais simples: `DIRECTORS`, `WRITERS`, `CAST`, `OTHER`
 - `roleLabel` é opcional em `WRITERS` e `CAST`, e obrigatório em `OTHER`
 
-`GET /api/movies/people/{personId}/tmdb-filmography` expande a filmografia externa da pessoa.
+`GET /api/people/{personId}/tmdb-filmography` expande a filmografia externa da pessoa.
 
 - cruza a filmografia do TMDb com os filmes já catalogados localmente
 - quando encontra um filme já local, reaproveita essa oportunidade para persistir o vínculo `movie_credits` da pessoa com o filme

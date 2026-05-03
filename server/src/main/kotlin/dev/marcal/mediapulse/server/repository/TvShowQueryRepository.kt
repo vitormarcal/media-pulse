@@ -3,10 +3,12 @@ package dev.marcal.mediapulse.server.repository
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.RangeDto
 import dev.marcal.mediapulse.server.api.shows.ShowCardDto
+import dev.marcal.mediapulse.server.api.shows.ShowCreditTypeDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowExternalIdDto
 import dev.marcal.mediapulse.server.api.shows.ShowImageDto
 import dev.marcal.mediapulse.server.api.shows.ShowLibraryCardDto
+import dev.marcal.mediapulse.server.api.shows.ShowPersonCreditDto
 import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDto
@@ -34,6 +36,53 @@ import java.time.Instant
 class TvShowQueryRepository(
     private val entityManager: EntityManager,
 ) {
+    fun getShowPeople(showId: Long): List<ShowPersonCreditDto> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT
+                  p.id,
+                  p.tmdb_id,
+                  p.name,
+                  p.slug,
+                  p.profile_url,
+                  sc.credit_type,
+                  NULLIF(sc.department, ''),
+                  NULLIF(sc.job, ''),
+                  NULLIF(sc.character_name, ''),
+                  sc.billing_order
+                FROM show_credits sc
+                JOIN people p ON p.id = sc.person_id
+                WHERE sc.show_id = :showId
+                ORDER BY
+                  CASE sc.credit_type WHEN 'CREW' THEN 0 ELSE 1 END,
+                  CASE
+                    WHEN sc.job = 'Director' THEN 0
+                    WHEN sc.job IN ('Writer', 'Screenplay', 'Story Editor') THEN 1
+                    ELSE 2
+                  END,
+                  COALESCE(sc.billing_order, 9999),
+                  p.name ASC,
+                  p.id ASC
+                """.trimIndent(),
+            ).setParameter("showId", showId)
+            .resultList
+            .map { row ->
+                val fields = row as Array<*>
+                ShowPersonCreditDto(
+                    personId = (fields[0] as Number).toLong(),
+                    tmdbId = fields[1] as String,
+                    name = fields[2] as String,
+                    slug = fields[3] as String,
+                    profileUrl = fields[4] as String?,
+                    creditType = ShowCreditTypeDto.valueOf(fields[5] as String),
+                    department = fields[6] as String?,
+                    job = fields[7] as String?,
+                    characterName = fields[8] as String?,
+                    billingOrder = (fields[9] as Number?)?.toInt(),
+                )
+            }
+
     fun library(
         limit: Int,
         cursor: String?,
@@ -437,6 +486,8 @@ class TvShowQueryRepository(
                     )
                 }
 
+        val people = getShowPeople(showId)
+
         val progress =
             if (seasons.isEmpty()) {
                 ShowProgressDto(
@@ -475,6 +526,7 @@ class TvShowQueryRepository(
             progress = progress,
             watches = watches,
             externalIds = externalIds,
+            people = people,
         )
     }
 

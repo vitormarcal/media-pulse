@@ -3,15 +3,15 @@ package dev.marcal.mediapulse.server.service.movie
 import dev.marcal.mediapulse.server.api.movies.MovieCreditTypeDto
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieExternalIdDto
-import dev.marcal.mediapulse.server.api.movies.MoviePersonCreditDto
+import dev.marcal.mediapulse.server.api.movies.PersonCreditDto
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.model.movie.Movie
-import dev.marcal.mediapulse.server.model.movie.MoviePerson
+import dev.marcal.mediapulse.server.model.person.Person
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieCreditAssignmentRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieCreditsCrudRepository
-import dev.marcal.mediapulse.server.repository.crud.MoviePersonRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
+import dev.marcal.mediapulse.server.repository.crud.PersonRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -24,7 +24,7 @@ import kotlin.test.assertEquals
 class MovieCreditsServiceTest {
     private val movieRepository = mockk<MovieRepository>()
     private val movieQueryRepository = mockk<MovieQueryRepository>()
-    private val moviePersonRepository = mockk<MoviePersonRepository>(relaxed = true)
+    private val personRepository = mockk<PersonRepository>(relaxed = true)
     private val movieCreditAssignmentRepository = mockk<MovieCreditAssignmentRepository>(relaxed = true)
     private val movieCreditsCrudRepository = mockk<MovieCreditsCrudRepository>()
     private val tmdbApiClient = mockk<TmdbApiClient>()
@@ -35,7 +35,7 @@ class MovieCreditsServiceTest {
         MovieCreditsService(
             movieRepository = movieRepository,
             movieQueryRepository = movieQueryRepository,
-            moviePersonRepository = moviePersonRepository,
+            personRepository = personRepository,
             movieCreditAssignmentRepository = movieCreditAssignmentRepository,
             movieCreditsCrudRepository = movieCreditsCrudRepository,
             tmdbApiClient = tmdbApiClient,
@@ -93,8 +93,8 @@ class MovieCreditsServiceTest {
         every { movieQueryRepository.getMoviePeople(9) } returns emptyList()
         every { manualMovieCatalogService.buildTmdbImageUrl(any()) } answers { "https://image.tmdb.org/t/p/w185${firstArg<String>()}" }
 
-        every { moviePersonRepository.findByTmdbId("2011") } returns
-            MoviePerson(
+        every { personRepository.findByTmdbId("2011") } returns
+            Person(
                 id = 2011,
                 tmdbId = "2011",
                 name = "Existing Actor",
@@ -102,8 +102,8 @@ class MovieCreditsServiceTest {
                 slug = "existing-actor-2011",
                 profileUrl = null,
             )
-        every { moviePersonRepository.findByTmdbId(match { it != "2011" }) } returns null
-        every { moviePersonRepository.save(any()) } answers { firstArg() }
+        every { personRepository.findByTmdbId(match { it != "2011" }) } returns null
+        every { personRepository.save(any()) } answers { firstArg() }
         every { movieCreditAssignmentRepository.replaceForMovie(9, capture(capturedCredits)) } returns Unit
 
         every { tmdbApiClient.fetchMovieCredits("909") } returns
@@ -137,7 +137,7 @@ class MovieCreditsServiceTest {
         every { manualMovieCatalogService.buildTmdbImageUrl(any()) } answers { "https://image.tmdb.org/t/p/w185${firstArg<String>()}" }
         every { movieQueryRepository.getMoviePeople(12) } returns
             listOf(
-                MoviePersonCreditDto(
+                PersonCreditDto(
                     personId = 88,
                     tmdbId = "1000",
                     name = "Saved Lead",
@@ -151,8 +151,8 @@ class MovieCreditsServiceTest {
                 ),
             )
 
-        every { moviePersonRepository.findByTmdbId("2011") } returns
-            MoviePerson(
+        every { personRepository.findByTmdbId("2011") } returns
+            Person(
                 id = 2011,
                 tmdbId = "2011",
                 name = "Known Extra",
@@ -160,7 +160,7 @@ class MovieCreditsServiceTest {
                 slug = "known-extra-2011",
                 profileUrl = null,
             )
-        every { moviePersonRepository.findByTmdbId(match { it != "2011" }) } returns null
+        every { personRepository.findByTmdbId(match { it != "2011" }) } returns null
 
         every { tmdbApiClient.fetchMovieCredits("1212") } returns
             TmdbApiClient.TmdbMovieCredits(

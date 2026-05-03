@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.api.movies
 
+import dev.marcal.mediapulse.server.api.shows.ShowLibraryCardDto
 import java.time.Instant
 
 data class MovieCardDto(
@@ -102,7 +103,7 @@ data class MovieCollectionSummaryDto(
     val previewMovies: List<MovieCollectionPreviewMovieDto> = emptyList(),
 )
 
-data class MoviePersonCreditDto(
+data class PersonCreditDto(
     val personId: Long,
     val tmdbId: String,
     val name: String,
@@ -147,7 +148,7 @@ data class MovieListSummaryDto(
     val previewMovies: List<MovieListPreviewMovieDto> = emptyList(),
 )
 
-data class MoviePersonSuggestionDto(
+data class PersonSuggestionDto(
     val personId: Long,
     val tmdbId: String,
     val name: String,
@@ -156,7 +157,7 @@ data class MoviePersonSuggestionDto(
     val roles: List<String>,
 )
 
-data class MoviePersonLinkRequest(
+data class PersonLinkRequest(
     val personId: Long,
     val group: String,
     val roleLabel: String? = null,
@@ -196,7 +197,7 @@ data class MovieTmdbCreditImportRequest(
     val billingOrder: Int? = null,
 )
 
-data class MoviePersonDetailsResponse(
+data class PersonDetailsResponse(
     val personId: Long,
     val tmdbId: String,
     val name: String,
@@ -206,6 +207,23 @@ data class MoviePersonDetailsResponse(
     val movieCount: Long,
     val watchedMoviesCount: Long,
     val movies: List<MovieLibraryCardDto>,
+    val showCount: Long = 0,
+    val watchedShowsCount: Long = 0,
+    val shows: List<ShowLibraryCardDto> = emptyList(),
+    val tmdbProfile: PersonTmdbProfileDto? = null,
+)
+
+data class PersonTmdbProfileDto(
+    val biography: String?,
+    val birthday: String?,
+    val deathday: String?,
+    val placeOfBirth: String?,
+    val knownForDepartment: String?,
+    val aliases: List<String> = emptyList(),
+    val homepage: String?,
+    val imdbId: String?,
+    val popularity: Double?,
+    val profileUrl: String?,
 )
 
 data class MovieCompanyDetailsResponse(
@@ -307,7 +325,7 @@ data class MovieDetailsResponse(
     val externalIds: List<MovieExternalIdDto>,
     val lists: List<MovieListSummaryDto> = emptyList(),
     val companies: List<MovieCompanyDto> = emptyList(),
-    val people: List<MoviePersonCreditDto> = emptyList(),
+    val people: List<PersonCreditDto> = emptyList(),
     val terms: List<MovieTermDto> = emptyList(),
     val collection: MovieCollectionDto? = null,
 )
@@ -475,15 +493,15 @@ data class MovieCollectionMemberDto(
     val inCatalog: Boolean,
 )
 
-data class MoviePersonFilmographyResponse(
+data class PersonFilmographyResponse(
     val personId: Long,
     val tmdbId: String,
     val name: String,
     val profileUrl: String?,
-    val members: List<MoviePersonFilmographyMemberDto>,
+    val members: List<PersonFilmographyMemberDto>,
 )
 
-data class MoviePersonFilmographyMemberDto(
+data class PersonFilmographyMemberDto(
     val tmdbId: String,
     val title: String,
     val originalTitle: String?,

@@ -1,6 +1,8 @@
 package dev.marcal.mediapulse.server.controller.shows
 
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
+import dev.marcal.mediapulse.server.api.shows.ShowCreditsBatchSyncResponse
+import dev.marcal.mediapulse.server.api.shows.ShowCreditsSyncResponse
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentApplyRequest
@@ -14,6 +16,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowsSearchResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsStatsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
+import dev.marcal.mediapulse.server.service.tv.ShowCreditsService
 import dev.marcal.mediapulse.server.service.tv.ShowSeasonMetadataEnrichmentService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
@@ -35,6 +38,7 @@ import kotlin.math.min
 class ShowsController(
     private val repository: TvShowQueryRepository,
     private val showSeasonMetadataEnrichmentService: ShowSeasonMetadataEnrichmentService,
+    private val showCreditsService: ShowCreditsService,
 ) {
     @GetMapping("/library")
     fun library(
@@ -75,6 +79,16 @@ class ShowsController(
         @PathVariable slug: String,
         @PathVariable seasonNumber: Int,
     ): ShowSeasonDetailsResponse = repository.getShowSeasonDetailsBySlug(slug, seasonNumber)
+
+    @PostMapping("/{showId}/credits/sync-tmdb")
+    fun syncCreditsFromTmdb(
+        @PathVariable showId: Long,
+    ): ShowCreditsSyncResponse = showCreditsService.syncFromTmdb(showId)
+
+    @PostMapping("/credits/sync-tmdb")
+    fun syncAllCreditsFromTmdb(
+        @RequestParam(defaultValue = "100") limit: Int,
+    ): ShowCreditsBatchSyncResponse = showCreditsService.syncAllFromTmdb(normalizeLimit("limit", limit))
 
     @PostMapping("/{showId}/seasons/{seasonNumber}/enrichment/preview")
     fun previewSeasonEnrichment(

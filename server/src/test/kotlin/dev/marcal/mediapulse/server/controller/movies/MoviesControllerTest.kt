@@ -11,9 +11,6 @@ import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
-import dev.marcal.mediapulse.server.api.movies.MoviePersonDetailsResponse
-import dev.marcal.mediapulse.server.api.movies.MoviePersonLinkRequest
-import dev.marcal.mediapulse.server.api.movies.MoviePersonSuggestionDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermKindDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermSourceDto
@@ -30,6 +27,7 @@ import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesTotalStatsDto
 import dev.marcal.mediapulse.server.api.movies.MoviesYearStatsDto
+import dev.marcal.mediapulse.server.api.movies.PersonLinkRequest
 import dev.marcal.mediapulse.server.api.movies.RangeDto
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
@@ -96,28 +94,6 @@ class MoviesControllerTest {
 
         assertEquals(10, response.movieId)
         verify(exactly = 1) { repository.getMovieDetailsBySlug("3828") }
-    }
-
-    @Test
-    fun `person details should delegate to repository`() {
-        val expected =
-            MoviePersonDetailsResponse(
-                personId = 44,
-                tmdbId = "138",
-                name = "Quentin Tarantino",
-                slug = "quentin-tarantino-138",
-                profileUrl = null,
-                roles = listOf("Direção"),
-                movieCount = 4,
-                watchedMoviesCount = 3,
-                movies = emptyList(),
-            )
-        every { repository.getMoviePersonDetails("quentin-tarantino-138") } returns expected
-
-        val response = controller.personDetails("quentin-tarantino-138")
-
-        assertEquals(44, response.personId)
-        verify(exactly = 1) { repository.getMoviePersonDetails("quentin-tarantino-138") }
     }
 
     @Test
@@ -198,28 +174,6 @@ class MoviesControllerTest {
 
         assertEquals(10, response.coverMovieId)
         verify(exactly = 1) { movieListsService.updateCover(3, MovieListCoverUpdateRequest(coverMovieId = 10)) }
-    }
-
-    @Test
-    fun `search people should delegate to credits service with capped limit`() {
-        val expected =
-            listOf(
-                MoviePersonSuggestionDto(
-                    personId = 44,
-                    tmdbId = "138",
-                    name = "Quentin Tarantino",
-                    slug = "quentin-tarantino-138",
-                    profileUrl = null,
-                    roles = listOf("Direção", "Roteiro"),
-                ),
-            )
-        every { movieCreditsService.searchPeople("quentin", 1000) } returns expected
-
-        val response = controller.searchPeople(q = "quentin", limit = 9999)
-
-        assertEquals(1, response.size)
-        assertEquals("Quentin Tarantino", response.first().name)
-        verify(exactly = 1) { movieCreditsService.searchPeople("quentin", 1000) }
     }
 
     @Test
@@ -318,9 +272,9 @@ class MoviesControllerTest {
 
     @Test
     fun `link existing person should delegate to credits service`() {
-        val request = MoviePersonLinkRequest(personId = 44, group = "DIRECTORS", roleLabel = null)
+        val request = PersonLinkRequest(personId = 44, group = "DIRECTORS", roleLabel = null)
         val expected =
-            dev.marcal.mediapulse.server.api.movies.MoviePersonCreditDto(
+            dev.marcal.mediapulse.server.api.movies.PersonCreditDto(
                 personId = 44,
                 tmdbId = "138",
                 name = "Quentin Tarantino",
@@ -350,7 +304,7 @@ class MoviesControllerTest {
                 job = "Writer",
             )
         val expected =
-            dev.marcal.mediapulse.server.api.movies.MoviePersonCreditDto(
+            dev.marcal.mediapulse.server.api.movies.PersonCreditDto(
                 personId = 44,
                 tmdbId = "138",
                 name = "Quentin Tarantino",

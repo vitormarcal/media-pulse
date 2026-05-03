@@ -133,6 +133,26 @@ data class TmdbPersonMovieCreditsResponse(
     val crew: List<TmdbPersonMovieCrewCreditResponse> = emptyList(),
 )
 
+data class TmdbPersonDetailsResponse(
+    val id: Long? = null,
+    val name: String? = null,
+    val biography: String? = null,
+    val birthday: String? = null,
+    val deathday: String? = null,
+    @JsonProperty("place_of_birth")
+    val placeOfBirth: String? = null,
+    @JsonProperty("known_for_department")
+    val knownForDepartment: String? = null,
+    @JsonProperty("also_known_as")
+    val alsoKnownAs: List<String> = emptyList(),
+    val homepage: String? = null,
+    @JsonProperty("imdb_id")
+    val imdbId: String? = null,
+    val popularity: Double? = null,
+    @JsonProperty("profile_path")
+    val profilePath: String? = null,
+)
+
 data class TmdbPersonMovieCastCreditResponse(
     val id: Long? = null,
     val title: String? = null,
@@ -206,6 +226,29 @@ data class TmdbShowDetailsResponse(
     @JsonProperty("backdrop_path")
     val backdropPath: String? = null,
     val seasons: List<TmdbShowSeasonSummaryResponse> = emptyList(),
+)
+
+data class TmdbShowCreditsResponse(
+    val cast: List<TmdbShowCastCreditResponse> = emptyList(),
+    val crew: List<TmdbShowCrewCreditResponse> = emptyList(),
+)
+
+data class TmdbShowCastCreditResponse(
+    val id: Long? = null,
+    val name: String? = null,
+    val character: String? = null,
+    val order: Int? = null,
+    @JsonProperty("profile_path")
+    val profilePath: String? = null,
+)
+
+data class TmdbShowCrewCreditResponse(
+    val id: Long? = null,
+    val name: String? = null,
+    val department: String? = null,
+    val job: String? = null,
+    @JsonProperty("profile_path")
+    val profilePath: String? = null,
 )
 
 data class TmdbShowSeasonEpisodeResponse(
@@ -325,6 +368,27 @@ class TmdbApiClient(
         val episodes: List<TmdbShowSeasonEpisode>,
     )
 
+    data class TmdbShowCredits(
+        val cast: List<TmdbShowCastCredit>,
+        val crew: List<TmdbShowCrewCredit>,
+    )
+
+    data class TmdbShowCastCredit(
+        val tmdbId: String,
+        val name: String,
+        val character: String?,
+        val order: Int?,
+        val profilePath: String?,
+    )
+
+    data class TmdbShowCrewCredit(
+        val tmdbId: String,
+        val name: String,
+        val department: String?,
+        val job: String?,
+        val profilePath: String?,
+    )
+
     data class TmdbMovieSearchItem(
         val tmdbId: String,
         val title: String?,
@@ -361,6 +425,21 @@ class TmdbApiClient(
     data class TmdbPersonMovieCredits(
         val cast: List<TmdbPersonMovieCastCredit>,
         val crew: List<TmdbPersonMovieCrewCredit>,
+    )
+
+    data class TmdbPersonDetails(
+        val tmdbId: String,
+        val name: String?,
+        val biography: String?,
+        val birthday: String?,
+        val deathday: String?,
+        val placeOfBirth: String?,
+        val knownForDepartment: String?,
+        val alsoKnownAs: List<String>,
+        val homepage: String?,
+        val imdbId: String?,
+        val popularity: Double?,
+        val profilePath: String?,
     )
 
     data class TmdbPersonMovieCastCredit(
@@ -767,6 +846,83 @@ class TmdbApiClient(
         return null
     }
 
+    fun fetchPersonDetails(tmdbPersonId: String): TmdbPersonDetails? {
+        if (!tmdbProperties.enabled) return null
+
+        val normalizedTmdbPersonId = tmdbPersonId.trim()
+        if (normalizedTmdbPersonId.isBlank()) return null
+
+        val attempts = (tmdbProperties.max429Retries + 1).coerceAtLeast(1)
+        var attempt = 0
+
+        while (attempt < attempts) {
+            attempt++
+            tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
+
+            try {
+                val response =
+                    tmdbWebClient
+                        .get()
+                        .uri { uriBuilder ->
+                            val builder = uriBuilder.path("/person/{id}")
+                            if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
+                                builder.queryParam("api_key", tmdbProperties.apiKey)
+                            }
+                            builder.build(normalizedTmdbPersonId)
+                        }.retrieve()
+                        .bodyToMono<TmdbPersonDetailsResponse>()
+                        .block()
+                        ?: return null
+
+                return TmdbPersonDetails(
+                    tmdbId = response.id?.toString() ?: normalizedTmdbPersonId,
+                    name = response.name?.trim()?.ifBlank { null },
+                    biography = response.biography?.trim()?.ifBlank { null },
+                    birthday = response.birthday?.trim()?.ifBlank { null },
+                    deathday = response.deathday?.trim()?.ifBlank { null },
+                    placeOfBirth = response.placeOfBirth?.trim()?.ifBlank { null },
+                    knownForDepartment = response.knownForDepartment?.trim()?.ifBlank { null },
+                    alsoKnownAs =
+                        response.alsoKnownAs
+                            .mapNotNull { it.trim().ifBlank { null } }
+                            .distinct(),
+                    homepage = response.homepage?.trim()?.ifBlank { null },
+                    imdbId = response.imdbId?.trim()?.ifBlank { null },
+                    popularity = response.popularity,
+                    profilePath = response.profilePath?.trim()?.ifBlank { null },
+                )
+            } catch (ex: WebClientResponseException.NotFound) {
+                return null
+            } catch (ex: WebClientResponseException) {
+                val isTooManyRequests = ex.statusCode.value() == 429
+                val hasRemainingRetry = attempt < attempts
+                if (isTooManyRequests && hasRemainingRetry) {
+                    val waitMs = resolve429WaitMs(ex, attempt)
+                    logger.warn(
+                        "TMDb person details rate limited (429). Waiting {}ms before retry {}/{}",
+                        waitMs,
+                        attempt + 1,
+                        attempts,
+                    )
+                    Thread.sleep(waitMs)
+                    continue
+                }
+                logger.warn(
+                    "Failed to fetch TMDb person details for id={} status={}",
+                    normalizedTmdbPersonId,
+                    ex.statusCode.value(),
+                    ex,
+                )
+                return null
+            } catch (ex: Exception) {
+                logger.warn("Failed to fetch TMDb person details for id={}", normalizedTmdbPersonId, ex)
+                return null
+            }
+        }
+
+        return null
+    }
+
     fun fetchShowDetails(tmdbId: String): TmdbShowDetails? {
         if (!tmdbProperties.enabled) return null
 
@@ -825,6 +981,92 @@ class TmdbApiClient(
                 return null
             } catch (ex: Exception) {
                 logger.warn("Failed to fetch TMDb show details for id={}", tmdbId, ex)
+                return null
+            }
+        }
+
+        return null
+    }
+
+    fun fetchShowCredits(tmdbShowId: String): TmdbShowCredits? {
+        if (!tmdbProperties.enabled) return null
+
+        val normalizedTmdbShowId = tmdbShowId.trim()
+        if (normalizedTmdbShowId.isBlank()) return null
+
+        val attempts = (tmdbProperties.max429Retries + 1).coerceAtLeast(1)
+        var attempt = 0
+
+        while (attempt < attempts) {
+            attempt++
+            tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
+
+            try {
+                val response =
+                    tmdbWebClient
+                        .get()
+                        .uri { uriBuilder ->
+                            val builder = uriBuilder.path("/tv/{id}/credits")
+                            if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
+                                builder.queryParam("api_key", tmdbProperties.apiKey)
+                            }
+                            builder.build(normalizedTmdbShowId)
+                        }.retrieve()
+                        .bodyToMono<TmdbShowCreditsResponse>()
+                        .block()
+                        ?: return null
+
+                return TmdbShowCredits(
+                    cast =
+                        response.cast.mapNotNull { item ->
+                            val personId = item.id?.toString() ?: return@mapNotNull null
+                            val name = item.name?.trim()?.ifBlank { null } ?: return@mapNotNull null
+                            TmdbShowCastCredit(
+                                tmdbId = personId,
+                                name = name,
+                                character = item.character?.trim()?.ifBlank { null },
+                                order = item.order,
+                                profilePath = item.profilePath?.trim()?.ifBlank { null },
+                            )
+                        },
+                    crew =
+                        response.crew.mapNotNull { item ->
+                            val personId = item.id?.toString() ?: return@mapNotNull null
+                            val name = item.name?.trim()?.ifBlank { null } ?: return@mapNotNull null
+                            TmdbShowCrewCredit(
+                                tmdbId = personId,
+                                name = name,
+                                department = item.department?.trim()?.ifBlank { null },
+                                job = item.job?.trim()?.ifBlank { null },
+                                profilePath = item.profilePath?.trim()?.ifBlank { null },
+                            )
+                        },
+                )
+            } catch (ex: WebClientResponseException.NotFound) {
+                return null
+            } catch (ex: WebClientResponseException) {
+                val isTooManyRequests = ex.statusCode.value() == 429
+                val hasRemainingRetry = attempt < attempts
+                if (isTooManyRequests && hasRemainingRetry) {
+                    val waitMs = resolve429WaitMs(ex, attempt)
+                    logger.warn(
+                        "TMDb show credits rate limited (429). Waiting {}ms before retry {}/{}",
+                        waitMs,
+                        attempt + 1,
+                        attempts,
+                    )
+                    Thread.sleep(waitMs)
+                    continue
+                }
+                logger.warn(
+                    "Failed to fetch TMDb show credits for id={} status={}",
+                    normalizedTmdbShowId,
+                    ex.statusCode.value(),
+                    ex,
+                )
+                return null
+            } catch (ex: Exception) {
+                logger.warn("Failed to fetch TMDb show credits for id={}", normalizedTmdbShowId, ex)
                 return null
             }
         }

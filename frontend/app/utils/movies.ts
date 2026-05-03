@@ -10,14 +10,14 @@ import type {
   MovieListDetailsResponse,
   MovieListSummaryDto,
   MovieListsIndexPageData,
-  MoviePersonDetailsResponse,
+  PersonDetailsResponse,
   MovieLibraryPageData,
   MovieDetailsResponse,
   MoviesByYearResponse,
   MoviesLibraryResponse,
   MoviesSearchResponse,
   MoviePageData,
-  MoviePersonCreditDto,
+  PersonCreditDto,
   MoviesStatsResponse,
   MovieWatchEntryModel,
 } from '~/types/movies'
@@ -104,7 +104,7 @@ function buildLibraryCardModel(movie: MovieLibraryCardDto): MovieLibraryCardMode
   }
 }
 
-function uniquePeopleById(items: MoviePersonCreditDto[]) {
+function uniquePeopleById(items: PersonCreditDto[]) {
   const seen = new Set<number>()
   return items.filter((item) => {
     if (seen.has(item.personId)) return false
@@ -123,6 +123,28 @@ function buildSearchCardModel(movie: MoviesSearchResponse['movies'][number]): Mo
     sessionsLabel: movie.watchedAt ? 'Encontrado pela busca' : 'Sem sessão recente no índice',
     activityLabel: movie.watchedAt ? `Último registro ${formatRelativeDate(movie.watchedAt)}` : 'Sem registro recente',
     aside: 'Busca',
+  }
+}
+
+function buildPersonShowCardModel(show: ShowLibraryCardDto): ShowLibraryCardModel {
+  const totalEpisodes = show.episodesCount || 0
+  const watchedEpisodes = show.watchedEpisodesCount || 0
+  const progressValue = totalEpisodes > 0 ? Math.round((watchedEpisodes / totalEpisodes) * 100) : 0
+  const complete = totalEpisodes > 0 && watchedEpisodes >= totalEpisodes
+
+  return {
+    id: `person-show-${show.showId}`,
+    title: show.title,
+    subtitle: formatMovieSubtitle(show.title, show.originalTitle, show.year),
+    href: show.slug ? `/shows/${show.slug}` : null,
+    imageUrl: show.coverUrl,
+    progressLabel: totalEpisodes > 0 ? `${watchedEpisodes}/${totalEpisodes} episódios` : 'Sem total consolidado',
+    progressValue,
+    activityLabel: show.lastWatchedAt
+      ? `Último avanço ${formatRelativeDate(show.lastWatchedAt)}`
+      : 'Sem watch registrado ainda',
+    aside: complete ? 'Fechada' : progressValue > 0 ? 'Aberta' : 'Intocada',
+    isDormant: !show.lastWatchedAt,
   }
 }
 
@@ -754,7 +776,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
             id: `person-${person.personId}-director`,
             personId: person.personId,
             name: person.name,
-            href: `/movies/people/${person.slug}`,
+            href: `/people/${person.slug}`,
             roleLabel: 'Direção',
             profileUrl: person.profileUrl,
           })),
@@ -766,7 +788,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
             id: `person-${person.personId}-writer`,
             personId: person.personId,
             name: person.name,
-            href: `/movies/people/${person.slug}`,
+            href: `/people/${person.slug}`,
             roleLabel: 'Roteiro',
             profileUrl: person.profileUrl,
           })),
@@ -778,7 +800,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
             id: `person-${person.personId}-cast`,
             personId: person.personId,
             name: person.name,
-            href: `/movies/people/${person.slug}`,
+            href: `/people/${person.slug}`,
             roleLabel: person.characterName || 'Elenco',
             profileUrl: person.profileUrl,
           })),
@@ -869,22 +891,31 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
   }
 }
 
-export function buildMoviePersonPageData(
-  person: MoviePersonDetailsResponse,
-): import('~/types/movies').MoviePersonPageData {
+export function buildPersonPageData(person: PersonDetailsResponse): import('~/types/movies').PersonPageData {
+  const heroMeta = [
+    `${person.movieCount} filmes`,
+    `${person.watchedMoviesCount} com sessão`,
+    person.tmdbProfile?.knownForDepartment,
+    ...person.roles.slice(0, 2),
+  ].filter(Boolean) as string[]
+
   return {
     personId: person.personId,
     tmdbId: person.tmdbId,
     name: person.name,
     slug: person.slug,
     profileUrl: person.profileUrl,
-    heroMeta: [`${person.movieCount} filmes`, `${person.watchedMoviesCount} com sessão`, ...person.roles.slice(0, 3)],
+    heroMeta,
     roles: person.roles,
+    tmdbProfile: person.tmdbProfile,
     stats: {
       movieCount: person.movieCount,
       watchedMoviesCount: person.watchedMoviesCount,
+      showCount: person.showCount,
+      watchedShowsCount: person.watchedShowsCount,
     },
     movies: person.movies.map(buildLibraryCardModel),
+    shows: person.shows.map(buildPersonShowCardModel),
   }
 }
 

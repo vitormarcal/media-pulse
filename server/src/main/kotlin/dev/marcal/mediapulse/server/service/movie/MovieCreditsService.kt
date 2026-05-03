@@ -2,22 +2,22 @@ package dev.marcal.mediapulse.server.service.movie
 
 import dev.marcal.mediapulse.server.api.movies.MovieCreditsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCreditsSyncResponse
-import dev.marcal.mediapulse.server.api.movies.MoviePersonCreditDto
-import dev.marcal.mediapulse.server.api.movies.MoviePersonLinkRequest
-import dev.marcal.mediapulse.server.api.movies.MoviePersonSuggestionDto
 import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditCandidateDto
 import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditCandidateGroupDto
 import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditCandidatesResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditImportRequest
+import dev.marcal.mediapulse.server.api.movies.PersonCreditDto
+import dev.marcal.mediapulse.server.api.movies.PersonLinkRequest
+import dev.marcal.mediapulse.server.api.movies.PersonSuggestionDto
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieCreditType
-import dev.marcal.mediapulse.server.model.movie.MoviePerson
+import dev.marcal.mediapulse.server.model.person.Person
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieCreditAssignmentRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieCreditsCrudRepository
-import dev.marcal.mediapulse.server.repository.crud.MoviePersonRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
+import dev.marcal.mediapulse.server.repository.crud.PersonRepository
 import dev.marcal.mediapulse.server.util.SlugTextUtil
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -31,7 +31,7 @@ import java.time.Instant
 class MovieCreditsService(
     private val movieRepository: MovieRepository,
     private val movieQueryRepository: MovieQueryRepository,
-    private val moviePersonRepository: MoviePersonRepository,
+    private val personRepository: PersonRepository,
     private val movieCreditAssignmentRepository: MovieCreditAssignmentRepository,
     private val movieCreditsCrudRepository: MovieCreditsCrudRepository,
     private val tmdbApiClient: TmdbApiClient,
@@ -61,7 +61,7 @@ class MovieCreditsService(
     fun searchPeople(
         query: String,
         limit: Int,
-    ): List<MoviePersonSuggestionDto> = movieQueryRepository.searchMoviePeople(query, limit.coerceIn(1, 20))
+    ): List<PersonSuggestionDto> = movieQueryRepository.searchPeople(query, limit.coerceIn(1, 20))
 
     @Transactional
     fun fetchTmdbCandidates(movieId: Long): MovieTmdbCreditCandidatesResponse {
@@ -121,12 +121,12 @@ class MovieCreditsService(
     @Transactional
     fun linkExistingPerson(
         movieId: Long,
-        request: MoviePersonLinkRequest,
-    ): MoviePersonCreditDto {
+        request: PersonLinkRequest,
+    ): PersonCreditDto {
         val movie = requireMovie(movieId)
         val person =
-            moviePersonRepository.findById(request.personId).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "Movie person not found")
+            personRepository.findById(request.personId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Person not found")
             }
 
         val group = request.group.trim().uppercase()
@@ -179,7 +179,7 @@ class MovieCreditsService(
     fun importTmdbCredit(
         movieId: Long,
         request: MovieTmdbCreditImportRequest,
-    ): MoviePersonCreditDto {
+    ): PersonCreditDto {
         requireMovie(movieId)
         val credits = requireTmdbMovieCredits(movieId)
 
@@ -359,7 +359,7 @@ class MovieCreditsService(
         var reconciled = 0
 
         cast.forEach { credit ->
-            val person = moviePersonRepository.findByTmdbId(credit.tmdbId) ?: return@forEach
+            val person = personRepository.findByTmdbId(credit.tmdbId) ?: return@forEach
             val request =
                 MovieCreditAssignmentRepository.UpsertMovieCreditRequest(
                     movieId = movie.id,
@@ -376,7 +376,7 @@ class MovieCreditsService(
         }
 
         crew.forEach { credit ->
-            val person = moviePersonRepository.findByTmdbId(credit.tmdbId) ?: return@forEach
+            val person = personRepository.findByTmdbId(credit.tmdbId) ?: return@forEach
             val request =
                 MovieCreditAssignmentRepository.UpsertMovieCreditRequest(
                     movieId = movie.id,
@@ -400,7 +400,7 @@ class MovieCreditsService(
         credit: TmdbApiClient.TmdbMovieCastCredit,
     ): MovieTmdbCreditCandidateDto? {
         val key = creditKey(credit.tmdbId, MovieCreditType.CAST, "", credit.character ?: "")
-        if (key in linkedKeys || moviePersonRepository.findByTmdbId(credit.tmdbId) != null) {
+        if (key in linkedKeys || personRepository.findByTmdbId(credit.tmdbId) != null) {
             return null
         }
 
@@ -422,7 +422,7 @@ class MovieCreditsService(
         credit: TmdbApiClient.TmdbMovieCrewCredit,
     ): MovieTmdbCreditCandidateDto? {
         val key = creditKey(credit.tmdbId, MovieCreditType.CREW, credit.job ?: "", "")
-        if (key in linkedKeys || moviePersonRepository.findByTmdbId(credit.tmdbId) != null) {
+        if (key in linkedKeys || personRepository.findByTmdbId(credit.tmdbId) != null) {
             return null
         }
 
@@ -443,13 +443,13 @@ class MovieCreditsService(
         movieId: Long,
         personId: Long,
         credit: MovieCreditAssignmentRepository.UpsertMovieCreditRequest,
-    ): MoviePersonCreditDto =
+    ): PersonCreditDto =
         movieQueryRepository.getMoviePeople(movieId).firstOrNull {
             it.personId == personId &&
                 it.creditType == credit.creditType.toDto() &&
                 (it.job ?: "") == credit.job &&
                 (it.characterName ?: "") == credit.characterName
-        } ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Movie person credit not found")
+        } ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Person credit not found")
 
     private fun requireMovie(movieId: Long): Movie =
         movieRepository.findById(movieId).orElseThrow {
@@ -470,21 +470,21 @@ class MovieCreditsService(
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "TMDb movie credits not found")
     }
 
-    private fun personExistsLocally(tmdbId: String): Boolean = moviePersonRepository.findByTmdbId(tmdbId) != null
+    private fun personExistsLocally(tmdbId: String): Boolean = personRepository.findByTmdbId(tmdbId) != null
 
     private fun upsertPerson(
         tmdbId: String,
         rawName: String,
         profilePath: String?,
-    ): MoviePerson {
+    ): Person {
         val name = rawName.trim().replace("\\s+".toRegex(), " ")
         val normalizedName = name.lowercase()
         val profileUrl = profilePath?.let(manualMovieCatalogService::buildTmdbImageUrl)
         val slug = SlugTextUtil.normalize("$name $tmdbId", maxLength = 80)
-        val existing = moviePersonRepository.findByTmdbId(tmdbId)
+        val existing = personRepository.findByTmdbId(tmdbId)
         return if (existing == null) {
-            moviePersonRepository.save(
-                MoviePerson(
+            personRepository.save(
+                Person(
                     tmdbId = tmdbId,
                     name = name,
                     normalizedName = normalizedName,
@@ -493,7 +493,7 @@ class MovieCreditsService(
                 ),
             )
         } else {
-            moviePersonRepository.save(
+            personRepository.save(
                 existing.copy(
                     name = name,
                     normalizedName = normalizedName,
@@ -505,7 +505,7 @@ class MovieCreditsService(
         }
     }
 
-    private fun creditKey(dto: MoviePersonCreditDto): String =
+    private fun creditKey(dto: PersonCreditDto): String =
         creditKey(dto.tmdbId, MovieCreditType.valueOf(dto.creditType.name), dto.job ?: "", dto.characterName ?: "")
 
     private fun creditKey(

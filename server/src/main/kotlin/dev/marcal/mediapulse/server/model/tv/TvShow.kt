@@ -29,4 +29,6 @@ data class TvShow(
     val createdAt: Instant = Instant.now(),
     @Column(name = "updated_at")
     val updatedAt: Instant? = null,
+    @Column(name = "credits_synced_at")
+    val creditsSyncedAt: Instant? = null,
 )

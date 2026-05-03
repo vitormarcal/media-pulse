@@ -1,10 +1,11 @@
-package dev.marcal.mediapulse.server.service.movie
+package dev.marcal.mediapulse.server.service.person
 
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
-import dev.marcal.mediapulse.server.model.movie.MoviePerson
+import dev.marcal.mediapulse.server.model.person.Person
 import dev.marcal.mediapulse.server.repository.crud.MovieCreditAssignmentRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieCreditsCrudRepository
-import dev.marcal.mediapulse.server.repository.crud.MoviePersonRepository
+import dev.marcal.mediapulse.server.repository.crud.PersonRepository
+import dev.marcal.mediapulse.server.service.movie.ManualMovieCatalogService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -12,16 +13,16 @@ import org.junit.jupiter.api.Test
 import java.util.Optional
 import kotlin.test.assertEquals
 
-class MoviePersonFilmographyServiceTest {
-    private val moviePersonRepository = mockk<MoviePersonRepository>()
+class PersonFilmographyServiceTest {
+    private val personRepository = mockk<PersonRepository>()
     private val movieCreditAssignmentRepository = mockk<MovieCreditAssignmentRepository>(relaxed = true)
     private val movieCreditsCrudRepository = mockk<MovieCreditsCrudRepository>()
     private val tmdbApiClient = mockk<TmdbApiClient>()
     private val manualMovieCatalogService = mockk<ManualMovieCatalogService>()
 
     private val service =
-        MoviePersonFilmographyService(
-            moviePersonRepository = moviePersonRepository,
+        PersonFilmographyService(
+            personRepository = personRepository,
             movieCreditAssignmentRepository = movieCreditAssignmentRepository,
             movieCreditsCrudRepository = movieCreditsCrudRepository,
             tmdbApiClient = tmdbApiClient,
@@ -31,7 +32,7 @@ class MoviePersonFilmographyServiceTest {
     @Test
     fun `fetch filmography should reconcile local movie credits before returning`() {
         val person =
-            MoviePerson(
+            Person(
                 id = 44,
                 tmdbId = "138",
                 name = "Quentin Tarantino",
@@ -40,7 +41,7 @@ class MoviePersonFilmographyServiceTest {
                 profileUrl = null,
             )
 
-        every { moviePersonRepository.findById(44) } returns Optional.of(person)
+        every { personRepository.findById(44) } returns Optional.of(person)
         every { tmdbApiClient.fetchPersonMovieCredits("138") } returns
             TmdbApiClient.TmdbPersonMovieCredits(
                 cast =

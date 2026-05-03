@@ -172,7 +172,9 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `GET /api/movies/recent`
 - `GET /api/movies/{movieId}`
 - `GET /api/movies/slug/{slug}`
-- `GET /api/movies/people/{slug}`
+- `GET /api/people/{slug}`
+- `GET /api/people/search`
+- `GET /api/people/{personId}/tmdb-filmography`
 - `GET /api/movies/companies/{slug}`
 - `GET /api/movies/terms/{kind}/{slug}`
 - `GET /api/movies/lists`
@@ -199,6 +201,8 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `GET /api/shows/stats`
 - `GET /api/shows/year/{year}`
 - `GET /api/shows/catalog/suggestions`
+- `POST /api/shows/credits/sync-tmdb`
+- `POST /api/shows/{showId}/credits/sync-tmdb`
 - `POST /api/shows/catalog`
 - `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview`
 - `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/apply`

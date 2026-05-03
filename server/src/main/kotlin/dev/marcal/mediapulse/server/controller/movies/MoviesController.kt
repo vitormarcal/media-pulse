@@ -14,10 +14,6 @@ import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
-import dev.marcal.mediapulse.server.api.movies.MoviePersonCreditDto
-import dev.marcal.mediapulse.server.api.movies.MoviePersonDetailsResponse
-import dev.marcal.mediapulse.server.api.movies.MoviePersonLinkRequest
-import dev.marcal.mediapulse.server.api.movies.MoviePersonSuggestionDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermDto
@@ -33,6 +29,8 @@ import dev.marcal.mediapulse.server.api.movies.MoviesRecentResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSearchResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesStatsResponse
 import dev.marcal.mediapulse.server.api.movies.MoviesSummaryResponse
+import dev.marcal.mediapulse.server.api.movies.PersonCreditDto
+import dev.marcal.mediapulse.server.api.movies.PersonLinkRequest
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
 import dev.marcal.mediapulse.server.service.movie.MovieCompaniesService
@@ -91,11 +89,6 @@ class MoviesController(
         @PathVariable slug: String,
     ): MovieDetailsResponse = repository.getMovieDetailsBySlug(slug)
 
-    @GetMapping("/people/{slug}")
-    fun personDetails(
-        @PathVariable slug: String,
-    ): MoviePersonDetailsResponse = repository.getMoviePersonDetails(slug)
-
     @GetMapping("/companies/{slug}")
     fun companyDetails(
         @PathVariable slug: String,
@@ -108,12 +101,6 @@ class MoviesController(
     fun listDetails(
         @PathVariable slug: String,
     ): MovieListDetailsResponse = repository.getMovieListDetails(slug)
-
-    @GetMapping("/people/search")
-    fun searchPeople(
-        @RequestParam q: String,
-        @RequestParam(defaultValue = "8") limit: Int,
-    ): List<MoviePersonSuggestionDto> = movieCreditsService.searchPeople(q, normalizeLimit("limit", limit))
 
     @GetMapping("/terms/{kind}/{slug}")
     fun termDetails(
@@ -179,13 +166,13 @@ class MoviesController(
     fun importMovieTmdbCredit(
         @PathVariable movieId: Long,
         @RequestBody request: MovieTmdbCreditImportRequest,
-    ): MoviePersonCreditDto = movieCreditsService.importTmdbCredit(movieId, request)
+    ): PersonCreditDto = movieCreditsService.importTmdbCredit(movieId, request)
 
     @PostMapping("/{movieId}/people")
     fun linkExistingPerson(
         @PathVariable movieId: Long,
-        @RequestBody request: MoviePersonLinkRequest,
-    ): MoviePersonCreditDto = movieCreditsService.linkExistingPerson(movieId, request)
+        @RequestBody request: PersonLinkRequest,
+    ): PersonCreditDto = movieCreditsService.linkExistingPerson(movieId, request)
 
     @PostMapping("/lists")
     fun createList(

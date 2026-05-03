@@ -3,6 +3,11 @@ package dev.marcal.mediapulse.server.api.shows
 import java.time.Instant
 import java.time.LocalDate
 
+enum class ShowCreditTypeDto {
+    CAST,
+    CREW,
+}
+
 data class ShowCardDto(
     val showId: Long,
     val title: String,
@@ -81,6 +86,19 @@ data class ShowExternalIdDto(
     val externalId: String,
 )
 
+data class ShowPersonCreditDto(
+    val personId: Long,
+    val tmdbId: String,
+    val name: String,
+    val slug: String,
+    val profileUrl: String?,
+    val creditType: ShowCreditTypeDto,
+    val department: String?,
+    val job: String?,
+    val characterName: String?,
+    val billingOrder: Int?,
+)
+
 data class ShowDetailsResponse(
     val showId: Long,
     val title: String,
@@ -94,6 +112,21 @@ data class ShowDetailsResponse(
     val progress: ShowProgressDto? = null,
     val watches: List<ShowWatchDto>,
     val externalIds: List<ShowExternalIdDto>,
+    val people: List<ShowPersonCreditDto> = emptyList(),
+)
+
+data class ShowCreditsSyncResponse(
+    val showId: Long,
+    val syncedCount: Int,
+    val visibleCount: Int,
+)
+
+data class ShowCreditsBatchSyncResponse(
+    val requestedLimit: Int,
+    val candidates: Int,
+    val processed: Int,
+    val synced: Int,
+    val failed: Int,
 )
 
 data class ShowsSearchResponse(

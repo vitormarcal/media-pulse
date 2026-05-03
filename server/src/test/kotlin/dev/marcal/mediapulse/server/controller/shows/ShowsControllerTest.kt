@@ -2,6 +2,8 @@ package dev.marcal.mediapulse.server.controller.shows
 
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.RangeDto
+import dev.marcal.mediapulse.server.api.shows.ShowCreditsBatchSyncResponse
+import dev.marcal.mediapulse.server.api.shows.ShowCreditsSyncResponse
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
@@ -16,6 +18,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsTotalStatsDto
 import dev.marcal.mediapulse.server.api.shows.ShowsYearStatsDto
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
+import dev.marcal.mediapulse.server.service.tv.ShowCreditsService
 import dev.marcal.mediapulse.server.service.tv.ShowSeasonMetadataEnrichmentService
 import io.mockk.every
 import io.mockk.mockk
@@ -30,7 +33,8 @@ import kotlin.test.assertFailsWith
 class ShowsControllerTest {
     private val repository = mockk<TvShowQueryRepository>(relaxed = true)
     private val showSeasonMetadataEnrichmentService = mockk<ShowSeasonMetadataEnrichmentService>(relaxed = true)
-    private val controller = ShowsController(repository, showSeasonMetadataEnrichmentService)
+    private val showCreditsService = mockk<ShowCreditsService>(relaxed = true)
+    private val controller = ShowsController(repository, showSeasonMetadataEnrichmentService, showCreditsService)
 
     @Test
     fun `recent should delegate to repository`() {
@@ -157,6 +161,34 @@ class ShowsControllerTest {
         assertEquals(10, response.showId)
         assertEquals(1, response.seasonNumber)
         verify(exactly = 1) { repository.getShowSeasonDetailsBySlug("the-big-bang-theory", 1) }
+    }
+
+    @Test
+    fun `sync credits should delegate to show credits service`() {
+        every { showCreditsService.syncFromTmdb(10) } returns
+            ShowCreditsSyncResponse(showId = 10, syncedCount = 8, visibleCount = 8)
+
+        val response = controller.syncCreditsFromTmdb(10)
+
+        assertEquals(8, response.syncedCount)
+        verify(exactly = 1) { showCreditsService.syncFromTmdb(10) }
+    }
+
+    @Test
+    fun `batch sync credits should delegate to show credits service with capped limit`() {
+        every { showCreditsService.syncAllFromTmdb(1000) } returns
+            ShowCreditsBatchSyncResponse(
+                requestedLimit = 1000,
+                candidates = 15,
+                processed = 15,
+                synced = 14,
+                failed = 1,
+            )
+
+        val response = controller.syncAllCreditsFromTmdb(5000)
+
+        assertEquals(14, response.synced)
+        verify(exactly = 1) { showCreditsService.syncAllFromTmdb(1000) }
     }
 
     @Test
