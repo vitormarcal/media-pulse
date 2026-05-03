@@ -104,6 +104,13 @@
               <div v-if="episode.meta.length" class="episode-meta">
                 <span v-for="item in episode.meta" :key="item">{{ item }}</span>
               </div>
+              <MediaRatingPanel
+                media-type="episodes"
+                :entity-id="episode.episodeId"
+                :initial-rating="episode.rating"
+                compact
+                label="Nota do episódio"
+              />
               <div v-if="editingEpisodeId === episode.episodeId && !episode.watched" class="episode-date-row">
                 <label>
                   <span>Data e hora</span>
@@ -119,6 +126,7 @@
 </template>
 
 <script setup lang="ts">
+import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 import ShowSeasonEnrichmentPanel from '~/components/shows/ShowSeasonEnrichmentPanel.vue'
 import { useShowSeasonPageData } from '~/composables/useShowSeasonPageData'

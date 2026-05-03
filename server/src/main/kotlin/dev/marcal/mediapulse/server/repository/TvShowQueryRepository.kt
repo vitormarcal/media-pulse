@@ -37,6 +37,7 @@ import java.time.Instant
 class TvShowQueryRepository(
     private val entityManager: EntityManager,
     private val mediaCommentQueryRepository: MediaCommentQueryRepository,
+    private val mediaRatingQueryRepository: MediaRatingQueryRepository,
 ) {
     fun getShowPeople(showId: Long): List<ShowPersonCreditDto> =
         entityManager
@@ -490,6 +491,7 @@ class TvShowQueryRepository(
 
         val people = getShowPeople(showId)
         val comments = mediaCommentQueryRepository.findByEntity(EntityType.SHOW, showId)
+        val rating = mediaRatingQueryRepository.findByEntity(EntityType.SHOW, showId)
 
         val progress =
             if (seasons.isEmpty()) {
@@ -530,6 +532,7 @@ class TvShowQueryRepository(
             watches = watches,
             externalIds = externalIds,
             people = people,
+            rating = rating,
             comments = comments,
         )
     }
@@ -594,6 +597,7 @@ class TvShowQueryRepository(
                 ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Show not found")
 
         val showId = (base[0] as Number).toLong()
+        val episodeRatingsById = mediaRatingQueryRepository.findByEntities(EntityType.EPISODE, findSeasonEpisodeIds(showId, seasonNumber))
         val episodes =
             entityManager
                 .createNativeQuery(
@@ -643,6 +647,7 @@ class TvShowQueryRepository(
                             },
                         watchCount = (fields[8] as Number).toLong(),
                         lastWatchedAt = asInstant(fields[9]),
+                        rating = episodeRatingsById[(fields[0] as Number).toLong()],
                     )
                 }
 
@@ -681,6 +686,23 @@ class TvShowQueryRepository(
             episodes = episodes,
         )
     }
+
+    private fun findSeasonEpisodeIds(
+        showId: Long,
+        seasonNumber: Int,
+    ): List<Long> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT te.id
+                FROM tv_episodes te
+                WHERE te.show_id = :showId
+                  AND te.season_number = :seasonNumber
+                """.trimIndent(),
+            ).setParameter("showId", showId)
+            .setParameter("seasonNumber", seasonNumber)
+            .resultList
+            .map { (it as Number).toLong() }
 
     fun search(
         q: String,

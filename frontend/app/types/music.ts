@@ -1,5 +1,6 @@
 import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
 import type { MediaCommentDto } from '~/types/comments'
+import type { MediaRatingDto } from '~/types/ratings'
 
 export interface AlbumTrackRow {
   trackId: number
@@ -8,6 +9,7 @@ export interface AlbumTrackRow {
   trackNumber: number | null
   playCount: number
   lastPlayed: string | null
+  rating: MediaRatingDto | null
 }
 
 export interface PlaysByDayRow {
@@ -24,6 +26,7 @@ export interface AlbumPageResponse {
   coverUrl: string | null
   lastPlayed: string | null
   totalPlays: number
+  rating: MediaRatingDto | null
   tracks: AlbumTrackRow[]
   playsByDay: PlaysByDayRow[]
   comments: MediaCommentDto[]
@@ -242,10 +245,12 @@ export interface DuplicateTrackBatchMergeResponse {
 
 export interface AlbumTrackModel {
   id: string
+  trackId: number
   title: string
   position: string
   meta: string
   lastPlayed: string
+  rating: MediaRatingDto | null
 }
 
 export interface AlbumDayModel {
@@ -262,6 +267,7 @@ export interface AlbumPageData {
   year: number | null
   coverUrl: string | null
   heroMeta: string[]
+  rating: MediaRatingDto | null
   stats: {
     totalPlays: number
     tracksCount: number

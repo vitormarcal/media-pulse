@@ -1,5 +1,6 @@
 import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
 import type { MediaCommentDto } from '~/types/comments'
+import type { MediaRatingDto } from '~/types/ratings'
 import type { ShowLibraryCardDto, ShowLibraryCardModel } from '~/types/shows'
 
 export interface MovieImageDto {
@@ -296,6 +297,7 @@ export interface MovieDetailsResponse {
   people: PersonCreditDto[]
   terms: MovieTermDto[]
   collection: MovieCollectionDto | null
+  rating: MediaRatingDto | null
   comments: MediaCommentDto[]
 }
 
@@ -522,6 +524,7 @@ export interface MoviePageData {
   coverUrl: string | null
   gallery: string[]
   heroMeta: string[]
+  rating: MediaRatingDto | null
   stats: {
     totalWatches: number
     firstWatch: string | null

@@ -22,6 +22,14 @@
 
       <ShowProgressPanel :progress="data.progress" :seasons="data.seasons" />
 
+      <MediaRatingPanel
+        media-type="shows"
+        :entity-id="data.showId"
+        :initial-rating="data.rating"
+        title="Peso geral da série"
+        description="Uma série pode oscilar entre temporadas. A nota aqui representa o saldo final que ela ocupa para você hoje."
+      />
+
       <ShowAddWatchPanel :show-id="data.showId" @created="handleWatchCreated" />
 
       <MediaCommentsPanel
@@ -45,6 +53,7 @@ import ShowPeoplePanel from '~/components/shows/ShowPeoplePanel.vue'
 import ShowProgressPanel from '~/components/shows/ShowProgressPanel.vue'
 import ShowWatchTimeline from '~/components/shows/ShowWatchTimeline.vue'
 import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
+import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import { useShowPageData } from '~/composables/useShowPageData'
 import type { ManualShowWatchCreateResponse } from '~/types/shows'
 

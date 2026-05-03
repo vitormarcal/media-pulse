@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.63
+  version: 1.0.0-beta.65
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -28,6 +28,8 @@ tags:
     description: MusicBrainz enrichment utilities.
   - name: Comments
     description: Manual comments attached to media details.
+  - name: Ratings
+    description: Manual ratings attached to media details.
 paths:
   /api/books/year/{year}:
     get:
@@ -2541,6 +2543,64 @@ paths:
         "404":
           description: Comment not found.
 
+  /api/ratings/{mediaType}/{entityId}:
+    post:
+      summary: Upsert media rating
+      description: Creates or updates a manual rating for a movie, show, episode, album, or track.
+      tags: [Ratings]
+      parameters:
+        - name: mediaType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [movies, shows, episodes, albums, tracks]
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertMediaRatingRequest"
+      responses:
+        "200":
+          description: Rating saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaRatingDto"
+        "400":
+          description: Invalid payload.
+        "404":
+          description: Media not found.
+    delete:
+      summary: Clear media rating
+      description: Removes a manual rating from a movie, show, episode, album, or track.
+      tags: [Ratings]
+      parameters:
+        - name: mediaType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [movies, shows, episodes, albums, tracks]
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Rating removed.
+        "404":
+          description: Media not found.
+
 components:
   schemas:
     CreateMediaCommentRequest:
@@ -2583,6 +2643,23 @@ components:
         edited:
           type: boolean
       required: [id, body, commentedAt, createdAt, updatedAt, edited]
+    MediaRatingDto:
+      type: object
+      properties:
+        rating:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+      required: [rating, updatedAt]
+    UpsertMediaRatingRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+      required: [rating]
     BookReadStatus:
       type: string
       enum: [READ, CURRENTLY_READING, WANT_TO_READ, DID_NOT_FINISH, PAUSED, UNKNOWN]
@@ -2801,6 +2878,14 @@ components:
           type: string
           format: date-time
           nullable: true
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/MediaCommentDto"
+        rating:
+          type: number
+          format: double
+          nullable: true
         authors:
           type: array
           items:
@@ -2813,10 +2898,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReadCardDto"
-        comments:
-          type: array
-          items:
-            $ref: "#/components/schemas/MediaCommentDto"
       required: [bookId, slug, title, authors, editions, reads, comments]
     BooksListResponse:
       type: object
@@ -3473,6 +3554,10 @@ components:
         totalPlays:
           type: integer
           format: int64
+        rating:
+          allOf:
+            - $ref: "#/components/schemas/MediaRatingDto"
+          nullable: true
         tracks:
           type: array
           items:
@@ -3577,6 +3662,10 @@ components:
           type: string
           format: date-time
           nullable: true
+        rating:
+          allOf:
+            - $ref: "#/components/schemas/MediaRatingDto"
+          nullable: true
       required: [trackId, title, playCount]
     TrackPageResponse:
       type: object
@@ -3597,6 +3686,10 @@ components:
         lastPlayed:
           type: string
           format: date-time
+          nullable: true
+        rating:
+          allOf:
+            - $ref: "#/components/schemas/MediaRatingDto"
           nullable: true
         albums:
           type: array
@@ -4314,6 +4407,10 @@ components:
         collection:
           allOf:
             - $ref: "#/components/schemas/MovieCollectionDto"
+          nullable: true
+        rating:
+          allOf:
+            - $ref: "#/components/schemas/MediaRatingDto"
           nullable: true
         comments:
           type: array
@@ -5378,6 +5475,10 @@ components:
           type: string
           format: date-time
           nullable: true
+        rating:
+          allOf:
+            - $ref: "#/components/schemas/MediaRatingDto"
+          nullable: true
       required: [episodeId, title, watchCount]
     ShowSeasonDetailsResponse:
       type: object
@@ -5529,6 +5630,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShowPersonCreditDto"
+        rating:
+          allOf:
+            - $ref: "#/components/schemas/MediaRatingDto"
+          nullable: true
         comments:
           type: array
           items:

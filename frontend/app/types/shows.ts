@@ -1,5 +1,6 @@
 import type { EditorialHighlight, EditorialShelfItem, ShowProgressDto } from '~/types/home'
 import type { MediaCommentDto } from '~/types/comments'
+import type { MediaRatingDto } from '~/types/ratings'
 
 export interface ShowImageDto {
   id: number
@@ -36,6 +37,7 @@ export interface ShowSeasonEpisodeDto {
   originallyAvailableAt: string | null
   watchCount: number
   lastWatchedAt: string | null
+  rating: MediaRatingDto | null
 }
 
 export interface ShowSeasonDetailsResponse {
@@ -89,6 +91,7 @@ export interface ShowDetailsResponse {
   watches: ShowWatchDto[]
   externalIds: ShowExternalIdDto[]
   people: ShowPersonCreditDto[]
+  rating: MediaRatingDto | null
   comments: MediaCommentDto[]
 }
 
@@ -259,6 +262,7 @@ export interface ShowPageData {
     completionPct: number
     statusText: string
   }
+  rating: MediaRatingDto | null
   heroMeta: string[]
   people: {
     summary: string
@@ -291,6 +295,7 @@ export interface ShowSeasonEpisodeModel {
   meta: string[]
   watchedLabel: string
   watched: boolean
+  rating: MediaRatingDto | null
 }
 
 export interface ShowSeasonPageData {

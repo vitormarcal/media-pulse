@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.api.music
 
+import dev.marcal.mediapulse.server.api.ratings.MediaRatingDto
 import java.time.Instant
 
 data class ArtistPageResponse(
@@ -43,6 +44,7 @@ data class TrackPageResponse(
     val artistName: String,
     val totalPlays: Long,
     val lastPlayed: Instant?,
+    val rating: MediaRatingDto? = null,
     val albums: List<TrackAlbumRow>,
     val recentPlays: List<TrackPlayRow>,
 )

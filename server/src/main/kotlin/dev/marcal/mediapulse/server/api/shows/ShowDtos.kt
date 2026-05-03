@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.api.shows
 
 import dev.marcal.mediapulse.server.api.comments.MediaCommentDto
+import dev.marcal.mediapulse.server.api.ratings.MediaRatingDto
 import java.time.Instant
 import java.time.LocalDate
 
@@ -54,6 +55,7 @@ data class ShowSeasonEpisodeDto(
     val originallyAvailableAt: LocalDate?,
     val watchCount: Long,
     val lastWatchedAt: Instant?,
+    val rating: MediaRatingDto? = null,
 )
 
 data class ShowSeasonDetailsResponse(
@@ -114,6 +116,7 @@ data class ShowDetailsResponse(
     val watches: List<ShowWatchDto>,
     val externalIds: List<ShowExternalIdDto>,
     val people: List<ShowPersonCreditDto> = emptyList(),
+    val rating: MediaRatingDto? = null,
     val comments: List<MediaCommentDto> = emptyList(),
 )
 

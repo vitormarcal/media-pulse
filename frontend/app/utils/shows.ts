@@ -330,6 +330,7 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
     gallery: [...(show.coverUrl ? [show.coverUrl] : []), ...show.images.map((image) => image.url)]
       .filter((value, index, array) => array.indexOf(value) === index)
       .slice(0, 4),
+    rating: show.rating,
     progress: {
       watchedEpisodes: progress.watchedEpisodesCount,
       totalEpisodes: progress.episodesCount,
@@ -450,6 +451,7 @@ export function buildShowSeasonPageData(season: ShowSeasonDetailsResponse): Show
         meta: [duration, release].filter(Boolean) as string[],
         watchedLabel: episode.lastWatchedAt ? `Visto ${formatRelativeDate(episode.lastWatchedAt)}` : 'Sem watch',
         watched: episode.watchCount > 0,
+        rating: episode.rating,
       }
     }),
   }

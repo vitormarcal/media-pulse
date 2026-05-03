@@ -710,6 +710,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
     description: movie.description,
     coverUrl: movie.coverUrl,
     gallery: orderedGallery.slice(0, 4),
+    rating: movie.rating,
     heroMeta: [
       movie.year ? String(movie.year) : null,
       `${movie.watches.length} sessões`,

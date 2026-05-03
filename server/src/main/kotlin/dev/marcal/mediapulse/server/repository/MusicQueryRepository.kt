@@ -52,6 +52,7 @@ import java.time.Instant
 class MusicQueryRepository(
     private val entityManager: EntityManager,
     private val mediaCommentQueryRepository: MediaCommentQueryRepository,
+    private val mediaRatingQueryRepository: MediaRatingQueryRepository,
 ) {
     fun getArtistLibrary(
         limit: Int,
@@ -897,38 +898,41 @@ class MusicQueryRepository(
                 .singleResult
 
         val tracks =
-            entityManager
-                .createNativeQuery(
-                    """
-                    SELECT
-                      t.id AS track_id,
-                      t.title AS title,
-                      at.disc_number AS disc_number,
-                      at.track_number AS track_number,
-                      COUNT(tp.id) AS play_count,
-                      MAX(tp.played_at) AS last_played
-                    FROM album_tracks at
-                    JOIN tracks t ON t.id = at.track_id
-                    LEFT JOIN track_playbacks tp
-                      ON tp.album_id = at.album_id
-                     AND tp.track_id = at.track_id
-                    WHERE at.album_id = :albumId
-                    GROUP BY t.id, t.title, at.disc_number, at.track_number
-                    ORDER BY COALESCE(at.disc_number, 1), COALESCE(at.track_number, 999), t.title
-                    """.trimIndent(),
-                ).setParameter("albumId", albumId)
-                .resultList
-                .map {
-                    val row = it as Array<*>
-                    AlbumTrackRow(
-                        trackId = (row[0] as Number).toLong(),
-                        title = row[1] as String,
-                        discNumber = row[2] as Int?,
-                        trackNumber = row[3] as Int?,
-                        playCount = (row[4] as Number).toLong(),
-                        lastPlayed = row[5] as Instant?,
-                    )
-                }
+            mediaRatingQueryRepository.findByEntities(EntityType.TRACK, findAlbumTrackIds(albumId)).let { ratingsByTrackId ->
+                entityManager
+                    .createNativeQuery(
+                        """
+                        SELECT
+                          t.id AS track_id,
+                          t.title AS title,
+                          at.disc_number AS disc_number,
+                          at.track_number AS track_number,
+                          COUNT(tp.id) AS play_count,
+                          MAX(tp.played_at) AS last_played
+                        FROM album_tracks at
+                        JOIN tracks t ON t.id = at.track_id
+                        LEFT JOIN track_playbacks tp
+                          ON tp.album_id = at.album_id
+                         AND tp.track_id = at.track_id
+                        WHERE at.album_id = :albumId
+                        GROUP BY t.id, t.title, at.disc_number, at.track_number
+                        ORDER BY COALESCE(at.disc_number, 1), COALESCE(at.track_number, 999), t.title
+                        """.trimIndent(),
+                    ).setParameter("albumId", albumId)
+                    .resultList
+                    .map {
+                        val row = it as Array<*>
+                        AlbumTrackRow(
+                            trackId = (row[0] as Number).toLong(),
+                            title = row[1] as String,
+                            discNumber = row[2] as Int?,
+                            trackNumber = row[3] as Int?,
+                            playCount = (row[4] as Number).toLong(),
+                            lastPlayed = row[5] as Instant?,
+                            rating = ratingsByTrackId[(row[0] as Number).toLong()],
+                        )
+                    }
+            }
 
         val days =
             entityManager
@@ -950,6 +954,7 @@ class MusicQueryRepository(
                     )
                 }
         val comments = mediaCommentQueryRepository.findByEntity(EntityType.ALBUM, albumId)
+        val rating = mediaRatingQueryRepository.findByEntity(EntityType.ALBUM, albumId)
 
         return AlbumPageResponse(
             albumId = header.albumId,
@@ -960,6 +965,7 @@ class MusicQueryRepository(
             coverUrl = header.coverUrl,
             lastPlayed = header.lastPlayed,
             totalPlays = header.totalPlays,
+            rating = rating,
             tracks = tracks,
             playsByDay = days,
             comments = comments,
@@ -1192,10 +1198,23 @@ class MusicQueryRepository(
             artistName = header[3] as String,
             totalPlays = (header[4] as Number).toLong(),
             lastPlayed = header[5] as Instant?,
+            rating = mediaRatingQueryRepository.findByEntity(EntityType.TRACK, (header[0] as Number).toLong()),
             albums = albums,
             recentPlays = recentPlays,
         )
     }
+
+    private fun findAlbumTrackIds(albumId: Long): List<Long> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT at.track_id
+                FROM album_tracks at
+                WHERE at.album_id = :albumId
+                """.trimIndent(),
+            ).setParameter("albumId", albumId)
+            .resultList
+            .map { (it as Number).toLong() }
 
     // Search
     fun search(

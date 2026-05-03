@@ -13,6 +13,13 @@
         <div class="content">
           <h3>{{ track.title }}</h3>
           <p>{{ track.meta }}</p>
+          <MediaRatingPanel
+            media-type="tracks"
+            :entity-id="track.trackId"
+            :initial-rating="track.rating"
+            compact
+            label="Nota da faixa"
+          />
         </div>
         <strong>{{ track.lastPlayed }}</strong>
       </article>
@@ -21,6 +28,7 @@
 </template>
 
 <script setup lang="ts">
+import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { AlbumTrackModel } from '~/types/music'
 

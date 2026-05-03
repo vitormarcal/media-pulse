@@ -20,6 +20,14 @@
 
       <AlbumContextPanel :stats="data.stats" :recent-days="data.recentDays" />
 
+      <MediaRatingPanel
+        media-type="albums"
+        :entity-id="Number(data.id)"
+        :initial-rating="data.rating"
+        title="Força real desse álbum"
+        description="Use a nota para separar disco só bom de disco que realmente continua pedindo retorno."
+      />
+
       <MediaCommentsPanel
         :entity-id="Number(data.id)"
         media-type="albums"
@@ -39,6 +47,7 @@ import AlbumContextPanel from '~/components/music/AlbumContextPanel.vue'
 import AlbumPageHero from '~/components/music/AlbumPageHero.vue'
 import AlbumTrackList from '~/components/music/AlbumTrackList.vue'
 import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
+import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import { useAlbumPageData } from '~/composables/useAlbumPageData'
 
 const route = useRoute()

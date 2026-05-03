@@ -50,6 +50,7 @@ import java.time.Instant
 class MovieQueryRepository(
     private val entityManager: EntityManager,
     private val mediaCommentQueryRepository: MediaCommentQueryRepository,
+    private val mediaRatingQueryRepository: MediaRatingQueryRepository,
 ) {
     fun library(
         limit: Int,
@@ -332,6 +333,7 @@ class MovieQueryRepository(
         val people = getMoviePeople(movieId)
         val terms = getMovieTerms(movieId)
         val comments = mediaCommentQueryRepository.findByEntity(EntityType.MOVIE, movieId)
+        val rating = mediaRatingQueryRepository.findByEntity(EntityType.MOVIE, movieId)
 
         val collection =
             (base[7] as Number?)?.toLong()?.let { collectionId ->
@@ -404,6 +406,7 @@ class MovieQueryRepository(
             people = people,
             terms = terms,
             collection = collection,
+            rating = rating,
             comments = comments,
         )
     }

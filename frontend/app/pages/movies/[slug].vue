@@ -35,6 +35,14 @@
 
       <MovieContextPanel :stats="data.stats" />
 
+      <MediaRatingPanel
+        media-type="movies"
+        :entity-id="data.movieId"
+        :initial-rating="data.rating"
+        title="Quanto esse filme realmente segura"
+        description="A nota existe para diferenciar entusiasmo momentâneo de filme que realmente ficou grande no seu repertório."
+      />
+
       <MoviePeoplePanel
         :movie-id="data.movieId"
         :people="data.people"
@@ -72,6 +80,7 @@ import MoviePageHero from '~/components/movies/MoviePageHero.vue'
 import MoviePeoplePanel from '~/components/movies/MoviePeoplePanel.vue'
 import MovieWatchTimeline from '~/components/movies/MovieWatchTimeline.vue'
 import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
+import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import { useMoviePageData } from '~/composables/useMoviePageData'
 import type { ManualMovieWatchCreateResponse, MovieEnrichmentApplyResponse } from '~/types/movies'
 

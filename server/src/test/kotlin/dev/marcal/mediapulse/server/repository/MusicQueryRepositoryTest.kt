@@ -14,17 +14,20 @@ import kotlin.test.assertEquals
 class MusicQueryRepositoryTest {
     private val em = mockk<EntityManager>()
     private val mediaCommentQueryRepository = mockk<MediaCommentQueryRepository>()
+    private val mediaRatingQueryRepository = mockk<MediaRatingQueryRepository>()
     private val query = mockk<Query>(relaxed = true)
     private lateinit var repository: MusicQueryRepository
 
     @BeforeEach
     fun setUp() {
-        repository = MusicQueryRepository(em, mediaCommentQueryRepository)
+        repository = MusicQueryRepository(em, mediaCommentQueryRepository, mediaRatingQueryRepository)
         every { em.createQuery(any<String>(), any<Class<*>>()) } returns mockk(relaxed = true)
         every { em.createNativeQuery(any<String>()) } returns query
         every { query.setParameter(any<String>(), any()) } returns query
         every { query.resultList } returns emptyList<Any>()
         every { mediaCommentQueryRepository.findByEntity(any(), any()) } returns emptyList()
+        every { mediaRatingQueryRepository.findByEntity(any(), any()) } returns null
+        every { mediaRatingQueryRepository.findByEntities(any(), any<Collection<Long>>()) } returns emptyMap()
     }
 
     @Test

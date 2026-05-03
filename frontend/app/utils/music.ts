@@ -42,10 +42,12 @@ function trackPosition(track: AlbumPageResponse['tracks'][number]) {
 function mapTrack(track: AlbumPageResponse['tracks'][number]): AlbumTrackModel {
   return {
     id: `track-${track.trackId}`,
+    trackId: track.trackId,
     title: track.title,
     position: trackPosition(track),
     meta: `${track.playCount} plays`,
     lastPlayed: track.lastPlayed ? formatRelativeDate(track.lastPlayed) : 'Ainda sem play',
+    rating: track.rating,
   }
 }
 
@@ -641,6 +643,7 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
     artistHref: `/music/artists/${album.artistId}`,
     year: album.year,
     coverUrl: album.coverUrl,
+    rating: album.rating,
     heroMeta: [
       album.year ? String(album.year) : null,
       album.artistName,

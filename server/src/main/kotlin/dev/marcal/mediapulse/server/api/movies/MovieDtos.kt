@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.api.movies
 
 import dev.marcal.mediapulse.server.api.comments.MediaCommentDto
+import dev.marcal.mediapulse.server.api.ratings.MediaRatingDto
 import dev.marcal.mediapulse.server.api.shows.ShowLibraryCardDto
 import java.time.Instant
 
@@ -329,6 +330,7 @@ data class MovieDetailsResponse(
     val people: List<PersonCreditDto> = emptyList(),
     val terms: List<MovieTermDto> = emptyList(),
     val collection: MovieCollectionDto? = null,
+    val rating: MediaRatingDto? = null,
     val comments: List<MediaCommentDto> = emptyList(),
 )
 
