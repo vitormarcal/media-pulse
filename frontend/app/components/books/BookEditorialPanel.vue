@@ -7,30 +7,13 @@
       summary="Uma linha editorial única para releituras, mudanças de humor e anotações importadas."
     />
 
-    <form class="composer-card" @submit.prevent="submitNewComment">
-      <label class="field">
-        <span class="field-label">Nova impressão</span>
-        <textarea
-          v-model="draftBody"
-          class="textarea"
-          rows="5"
-          placeholder="Escreva o que ficou desta leitura."
-          :disabled="submitting"
-        />
-      </label>
-
-      <label class="field field-compact">
-        <span class="field-label">Data do comentário</span>
-        <input v-model="draftCommentedAt" class="input" type="datetime-local" :disabled="submitting" />
-      </label>
-
-      <div class="actions">
-        <button class="button button-primary" type="submit" :disabled="submitting || !draftBody.trim()">
-          {{ submitting ? 'Salvando...' : 'Salvar comentário' }}
-        </button>
-        <p v-if="submitError" class="feedback error">{{ submitError }}</p>
+    <div v-if="entries.length" class="summary-card">
+      <div>
+        <p class="summary-label">Linha editorial</p>
+        <strong>{{ entries.length }} {{ entries.length === 1 ? 'registro' : 'registros' }}</strong>
       </div>
-    </form>
+      <p class="summary-copy">Mais recente {{ buildEntryLabel(entries[0]) }}</p>
+    </div>
 
     <div v-if="entries.length" class="entry-list">
       <article v-for="entry in entries" :key="entry.id" class="entry-card">
@@ -94,6 +77,55 @@
     <article v-else class="empty-card">
       <p>Nenhum texto editorial registrado para este livro ainda.</p>
     </article>
+
+    <div class="composer-shell">
+      <div class="composer-header">
+        <div>
+          <p class="summary-label">Nova impressão</p>
+          <p class="summary-copy">
+            {{
+              entries.length
+                ? 'Adicione uma nova camada sem competir com o histórico já escrito.'
+                : 'Comece a linha editorial deste livro.'
+            }}
+          </p>
+        </div>
+
+        <button
+          v-if="entries.length"
+          class="button button-secondary"
+          type="button"
+          @click="composerOpen = !composerOpen"
+        >
+          {{ composerOpen ? 'Fechar' : 'Escrever' }}
+        </button>
+      </div>
+
+      <form v-if="composerOpen" class="composer-card" @submit.prevent="submitNewComment">
+        <label class="field">
+          <span class="field-label">Comentário</span>
+          <textarea
+            v-model="draftBody"
+            class="textarea"
+            rows="5"
+            placeholder="Escreva o que ficou desta leitura."
+            :disabled="submitting"
+          />
+        </label>
+
+        <label class="field field-compact">
+          <span class="field-label">Data do comentário</span>
+          <input v-model="draftCommentedAt" class="input" type="datetime-local" :disabled="submitting" />
+        </label>
+
+        <div class="actions">
+          <button class="button button-primary" type="submit" :disabled="submitting || !draftBody.trim()">
+            {{ submitting ? 'Salvando...' : 'Salvar comentário' }}
+          </button>
+          <p v-if="submitError" class="feedback error">{{ submitError }}</p>
+        </div>
+      </form>
+    </div>
   </section>
 </template>
 
@@ -132,6 +164,7 @@ const props = defineProps<{
 const config = useRuntimeConfig()
 
 const localComments = ref([...props.comments])
+const composerOpen = ref(props.comments.length === 0)
 const draftBody = ref('')
 const draftCommentedAt = ref(toLocalDateTimeInput(new Date().toISOString()))
 const submitting = ref(false)
@@ -147,6 +180,9 @@ watch(
   () => props.comments,
   (nextComments) => {
     localComments.value = [...nextComments]
+    if (!nextComments.length) {
+      composerOpen.value = true
+    }
   },
 )
 
@@ -231,6 +267,7 @@ async function submitNewComment() {
     localComments.value = sortComments([created, ...localComments.value])
     draftBody.value = ''
     draftCommentedAt.value = toLocalDateTimeInput(new Date().toISOString())
+    composerOpen.value = false
   } catch (error) {
     submitError.value = error instanceof Error ? error.message : 'Não foi possível salvar o comentário.'
   } finally {
@@ -293,11 +330,14 @@ function sortComments(comments: MediaCommentDto[]) {
 </script>
 
 <style scoped>
-.editorial-panel {
+.editorial-panel,
+.entry-list,
+.composer-shell {
   display: grid;
   gap: 24px;
 }
 
+.summary-card,
 .composer-card,
 .entry-card,
 .empty-card {
@@ -305,15 +345,26 @@ function sortComments(comments: MediaCommentDto[]) {
   gap: 18px;
   padding: clamp(22px, 3vw, 32px);
   border-radius: 28px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(246, 243, 238, 0.98));
-  border: 1px solid color-mix(in srgb, var(--base-color-border) 52%, white);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, white 92%, var(--base-color-surface-soft)),
+    color-mix(in srgb, var(--base-color-surface-soft) 88%, white)
+  );
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 56%, white);
 }
 
-.entry-list {
-  display: grid;
-  gap: 18px;
+.composer-header,
+.actions,
+.entry-header,
+.entry-kicker-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
 }
 
+.entry-meta-block,
 .field {
   display: grid;
   gap: 10px;
@@ -323,24 +374,36 @@ function sortComments(comments: MediaCommentDto[]) {
   max-width: 18rem;
 }
 
+.summary-label,
 .field-label,
 .entry-kicker,
 .entry-edited {
   margin: 0;
+  color: var(--base-color-text-secondary);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.field-label,
-.entry-kicker {
-  color: var(--base-color-brand-red);
+.summary-card strong,
+.entry-kicker,
+.entry-paragraph,
+.empty-card p,
+.feedback {
+  margin: 0;
 }
 
+.summary-card strong,
+.entry-kicker,
+.entry-paragraph,
+.empty-card p {
+  color: var(--base-color-text-primary);
+}
+
+.summary-copy,
 .entry-edited {
-  margin-top: 6px;
-  color: var(--base-color-text-muted);
+  color: var(--base-color-text-secondary);
 }
 
 .textarea,
@@ -348,7 +411,7 @@ function sortComments(comments: MediaCommentDto[]) {
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--base-color-border) 72%, white);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.96);
+  background: white;
   color: var(--base-color-text-primary);
   font: inherit;
 }
@@ -371,21 +434,6 @@ function sortComments(comments: MediaCommentDto[]) {
   border-color: color-mix(in srgb, var(--base-color-focus) 45%, var(--base-color-border));
 }
 
-.actions,
-.entry-header,
-.entry-kicker-row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-}
-
-.entry-meta-block {
-  display: grid;
-  gap: 2px;
-}
-
 .button {
   border: 0;
   border-radius: 16px;
@@ -405,7 +453,7 @@ function sortComments(comments: MediaCommentDto[]) {
 
 .button-primary {
   background: var(--base-color-brand-red);
-  color: #fff;
+  color: black;
 }
 
 .button-secondary {
@@ -419,36 +467,23 @@ function sortComments(comments: MediaCommentDto[]) {
 }
 
 .origin-badge {
-  display: inline-flex;
-  align-items: center;
   border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.origin-badge--manual {
-  background: color-mix(in srgb, var(--base-color-brand-red) 12%, white);
-  color: var(--base-color-brand-red);
+  padding: 6px 10px;
+  background: hsla(60, 20%, 98%, 0.5);
+  color: var(--base-color-text-secondary);
+  font-size: 0.76rem;
 }
 
 .origin-badge--hardcover {
-  background: color-mix(in srgb, var(--base-color-surface-warm) 72%, white);
-  color: var(--base-color-text-secondary);
+  background: color-mix(in srgb, var(--base-color-surface-warm) 82%, white);
 }
 
-.entry-paragraph,
-.empty-card p,
-.feedback {
-  margin: 0;
+.origin-badge--manual {
+  background: color-mix(in srgb, white 72%, var(--base-color-surface-soft));
 }
 
-.entry-paragraph,
-.empty-card p {
+.entry-paragraph {
   max-width: 54rem;
-  color: var(--base-color-text-primary);
   line-height: 1.72;
 }
 
@@ -462,7 +497,9 @@ function sortComments(comments: MediaCommentDto[]) {
   }
 
   .actions,
-  .entry-header {
+  .entry-header,
+  .entry-kicker-row,
+  .composer-header {
     align-items: stretch;
   }
 }

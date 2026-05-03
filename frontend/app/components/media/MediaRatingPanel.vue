@@ -5,52 +5,108 @@
       eyebrow="Avaliação"
       :title="title"
       :description="description"
-      summary="A escala fica fixa para te lembrar o peso de cada nota e evitar inflar avaliações no impulso."
+      summary="A nota precisa ser rápida de usar no dia a dia, mas firme o bastante para sustentar consistência ao longo do tempo."
     />
 
     <div class="rating-card" :class="{ compact }">
-      <p class="eyebrow">{{ compact ? label : 'Escala pessoal de 1 a 5' }}</p>
+      <template v-if="compact">
+        <div class="compact-row">
+          <span class="compact-label">{{ label }}</span>
 
-      <div class="rating-actions">
-        <button
-          v-for="item in scale"
-          :key="item.rating"
-          type="button"
-          class="rating-button"
-          :class="{ selected: currentRating === item.rating, compact }"
-          :disabled="submitting"
-          @click="selectRating(item.rating)"
-        >
-          <span class="rating-number">{{ item.rating }}</span>
-          <span v-if="!compact" class="rating-label">{{ item.title }}</span>
-        </button>
-
-        <button
-          v-if="currentRating != null"
-          type="button"
-          class="clear-button"
-          :disabled="submitting"
-          @click="clearRating"
-        >
-          Limpar
-        </button>
-      </div>
-
-      <p class="selection-copy">
-        {{ currentScaleItem ? currentScaleItem.description : emptyCopy }}
-      </p>
-
-      <div v-if="!compact" class="legend-list">
-        <article v-for="item in scale" :key="`legend-${item.rating}`" class="legend-item">
-          <strong>{{ item.rating }}</strong>
-          <div>
-            <p>{{ item.title }}</p>
-            <span>{{ item.description }}</span>
+          <div class="compact-actions">
+            <button
+              v-for="item in scale"
+              :key="item.rating"
+              type="button"
+              class="compact-button"
+              :class="{ selected: currentRating === item.rating }"
+              :disabled="submitting"
+              :aria-label="`${label}: ${item.rating}`"
+              @click="selectRating(item.rating)"
+            >
+              {{ item.rating }}
+            </button>
           </div>
-        </article>
-      </div>
 
-      <p v-if="errorMessage" class="feedback error">{{ errorMessage }}</p>
+          <button
+            v-if="currentRating != null"
+            type="button"
+            class="compact-clear"
+            :disabled="submitting"
+            @click="clearRating"
+          >
+            Limpar
+          </button>
+        </div>
+
+        <p v-if="currentScaleItem" class="compact-copy">{{ currentScaleItem.compactHint }}</p>
+        <p v-if="errorMessage" class="feedback error">{{ errorMessage }}</p>
+      </template>
+
+      <template v-else>
+        <div class="rating-overview">
+          <div class="current-state">
+            <p class="kicker">Nota atual</p>
+            <div class="current-value">
+              <strong>{{ currentRating ?? '—' }}</strong>
+              <div>
+                <p class="current-title">{{ currentScaleItem?.title ?? 'Ainda sem nota' }}</p>
+                <span class="current-copy">
+                  {{ currentScaleItem?.description ?? 'Use a escala abaixo para marcar o peso real dessa obra.' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            v-if="currentRating != null"
+            type="button"
+            class="clear-button"
+            :disabled="submitting"
+            @click="clearRating"
+          >
+            Limpar nota
+          </button>
+        </div>
+
+        <div class="rating-scale" role="group" :aria-label="title">
+          <button
+            v-for="item in scale"
+            :key="item.rating"
+            type="button"
+            class="scale-button"
+            :class="{ selected: currentRating === item.rating }"
+            :disabled="submitting"
+            @click="selectRating(item.rating)"
+          >
+            <span class="scale-number">{{ item.rating }}</span>
+            <span class="scale-title">{{ item.title }}</span>
+          </button>
+        </div>
+
+        <div class="scale-anchors">
+          <article v-for="anchor in anchors" :key="anchor.id" class="anchor-item">
+            <p>{{ anchor.label }}</p>
+            <span>{{ anchor.copy }}</span>
+          </article>
+        </div>
+
+        <details class="scale-reference">
+          <summary>Escala completa</summary>
+
+          <div class="reference-list">
+            <article v-for="item in scale" :key="`reference-${item.rating}`" class="reference-item">
+              <strong>{{ item.rating }}</strong>
+              <div>
+                <p>{{ item.title }}</p>
+                <span>{{ item.description }}</span>
+              </div>
+            </article>
+          </div>
+        </details>
+
+        <p v-if="errorMessage" class="feedback error">{{ errorMessage }}</p>
+      </template>
     </div>
   </section>
 </template>
@@ -60,11 +116,54 @@ import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { MediaRatingDto } from '~/types/ratings'
 
 const scale = [
-  { rating: 1, title: 'Fraco', description: 'Não gostei, achei chato ou de qualidade duvidosa.' },
-  { rating: 2, title: 'Abaixo', description: 'Tem algo aqui, mas ficou aquém do que prometia.' },
-  { rating: 3, title: 'Bom', description: 'Funciona bem, gostei, mas não chega a marcar tanto.' },
-  { rating: 4, title: 'Muito bom', description: 'Ficou claramente acima da média e vale revisitar.' },
-  { rating: 5, title: 'Masterpiece', description: 'Realmente amei. Fica reservado para o que é especial.' },
+  {
+    rating: 1,
+    title: 'Ruim',
+    description: 'Não gostei. Ficou chato, fraco ou de qualidade duvidosa.',
+    compactHint: 'Ruim: não gostei.',
+  },
+  {
+    rating: 2,
+    title: 'Fraco',
+    description: 'Tem algo aqui, mas o saldo final ficou abaixo do que eu queria.',
+    compactHint: 'Fraco: abaixo do esperado.',
+  },
+  {
+    rating: 3,
+    title: 'Bom',
+    description: 'Gostei. Funciona bem, mas não vira referência nem pede retorno imediato.',
+    compactHint: 'Bom: gostei, mas sem grande peso.',
+  },
+  {
+    rating: 4,
+    title: 'Muito bom',
+    description: 'Me pegou de verdade. Claramente acima da média e com vontade real de revisitar.',
+    compactHint: 'Muito bom: acima da média.',
+  },
+  {
+    rating: 5,
+    title: 'Essencial',
+    description: 'Amei. Entra no grupo raro do que considero grande, pessoal e memorável.',
+    compactHint: 'Essencial: raro e grande para você.',
+  },
+] as const
+
+const anchors = [
+  {
+    id: 'three',
+    label: '3 = gostei',
+    copy: 'Bom de verdade, mas ainda não entra no grupo do que mais te marca.',
+  },
+  {
+    id: 'four',
+    label: '4 = me pegou',
+    copy: 'Já está claramente acima da média e deixa vontade forte de voltar.',
+  },
+  {
+    id: 'five',
+    label: '5 = raro',
+    copy: 'Reserve para o que você realmente ama e quer proteger da inflação da escala.',
+  },
 ] as const
 
 const props = withDefaults(
@@ -80,7 +179,7 @@ const props = withDefaults(
   {
     title: 'Como essa obra fica na sua escala',
     description:
-      'Uma nota curta, mas com peso real. A escala existe para te ajudar a manter consistência ao longo do tempo.',
+      'A nota deve te ajudar a distinguir algo só bom de algo que realmente merece ocupar espaço maior no seu repertório.',
     label: 'Sua nota',
     compact: false,
   },
@@ -103,11 +202,6 @@ watch(
 )
 
 const currentScaleItem = computed(() => scale.find((item) => item.rating === currentRating.value) ?? null)
-const emptyCopy = computed(() =>
-  props.compact
-    ? 'Sem nota por enquanto.'
-    : 'Sem nota ainda. Use a escala acima para manter o critério estável entre obras e revisitas.',
-)
 
 async function selectRating(rating: number) {
   if (submitting.value) return
@@ -164,42 +258,97 @@ async function clearRating() {
   gap: 18px;
   padding: clamp(22px, 3vw, 32px);
   border-radius: 28px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 243, 238, 0.98));
-  border: 1px solid color-mix(in srgb, var(--base-color-border) 52%, white);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, white 92%, var(--base-color-surface-soft)),
+    color-mix(in srgb, var(--base-color-surface-soft) 88%, white)
+  );
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 56%, white);
 }
 
 .rating-card.compact {
-  padding: 14px 16px;
-  border-radius: 20px;
-  gap: 12px;
-  background: color-mix(in srgb, var(--base-color-surface-strong) 84%, var(--base-color-surface-soft));
+  padding: 0;
+  gap: 6px;
+  border: 0;
+  background: transparent;
 }
 
-.eyebrow,
-.legend-item strong {
+.rating-overview,
+.current-value,
+.compact-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.current-state {
+  display: grid;
+  gap: 10px;
+}
+
+.kicker,
+.compact-label,
+.scale-reference summary {
   margin: 0;
-  color: var(--base-color-brand-red);
-  font-size: 0.76rem;
+  color: var(--base-color-text-secondary);
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.rating-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
+.current-value strong {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+  font-size: 1.35rem;
+  line-height: 1;
 }
 
-.rating-button,
-.clear-button {
-  border: 1px solid var(--base-color-border);
+.current-title,
+.current-copy,
+.compact-copy,
+.anchor-item p,
+.anchor-item span,
+.reference-item p,
+.reference-item span,
+.feedback {
+  margin: 0;
+}
+
+.current-title,
+.reference-item p {
+  color: var(--base-color-text-primary);
+  font-weight: 600;
+}
+
+.current-copy,
+.compact-copy,
+.anchor-item span,
+.reference-item span {
+  color: var(--base-color-text-secondary);
+}
+
+.rating-scale {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.scale-button,
+.clear-button,
+.compact-button,
+.compact-clear {
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 76%, white);
   border-radius: 16px;
-  background: #e5e5e0;
-  color: #211922;
-  min-height: 44px;
-  padding: 8px 14px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
   font: inherit;
   cursor: pointer;
   transition:
@@ -208,96 +357,132 @@ async function clearRating() {
     transform 160ms ease;
 }
 
-.rating-button {
+.scale-button {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-height: 76px;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.compact-actions {
   display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
   align-items: center;
-  gap: 10px;
 }
 
-.rating-button.compact {
-  min-width: 40px;
-  justify-content: center;
-  padding: 8px 10px;
-}
-
-.rating-button:hover,
-.clear-button:hover {
-  border-color: #bcbcb3;
-  transform: translateY(-1px);
-}
-
-.rating-button.selected {
-  background: #e60023;
-  border-color: transparent;
-  color: #000000;
-}
-
-.rating-button:focus-visible,
-.clear-button:focus-visible {
-  outline: 3px solid #435ee5;
-  outline-offset: 2px;
-}
-
-.rating-number {
-  font-size: 1rem;
+.compact-button {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
-.rating-label,
-.selection-copy,
-.legend-item p,
-.legend-item span,
-.feedback {
-  margin: 0;
+.compact-clear {
+  padding: 6px 12px;
 }
 
-.selection-copy,
-.legend-item span {
-  color: var(--base-color-text-secondary);
+.clear-button {
+  padding: 8px 14px;
 }
 
-.legend-list {
+.scale-button:hover,
+.clear-button:hover,
+.compact-button:hover,
+.compact-clear:hover {
+  border-color: var(--base-color-hover-grayscale-150);
+  transform: translateY(-1px);
+}
+
+.scale-button.selected,
+.compact-button.selected {
+  background: var(--base-color-brand-red);
+  border-color: transparent;
+  color: black;
+}
+
+.scale-button:focus-visible,
+.clear-button:focus-visible,
+.compact-button:focus-visible,
+.compact-clear:focus-visible {
+  outline: 3px solid var(--base-color-focus);
+  outline-offset: 2px;
+}
+
+.scale-number {
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.scale-title {
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.scale-reference {
+  display: grid;
+  gap: 12px;
+}
+
+.scale-reference summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.scale-reference summary::-webkit-details-marker {
+  display: none;
+}
+
+.reference-list {
   display: grid;
   gap: 10px;
 }
 
-.legend-item {
+.scale-anchors {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.anchor-item,
+.reference-item {
+  display: grid;
+  gap: 6px;
   padding: 12px 14px;
   border-radius: 16px;
   background: hsla(60, 20%, 98%, 0.5);
 }
 
-.legend-item p {
+.anchor-item p,
+.reference-item strong {
   color: var(--base-color-text-primary);
-  font-size: 0.95rem;
   font-weight: 600;
 }
 
-.legend-item span {
-  display: block;
-  margin-top: 2px;
-  font-size: 0.88rem;
+.reference-item {
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
 }
 
 .feedback.error {
   color: #9e0a0a;
 }
 
-@media (max-width: 720px) {
-  .rating-actions {
-    gap: 8px;
+@media (max-width: 820px) {
+  .rating-scale {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .rating-button:not(.compact) {
-    width: calc(50% - 4px);
-    justify-content: center;
+  .scale-anchors {
+    grid-template-columns: 1fr;
   }
 
-  .clear-button {
-    width: 100%;
+  .scale-button:last-child {
+    grid-column: span 2;
   }
 }
 </style>
