@@ -133,6 +133,11 @@ data class TmdbPersonMovieCreditsResponse(
     val crew: List<TmdbPersonMovieCrewCreditResponse> = emptyList(),
 )
 
+data class TmdbPersonTvCreditsResponse(
+    val cast: List<TmdbPersonTvCastCreditResponse> = emptyList(),
+    val crew: List<TmdbPersonTvCrewCreditResponse> = emptyList(),
+)
+
 data class TmdbPersonDetailsResponse(
     val id: Long? = null,
     val name: String? = null,
@@ -177,6 +182,38 @@ data class TmdbPersonMovieCrewCreditResponse(
     val overview: String? = null,
     @JsonProperty("release_date")
     val releaseDate: String? = null,
+    @JsonProperty("poster_path")
+    val posterPath: String? = null,
+    @JsonProperty("backdrop_path")
+    val backdropPath: String? = null,
+    val department: String? = null,
+    val job: String? = null,
+)
+
+data class TmdbPersonTvCastCreditResponse(
+    val id: Long? = null,
+    val name: String? = null,
+    @JsonProperty("original_name")
+    val originalName: String? = null,
+    val overview: String? = null,
+    @JsonProperty("first_air_date")
+    val firstAirDate: String? = null,
+    @JsonProperty("poster_path")
+    val posterPath: String? = null,
+    @JsonProperty("backdrop_path")
+    val backdropPath: String? = null,
+    val character: String? = null,
+    val order: Int? = null,
+)
+
+data class TmdbPersonTvCrewCreditResponse(
+    val id: Long? = null,
+    val name: String? = null,
+    @JsonProperty("original_name")
+    val originalName: String? = null,
+    val overview: String? = null,
+    @JsonProperty("first_air_date")
+    val firstAirDate: String? = null,
     @JsonProperty("poster_path")
     val posterPath: String? = null,
     @JsonProperty("backdrop_path")
@@ -427,6 +464,11 @@ class TmdbApiClient(
         val crew: List<TmdbPersonMovieCrewCredit>,
     )
 
+    data class TmdbPersonTvCredits(
+        val cast: List<TmdbPersonTvCastCredit>,
+        val crew: List<TmdbPersonTvCrewCredit>,
+    )
+
     data class TmdbPersonDetails(
         val tmdbId: String,
         val name: String?,
@@ -455,6 +497,30 @@ class TmdbApiClient(
     )
 
     data class TmdbPersonMovieCrewCredit(
+        val tmdbId: String,
+        val title: String?,
+        val originalTitle: String?,
+        val overview: String?,
+        val releaseYear: Int?,
+        val posterPath: String?,
+        val backdropPath: String?,
+        val department: String?,
+        val job: String?,
+    )
+
+    data class TmdbPersonTvCastCredit(
+        val tmdbId: String,
+        val title: String?,
+        val originalTitle: String?,
+        val overview: String?,
+        val releaseYear: Int?,
+        val posterPath: String?,
+        val backdropPath: String?,
+        val character: String?,
+        val order: Int?,
+    )
+
+    data class TmdbPersonTvCrewCredit(
         val tmdbId: String,
         val title: String?,
         val originalTitle: String?,
@@ -839,6 +905,98 @@ class TmdbApiClient(
                 return null
             } catch (ex: Exception) {
                 logger.warn("Failed to fetch TMDb person movie credits for id={}", normalizedTmdbPersonId, ex)
+                return null
+            }
+        }
+
+        return null
+    }
+
+    fun fetchPersonTvCredits(tmdbPersonId: String): TmdbPersonTvCredits? {
+        if (!tmdbProperties.enabled) return null
+
+        val normalizedTmdbPersonId = tmdbPersonId.trim()
+        if (normalizedTmdbPersonId.isBlank()) return null
+
+        val attempts = (tmdbProperties.max429Retries + 1).coerceAtLeast(1)
+        var attempt = 0
+
+        while (attempt < attempts) {
+            attempt++
+            tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
+
+            try {
+                val response =
+                    tmdbWebClient
+                        .get()
+                        .uri { uriBuilder ->
+                            val builder = uriBuilder.path("/person/{id}/tv_credits")
+                            if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
+                                builder.queryParam("api_key", tmdbProperties.apiKey)
+                            }
+                            builder.build(normalizedTmdbPersonId)
+                        }.retrieve()
+                        .bodyToMono<TmdbPersonTvCreditsResponse>()
+                        .block()
+                        ?: return null
+
+                return TmdbPersonTvCredits(
+                    cast =
+                        response.cast.mapNotNull { item ->
+                            val showId = item.id?.toString() ?: return@mapNotNull null
+                            TmdbPersonTvCastCredit(
+                                tmdbId = showId,
+                                title = item.name?.trim()?.ifBlank { null },
+                                originalTitle = item.originalName?.trim()?.ifBlank { null },
+                                overview = item.overview?.trim()?.ifBlank { null },
+                                releaseYear = parseReleaseYear(item.firstAirDate),
+                                posterPath = item.posterPath?.trim()?.ifBlank { null },
+                                backdropPath = item.backdropPath?.trim()?.ifBlank { null },
+                                character = item.character?.trim()?.ifBlank { null },
+                                order = item.order,
+                            )
+                        },
+                    crew =
+                        response.crew.mapNotNull { item ->
+                            val showId = item.id?.toString() ?: return@mapNotNull null
+                            TmdbPersonTvCrewCredit(
+                                tmdbId = showId,
+                                title = item.name?.trim()?.ifBlank { null },
+                                originalTitle = item.originalName?.trim()?.ifBlank { null },
+                                overview = item.overview?.trim()?.ifBlank { null },
+                                releaseYear = parseReleaseYear(item.firstAirDate),
+                                posterPath = item.posterPath?.trim()?.ifBlank { null },
+                                backdropPath = item.backdropPath?.trim()?.ifBlank { null },
+                                department = item.department?.trim()?.ifBlank { null },
+                                job = item.job?.trim()?.ifBlank { null },
+                            )
+                        },
+                )
+            } catch (ex: WebClientResponseException.NotFound) {
+                return null
+            } catch (ex: WebClientResponseException) {
+                val isTooManyRequests = ex.statusCode.value() == 429
+                val hasRemainingRetry = attempt < attempts
+                if (isTooManyRequests && hasRemainingRetry) {
+                    val waitMs = resolve429WaitMs(ex, attempt)
+                    logger.warn(
+                        "TMDb person tv credits rate limited (429). Waiting {}ms before retry {}/{}",
+                        waitMs,
+                        attempt + 1,
+                        attempts,
+                    )
+                    Thread.sleep(waitMs)
+                    continue
+                }
+                logger.warn(
+                    "Failed to fetch TMDb person tv credits for personId={} status={}",
+                    normalizedTmdbPersonId,
+                    ex.statusCode.value(),
+                    ex,
+                )
+                return null
+            } catch (ex: Exception) {
+                logger.warn("Failed to fetch TMDb person tv credits for personId={}", normalizedTmdbPersonId, ex)
                 return null
             }
         }

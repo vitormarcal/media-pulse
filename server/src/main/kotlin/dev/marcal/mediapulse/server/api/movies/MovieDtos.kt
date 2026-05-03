@@ -516,6 +516,29 @@ data class PersonFilmographyMemberDto(
     val roleLabel: String,
 )
 
+data class PersonShowFilmographyResponse(
+    val personId: Long,
+    val tmdbId: String,
+    val name: String,
+    val profileUrl: String?,
+    val members: List<PersonShowFilmographyMemberDto>,
+)
+
+data class PersonShowFilmographyMemberDto(
+    val tmdbId: String,
+    val title: String,
+    val originalTitle: String?,
+    val year: Int?,
+    val overview: String?,
+    val posterUrl: String?,
+    val backdropUrl: String?,
+    val tmdbUrl: String,
+    val localShowId: Long?,
+    val localSlug: String?,
+    val inCatalog: Boolean,
+    val roleLabel: String,
+)
+
 data class MovieCompanyMembersResponse(
     val companyId: Long,
     val tmdbId: String,

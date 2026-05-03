@@ -1549,6 +1549,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PersonFilmographyResponse"
+  /api/people/{personId}/tmdb-show-filmography:
+    get:
+      summary: Fetch TMDb show filmography for a local person
+      tags: [Movies]
+      parameters:
+        - name: personId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonShowFilmographyResponse"
 
   /api/movies/{movieId}/terms/sync-tmdb:
     post:
@@ -4705,6 +4723,60 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PersonFilmographyMemberDto"
+      required: [personId, tmdbId, name, members]
+    PersonShowFilmographyMemberDto:
+      type: object
+      properties:
+        tmdbId:
+          type: string
+        title:
+          type: string
+        originalTitle:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        overview:
+          type: string
+          nullable: true
+        posterUrl:
+          type: string
+          nullable: true
+        backdropUrl:
+          type: string
+          nullable: true
+        tmdbUrl:
+          type: string
+        localShowId:
+          type: integer
+          format: int64
+          nullable: true
+        localSlug:
+          type: string
+          nullable: true
+        inCatalog:
+          type: boolean
+        roleLabel:
+          type: string
+      required: [tmdbId, title, tmdbUrl, inCatalog, roleLabel]
+    PersonShowFilmographyResponse:
+      type: object
+      properties:
+        personId:
+          type: integer
+          format: int64
+        tmdbId:
+          type: string
+        name:
+          type: string
+        profileUrl:
+          type: string
+          nullable: true
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/PersonShowFilmographyMemberDto"
       required: [personId, tmdbId, name, members]
     MovieCompaniesSyncResponse:
       type: object

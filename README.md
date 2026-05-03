@@ -175,6 +175,7 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `GET /api/people/{slug}`
 - `GET /api/people/search`
 - `GET /api/people/{personId}/tmdb-filmography`
+- `GET /api/people/{personId}/tmdb-show-filmography`
 - `GET /api/movies/companies/{slug}`
 - `GET /api/movies/terms/{kind}/{slug}`
 - `GET /api/movies/lists`

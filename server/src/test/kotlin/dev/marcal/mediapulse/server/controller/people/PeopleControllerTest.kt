@@ -2,10 +2,12 @@ package dev.marcal.mediapulse.server.controller.people
 
 import dev.marcal.mediapulse.server.api.movies.PersonDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.PersonFilmographyResponse
+import dev.marcal.mediapulse.server.api.movies.PersonShowFilmographyResponse
 import dev.marcal.mediapulse.server.api.movies.PersonSuggestionDto
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.service.person.PersonDetailsService
 import dev.marcal.mediapulse.server.service.person.PersonFilmographyService
+import dev.marcal.mediapulse.server.service.person.PersonShowFilmographyService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -16,11 +18,13 @@ class PeopleControllerTest {
     private val personDetailsService = mockk<PersonDetailsService>()
     private val movieCreditsService = mockk<MovieCreditsService>()
     private val personFilmographyService = mockk<PersonFilmographyService>()
+    private val personShowFilmographyService = mockk<PersonShowFilmographyService>()
     private val controller =
         PeopleController(
             personDetailsService = personDetailsService,
             movieCreditsService = movieCreditsService,
             personFilmographyService = personFilmographyService,
+            personShowFilmographyService = personShowFilmographyService,
         )
 
     @Test
@@ -84,5 +88,23 @@ class PeopleControllerTest {
 
         assertEquals("138", response.tmdbId)
         verify(exactly = 1) { personFilmographyService.fetchFilmography(44) }
+    }
+
+    @Test
+    fun `tmdb show filmography should delegate to service`() {
+        val expected =
+            PersonShowFilmographyResponse(
+                personId = 44,
+                tmdbId = "138",
+                name = "Quentin Tarantino",
+                profileUrl = null,
+                members = emptyList(),
+            )
+        every { personShowFilmographyService.fetchFilmography(44) } returns expected
+
+        val response = controller.tmdbShowFilmography(44)
+
+        assertEquals("138", response.tmdbId)
+        verify(exactly = 1) { personShowFilmographyService.fetchFilmography(44) }
     }
 }

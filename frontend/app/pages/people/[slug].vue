@@ -12,7 +12,7 @@
     <template v-else-if="data">
       <section class="person-hero" :style="heroShellStyle">
         <div class="copy">
-          <NuxtLink class="back-link" to="/movies"> Voltar para filmes </NuxtLink>
+          <NuxtLink class="back-link" to="/movies"> Voltar ao catálogo </NuxtLink>
 
           <p class="eyebrow">Pessoa</p>
           <h1>{{ data.name }}</h1>
@@ -89,13 +89,13 @@
         empty-message="Nenhuma série local apareceu ligada a esta pessoa."
       />
 
-      <PersonFilmographyPanel :person="data" @added="handleCatalogAdded" />
+      <PersonScreenographyPanel :person="data" @added="handleCatalogAdded" />
     </template>
   </main>
 </template>
 
 <script setup lang="ts">
-import PersonFilmographyPanel from '~/components/people/PersonFilmographyPanel.vue'
+import PersonScreenographyPanel from '~/components/people/PersonScreenographyPanel.vue'
 import MoviesLibraryGrid from '~/components/movies/MoviesLibraryGrid.vue'
 import ShowsLibraryGrid from '~/components/shows/ShowsLibraryGrid.vue'
 import { usePersonPageData } from '~/composables/usePersonPageData'
@@ -194,7 +194,7 @@ useHead(() => ({
     {
       name: 'description',
       content: data.value
-        ? `Pessoa atravessando o catálogo audiovisual do Media Pulse, hoje ainda com recorte local de filmes.`
+        ? `Pessoa atravessando filmes e séries no catálogo audiovisual do Media Pulse.`
         : 'Página de pessoa do catálogo audiovisual do Media Pulse.',
     },
   ],

@@ -399,6 +399,29 @@ export interface PersonFilmographyMember {
   roleLabel: string
 }
 
+export interface PersonShowFilmographyResponse {
+  personId: number
+  tmdbId: string
+  name: string
+  profileUrl: string | null
+  members: PersonShowFilmographyMember[]
+}
+
+export interface PersonShowFilmographyMember {
+  tmdbId: string
+  title: string
+  originalTitle: string | null
+  year: number | null
+  overview: string | null
+  posterUrl: string | null
+  backdropUrl: string | null
+  tmdbUrl: string
+  localShowId: number | null
+  localSlug: string | null
+  inCatalog: boolean
+  roleLabel: string
+}
+
 export interface MovieCompanyMembersResponse {
   companyId: number
   tmdbId: string

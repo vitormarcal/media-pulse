@@ -53,6 +53,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/{movieId}/enrichment/preview` | body com `tmdbId?` | `MovieEnrichmentPreviewResponse` |
 | `POST /api/movies/{movieId}/enrichment/apply` | body com `tmdbId?`, `mode`, `fields[]` | `MovieEnrichmentApplyResponse` |
 | `GET /api/people/{personId}/tmdb-filmography` | `personId` | `PersonFilmographyResponse` |
+| `GET /api/people/{personId}/tmdb-show-filmography` | `personId` | `PersonShowFilmographyResponse` |
 
 ## Paginação e limites
 
@@ -335,6 +336,12 @@ Persistência:
 
 - cruza a filmografia do TMDb com os filmes já catalogados localmente
 - quando encontra um filme já local, reaproveita essa oportunidade para persistir o vínculo `movie_credits` da pessoa com o filme
+- permite à UI mostrar o que já existe e o que ainda pode ser adicionado explicitamente
+
+`GET /api/people/{personId}/tmdb-show-filmography` faz o mesmo recorte para séries.
+
+- cruza `person/{id}/tv_credits` do TMDb com as séries já catalogadas localmente
+- quando encontra uma série já local, reaproveita essa oportunidade para persistir o vínculo `show_credits` da pessoa com a série
 - permite à UI mostrar o que já existe e o que ainda pode ser adicionado explicitamente
 
 ## Coleções oficiais TMDb

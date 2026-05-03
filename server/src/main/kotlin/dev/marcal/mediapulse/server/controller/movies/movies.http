@@ -206,6 +206,10 @@ Accept: application/json
 GET {{peopleBaseUrl}}/1/tmdb-filmography
 Accept: application/json
 
+### Filmografia TMDb de series de uma pessoa
+GET {{peopleBaseUrl}}/1/tmdb-show-filmography
+Accept: application/json
+
 ### Adicionar termo manual
 POST {{baseUrl}}/{{movieId}}/terms
 Content-Type: application/json
