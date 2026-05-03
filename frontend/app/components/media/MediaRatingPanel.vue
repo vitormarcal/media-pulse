@@ -22,21 +22,11 @@
               :class="{ selected: currentRating === item.rating }"
               :disabled="submitting"
               :aria-label="`${label}: ${item.rating}`"
-              @click="selectRating(item.rating)"
+              @click="toggleRating(item.rating)"
             >
               {{ item.rating }}
             </button>
           </div>
-
-          <button
-            v-if="currentRating != null"
-            type="button"
-            class="compact-clear"
-            :disabled="submitting"
-            @click="clearRating"
-          >
-            Limpar
-          </button>
         </div>
 
         <p v-if="currentScaleItem" class="compact-copy">{{ currentScaleItem.compactHint }}</p>
@@ -57,16 +47,6 @@
               </div>
             </div>
           </div>
-
-          <button
-            v-if="currentRating != null"
-            type="button"
-            class="clear-button"
-            :disabled="submitting"
-            @click="clearRating"
-          >
-            Limpar nota
-          </button>
         </div>
 
         <div class="rating-scale" role="group" :aria-label="title">
@@ -77,18 +57,23 @@
             class="scale-button"
             :class="{ selected: currentRating === item.rating }"
             :disabled="submitting"
-            @click="selectRating(item.rating)"
+            @click="toggleRating(item.rating)"
           >
             <span class="scale-number">{{ item.rating }}</span>
             <span class="scale-title">{{ item.title }}</span>
           </button>
         </div>
 
+        <p class="scale-copy">
+          {{
+            currentScaleItem
+              ? currentScaleItem.description
+              : 'Escolha uma nota. O critério mais importante aqui é manter o uso consistente entre obras.'
+          }}
+        </p>
+
         <div class="scale-anchors">
-          <article v-for="anchor in anchors" :key="anchor.id" class="anchor-item">
-            <p>{{ anchor.label }}</p>
-            <span>{{ anchor.copy }}</span>
-          </article>
+          <span v-for="anchor in anchors" :key="anchor.id" class="anchor-item">{{ anchor.label }}</span>
         </div>
 
         <details class="scale-reference">
@@ -225,6 +210,15 @@ async function selectRating(rating: number) {
   }
 }
 
+async function toggleRating(rating: number) {
+  if (currentRating.value === rating) {
+    await clearRating()
+    return
+  }
+
+  await selectRating(rating)
+}
+
 async function clearRating() {
   if (submitting.value) return
 
@@ -255,15 +249,15 @@ async function clearRating() {
 
 .rating-card {
   display: grid;
-  gap: 18px;
-  padding: clamp(22px, 3vw, 32px);
+  gap: 16px;
+  padding: clamp(20px, 2.4vw, 28px);
   border-radius: 28px;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, white 92%, var(--base-color-surface-soft)),
-    color-mix(in srgb, var(--base-color-surface-soft) 88%, white)
+    color-mix(in srgb, white 94%, var(--base-color-surface-soft)),
+    color-mix(in srgb, var(--base-color-surface-soft) 92%, white)
   );
-  border: 1px solid color-mix(in srgb, var(--base-color-border) 56%, white);
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 48%, white);
 }
 
 .rating-card.compact {
@@ -300,14 +294,15 @@ async function clearRating() {
 }
 
 .current-value strong {
-  display: grid;
+  display: inline-grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--base-color-surface-warm);
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--base-color-surface-warm) 82%, white);
   color: var(--base-color-text-primary);
-  font-size: 1.35rem;
+  font-size: 1rem;
   line-height: 1;
 }
 
@@ -342,12 +337,10 @@ async function clearRating() {
 }
 
 .scale-button,
-.clear-button,
-.compact-button,
-.compact-clear {
+.compact-button {
   border: 1px solid color-mix(in srgb, var(--base-color-border) 76%, white);
   border-radius: 16px;
-  background: var(--base-color-surface-warm);
+  background: transparent;
   color: var(--base-color-text-primary);
   font: inherit;
   cursor: pointer;
@@ -361,8 +354,8 @@ async function clearRating() {
   display: grid;
   gap: 4px;
   justify-items: center;
-  min-height: 76px;
-  padding: 12px 10px;
+  min-height: 64px;
+  padding: 10px 10px;
   text-align: center;
 }
 
@@ -382,33 +375,21 @@ async function clearRating() {
   font-weight: 700;
 }
 
-.compact-clear {
-  padding: 6px 12px;
-}
-
-.clear-button {
-  padding: 8px 14px;
-}
-
 .scale-button:hover,
-.clear-button:hover,
-.compact-button:hover,
-.compact-clear:hover {
+.compact-button:hover {
   border-color: var(--base-color-hover-grayscale-150);
   transform: translateY(-1px);
 }
 
 .scale-button.selected,
 .compact-button.selected {
-  background: var(--base-color-brand-red);
-  border-color: transparent;
-  color: black;
+  background: color-mix(in srgb, var(--base-color-brand-red) 14%, white);
+  border-color: color-mix(in srgb, var(--base-color-brand-red) 24%, var(--base-color-border));
+  color: var(--base-color-text-primary);
 }
 
 .scale-button:focus-visible,
-.clear-button:focus-visible,
-.compact-button:focus-visible,
-.compact-clear:focus-visible {
+.compact-button:focus-visible {
   outline: 3px solid var(--base-color-focus);
   outline-offset: 2px;
 }
@@ -421,6 +402,13 @@ async function clearRating() {
 .scale-title {
   font-size: 0.82rem;
   line-height: 1.2;
+}
+
+.scale-copy {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.6;
 }
 
 .scale-reference {
@@ -457,7 +445,7 @@ async function clearRating() {
   background: hsla(60, 20%, 98%, 0.5);
 }
 
-.anchor-item p,
+.anchor-item,
 .reference-item strong {
   color: var(--base-color-text-primary);
   font-weight: 600;
@@ -479,10 +467,6 @@ async function clearRating() {
 
   .scale-anchors {
     grid-template-columns: 1fr;
-  }
-
-  .scale-button:last-child {
-    grid-column: span 2;
   }
 }
 </style>
