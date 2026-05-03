@@ -25,6 +25,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowsStatsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsTotalStatsDto
 import dev.marcal.mediapulse.server.api.shows.ShowsYearStatsDto
+import dev.marcal.mediapulse.server.model.EntityType
 import jakarta.persistence.EntityManager
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
@@ -35,6 +36,7 @@ import java.time.Instant
 @Repository
 class TvShowQueryRepository(
     private val entityManager: EntityManager,
+    private val mediaCommentQueryRepository: MediaCommentQueryRepository,
 ) {
     fun getShowPeople(showId: Long): List<ShowPersonCreditDto> =
         entityManager
@@ -487,6 +489,7 @@ class TvShowQueryRepository(
                 }
 
         val people = getShowPeople(showId)
+        val comments = mediaCommentQueryRepository.findByEntity(EntityType.SHOW, showId)
 
         val progress =
             if (seasons.isEmpty()) {
@@ -527,6 +530,7 @@ class TvShowQueryRepository(
             watches = watches,
             externalIds = externalIds,
             people = people,
+            comments = comments,
         )
     }
 

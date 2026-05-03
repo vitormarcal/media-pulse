@@ -1,4 +1,5 @@
 import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
+import type { MediaCommentDto } from '~/types/comments'
 
 export interface AuthorDto {
   id: number
@@ -60,6 +61,7 @@ export interface BookDetailsResponse {
   authors: AuthorDto[]
   editions: EditionDto[]
   reads: ReadCardDto[]
+  comments: MediaCommentDto[]
 }
 
 export interface AuthorDetailsResponse {
@@ -91,6 +93,7 @@ export interface BookEditionModel {
 }
 
 export interface BookPageData {
+  bookId: number
   slug: string
   title: string
   description: string | null
@@ -109,6 +112,7 @@ export interface BookPageData {
   recentReads: BookReadEntryModel[]
   reviewRaw: string | null
   reviewedAt: string | null
+  comments: MediaCommentDto[]
 }
 
 export interface AuthorPageData {

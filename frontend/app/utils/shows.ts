@@ -385,6 +385,7 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
     },
     seasons: show.seasons.map((season) => mapSeason(season, show.slug)),
     recentWatches: show.watches.slice(0, 24).map(mapWatch),
+    comments: show.comments,
   }
 }
 

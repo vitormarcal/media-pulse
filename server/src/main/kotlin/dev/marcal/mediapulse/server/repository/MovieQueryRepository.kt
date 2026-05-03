@@ -38,6 +38,7 @@ import dev.marcal.mediapulse.server.api.movies.PersonDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.PersonSuggestionDto
 import dev.marcal.mediapulse.server.api.movies.RangeDto
 import dev.marcal.mediapulse.server.api.shows.ShowLibraryCardDto
+import dev.marcal.mediapulse.server.model.EntityType
 import jakarta.persistence.EntityManager
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
@@ -48,6 +49,7 @@ import java.time.Instant
 @Repository
 class MovieQueryRepository(
     private val entityManager: EntityManager,
+    private val mediaCommentQueryRepository: MediaCommentQueryRepository,
 ) {
     fun library(
         limit: Int,
@@ -329,6 +331,7 @@ class MovieQueryRepository(
         val companies = getMovieCompanies(movieId)
         val people = getMoviePeople(movieId)
         val terms = getMovieTerms(movieId)
+        val comments = mediaCommentQueryRepository.findByEntity(EntityType.MOVIE, movieId)
 
         val collection =
             (base[7] as Number?)?.toLong()?.let { collectionId ->
@@ -401,6 +404,7 @@ class MovieQueryRepository(
             people = people,
             terms = terms,
             collection = collection,
+            comments = comments,
         )
     }
 

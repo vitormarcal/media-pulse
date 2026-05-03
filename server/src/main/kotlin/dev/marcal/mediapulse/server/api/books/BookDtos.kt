@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.api.books
 
+import dev.marcal.mediapulse.server.api.comments.MediaCommentDto
 import java.time.Instant
 import java.time.LocalDate
 
@@ -83,6 +84,7 @@ data class BookDetailsResponse(
     val authors: List<AuthorDto>,
     val editions: List<EditionDto>,
     val reads: List<ReadCardDto>,
+    val comments: List<MediaCommentDto> = emptyList(),
 )
 
 data class BooksListResponse(

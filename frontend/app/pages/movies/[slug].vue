@@ -48,6 +48,15 @@
 
       <MovieAddWatchPanel :movie-id="data.movieId" @created="handleWatchCreated" />
 
+      <MediaCommentsPanel
+        :entity-id="data.movieId"
+        media-type="movies"
+        title="Impressões do filme"
+        description="Cada retorno ao filme pode render uma leitura diferente. Os comentários preservam essas camadas sem sobrescrever a anterior."
+        :comments="data.comments"
+        empty-label="Nenhuma impressão manual registrada para este filme ainda."
+      />
+
       <MovieWatchTimeline :movie-id="data.movieId" :watches="data.recentWatches" @deleted="handleWatchDeleted" />
     </template>
   </main>
@@ -62,6 +71,7 @@ import MovieListsPanel from '~/components/movies/MovieListsPanel.vue'
 import MoviePageHero from '~/components/movies/MoviePageHero.vue'
 import MoviePeoplePanel from '~/components/movies/MoviePeoplePanel.vue'
 import MovieWatchTimeline from '~/components/movies/MovieWatchTimeline.vue'
+import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
 import { useMoviePageData } from '~/composables/useMoviePageData'
 import type { ManualMovieWatchCreateResponse, MovieEnrichmentApplyResponse } from '~/types/movies'
 

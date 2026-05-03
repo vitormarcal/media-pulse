@@ -20,6 +20,7 @@ import dev.marcal.mediapulse.server.api.books.SummaryCountsDto
 import dev.marcal.mediapulse.server.api.books.TopAuthorDto
 import dev.marcal.mediapulse.server.api.books.YearReadsResponse
 import dev.marcal.mediapulse.server.api.books.YearStatsDto
+import dev.marcal.mediapulse.server.model.EntityType
 import jakarta.persistence.EntityManager
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
@@ -34,6 +35,7 @@ import java.time.ZoneOffset
 @Repository
 class BookQueryRepository(
     private val entityManager: EntityManager,
+    private val mediaCommentQueryRepository: MediaCommentQueryRepository,
 ) {
     fun library(
         limit: Int,
@@ -282,6 +284,7 @@ class BookQueryRepository(
             ).map { row ->
                 row.toDto(mapOf(bookId to authors))
             }
+        val comments = mediaCommentQueryRepository.findByEntity(EntityType.BOOK, bookId)
 
         return BookDetailsResponse(
             bookId = book.bookId,
@@ -296,6 +299,7 @@ class BookQueryRepository(
             authors = authors,
             editions = editions,
             reads = reads,
+            comments = comments,
         )
     }
 

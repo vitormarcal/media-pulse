@@ -20,6 +20,15 @@
 
       <AlbumContextPanel :stats="data.stats" :recent-days="data.recentDays" />
 
+      <MediaCommentsPanel
+        :entity-id="Number(data.id)"
+        media-type="albums"
+        title="Impressões do álbum"
+        description="Espaço para primeira audição, redescobertas tardias e qualquer mudança de leitura conforme o disco volta para a rotação."
+        :comments="data.comments"
+        empty-label="Nenhuma impressão manual registrada para este álbum ainda."
+      />
+
       <AlbumTrackList :tracks="data.tracks" />
     </template>
   </main>
@@ -29,6 +38,7 @@
 import AlbumContextPanel from '~/components/music/AlbumContextPanel.vue'
 import AlbumPageHero from '~/components/music/AlbumPageHero.vue'
 import AlbumTrackList from '~/components/music/AlbumTrackList.vue'
+import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
 import { useAlbumPageData } from '~/composables/useAlbumPageData'
 
 const route = useRoute()

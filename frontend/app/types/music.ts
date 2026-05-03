@@ -1,4 +1,5 @@
 import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
+import type { MediaCommentDto } from '~/types/comments'
 
 export interface AlbumTrackRow {
   trackId: number
@@ -25,6 +26,7 @@ export interface AlbumPageResponse {
   totalPlays: number
   tracks: AlbumTrackRow[]
   playsByDay: PlaysByDayRow[]
+  comments: MediaCommentDto[]
 }
 
 export interface ArtistPageResponse {
@@ -268,6 +270,7 @@ export interface AlbumPageData {
   }
   tracks: AlbumTrackModel[]
   recentDays: AlbumDayModel[]
+  comments: MediaCommentDto[]
 }
 
 export interface ArtistTrackModel {

@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.api.music
 
+import dev.marcal.mediapulse.server.api.comments.MediaCommentDto
 import java.time.Instant
 import java.time.LocalDate
 
@@ -14,6 +15,7 @@ data class AlbumPageResponse(
     val totalPlays: Long,
     val tracks: List<AlbumTrackRow>,
     val playsByDay: List<PlaysByDayRow>,
+    val comments: List<MediaCommentDto> = emptyList(),
 )
 
 data class AlbumTrackRow(

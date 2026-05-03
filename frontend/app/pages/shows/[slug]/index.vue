@@ -24,6 +24,15 @@
 
       <ShowAddWatchPanel :show-id="data.showId" @created="handleWatchCreated" />
 
+      <MediaCommentsPanel
+        :entity-id="data.showId"
+        media-type="shows"
+        title="Impressões da série"
+        description="Comentários em momentos diferentes para acompanhar como a série muda de peso conforme as temporadas avançam ou você retorna a ela."
+        :comments="data.comments"
+        empty-label="Nenhuma impressão manual registrada para esta série ainda."
+      />
+
       <ShowWatchTimeline :watches="data.recentWatches" />
     </template>
   </main>
@@ -35,6 +44,7 @@ import ShowPageHero from '~/components/shows/ShowPageHero.vue'
 import ShowPeoplePanel from '~/components/shows/ShowPeoplePanel.vue'
 import ShowProgressPanel from '~/components/shows/ShowProgressPanel.vue'
 import ShowWatchTimeline from '~/components/shows/ShowWatchTimeline.vue'
+import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
 import { useShowPageData } from '~/composables/useShowPageData'
 import type { ManualShowWatchCreateResponse } from '~/types/shows'
 

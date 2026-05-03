@@ -39,6 +39,7 @@ import dev.marcal.mediapulse.server.api.music.TrackPageResponse
 import dev.marcal.mediapulse.server.api.music.TrackPlayRow
 import dev.marcal.mediapulse.server.api.music.TrendingGenreResponse
 import dev.marcal.mediapulse.server.api.music.UnderplayedGenreResponse
+import dev.marcal.mediapulse.server.model.EntityType
 import jakarta.persistence.EntityManager
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
@@ -50,6 +51,7 @@ import java.time.Instant
 @Repository
 class MusicQueryRepository(
     private val entityManager: EntityManager,
+    private val mediaCommentQueryRepository: MediaCommentQueryRepository,
 ) {
     fun getArtistLibrary(
         limit: Int,
@@ -947,6 +949,7 @@ class MusicQueryRepository(
                         plays = (it[1] as Long),
                     )
                 }
+        val comments = mediaCommentQueryRepository.findByEntity(EntityType.ALBUM, albumId)
 
         return AlbumPageResponse(
             albumId = header.albumId,
@@ -959,6 +962,7 @@ class MusicQueryRepository(
             totalPlays = header.totalPlays,
             tracks = tracks,
             playsByDay = days,
+            comments = comments,
         )
     }
 

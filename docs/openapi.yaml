@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.61
+  version: 1.0.0-beta.63
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -26,6 +26,8 @@ tags:
     description: Event source reprocessing utilities.
   - name: MusicBrainz
     description: MusicBrainz enrichment utilities.
+  - name: Comments
+    description: Manual comments attached to media details.
 paths:
   /api/books/year/{year}:
     get:
@@ -2473,8 +2475,114 @@ paths:
         "202":
           description: Accepted
 
+  /api/comments/{mediaType}/{entityId}:
+    post:
+      summary: Create media comment
+      description: Creates a manual comment for a movie, show, album, or book.
+      tags: [Comments]
+      parameters:
+        - name: mediaType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [movies, shows, albums, books]
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMediaCommentRequest"
+      responses:
+        "200":
+          description: Comment created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaCommentDto"
+        "400":
+          description: Invalid payload.
+        "404":
+          description: Media not found.
+
+  /api/comments/{commentId}/edit:
+    post:
+      summary: Edit media comment
+      description: Updates the body and optional timestamp of an existing manual comment.
+      tags: [Comments]
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMediaCommentRequest"
+      responses:
+        "200":
+          description: Comment updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaCommentDto"
+        "400":
+          description: Invalid payload.
+        "404":
+          description: Comment not found.
+
 components:
   schemas:
+    CreateMediaCommentRequest:
+      type: object
+      properties:
+        body:
+          type: string
+        commentedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [body]
+    UpdateMediaCommentRequest:
+      type: object
+      properties:
+        body:
+          type: string
+        commentedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [body]
+    MediaCommentDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        body:
+          type: string
+        commentedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        edited:
+          type: boolean
+      required: [id, body, commentedAt, createdAt, updatedAt, edited]
     BookReadStatus:
       type: string
       enum: [READ, CURRENTLY_READING, WANT_TO_READ, DID_NOT_FINISH, PAUSED, UNKNOWN]
@@ -2705,7 +2813,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReadCardDto"
-      required: [bookId, slug, title, authors, editions, reads]
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/MediaCommentDto"
+      required: [bookId, slug, title, authors, editions, reads, comments]
     BooksListResponse:
       type: object
       properties:
@@ -3369,7 +3481,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PlaysByDayRow"
-      required: [albumId, albumTitle, artistId, artistName, totalPlays, tracks, playsByDay]
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/MediaCommentDto"
+      required: [albumId, albumTitle, artistId, artistName, totalPlays, tracks, playsByDay, comments]
     ArtistPageResponse:
       type: object
       properties:
@@ -4199,7 +4315,11 @@ components:
           allOf:
             - $ref: "#/components/schemas/MovieCollectionDto"
           nullable: true
-      required: [movieId, title, originalTitle, images, watches, externalIds, lists, companies, people, terms]
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/MediaCommentDto"
+      required: [movieId, title, originalTitle, images, watches, externalIds, lists, companies, people, terms, comments]
     PersonSuggestionDto:
       type: object
       properties:
@@ -5409,7 +5529,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShowPersonCreditDto"
-      required: [showId, title, originalTitle, images, watches, externalIds, people]
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/MediaCommentDto"
+      required: [showId, title, originalTitle, images, watches, externalIds, people, comments]
     ShowCreditsSyncResponse:
       type: object
       properties:

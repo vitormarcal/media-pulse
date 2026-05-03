@@ -659,6 +659,7 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
       label: day.day,
       plays: day.plays,
     })),
+    comments: album.comments,
   }
 }
 

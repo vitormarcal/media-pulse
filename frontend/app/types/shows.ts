@@ -1,4 +1,5 @@
 import type { EditorialHighlight, EditorialShelfItem, ShowProgressDto } from '~/types/home'
+import type { MediaCommentDto } from '~/types/comments'
 
 export interface ShowImageDto {
   id: number
@@ -88,6 +89,7 @@ export interface ShowDetailsResponse {
   watches: ShowWatchDto[]
   externalIds: ShowExternalIdDto[]
   people: ShowPersonCreditDto[]
+  comments: MediaCommentDto[]
 }
 
 export interface ShowCreditsSyncResponse {
@@ -276,6 +278,7 @@ export interface ShowPageData {
   }
   seasons: ShowSeasonCardModel[]
   recentWatches: ShowWatchEntryModel[]
+  comments: MediaCommentDto[]
 }
 
 export interface ShowSeasonEpisodeModel {

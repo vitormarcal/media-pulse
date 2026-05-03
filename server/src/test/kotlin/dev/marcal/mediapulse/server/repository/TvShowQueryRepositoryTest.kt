@@ -15,13 +15,14 @@ import kotlin.test.assertTrue
 
 class TvShowQueryRepositoryTest {
     private val em = mockk<EntityManager>()
+    private val mediaCommentQueryRepository = mockk<MediaCommentQueryRepository>()
     private val query = mockk<Query>(relaxed = true)
     private lateinit var repository: TvShowQueryRepository
     private val sqls = mutableListOf<String>()
 
     @BeforeEach
     fun setUp() {
-        repository = TvShowQueryRepository(em)
+        repository = TvShowQueryRepository(em, mediaCommentQueryRepository)
         sqls.clear()
 
         every { em.createNativeQuery(any<String>()) } answers {
@@ -31,6 +32,7 @@ class TvShowQueryRepositoryTest {
         every { query.setParameter(any<String>(), any()) } returns query
         every { query.resultList } returns emptyList<Any>()
         every { query.singleResult } returns 0L
+        every { mediaCommentQueryRepository.findByEntity(any(), any()) } returns emptyList()
     }
 
     @Test

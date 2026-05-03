@@ -1,4 +1,5 @@
 import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
+import type { MediaCommentDto } from '~/types/comments'
 import type { ShowLibraryCardDto, ShowLibraryCardModel } from '~/types/shows'
 
 export interface MovieImageDto {
@@ -295,6 +296,7 @@ export interface MovieDetailsResponse {
   people: PersonCreditDto[]
   terms: MovieTermDto[]
   collection: MovieCollectionDto | null
+  comments: MediaCommentDto[]
 }
 
 export interface MovieTermCreateRequest {
@@ -620,6 +622,7 @@ export interface MoviePageData {
     }>
   } | null
   recentWatches: MovieWatchEntryModel[]
+  comments: MediaCommentDto[]
 }
 
 export interface MovieTermPageData {

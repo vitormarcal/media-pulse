@@ -888,6 +888,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
         }
       : null,
     recentWatches: movie.watches.slice(0, 24).map(mapWatch),
+    comments: movie.comments,
   }
 }
 

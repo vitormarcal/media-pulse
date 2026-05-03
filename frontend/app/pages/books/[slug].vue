@@ -21,7 +21,12 @@
 
       <BookContextPanel :stats="data.stats" :editions="data.editions" />
 
-      <BookReviewPanel v-if="data.reviewRaw" :review="data.reviewRaw" :reviewed-at="data.reviewedAt" />
+      <BookEditorialPanel
+        :book-id="data.bookId"
+        :review-raw="data.reviewRaw"
+        :reviewed-at="data.reviewedAt"
+        :comments="data.comments"
+      />
 
       <BookReadTimeline :reads="data.recentReads" />
     </template>
@@ -30,9 +35,9 @@
 
 <script setup lang="ts">
 import BookContextPanel from '~/components/books/BookContextPanel.vue'
+import BookEditorialPanel from '~/components/books/BookEditorialPanel.vue'
 import BookPageHero from '~/components/books/BookPageHero.vue'
 import BookReadTimeline from '~/components/books/BookReadTimeline.vue'
-import BookReviewPanel from '~/components/books/BookReviewPanel.vue'
 import { useBookPageData } from '~/composables/useBookPageData'
 
 const route = useRoute()

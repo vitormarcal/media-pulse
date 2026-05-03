@@ -574,6 +574,7 @@ export function buildBookPageData(book: BookDetailsResponse): BookPageData {
     : 'Sem atividade recente'
 
   return {
+    bookId: book.bookId,
     slug: book.slug,
     title: book.title,
     description: book.description,
@@ -601,6 +602,7 @@ export function buildBookPageData(book: BookDetailsResponse): BookPageData {
     recentReads: book.reads.slice(0, 24).map(mapRead),
     reviewRaw: book.reviewRaw,
     reviewedAt: book.reviewedAt,
+    comments: book.comments,
   }
 }
 

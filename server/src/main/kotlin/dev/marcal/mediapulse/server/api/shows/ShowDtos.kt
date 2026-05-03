@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.api.shows
 
+import dev.marcal.mediapulse.server.api.comments.MediaCommentDto
 import java.time.Instant
 import java.time.LocalDate
 
@@ -113,6 +114,7 @@ data class ShowDetailsResponse(
     val watches: List<ShowWatchDto>,
     val externalIds: List<ShowExternalIdDto>,
     val people: List<ShowPersonCreditDto> = emptyList(),
+    val comments: List<MediaCommentDto> = emptyList(),
 )
 
 data class ShowCreditsSyncResponse(
