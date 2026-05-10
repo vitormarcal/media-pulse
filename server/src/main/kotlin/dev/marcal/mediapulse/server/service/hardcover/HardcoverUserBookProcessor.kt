@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneOffset
 
 @Service
 class HardcoverUserBookProcessor(
@@ -270,10 +272,16 @@ class HardcoverUserBookProcessor(
                 ?: runCatching {
                     java.time.LocalDateTime
                         .parse(it)
-                        .atZone(java.time.ZoneOffset.UTC)
+                        .atZone(ZoneOffset.UTC)
                         .toInstant()
                 }.getOrNull()
-                ?: runCatching { LocalDate.parse(it).atStartOfDay(java.time.ZoneOffset.UTC).toInstant() }.getOrNull()
+                ?: runCatching {
+                    LocalDate
+                        .parse(it)
+                        .atTime(LocalTime.NOON)
+                        .atZone(ZoneOffset.UTC)
+                        .toInstant()
+                }.getOrNull()
         }
 
     private fun parseLocalDate(value: String?): LocalDate? {

@@ -1,23 +1,41 @@
 const locale = 'pt-BR'
+const relativeDateFormatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+
+function isDayPrecisionTimestamp(value: string, date: Date) {
+  return (
+    value.includes('T') &&
+    date.getUTCHours() === 0 &&
+    date.getUTCMinutes() === 0 &&
+    date.getUTCSeconds() === 0 &&
+    date.getUTCMilliseconds() === 0
+  )
+}
+
+function diffCalendarDays(date: Date, now: Date) {
+  const utcDate = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+  const utcNow = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  return Math.round((utcDate - utcNow) / 86400000)
+}
 
 export function formatRelativeDate(value: string | null | undefined) {
   if (!value) return 'Sem registro recente'
 
   const date = new Date(value)
-  const diffMs = date.getTime() - Date.now()
+  const now = new Date()
+  const diffMs = date.getTime() - now.getTime()
   const minutes = Math.round(diffMs / 60000)
   const hours = Math.round(diffMs / 3600000)
-  const days = Math.round(diffMs / 86400000)
+  const days = isDayPrecisionTimestamp(value, date) ? diffCalendarDays(date, now) : Math.round(diffMs / 86400000)
 
   if (Math.abs(minutes) < 60) {
-    return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(minutes, 'minute')
+    return relativeDateFormatter.format(minutes, 'minute')
   }
 
-  if (Math.abs(hours) < 48) {
-    return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(hours, 'hour')
+  if (Math.abs(hours) < 48 && !isDayPrecisionTimestamp(value, date)) {
+    return relativeDateFormatter.format(hours, 'hour')
   }
 
-  return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(days, 'day')
+  return relativeDateFormatter.format(days, 'day')
 }
 
 export function formatAbsoluteDate(value: string | null | undefined) {
