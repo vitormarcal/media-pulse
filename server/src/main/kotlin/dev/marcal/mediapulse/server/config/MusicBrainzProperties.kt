@@ -6,7 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class MusicBrainzProperties(
     val enabled: Boolean = false,
     val baseUrl: String = "https://musicbrainz.org",
-    val userAgent: String = "media-pulse/1.0 (contact: you@example.com)",
     val enrich: Enrich = Enrich(),
 ) {
     data class Enrich(

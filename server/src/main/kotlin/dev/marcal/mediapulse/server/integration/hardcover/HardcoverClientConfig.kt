@@ -48,7 +48,6 @@ class HardcoverClientConfig(
 
         return builder
             .exchangeStrategies(strategies)
-            .defaultHeader(HttpHeaders.USER_AGENT, "MediaPulse/1.0")
             .build()
     }
 }

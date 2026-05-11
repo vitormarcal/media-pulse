@@ -63,7 +63,6 @@ media-pulse:
       page-size: ${PLEX_IMPORT_PAGE_SIZE:200}
   musicbrainz:
     enabled: ${MB_IMPORT_ENABLED:true}
-    user-agent: "media-pulse/1.0"
     enrich:
       batch-size: ${MB_ENRICH_BATCH_SIZE:200}
       max-tags: ${MB_ENRICH_MAX_TAGS:30}

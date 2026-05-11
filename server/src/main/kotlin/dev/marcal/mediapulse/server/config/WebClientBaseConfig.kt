@@ -6,6 +6,7 @@ import io.netty.handler.timeout.WriteTimeoutHandler
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
+import org.springframework.http.HttpHeaders
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit
 @Configuration
 class WebClientBaseConfig(
     private val props: HttpClientsProperties,
+    private val backendVersion: BackendVersion,
 ) {
     @Bean
     fun remoteHttpClient(): HttpClient = buildHttpClient("remote", props.remote)
@@ -33,12 +35,26 @@ class WebClientBaseConfig(
         WebClient
             .builder()
             .clientConnector(ReactorClientHttpConnector(remoteHttpClient))
+            .defaultRequest { spec ->
+                spec.headers { headers ->
+                    if (!headers.containsKey(HttpHeaders.USER_AGENT)) {
+                        headers.set(HttpHeaders.USER_AGENT, backendVersion.userAgent)
+                    }
+                }
+            }
 
     @Bean("imagesWebClientBuilder")
     fun imagesWebClientBuilder(imagesHttpClient: HttpClient): WebClient.Builder =
         WebClient
             .builder()
             .clientConnector(ReactorClientHttpConnector(imagesHttpClient))
+            .defaultRequest { spec ->
+                spec.headers { headers ->
+                    if (!headers.containsKey(HttpHeaders.USER_AGENT)) {
+                        headers.set(HttpHeaders.USER_AGENT, backendVersion.userAgent)
+                    }
+                }
+            }
 
     @Bean("plexWebClientBuilder")
     fun plexWebClientBuilder(localHttpClient: HttpClient): WebClient.Builder {
@@ -55,6 +71,13 @@ class WebClientBaseConfig(
             .builder()
             .clientConnector(ReactorClientHttpConnector(localHttpClient.followRedirect(true)))
             .exchangeStrategies(strategies)
+            .defaultRequest { spec ->
+                spec.headers { headers ->
+                    if (!headers.containsKey(HttpHeaders.USER_AGENT)) {
+                        headers.set(HttpHeaders.USER_AGENT, backendVersion.userAgent)
+                    }
+                }
+            }
     }
 
     private fun buildHttpClient(

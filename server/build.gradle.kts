@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.marcal.mediapulse.server"
-version = "1.0.0-beta.69"
+version = "1.0.0-beta.70"
 
 java {
     toolchain {
@@ -18,6 +18,7 @@ java {
 
 springBoot {
     mainClass = "dev.marcal.mediapulse.server.Boot"
+    buildInfo()
 }
 
 repositories {
