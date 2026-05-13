@@ -5,6 +5,11 @@ import dev.marcal.mediapulse.server.api.music.AlbumHeaderRow
 import dev.marcal.mediapulse.server.api.music.AlbumLibraryPageResponse
 import dev.marcal.mediapulse.server.api.music.AlbumLibraryRow
 import dev.marcal.mediapulse.server.api.music.AlbumPageResponse
+import dev.marcal.mediapulse.server.api.music.AlbumTermDetailsResponse
+import dev.marcal.mediapulse.server.api.music.AlbumTermDto
+import dev.marcal.mediapulse.server.api.music.AlbumTermKindDto
+import dev.marcal.mediapulse.server.api.music.AlbumTermSourceDto
+import dev.marcal.mediapulse.server.api.music.AlbumTermSuggestionDto
 import dev.marcal.mediapulse.server.api.music.AlbumTrackRow
 import dev.marcal.mediapulse.server.api.music.ArtistAlbumRow
 import dev.marcal.mediapulse.server.api.music.ArtistCoverageResponse
@@ -968,7 +973,183 @@ class MusicQueryRepository(
             rating = rating,
             tracks = tracks,
             playsByDay = days,
+            terms = getAlbumTerms(albumId),
             comments = comments,
+        )
+    }
+
+    fun getAlbumTerms(albumId: Long): List<AlbumTermDto> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT
+                  at.id,
+                  at.name,
+                  at.slug,
+                  at.kind,
+                  ata.source,
+                  at.hidden AS hidden_globally,
+                  ata.hidden AS hidden_for_album
+                FROM album_term_assignments ata
+                JOIN album_terms at ON at.id = ata.term_id
+                WHERE ata.album_id = :albumId
+                ORDER BY
+                  CASE at.kind WHEN 'GENRE' THEN 0 ELSE 1 END,
+                  CASE WHEN at.hidden OR ata.hidden THEN 1 ELSE 0 END,
+                  at.name ASC,
+                  at.id ASC
+                """.trimIndent(),
+            ).setParameter("albumId", albumId)
+            .resultList
+            .map { row -> toAlbumTermDto(row as Array<*>) }
+
+    fun findAlbumTerm(termId: Long): AlbumTermDto? =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT
+                  at.id,
+                  at.name,
+                  at.slug,
+                  at.kind,
+                  at.source,
+                  at.hidden AS hidden_globally,
+                  FALSE AS hidden_for_album
+                FROM album_terms at
+                WHERE at.id = :termId
+                LIMIT 1
+                """.trimIndent(),
+            ).setParameter("termId", termId)
+            .resultList
+            .firstOrNull()
+            ?.let { toAlbumTermDto(it as Array<*>) }
+
+    fun searchAlbumTerms(
+        query: String,
+        kind: String,
+        limit: Int,
+    ): List<AlbumTermSuggestionDto> {
+        val normalizedQuery = query.trim().lowercase()
+        if (normalizedQuery.isBlank()) return emptyList()
+
+        return entityManager
+            .createNativeQuery(
+                """
+                SELECT
+                  at.id,
+                  at.name,
+                  at.slug,
+                  at.kind,
+                  at.source,
+                  at.hidden
+                FROM album_terms at
+                WHERE at.kind = :kind
+                  AND at.normalized_name LIKE :query
+                ORDER BY
+                  CASE WHEN at.normalized_name = :exactQuery THEN 0 ELSE 1 END,
+                  at.hidden ASC,
+                  at.name ASC,
+                  at.id ASC
+                LIMIT :limit
+                """.trimIndent(),
+            ).setParameter("kind", kind)
+            .setParameter("query", "%$normalizedQuery%")
+            .setParameter("exactQuery", normalizedQuery)
+            .setParameter("limit", limit)
+            .resultList
+            .map { row -> toAlbumTermSuggestionDto(row as Array<*>) }
+    }
+
+    fun getAlbumTermDetails(
+        kind: String,
+        slug: String,
+    ): AlbumTermDetailsResponse {
+        val base =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      at.id,
+                      at.name,
+                      at.slug,
+                      at.kind,
+                      at.source,
+                      COUNT(ata.id) AS album_count,
+                      COUNT(CASE WHEN EXISTS (
+                        SELECT 1
+                        FROM track_playbacks tp
+                        WHERE tp.album_id = ata.album_id
+                      ) THEN 1 END) AS played_albums_count
+                    FROM album_terms at
+                    JOIN album_term_assignments ata ON ata.term_id = at.id
+                    WHERE at.kind = :kind
+                      AND at.slug = :slug
+                      AND at.hidden = FALSE
+                      AND ata.hidden = FALSE
+                    GROUP BY at.id, at.name, at.slug, at.kind, at.source
+                    LIMIT 1
+                    """.trimIndent(),
+                ).setParameter("kind", kind)
+                .setParameter("slug", slug.trim())
+                .resultList
+                .firstOrNull() as Array<*>?
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Album term not found")
+
+        val termId = (base[0] as Number).toLong()
+        val albums =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH album_rollup AS (
+                      SELECT
+                        al.id AS album_id,
+                        al.title AS album_title,
+                        ar.id AS artist_id,
+                        ar.name AS artist_name,
+                        al.cover_url,
+                        al.year,
+                        COUNT(DISTINCT at.track_id) AS total_tracks,
+                        COUNT(DISTINCT tp.track_id) AS played_tracks,
+                        COUNT(tp.id) AS play_count,
+                        MAX(tp.played_at) AS last_played
+                      FROM album_term_assignments ata
+                      JOIN albums al ON al.id = ata.album_id
+                      JOIN artists ar ON ar.id = al.artist_id
+                      LEFT JOIN album_tracks at ON at.album_id = al.id
+                      LEFT JOIN track_playbacks tp
+                        ON tp.album_id = al.id
+                       AND tp.track_id = at.track_id
+                      WHERE ata.term_id = :termId
+                        AND ata.hidden = FALSE
+                      GROUP BY al.id, al.title, ar.id, ar.name, al.cover_url, al.year
+                    )
+                    SELECT
+                      album_id,
+                      album_title,
+                      artist_id,
+                      artist_name,
+                      cover_url,
+                      year,
+                      total_tracks,
+                      played_tracks,
+                      play_count,
+                      last_played
+                    FROM album_rollup
+                    ORDER BY COALESCE(last_played, TIMESTAMP '1970-01-01 00:00:00') DESC, album_title ASC
+                    """.trimIndent(),
+                ).setParameter("termId", termId)
+                .resultList
+                .map { row -> toAlbumLibraryRow(row as Array<*>) }
+
+        return AlbumTermDetailsResponse(
+            termId = termId,
+            name = base[1] as String,
+            slug = base[2] as String,
+            kind = AlbumTermKindDto.valueOf(base[3] as String),
+            source = AlbumTermSourceDto.valueOf(base[4] as String),
+            albumCount = (base[5] as Number).toLong(),
+            playedAlbumsCount = (base[6] as Number).toLong(),
+            albums = albums,
         )
     }
 
@@ -1477,6 +1658,45 @@ class MusicQueryRepository(
             is java.util.Date -> value.toInstant()
             else -> null
         }
+
+    private fun toAlbumTermDto(fields: Array<*>): AlbumTermDto {
+        val hiddenGlobally = fields[5] as Boolean
+        val hiddenForAlbum = fields[6] as Boolean
+        return AlbumTermDto(
+            id = (fields[0] as Number).toLong(),
+            name = fields[1] as String,
+            slug = fields[2] as String,
+            kind = AlbumTermKindDto.valueOf(fields[3] as String),
+            source = AlbumTermSourceDto.valueOf(fields[4] as String),
+            hiddenGlobally = hiddenGlobally,
+            hiddenForAlbum = hiddenForAlbum,
+            active = !hiddenGlobally && !hiddenForAlbum,
+        )
+    }
+
+    private fun toAlbumTermSuggestionDto(fields: Array<*>): AlbumTermSuggestionDto =
+        AlbumTermSuggestionDto(
+            id = (fields[0] as Number).toLong(),
+            name = fields[1] as String,
+            slug = fields[2] as String,
+            kind = AlbumTermKindDto.valueOf(fields[3] as String),
+            source = AlbumTermSourceDto.valueOf(fields[4] as String),
+            hiddenGlobally = fields[5] as Boolean,
+        )
+
+    private fun toAlbumLibraryRow(fields: Array<*>): AlbumLibraryRow =
+        AlbumLibraryRow(
+            albumId = (fields[0] as Number).toLong(),
+            albumTitle = fields[1] as String,
+            artistId = (fields[2] as Number).toLong(),
+            artistName = fields[3] as String,
+            coverUrl = fields[4] as String?,
+            year = (fields[5] as Number?)?.toInt(),
+            totalTracks = (fields[6] as Number).toLong(),
+            playedTracks = (fields[7] as Number).toLong(),
+            playCount = (fields[8] as Number).toLong(),
+            lastPlayed = asInstant(fields[9]),
+        )
 
     private fun parseRecentAlbumCursor(cursor: String?): Pair<Instant?, Long?> {
         if (cursor.isNullOrBlank()) return null to null

@@ -2,6 +2,11 @@ package dev.marcal.mediapulse.server.controller.music
 
 import dev.marcal.mediapulse.server.api.music.AlbumLibraryPageResponse
 import dev.marcal.mediapulse.server.api.music.AlbumPageResponse
+import dev.marcal.mediapulse.server.api.music.AlbumTermCreateRequest
+import dev.marcal.mediapulse.server.api.music.AlbumTermDetailsResponse
+import dev.marcal.mediapulse.server.api.music.AlbumTermDto
+import dev.marcal.mediapulse.server.api.music.AlbumTermSuggestionDto
+import dev.marcal.mediapulse.server.api.music.AlbumTermVisibilityRequest
 import dev.marcal.mediapulse.server.api.music.ArtistLibraryPageResponse
 import dev.marcal.mediapulse.server.api.music.ArtistPageResponse
 import dev.marcal.mediapulse.server.api.music.MusicByYearResponse
@@ -12,8 +17,11 @@ import dev.marcal.mediapulse.server.api.music.SearchResponse
 import dev.marcal.mediapulse.server.api.music.TrackLibraryPageResponse
 import dev.marcal.mediapulse.server.api.music.TrackPageResponse
 import dev.marcal.mediapulse.server.repository.MusicQueryRepository
+import dev.marcal.mediapulse.server.service.music.AlbumTermsService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -27,6 +35,7 @@ import kotlin.math.min
 @RequestMapping("/api/music")
 class MusicSummaryController(
     private val repository: MusicQueryRepository,
+    private val albumTermsService: AlbumTermsService,
 ) {
     @GetMapping("/summary")
     fun summary(
@@ -119,6 +128,38 @@ class MusicSummaryController(
     fun albumPage(
         @PathVariable albumId: Long,
     ): AlbumPageResponse = repository.getAlbumPage(albumId)
+
+    @GetMapping("/terms/{kind}/{slug}")
+    fun albumTermPage(
+        @PathVariable kind: String,
+        @PathVariable slug: String,
+    ): AlbumTermDetailsResponse = repository.getAlbumTermDetails(kind.trim().uppercase(), slug)
+
+    @GetMapping("/terms/search")
+    fun searchTerms(
+        @RequestParam q: String,
+        @RequestParam kind: String,
+        @RequestParam(defaultValue = "10") limit: Int,
+    ): List<AlbumTermSuggestionDto> = repository.searchAlbumTerms(q, kind.trim().uppercase(), normalizeLimit("limit", limit))
+
+    @PostMapping("/albums/{albumId}/terms")
+    fun addTerm(
+        @PathVariable albumId: Long,
+        @RequestBody request: AlbumTermCreateRequest,
+    ): AlbumTermDto = albumTermsService.addTerm(albumId, request)
+
+    @PostMapping("/albums/{albumId}/terms/{termId}/visibility")
+    fun updateAlbumTermVisibility(
+        @PathVariable albumId: Long,
+        @PathVariable termId: Long,
+        @RequestBody request: AlbumTermVisibilityRequest,
+    ): AlbumTermDto = albumTermsService.updateAlbumVisibility(albumId, termId, request.hidden)
+
+    @PostMapping("/terms/{termId}/visibility")
+    fun updateGlobalTermVisibility(
+        @PathVariable termId: Long,
+        @RequestBody request: AlbumTermVisibilityRequest,
+    ): AlbumTermDto = albumTermsService.updateGlobalVisibility(termId, request.hidden)
 
     @GetMapping("/artists/{artistId}")
     fun artistPage(

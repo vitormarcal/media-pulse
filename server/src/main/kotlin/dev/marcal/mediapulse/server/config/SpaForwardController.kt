@@ -25,6 +25,7 @@ class SpaForwardController {
         "/books/authors/{id}",
         "/books/{slug}",
         "/music/albums/{id}",
+        "/music/terms/{kind}/{slug}",
         "/music/admin/duplicates",
     )
     fun forwardToIndex(): String = "forward:/index.html"

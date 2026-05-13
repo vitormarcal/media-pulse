@@ -9,6 +9,8 @@ import type {
   AlbumLibraryRow,
   AlbumPageData,
   AlbumPageResponse,
+  AlbumTermDetailsResponse,
+  AlbumTermPageData,
   AlbumTrackModel,
   ArtistPageData,
   ArtistPageResponse,
@@ -636,6 +638,9 @@ export function buildMusicLibraryPageData(payload: {
 }
 
 export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
+  const visibleTerms = album.terms.filter((term) => term.active)
+  const hiddenTerms = album.terms.filter((term) => !term.active)
+
   return {
     id: String(album.albumId),
     title: album.albumTitle,
@@ -656,6 +661,53 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
       latestPlay: album.lastPlayed ? formatRelativeDate(album.lastPlayed) : 'Sem play recente',
       latestPlayAbsolute: album.lastPlayed ? formatAbsoluteDate(album.lastPlayed) : null,
     },
+    terms: {
+      summary: visibleTerms.length
+        ? `${visibleTerms.length} termos ativos entre classificação ampla e recortes mais livres deste disco.`
+        : 'Ainda não há termos ativos costurando esse álbum.',
+      visibleCount: visibleTerms.length,
+      hiddenCount: hiddenTerms.length,
+      groups: [
+        {
+          id: 'genre',
+          title: 'Gêneros',
+          description: 'A camada mais estável da classificação do álbum, boa para abrir recortes amplos do arquivo.',
+          items: album.terms
+            .filter((term) => term.kind === 'GENRE')
+            .map((term) => ({
+              id: `term-${term.id}`,
+              termId: term.id,
+              name: term.name,
+              href: `/music/terms/${term.kind.toLowerCase()}/${term.slug}`,
+              kind: term.kind,
+              source: term.source,
+              hiddenGlobally: term.hiddenGlobally,
+              hiddenForAlbum: term.hiddenForAlbum,
+              active: term.active,
+              stateLabel: term.active ? 'Manual' : term.hiddenGlobally ? 'Oculto globalmente' : 'Oculto neste álbum',
+            })),
+        },
+        {
+          id: 'tag',
+          title: 'Tags',
+          description: 'Recortes mais específicos e livres para ligar discos por clima, cena, fase ou obsessão.',
+          items: album.terms
+            .filter((term) => term.kind === 'TAG')
+            .map((term) => ({
+              id: `term-${term.id}`,
+              termId: term.id,
+              name: term.name,
+              href: `/music/terms/${term.kind.toLowerCase()}/${term.slug}`,
+              kind: term.kind,
+              source: term.source,
+              hiddenGlobally: term.hiddenGlobally,
+              hiddenForAlbum: term.hiddenForAlbum,
+              active: term.active,
+              stateLabel: term.active ? 'Manual' : term.hiddenGlobally ? 'Oculto globalmente' : 'Oculto neste álbum',
+            })),
+        },
+      ],
+    },
     tracks: album.tracks.map(mapTrack),
     recentDays: album.playsByDay.slice(-12).map((day) => ({
       id: day.day,
@@ -663,6 +715,24 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
       plays: day.plays,
     })),
     comments: album.comments,
+  }
+}
+
+export function buildAlbumTermPageData(term: AlbumTermDetailsResponse): AlbumTermPageData {
+  return {
+    kind: term.kind,
+    name: term.name,
+    slug: term.slug,
+    heroMeta: [
+      term.kind === 'GENRE' ? 'Gênero' : 'Tag',
+      `${term.albumCount} álbuns`,
+      `${term.playedAlbumsCount} com plays`,
+    ],
+    stats: {
+      albumCount: term.albumCount,
+      playedAlbumsCount: term.playedAlbumsCount,
+    },
+    albums: term.albums.map(albumCard),
   }
 }
 

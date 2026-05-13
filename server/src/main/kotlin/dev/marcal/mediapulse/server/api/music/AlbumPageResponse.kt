@@ -17,6 +17,7 @@ data class AlbumPageResponse(
     val rating: MediaRatingDto? = null,
     val tracks: List<AlbumTrackRow>,
     val playsByDay: List<PlaysByDayRow>,
+    val terms: List<AlbumTermDto> = emptyList(),
     val comments: List<MediaCommentDto> = emptyList(),
 )
 

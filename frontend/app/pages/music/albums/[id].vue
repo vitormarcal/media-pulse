@@ -11,11 +11,16 @@
 
     <template v-else-if="data">
       <AlbumPageHero
+        :album-id="Number(data.id)"
+        :editing="editMode"
         :title="data.title"
         :artist-name="data.artistName"
         :artist-href="data.artistHref"
         :cover-url="data.coverUrl"
         :hero-meta="data.heroMeta"
+        :terms="data.terms"
+        @terms-changed="handleTermsChanged"
+        @toggle-editing="toggleEditing"
       />
 
       <AlbumContextPanel :stats="data.stats" :recent-days="data.recentDays" />
@@ -52,8 +57,9 @@ import { useAlbumPageData } from '~/composables/useAlbumPageData'
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))
+const editMode = ref(false)
 
-const { data, error, status } = await useAlbumPageData(id.value)
+const { data, error, status, refresh } = await useAlbumPageData(id.value)
 
 useHead(() => ({
   title: data.value ? `${data.value.title} · Media Pulse` : 'Álbum · Media Pulse',
@@ -66,6 +72,14 @@ useHead(() => ({
     },
   ],
 }))
+
+async function handleTermsChanged() {
+  await refresh()
+}
+
+function toggleEditing() {
+  editMode.value = !editMode.value
+}
 </script>
 
 <style scoped>

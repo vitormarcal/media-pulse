@@ -1,6 +1,11 @@
 <template>
   <section class="album-hero">
-    <NuxtLink class="back-link" to="/"> Voltar para a capa </NuxtLink>
+    <div class="hero-topbar">
+      <NuxtLink class="back-link" to="/"> Voltar para a capa </NuxtLink>
+      <button type="button" class="edit-page-button" :class="{ active: editing }" @click="$emit('toggleEditing')">
+        {{ editing ? 'Fechar ajustes' : 'Ajustar tags' }}
+      </button>
+    </div>
 
     <div class="hero-grid" :style="heroShellStyle">
       <div class="copy">
@@ -10,6 +15,16 @@
 
         <div class="meta-list">
           <span v-for="item in heroMeta" :key="item" class="meta-pill">{{ item }}</span>
+        </div>
+
+        <div v-if="terms.visibleCount || editing" class="detail-row terms-row">
+          <AlbumTermsPanel
+            :album-id="albumId"
+            :terms="terms"
+            :editing="editing"
+            embedded
+            @changed="$emit('termsChanged')"
+          />
         </div>
       </div>
 
@@ -22,12 +37,18 @@
 </template>
 
 <script setup lang="ts">
+import AlbumTermsPanel from '~/components/music/AlbumTermsPanel.vue'
+import type { AlbumPageData } from '~/types/music'
+
 const props = defineProps<{
+  albumId: number
+  editing: boolean
   title: string
   artistName: string
   artistHref: string
   coverUrl: string | null
   heroMeta: string[]
+  terms: AlbumPageData['terms']
 }>()
 
 const { resolveMediaUrl } = useMediaUrl()
@@ -39,12 +60,24 @@ const heroShellStyle = computed(() =>
       }
     : undefined,
 )
+
+defineEmits<{
+  termsChanged: []
+  toggleEditing: []
+}>()
 </script>
 
 <style scoped>
 .album-hero {
   display: grid;
   gap: 18px;
+}
+
+.hero-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
 }
 
 .back-link {
@@ -54,6 +87,22 @@ const heroShellStyle = computed(() =>
   background: var(--base-color-surface-warm);
   color: var(--base-color-text-primary);
   font-size: 0.8rem;
+}
+
+.edit-page-button {
+  border: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--base-color-text-secondary);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.edit-page-button.active {
+  background: color-mix(in srgb, var(--base-color-surface-warm) 88%, white);
+  color: var(--base-color-text-primary);
 }
 
 .hero-grid {
@@ -112,6 +161,10 @@ h1 {
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 4px;
+}
+
+.terms-row {
+  margin-top: 8px;
 }
 
 .meta-pill {

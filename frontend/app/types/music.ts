@@ -29,7 +29,42 @@ export interface AlbumPageResponse {
   rating: MediaRatingDto | null
   tracks: AlbumTrackRow[]
   playsByDay: PlaysByDayRow[]
+  terms: AlbumTermDto[]
   comments: MediaCommentDto[]
+}
+
+export type AlbumTermKind = 'GENRE' | 'TAG'
+export type AlbumTermSource = 'USER'
+
+export interface AlbumTermDto {
+  id: number
+  name: string
+  slug: string
+  kind: AlbumTermKind
+  source: AlbumTermSource
+  hiddenGlobally: boolean
+  hiddenForAlbum: boolean
+  active: boolean
+}
+
+export interface AlbumTermSuggestionDto {
+  id: number
+  name: string
+  slug: string
+  kind: AlbumTermKind
+  source: AlbumTermSource
+  hiddenGlobally: boolean
+}
+
+export interface AlbumTermDetailsResponse {
+  termId: number
+  name: string
+  slug: string
+  kind: AlbumTermKind
+  source: AlbumTermSource
+  albumCount: number
+  playedAlbumsCount: number
+  albums: AlbumLibraryRow[]
 }
 
 export interface ArtistPageResponse {
@@ -274,9 +309,43 @@ export interface AlbumPageData {
     latestPlay: string
     latestPlayAbsolute: string | null
   }
+  terms: {
+    summary: string
+    visibleCount: number
+    hiddenCount: number
+    groups: Array<{
+      id: string
+      title: string
+      description: string
+      items: Array<{
+        id: string
+        termId: number
+        name: string
+        href: string
+        kind: AlbumTermKind
+        source: AlbumTermSource
+        hiddenGlobally: boolean
+        hiddenForAlbum: boolean
+        active: boolean
+        stateLabel: string
+      }>
+    }>
+  }
   tracks: AlbumTrackModel[]
   recentDays: AlbumDayModel[]
   comments: MediaCommentDto[]
+}
+
+export interface AlbumTermPageData {
+  kind: AlbumTermKind
+  name: string
+  slug: string
+  heroMeta: string[]
+  stats: {
+    albumCount: number
+    playedAlbumsCount: number
+  }
+  albums: MusicLibraryCardModel[]
 }
 
 export interface ArtistTrackModel {
