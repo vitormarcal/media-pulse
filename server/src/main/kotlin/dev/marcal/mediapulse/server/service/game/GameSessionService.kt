@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.games.GameSessionCreateRequest
 import dev.marcal.mediapulse.server.api.games.GameSessionCreateResponse
 import dev.marcal.mediapulse.server.api.games.GameSessionDto
 import dev.marcal.mediapulse.server.api.games.GameSessionStatusDto
+import dev.marcal.mediapulse.server.api.games.GameSessionUpdateRequest
 import dev.marcal.mediapulse.server.model.game.GameSession
 import dev.marcal.mediapulse.server.model.game.GameSessionStatus
 import dev.marcal.mediapulse.server.repository.crud.GameRepository
@@ -46,10 +47,40 @@ class GameSessionService(
     }
 
     @Transactional
+    fun update(
+        gameId: Long,
+        sessionId: Long,
+        request: GameSessionUpdateRequest,
+    ): GameSessionDto {
+        val current = findSession(gameId, sessionId)
+        validateRange(request.startedAt, request.endedAt)
+
+        val saved =
+            gameSessionCrudRepository.save(
+                current.copy(
+                    status = GameSessionStatus.valueOf(request.status.name),
+                    startedAt = request.startedAt,
+                    endedAt = request.endedAt,
+                    notes = request.notes?.trim()?.ifBlank { null },
+                    updatedAt = Instant.now(),
+                ),
+            )
+        return saved.toDto()
+    }
+
+    @Transactional
     fun delete(
         gameId: Long,
         sessionId: Long,
     ) {
+        val current = findSession(gameId, sessionId)
+        gameSessionCrudRepository.delete(current)
+    }
+
+    private fun findSession(
+        gameId: Long,
+        sessionId: Long,
+    ): GameSession {
         val current =
             gameSessionCrudRepository.findById(sessionId).orElseThrow {
                 ResponseStatusException(HttpStatus.NOT_FOUND, "sessão não encontrada")
@@ -57,7 +88,16 @@ class GameSessionService(
         if (current.gameId != gameId) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "sessão não encontrada")
         }
-        gameSessionCrudRepository.delete(current)
+        return current
+    }
+
+    private fun validateRange(
+        startedAt: Instant,
+        endedAt: Instant?,
+    ) {
+        if (endedAt != null && endedAt.isBefore(startedAt)) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "fim da sessão não pode ser anterior ao início")
+        }
     }
 
     private fun GameSession.toDto(): GameSessionDto =

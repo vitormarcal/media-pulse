@@ -12,17 +12,57 @@
         <div class="timeline-marker" />
         <div class="timeline-body">
           <div class="timeline-header">
-            <div>
+            <div v-if="editingId !== session.sessionId">
               <p class="timeline-context">{{ session.statusLabel }}</p>
               <h3>{{ session.title }}</h3>
               <p v-if="session.notes" class="notes">{{ session.notes }}</p>
             </div>
+
+            <form v-else class="edit-form" @submit.prevent="saveEdit(session)">
+              <label class="field">
+                <span>Status</span>
+                <select v-model="editStatus">
+                  <option value="PLAYING">Jogando</option>
+                  <option value="BACKLOG">Backlog</option>
+                  <option value="COMPLETED">Finalizado</option>
+                  <option value="ABANDONED">Abandonado</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Início</span>
+                <input v-model="editStartedAt" type="datetime-local" />
+              </label>
+
+              <label class="field">
+                <span>Fim</span>
+                <input v-model="editEndedAt" type="datetime-local" />
+              </label>
+
+              <label class="field field-wide">
+                <span>Notas</span>
+                <textarea v-model="editNotes" rows="3" />
+              </label>
+
+              <div class="edit-actions">
+                <button type="submit" class="primary-button" :disabled="savingId === session.sessionId">
+                  {{ savingId === session.sessionId ? 'Salvando...' : 'Salvar' }}
+                </button>
+                <button type="button" class="secondary-button" :disabled="savingId === session.sessionId" @click="cancelEdit">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+
             <div class="timeline-dates">
               <strong>{{ session.relativeStartedAt }}</strong>
               <span>{{ session.meta }}</span>
             </div>
           </div>
-          <div class="timeline-actions">
+          <div v-if="editingId !== session.sessionId" class="timeline-actions">
+            <button type="button" class="edit-button" :disabled="deletingId === session.sessionId" @click="startEdit(session)">
+              Editar
+            </button>
             <button type="button" class="remove-button" :disabled="deletingId === session.sessionId" @click="remove(session)">
               {{ deletingId === session.sessionId ? 'Removendo...' : 'Remover sessão' }}
             </button>
@@ -41,18 +81,76 @@
 
 <script setup lang="ts">
 import SectionHeading from '~/components/home/SectionHeading.vue'
-import type { GamePageData } from '~/types/games'
+import type { GamePageData, GameSessionStatus, GameSessionUpdateRequest } from '~/types/games'
 
 const props = defineProps<{
   gameId: number
   sessions: GamePageData['sessions']
 }>()
 
-const emit = defineEmits<{ deleted: [] }>()
+const emit = defineEmits<{ changed: [] }>()
 const config = useRuntimeConfig()
 const deletingId = ref<number | null>(null)
+const editingId = ref<number | null>(null)
+const savingId = ref<number | null>(null)
+const editStatus = ref<GameSessionStatus>('PLAYING')
+const editStartedAt = ref('')
+const editEndedAt = ref('')
+const editNotes = ref('')
 const feedback = ref<string | null>(null)
 const feedbackError = ref(false)
+
+function startEdit(session: GamePageData['sessions'][number]) {
+  feedback.value = null
+  feedbackError.value = false
+  editingId.value = session.sessionId
+  editStatus.value = session.status
+  editStartedAt.value = toDatetimeLocalValue(session.startedAt)
+  editEndedAt.value = session.endedAt ? toDatetimeLocalValue(session.endedAt) : ''
+  editNotes.value = session.notes ?? ''
+}
+
+function cancelEdit() {
+  editingId.value = null
+  editStartedAt.value = ''
+  editEndedAt.value = ''
+  editNotes.value = ''
+}
+
+async function saveEdit(session: GamePageData['sessions'][number]) {
+  const startedAt = toIso(editStartedAt.value)
+  if (!startedAt) {
+    feedback.value = 'Informe uma data de início válida.'
+    feedbackError.value = true
+    return
+  }
+
+  savingId.value = session.sessionId
+  feedback.value = null
+  feedbackError.value = false
+
+  try {
+    const body: GameSessionUpdateRequest = {
+      status: editStatus.value,
+      startedAt,
+      endedAt: toIso(editEndedAt.value),
+      notes: editNotes.value.trim() || null,
+    }
+    await $fetch(`/api/games/${props.gameId}/sessions/${session.sessionId}`, {
+      baseURL: config.public.apiBase,
+      method: 'PATCH',
+      body,
+    })
+    feedback.value = 'Sessão atualizada.'
+    cancelEdit()
+    emit('changed')
+  } catch (error) {
+    feedback.value = error instanceof Error ? error.message : 'Não foi possível atualizar a sessão.'
+    feedbackError.value = true
+  } finally {
+    savingId.value = null
+  }
+}
 
 async function remove(session: GamePageData['sessions'][number]) {
   deletingId.value = session.sessionId
@@ -65,13 +163,25 @@ async function remove(session: GamePageData['sessions'][number]) {
       method: 'DELETE',
     })
     feedback.value = 'Sessão removida.'
-    emit('deleted')
+    emit('changed')
   } catch (error) {
     feedback.value = error instanceof Error ? error.message : 'Não foi possível remover a sessão.'
     feedbackError.value = true
   } finally {
     deletingId.value = null
   }
+}
+
+function toDatetimeLocalValue(value: string) {
+  const date = new Date(value)
+  const offset = date.getTimezoneOffset()
+  return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 16)
+}
+
+function toIso(value: string) {
+  if (!value.trim()) return null
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date.toISOString()
 }
 </script>
 
@@ -145,20 +255,71 @@ h3 {
   text-align: right;
 }
 
-.timeline-actions {
+.timeline-actions,
+.edit-actions {
   display: flex;
+  gap: 10px;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
-.remove-button {
+.edit-form {
+  display: grid;
+  grid-template-columns: 11rem 13rem 13rem minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field span {
+  color: var(--base-color-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field input,
+.field select,
+.field textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--base-color-border);
+  border-radius: 16px;
+  background: white;
+  font: inherit;
+}
+
+.field-wide,
+.edit-actions {
+  grid-column: 1 / -1;
+}
+
+.remove-button,
+.edit-button,
+.primary-button,
+.secondary-button {
   border: 0;
   border-radius: 16px;
   padding: 10px 14px;
-  background: var(--base-color-surface-warm);
-  color: var(--base-color-text-primary);
   font: inherit;
   font-size: 0.78rem;
   cursor: pointer;
+}
+
+.remove-button,
+.edit-button,
+.secondary-button {
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+}
+
+.primary-button {
+  background: var(--base-color-brand-red);
+  color: #000000;
 }
 
 .feedback {
@@ -178,6 +339,10 @@ h3 {
   .timeline-dates {
     justify-items: start;
     text-align: left;
+  }
+
+  .edit-form {
+    grid-template-columns: 1fr;
   }
 }
 </style>

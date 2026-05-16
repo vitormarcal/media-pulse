@@ -20,6 +20,7 @@ Sem credenciais, a entrada mínima continua funcionando, mas sugestões/metadado
 - `GET /api/games/catalog/suggestions?q=hollow`
 - `POST /api/games/catalog`
 - `POST /api/games/{gameId}/sessions`
+- `PATCH /api/games/{gameId}/sessions/{sessionId}`
 - `DELETE /api/games/{gameId}/sessions/{sessionId}`
 
 ## Criação manual
@@ -57,3 +58,14 @@ Status aceitos:
 - `ABANDONED`
 
 Cada sessão tem início obrigatório e fim opcional. O histórico aceita múltiplas sessões para o mesmo game.
+
+Para finalizar ou abandonar um ciclo em andamento, atualize a mesma sessão com `PATCH /api/games/{gameId}/sessions/{sessionId}` em vez de criar outra sessão:
+
+```json
+{
+  "status": "COMPLETED",
+  "startedAt": "2026-05-16T20:00:00Z",
+  "endedAt": "2026-05-21T23:00:00Z",
+  "notes": "Campanha finalizada."
+}
+```

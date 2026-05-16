@@ -104,6 +104,13 @@ export interface GameSessionCreateResponse {
   session: GameSessionDto
 }
 
+export interface GameSessionUpdateRequest {
+  status: GameSessionStatus
+  startedAt: string
+  endedAt: string | null
+  notes: string | null
+}
+
 export interface GameLibraryCardModel {
   id: string
   gameId: number
@@ -138,6 +145,8 @@ export interface GamePageData {
     title: string
     status: GameSessionStatus
     statusLabel: string
+    startedAt: string
+    endedAt: string | null
     relativeStartedAt: string
     meta: string
     notes: string | null

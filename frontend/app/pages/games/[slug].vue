@@ -46,7 +46,7 @@
         empty-label="Nenhuma impressão manual registrada para este game ainda."
       />
 
-      <GameSessionsTimeline :game-id="data.gameId" :sessions="data.sessions" @deleted="handleSessionChanged" />
+      <GameSessionsTimeline :game-id="data.gameId" :sessions="data.sessions" @changed="handleSessionChanged" />
     </template>
   </main>
 </template>

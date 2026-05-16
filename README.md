@@ -233,6 +233,7 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `GET /api/games/catalog/suggestions`
 - `POST /api/games/catalog`
 - `POST /api/games/{gameId}/sessions`
+- `PATCH /api/games/{gameId}/sessions/{sessionId}`
 - `DELETE /api/games/{gameId}/sessions/{sessionId}`
 
 ## Endpoints operacionais

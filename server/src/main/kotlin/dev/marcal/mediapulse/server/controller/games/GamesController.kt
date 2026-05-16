@@ -3,6 +3,8 @@ package dev.marcal.mediapulse.server.controller.games
 import dev.marcal.mediapulse.server.api.games.GameDetailsResponse
 import dev.marcal.mediapulse.server.api.games.GameSessionCreateRequest
 import dev.marcal.mediapulse.server.api.games.GameSessionCreateResponse
+import dev.marcal.mediapulse.server.api.games.GameSessionDto
+import dev.marcal.mediapulse.server.api.games.GameSessionUpdateRequest
 import dev.marcal.mediapulse.server.api.games.GamesLibraryResponse
 import dev.marcal.mediapulse.server.api.games.GamesSearchResponse
 import dev.marcal.mediapulse.server.api.games.GamesStatsResponse
@@ -10,6 +12,7 @@ import dev.marcal.mediapulse.server.repository.GameQueryRepository
 import dev.marcal.mediapulse.server.service.game.GameSessionService
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -54,6 +57,13 @@ class GamesController(
         @PathVariable gameId: Long,
         @RequestBody request: GameSessionCreateRequest,
     ): GameSessionCreateResponse = gameSessionService.create(gameId, request)
+
+    @PatchMapping("/{gameId}/sessions/{sessionId}")
+    fun updateSession(
+        @PathVariable gameId: Long,
+        @PathVariable sessionId: Long,
+        @RequestBody request: GameSessionUpdateRequest,
+    ): GameSessionDto = gameSessionService.update(gameId, sessionId, request)
 
     @DeleteMapping("/{gameId}/sessions/{sessionId}")
     fun deleteSession(

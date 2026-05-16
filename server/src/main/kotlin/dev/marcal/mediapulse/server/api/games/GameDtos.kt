@@ -122,3 +122,10 @@ data class GameSessionCreateRequest(
 data class GameSessionCreateResponse(
     val session: GameSessionDto,
 )
+
+data class GameSessionUpdateRequest(
+    val status: GameSessionStatusDto,
+    val startedAt: Instant,
+    val endedAt: Instant? = null,
+    val notes: String? = null,
+)

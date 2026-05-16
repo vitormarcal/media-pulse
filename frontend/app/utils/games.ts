@@ -134,6 +134,8 @@ export function buildGamePageData(game: GameDetailsResponse): GamePageData {
       title: statusLabels[session.status],
       status: session.status,
       statusLabel: statusLabels[session.status],
+      startedAt: session.startedAt,
+      endedAt: session.endedAt,
       relativeStartedAt: formatRelativeDate(session.startedAt),
       meta: session.endedAt
         ? `${formatAbsoluteDate(session.startedAt)} até ${formatAbsoluteDate(session.endedAt)}`
