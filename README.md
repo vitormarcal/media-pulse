@@ -1,11 +1,12 @@
 # Media Pulse
 
-Media Pulse centraliza dados pessoais de consumo de mídia em quatro domínios:
+Media Pulse centraliza dados pessoais de consumo de mídia em cinco domínios:
 
 - música
 - livros
 - filmes
 - séries
+- games
 
 O backend agrega dados de provedores externos, persiste uma visão canônica local e expõe APIs HTTP principalmente read-only para exploração, resumos e páginas de detalhe.
 
@@ -47,6 +48,7 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `V13__add_tv_episode_season_title.sql`
 - `V14__create_music_duplicate_review_state.sql`
 - `V15__add_movie_collections.sql`
+- `V29__create_games_schema.sql`
 
 ## Configuração
 
@@ -116,6 +118,17 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `TMDB_RATE_LIMIT_PER_SECOND`
 - `TMDB_MAX_429_RETRIES`
 - `TMDB_RETRY_BACKOFF_MS`
+
+### IGDB e SteamGridDB
+
+- `IGDB_ENABLED`
+- `IGDB_API_BASE_URL`
+- `IGDB_OAUTH_BASE_URL`
+- `IGDB_CLIENT_ID`
+- `IGDB_CLIENT_SECRET`
+- `STEAMGRIDDB_ENABLED`
+- `STEAMGRIDDB_API_BASE_URL`
+- `STEAMGRIDDB_API_KEY`
 
 ### MusicBrainz e HTTP clients
 
@@ -210,6 +223,18 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `POST /api/shows/watches`
 - `POST /api/shows/{showId}/watches`
 
+### Games
+
+- `GET /api/games/library`
+- `GET /api/games/{gameId}`
+- `GET /api/games/slug/{slug}`
+- `GET /api/games/search`
+- `GET /api/games/stats`
+- `GET /api/games/catalog/suggestions`
+- `POST /api/games/catalog`
+- `POST /api/games/{gameId}/sessions`
+- `DELETE /api/games/{gameId}/sessions/{sessionId}`
+
 ## Endpoints operacionais
 
 - `POST /webhook/plex`
@@ -255,6 +280,7 @@ Por padrão, o `Makefile` usa o `Dockerfile` raiz.
 - `docs/music-api.md`
 - `docs/movies-api.md`
 - `docs/shows-api.md`
+- `docs/games-api.md`
 - `docs/plex-movie-ingestion.md`
 - `docs/plex-show-ingestion.md`
 - `docs/operations-api.md`

@@ -128,7 +128,7 @@ import { formatAbsoluteDate, formatRelativeDate } from '~/utils/formatting'
 const props = defineProps<{
   title: string
   description: string
-  mediaType: 'movies' | 'shows' | 'albums' | 'books'
+  mediaType: 'movies' | 'shows' | 'albums' | 'books' | 'games'
   entityId: number
   comments: MediaCommentDto[]
   emptyLabel: string

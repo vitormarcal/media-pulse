@@ -214,6 +214,49 @@ class ImageStorageService(
         return "/covers/${provider.lowercase()}/tv-shows/$showId/$fileName"
     }
 
+    fun saveImageForGame(
+        image: ImageContent,
+        provider: String, // "STEAMGRIDDB"
+        gameId: Long,
+        fileNameHint: String? = null,
+    ): String {
+        val extension = extensionFromContentType(image.contentType)
+
+        val providerDir = baseDir.resolve(provider.lowercase())
+        val gamesDir = providerDir.resolve("games")
+        val gameDir = gamesDir.resolve(gameId.toString())
+        logger.debug("Saving game image. providerDir={}, gameDir={}", providerDir, gameDir)
+
+        Files.createDirectories(gameDir)
+
+        val safeHint = fileNameHint?.let { SlugTextUtil.normalize(it) }
+        val baseName = if (!safeHint.isNullOrBlank()) "${gameId}_$safeHint" else gameId.toString()
+        val fileName = "$baseName$extension"
+        val target = gameDir.resolve(fileName)
+
+        if (!Files.exists(target)) {
+            try {
+                Files.write(
+                    target,
+                    image.bytes,
+                    StandardOpenOption.CREATE_NEW,
+                )
+            } catch (_: FileAlreadyExistsException) {
+                logger.debug("File already exists, skipping write. target={}", target)
+            } catch (e: Exception) {
+                logger.error(
+                    "Failed to write game image to disk. target=$target, baseDir=$baseDir, providerDir=$providerDir, gameDir=$gameDir",
+                    e,
+                )
+                throw e
+            }
+        } else {
+            logger.debug("File already exists, nothing to do. target={}", target)
+        }
+
+        return "/covers/${provider.lowercase()}/games/$gameId/$fileName"
+    }
+
     private fun extensionFromContentType(contentType: MediaType?): String =
         when {
             contentType == null -> ".jpg"

@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.comment.MediaComment
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import dev.marcal.mediapulse.server.repository.crud.BookRepository
+import dev.marcal.mediapulse.server.repository.crud.GameRepository
 import dev.marcal.mediapulse.server.repository.crud.MediaCommentRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
@@ -24,6 +25,7 @@ class MediaCommentServiceTest {
     private val tvShowRepository = mockk<TvShowRepository>()
     private val albumRepository = mockk<AlbumRepository>()
     private val bookRepository = mockk<BookRepository>()
+    private val gameRepository = mockk<GameRepository>()
 
     private val service =
         MediaCommentService(
@@ -32,6 +34,7 @@ class MediaCommentServiceTest {
             tvShowRepository = tvShowRepository,
             albumRepository = albumRepository,
             bookRepository = bookRepository,
+            gameRepository = gameRepository,
         )
 
     @Test

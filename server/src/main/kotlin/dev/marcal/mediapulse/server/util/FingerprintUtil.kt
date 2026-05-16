@@ -62,6 +62,11 @@ object FingerprintUtil {
         year: Int?,
     ) = DigestUtils.sha256Hex("show|${normalize(originalTitle)}|${year ?: ""}")
 
+    fun gameFp(
+        title: String,
+        year: Int?,
+    ) = DigestUtils.sha256Hex("game|${normalize(title)}|${year ?: ""}")
+
     fun tvEpisodeFp(
         showId: Long,
         seasonNumber: Int?,

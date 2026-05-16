@@ -1,0 +1,102 @@
+### Variables
+@baseUrl = {{host}}/api/games
+@gameId = 1
+@sessionId = 1
+
+### Biblioteca de games
+GET {{baseUrl}}/library?limit=24
+Accept: application/json
+
+### Detalhes do game
+GET {{baseUrl}}/{{gameId}}
+Accept: application/json
+
+### Detalhes do game por slug
+GET {{baseUrl}}/slug/hollow-knight
+Accept: application/json
+
+### Busca de games
+GET {{baseUrl}}/search?q=hollow&limit=10
+Accept: application/json
+
+### Stats globais
+GET {{baseUrl}}/stats
+Accept: application/json
+
+### Sugestoes IGDB para catalogo
+GET {{baseUrl}}/catalog/suggestions?q=hollow%20knight
+Accept: application/json
+
+### Adicionar game ao catalogo via IGDB
+POST {{baseUrl}}/catalog
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Hollow Knight",
+  "year": 2017,
+  "igdbId": "11156"
+}
+
+### Adicionar game ao catalogo com entrada minima
+POST {{baseUrl}}/catalog
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Celeste",
+  "year": 2018,
+  "igdbId": null
+}
+
+### Registrar sessao jogando
+POST {{baseUrl}}/{{gameId}}/sessions
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": "PLAYING",
+  "startedAt": "2026-05-15T20:00:00Z",
+  "endedAt": null,
+  "notes": "Comecei uma nova campanha."
+}
+
+### Registrar backlog
+POST {{baseUrl}}/{{gameId}}/sessions
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": "BACKLOG",
+  "startedAt": "2026-05-15T20:00:00Z",
+  "endedAt": null,
+  "notes": "Entrou na fila para jogar depois."
+}
+
+### Registrar finalizado
+POST {{baseUrl}}/{{gameId}}/sessions
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": "COMPLETED",
+  "startedAt": "2026-05-01T20:00:00Z",
+  "endedAt": "2026-05-15T23:00:00Z",
+  "notes": "Campanha principal finalizada."
+}
+
+### Registrar abandonado
+POST {{baseUrl}}/{{gameId}}/sessions
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": "ABANDONED",
+  "startedAt": "2026-05-01T20:00:00Z",
+  "endedAt": "2026-05-10T22:00:00Z",
+  "notes": "Parei sem intenção de voltar agora."
+}
+
+### Remover sessao
+DELETE {{baseUrl}}/{{gameId}}/sessions/{{sessionId}}
+Accept: application/json

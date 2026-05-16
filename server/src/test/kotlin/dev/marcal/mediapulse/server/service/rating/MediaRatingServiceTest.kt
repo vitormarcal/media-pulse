@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.ratings.UpsertMediaRatingRequest
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.rating.MediaRating
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
+import dev.marcal.mediapulse.server.repository.crud.GameRepository
 import dev.marcal.mediapulse.server.repository.crud.MediaRatingRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.TrackRepository
@@ -25,6 +26,7 @@ class MediaRatingServiceTest {
     private val tvEpisodeRepository = mockk<TvEpisodeRepository>()
     private val albumRepository = mockk<AlbumRepository>()
     private val trackRepository = mockk<TrackRepository>()
+    private val gameRepository = mockk<GameRepository>()
 
     private val service =
         MediaRatingService(
@@ -34,6 +36,7 @@ class MediaRatingServiceTest {
             tvEpisodeRepository = tvEpisodeRepository,
             albumRepository = albumRepository,
             trackRepository = trackRepository,
+            gameRepository = gameRepository,
         )
 
     @Test

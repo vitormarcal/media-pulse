@@ -7,6 +7,7 @@ import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.comment.MediaComment
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import dev.marcal.mediapulse.server.repository.crud.BookRepository
+import dev.marcal.mediapulse.server.repository.crud.GameRepository
 import dev.marcal.mediapulse.server.repository.crud.MediaCommentRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
@@ -23,6 +24,7 @@ class MediaCommentService(
     private val tvShowRepository: TvShowRepository,
     private val albumRepository: AlbumRepository,
     private val bookRepository: BookRepository,
+    private val gameRepository: GameRepository,
 ) {
     @Transactional
     fun create(
@@ -71,6 +73,7 @@ class MediaCommentService(
             "shows" -> EntityType.SHOW
             "albums" -> EntityType.ALBUM
             "books" -> EntityType.BOOK
+            "games" -> EntityType.GAME
             else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "mediaType inválido")
         }
 
@@ -84,6 +87,7 @@ class MediaCommentService(
                 EntityType.SHOW -> tvShowRepository.existsById(entityId)
                 EntityType.ALBUM -> albumRepository.existsById(entityId)
                 EntityType.BOOK -> bookRepository.existsById(entityId)
+                EntityType.GAME -> gameRepository.existsById(entityId)
                 else -> false
             }
         if (!exists) {

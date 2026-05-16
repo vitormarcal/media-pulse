@@ -102,6 +102,16 @@ media-pulse:
     rate-limit-per-second: ${TMDB_RATE_LIMIT_PER_SECOND:10}
     max-429-retries: ${TMDB_MAX_429_RETRIES:2}
     retry-backoff-ms: ${TMDB_RETRY_BACKOFF_MS:1000}
+  igdb:
+    enabled: ${IGDB_ENABLED:true}
+    api-base-url: ${IGDB_API_BASE_URL:https://api.igdb.com/v4}
+    oauth-base-url: ${IGDB_OAUTH_BASE_URL:https://id.twitch.tv/oauth2}
+    client-id: ${IGDB_CLIENT_ID:}
+    client-secret: ${IGDB_CLIENT_SECRET:}
+  steamgriddb:
+    enabled: ${STEAMGRIDDB_ENABLED:true}
+    api-base-url: ${STEAMGRIDDB_API_BASE_URL:https://www.steamgriddb.com/api/v2}
+    api-key: ${STEAMGRIDDB_API_KEY:}
   storage:
     covers-path: "/data/covers"
     imports-path: "/data/imports"

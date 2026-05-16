@@ -1,4 +1,5 @@
 import type { BooksSearchResponse } from '~/types/books'
+import type { GamesSearchResponse } from '~/types/games'
 import type { MoviesSearchResponse } from '~/types/movies'
 import type { ShowsSearchResponse } from '~/types/shows'
 import type { GlobalSearchData, MusicSearchResponse, SearchResultItem } from '~/types/search'
@@ -19,11 +20,12 @@ export async function fetchGlobalSearch(query: string): Promise<GlobalSearchData
     return { groups: [], total: 0 }
   }
 
-  const [shows, movies, books, music] = await Promise.all([
+  const [shows, movies, books, music, games] = await Promise.all([
     $fetch<ShowsSearchResponse>('/api/shows/search', { baseURL: config.public.apiBase, query: { q, limit: 5 } }),
     $fetch<MoviesSearchResponse>('/api/movies/search', { baseURL: config.public.apiBase, query: { q, limit: 5 } }),
     $fetch<BooksSearchResponse>('/api/books/search', { baseURL: config.public.apiBase, query: { q, limit: 5 } }),
     $fetch<MusicSearchResponse>('/api/music/search', { baseURL: config.public.apiBase, query: { q, limit: 5 } }),
+    $fetch<GamesSearchResponse>('/api/games/search', { baseURL: config.public.apiBase, query: { q, limit: 5 } }),
   ])
 
   const groups = [
@@ -47,6 +49,17 @@ export async function fetchGlobalSearch(query: string): Promise<GlobalSearchData
         title: item.title,
         subtitle: item.year ? String(item.year) : 'Filme',
         href: item.slug ? `/movies/${item.slug}` : null,
+      })),
+    ),
+    group(
+      'games',
+      'Games',
+      games.games.map((item) => ({
+        id: `game-${item.gameId}`,
+        kind: 'game',
+        title: item.title,
+        subtitle: item.year ? String(item.year) : 'Game',
+        href: item.slug ? `/games/${item.slug}` : `/games/${item.gameId}`,
       })),
     ),
     group(

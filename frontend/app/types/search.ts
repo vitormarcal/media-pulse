@@ -1,4 +1,4 @@
-export type SearchResultKind = 'show' | 'movie' | 'book' | 'album' | 'artist' | 'track' | 'author'
+export type SearchResultKind = 'show' | 'movie' | 'book' | 'album' | 'artist' | 'track' | 'author' | 'game'
 
 export interface MusicSearchResponse {
   artists: Array<{
