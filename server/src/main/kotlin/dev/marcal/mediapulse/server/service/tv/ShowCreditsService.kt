@@ -53,6 +53,20 @@ class ShowCreditsService(
     @Transactional
     fun syncFromTmdb(showId: Long): ShowCreditsSyncResponse = syncFromTmdbInternal(showId)
 
+    @Transactional
+    fun syncFromTmdbIfLinked(showId: Long) {
+        val hasTmdbLink =
+            externalIdentifierRepository.findFirstByEntityTypeAndProviderAndEntityId(
+                entityType = EntityType.SHOW,
+                provider = Provider.TMDB,
+                entityId = showId,
+            ) != null
+
+        if (hasTmdbLink) {
+            syncFromTmdbInternal(showId)
+        }
+    }
+
     fun syncAllFromTmdb(limit: Int = 100): ShowCreditsBatchSyncResponse {
         val requestedLimit = limit.coerceIn(1, 1000)
         val pendingTotal = showCreditsCrudRepository.countPendingTmdbSyncCandidates()

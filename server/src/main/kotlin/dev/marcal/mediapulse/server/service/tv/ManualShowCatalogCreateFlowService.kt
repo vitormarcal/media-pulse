@@ -16,6 +16,7 @@ class ManualShowCatalogCreateFlowService(
     private val manualShowCatalogService: ManualShowCatalogService,
     private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val tmdbApiClient: TmdbApiClient,
+    private val showCreditsService: ShowCreditsService,
 ) {
     fun suggest(query: String): ShowCatalogSuggestionsResponse =
         ShowCatalogSuggestionsResponse(
@@ -47,6 +48,8 @@ class ManualShowCatalogCreateFlowService(
                     importEpisodes = request.importEpisodes,
                 ),
             )
+
+        showCreditsService.syncFromTmdbIfLinked(catalogResult.show.id)
 
         val externalIds =
             externalIdentifierRepository
