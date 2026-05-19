@@ -23,6 +23,11 @@ No frontend atual, `/music` concentra tanto o recorte editorial quanto o arquivo
 | `GET /api/music/albums/{albumId}` | `albumId` | `AlbumPageResponse` |
 | `GET /api/music/artists/{artistId}` | `artistId` | `ArtistPageResponse` |
 | `GET /api/music/tracks/{trackId}` | `trackId` | `TrackPageResponse` |
+| `GET /api/music/terms/{kind}/{slug}` | `kind=GENRE|TAG`, `slug` | `AlbumTermDetailsResponse` |
+| `GET /api/music/terms/search` | `q`, `kind=GENRE|TAG`, `limit=10` | `AlbumTermSuggestionDto[]` |
+| `POST /api/music/albums/{albumId}/terms` | body com `name`, `kind=GENRE|TAG` | `AlbumTermDto` |
+| `POST /api/music/albums/{albumId}/terms/{termId}/visibility` | body com `hidden` | `AlbumTermDto` |
+| `POST /api/music/terms/{termId}/visibility` | body com `hidden` | `AlbumTermDto` |
 | `GET /api/music/admin/track-duplicates` | `limit=20`, `cursor?`, `includeIgnored=false`, `artist?`, `album?` | `DuplicateTrackReviewPageResponse` |
 | `POST /api/music/admin/track-duplicates/ignore` | body com `albumId`, `groupKey`, `ignored=true` | vazio |
 | `POST /api/music/admin/track-duplicates/merge` | body com `albumId`, `groupKey`, `targetTrackId`, `sourceTrackIds[]` | `DuplicateTrackMergeResponse` |
@@ -49,6 +54,8 @@ Os endpoints abaixo usam paginação por cursor retornado no payload:
 - `GET /api/music/library/tracks`
 - `GET /api/music/admin/track-duplicates`
 
+Trate `cursor` como opaco e envie exatamente o `nextCursor` retornado.
+
 ## Range temporal
 
 `GET /api/music/summary` resolve o range assim:
@@ -64,6 +71,16 @@ Os endpoints de ranking e análise por período exigem `start` e `end` explícit
 - início: `YYYY-01-01T00:00:00Z`
 - fim: `YYYY-12-31T23:59:59Z`
 
+## Termos de álbuns
+
+Álbuns podem receber termos locais editáveis.
+
+- `kind` aceita `GENRE` ou `TAG`
+- `source` exposto atualmente é `USER`
+- `hidden` em termo global oculta o termo em todos os álbuns
+- `hidden` no vínculo álbum-termo oculta apenas naquele álbum
+- termos ocultos continuam persistidos e podem ser reativados
+
 ## Observações de contrato
 
 - páginas de artista, álbum e faixa retornam visão agregada do histórico, não eventos crus
@@ -71,3 +88,21 @@ Os endpoints de ranking e análise por período exigem `start` e `end` explícit
 - `genres/recent` usa os últimos plays, não uma janela por data
 - `stats` existe para sustentar navegação anual e visão consolidada da library
 - `year/{year}` é centrado em álbuns; artistas e faixas entram como contexto editorial do mesmo período
+- `AlbumPageResponse.rating` e `AlbumPageResponse.comments` podem incluir dados cross-domain de Ratings e Comments
+
+## Invariantes
+
+- playbacks são agregados para as respostas públicas
+- rankings e análises por período exigem `start` e `end` explícitos quando o endpoint não tem `range`
+- endpoints de termos de álbum operam sobre catálogo local
+
+## Non-goals
+
+- este contrato não cobre importação Spotify/Plex; endpoints operacionais ficam em `operations-api.md`
+- termos de álbum não documentam enriquecimento externo automático
+
+## Critérios de aceite
+
+- endpoints documentados existem em `MusicSummaryController` ou `MusicDuplicateReviewController`
+- DTOs citados existem em `api/music`
+- cursor é tratado como contrato opaco

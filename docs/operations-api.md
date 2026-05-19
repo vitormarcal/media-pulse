@@ -35,6 +35,15 @@ Query params:
 
 Resposta: `202 Accepted`.
 
+Resposta body:
+
+```json
+{
+  "limit": 50,
+  "accepted": true
+}
+```
+
 ## Spotify OAuth
 
 ### `GET /oauth/spotify/login`
@@ -82,15 +91,88 @@ Body:
 }
 ```
 
+Resposta: `200 OK` com `sectionKey` e `stats`.
+
 ## Event sources
 
 ### `POST /event-sources/reprocess`
 
 Reprocessa em lote eventos salvos em `event_sources` conforme os filtros enviados em `ReprocessRequest`.
 
+Resposta: `ApiResult<ReprocessCounter>`.
+
 ### `POST /event-sources/{id}/reprocess`
 
 Reprocessa um evento específico pelo `id`.
+
+Resposta: `ApiResult<Unit>`.
+
+## Comments
+
+Comentários são cross-domain e podem aparecer nos detalhes de livros, filmes, séries, álbuns e games.
+
+### `POST /api/comments/{mediaType}/{entityId}`
+
+Cria comentário para uma mídia existente.
+
+Body:
+
+```json
+{
+  "body": "Comentário pessoal.",
+  "commentedAt": "2026-05-19T12:00:00Z"
+}
+```
+
+- `mediaType`: `movies`, `shows`, `albums`, `books`, `games`
+- `body` é obrigatório depois de `trim`
+- `body` acima de 10000 caracteres retorna `400`
+- mídia inexistente retorna `404`
+- retorna `MediaCommentDto`
+
+### `POST /api/comments/{commentId}/edit`
+
+Atualiza comentário existente.
+
+Body:
+
+```json
+{
+  "body": "Comentário atualizado.",
+  "commentedAt": "2026-05-19T12:00:00Z"
+}
+```
+
+- comentário inexistente retorna `404`
+- retorna `MediaCommentDto`
+
+## Ratings
+
+Ratings são cross-domain e podem aparecer nos detalhes de filmes, séries, episódios, álbuns, faixas e games.
+
+### `POST /api/ratings/{mediaType}/{entityId}`
+
+Cria ou atualiza nota para uma mídia existente.
+
+Body:
+
+```json
+{
+  "rating": 5
+}
+```
+
+- `mediaType`: `movies`, `shows`, `episodes`, `albums`, `tracks`, `games`
+- `rating` deve estar entre `1` e `5`
+- mídia inexistente retorna `404`
+- retorna `MediaRatingDto`
+
+### `DELETE /api/ratings/{mediaType}/{entityId}`
+
+Remove a nota da mídia.
+
+- mídia inexistente retorna `404`
+- resposta: `204 No Content`
 
 ## MusicBrainz
 
@@ -110,3 +192,20 @@ Query params:
 
 - `batchSize=200`
 - `maxTotal=50000`
+
+## Invariantes
+
+- endpoints operacionais podem disparar trabalho assíncrono
+- segredos e tokens reais não devem ser documentados em arquivos versionados
+- callbacks OAuth retornam texto simples porque são usados para configuração local
+
+## Non-goals
+
+- este documento não descreve APIs read-only de domínio
+- este documento não define UI para operações
+
+## Critérios de aceite
+
+- endpoints documentados existem em controllers operacionais ou cross-domain
+- status HTTP documentado bate com o controller quando confirmado
+- payloads documentados usam DTOs reais

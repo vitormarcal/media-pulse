@@ -1,3 +1,8 @@
+Antes de implementar ou alterar qualquer funcionalidade no Media Pulse, leia também `PRODUCT_CONSTITUTION.md`.
+
+`PRODUCT_CONSTITUTION.md` define missão, princípios de produto, stack e roadmap.
+Este `GOVERNANCE.md` define regras de engenharia, arquitetura e execução.
+
 Antes de implementar ou alterar qualquer funcionalidade no Media Pulse, siga estas regras.
 
 # Objetivo

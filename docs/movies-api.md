@@ -33,10 +33,11 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/catalog` | body com `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieCatalogCreateResponse` |
 | `POST /api/movies/collections/backfill` | `limit=50` | `MovieCollectionBackfillResponse` |
 | `POST /api/movies/{movieId}/watches` | body com `watchedAt` | `ManualMovieWatchCreateResponse` |
+| `DELETE /api/movies/{movieId}/watches/{watchId}` | `movieId`, `watchId` | vazio |
 | `POST /api/movies/lists` | body com `name`, `description?` | `MovieListSummaryDto` |
 | `POST /api/movies/{movieId}/lists` | body com `listId?`, `name?`, `description?` | `MovieListSummaryDto` |
-| `DELETE /api/movies/{movieId}/lists/{listId}` | `movieId`, `listId` | `204 No Content` |
-| `POST /api/movies/lists/{listId}/order` | `listId`, body com `movieIds[]` | `204 No Content` |
+| `DELETE /api/movies/{movieId}/lists/{listId}` | `movieId`, `listId` | vazio |
+| `POST /api/movies/lists/{listId}/order` | `listId`, body com `movieIds[]` | vazio |
 | `PATCH /api/movies/lists/{listId}/cover` | `listId`, body com `coverMovieId?` | `MovieListSummaryDto` |
 | `POST /api/movies/{movieId}/companies/sync-tmdb` | `movieId` | `MovieCompaniesSyncResponse` |
 | `POST /api/movies/companies/sync-tmdb` | `limit=100` | `MovieCompaniesBatchSyncResponse` |
@@ -58,6 +59,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 ## Paginação e limites
 
 - `library` e `recent` são paginados por cursor retornado no payload
+- trate `cursor` como opaco
 - `limitWatched` e `limitUnwatched` são normalizados para no máximo `1000`
 - valores menores que `1` geram erro `400`
 
@@ -91,18 +93,12 @@ O range do relatório anual é:
 - uso esperado: cinema, memória antiga, lacuna de histórico ou correção manual
 - a inserção continua idempotente por `(movie_id, source=MANUAL, watched_at)`
 - o endpoint não recria nem recatalogra o filme; só acrescenta a sessão
+- se `movieId` não existir, retorna `404`
 
-Resolução do filme:
+`DELETE /api/movies/{movieId}/watches/{watchId}` remove uma sessão de watch existente.
 
-1. `tmdbId`
-2. `imdbId`
-3. fingerprint por `title + year`
-4. criação de `movies` e `movie_titles` com `source=MANUAL`
-
-Regras importantes:
-
-- deduplicação por `(source, movie_id, watched_at)`
-- quando `tmdbId` existir, o serviço tenta preencher metadados faltantes, baixar imagens do TMDb e vincular a coleção oficial do filme quando houver `belongs_to_collection`
+- retorna `404` se a sessão não existir ou não pertencer ao filme informado
+- não remove o filme do catálogo
 
 ## Catálogo e enriquecimento
 
@@ -122,6 +118,13 @@ Uso esperado:
 - abrir um detalhe de filme utilizável mesmo sem histórico de sessão
 - vincular automaticamente a coleção/franquia oficial do TMDb quando o filme pertencer a uma
 
+Resolução do catálogo:
+
+1. `tmdbId`
+2. `imdbId`
+3. fingerprint por `title + year`
+4. criação local de catálogo quando necessário
+
 `POST /api/movies/{movieId}/enrichment/preview` compara o estado atual do filme com uma sugestão do TMDb.
 
 - se o filme já tiver vínculo `TMDB`, o body pode omitir `tmdbId`
@@ -132,6 +135,8 @@ Uso esperado:
 
 - `mode=MISSING`: só preenche lacunas
 - `mode=SELECTED`: aplica apenas os campos explicitamente escolhidos em `fields[]`
+- `imageSelection.selectedKeys` seleciona imagens candidatas
+- `imageSelection.primaryKey` define qual imagem selecionada vira primária
 
 Campos suportados no MVP:
 
@@ -197,8 +202,6 @@ Visibilidade:
 - `kind` aceita `genre` ou `tag`
 - retorna o termo e os filmes ativos ligados a ele
 - o resultado exclui termos ocultos globalmente e vínculos ocultos no filme
-
-## Pessoas e créditos
 
 ## Empresas
 
@@ -372,3 +375,21 @@ Filmes podem ser vinculados a uma coleção oficial do TMDb, como `The Matrix Co
 - marca filmes sem `belongs_to_collection` como verificados para não repetir o mesmo candidato indefinidamente
 - `limit` é normalizado entre `1` e `500`
 - retorna contadores de candidatos, processados, vinculados, sem coleção e falhas
+
+## Invariantes
+
+- `MovieDetailsResponse.rating` e `MovieDetailsResponse.comments` podem incluir dados cross-domain de Ratings e Comments
+- watches manuais usam `source=MANUAL`
+- endpoints `sync-tmdb` são ações explícitas de enriquecimento provider-specific
+- endpoints de leitura retornam catálogo local, não uma proxy direta do TMDb
+
+## Non-goals
+
+- listas manuais não substituem coleções oficiais TMDb
+- `POST /api/movies/{movieId}/watches` não cria catálogo
+
+## Critérios de aceite
+
+- endpoints documentados existem em `MoviesController`, `MovieCatalogController` ou `PeopleController`
+- DTOs citados existem em `api/movies`
+- comportamento de provider externo é descrito como enriquecimento, não como fonte canônica

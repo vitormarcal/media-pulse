@@ -34,6 +34,7 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 ## Paginação e limites
 
 - `library` e `recent` são paginados por cursor retornado no payload
+- trate `cursor` como opaco
 - `library?unwatched=true` retorna apenas séries sem nenhum episódio assistido
 - `currently-watching` exige `limit >= 1` e `activeWithinDays >= 1`
 - `limitWatched` e `limitUnwatched` são truncados para no máximo `1000`
@@ -62,24 +63,6 @@ O range anual é:
 
 ## Enriquecimento de temporada
 
-## Pessoas e créditos
-
-`POST /api/shows/{showId}/credits/sync-tmdb` sincroniza as pessoas principais da série a partir do TMDb.
-
-- exige vínculo `TMDB` salvo na série
-- traz o recorte principal de elenco e equipe relevante
-- persiste os vínculos em `show_credits`, reutilizando `people` por `tmdb_id`
-- a página da série passa a navegar para `/people/{slug}`
-- a página da pessoa agrega esses créditos de série ao lado dos créditos de filme
-
-`POST /api/shows/credits/sync-tmdb?limit=100` faz o backfill em lote para séries já existentes.
-
-- considera apenas séries com vínculo `TMDB`
-- considera apenas pendentes (`tv_shows.credits_synced_at IS NULL`)
-- processa no máximo `limit`, truncado em `1000`
-- executa cada série em transação isolada, contabilizando `synced` e `failed`
-- marca `tv_shows.credits_synced_at` ao concluir com sucesso
-
 `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview` compara os episódios existentes da temporada com o TMDb.
 
 - usa o vínculo `TMDB` salvo na série ou o `tmdbId` enviado no body
@@ -101,6 +84,24 @@ Campos aceitos:
 - `EPISODE_SUMMARY`
 - `EPISODE_DURATION`
 - `EPISODE_AIR_DATE`
+
+## Pessoas e créditos
+
+`POST /api/shows/{showId}/credits/sync-tmdb` sincroniza as pessoas principais da série a partir do TMDb.
+
+- exige vínculo `TMDB` salvo na série
+- traz o recorte principal de elenco e equipe relevante
+- persiste os vínculos em `show_credits`, reutilizando `people` por `tmdb_id`
+- a página da série passa a navegar para `/people/{slug}`
+- a página da pessoa agrega esses créditos de série ao lado dos créditos de filme
+
+`POST /api/shows/credits/sync-tmdb?limit=100` faz o backfill em lote para séries já existentes.
+
+- considera apenas séries com vínculo `TMDB`
+- considera apenas pendentes (`tv_shows.credits_synced_at IS NULL`)
+- processa no máximo `limit`, truncado em `1000`
+- executa cada série em transação isolada, contabilizando `synced` e `failed`
+- marca `tv_shows.credits_synced_at` ao concluir com sucesso
 
 ## Catálogo manual
 
@@ -142,3 +143,23 @@ Regras importantes:
 
 - watches manuais são persistidos com `source=MANUAL`
 - quando `tmdbId` existir, o serviço tenta preencher metadados do show e baixar poster/backdrop
+
+## Invariantes
+
+- `ShowDetailsResponse.rating` e `ShowDetailsResponse.comments` podem incluir dados cross-domain de Ratings e Comments
+- `ShowSeasonEpisodeDto.rating` pode incluir rating por episódio
+- watches manuais usam `source=MANUAL`
+- endpoints `sync-tmdb` são ações explícitas de enriquecimento provider-specific
+- endpoints de leitura retornam catálogo local, não uma proxy direta do TMDb
+
+## Non-goals
+
+- importação de biblioteca não cria linhas em `tv_episode_watches`
+- enriquecimento de temporada não cria episódios ou temporadas faltantes
+- não há endpoint documentado para remover watch de episódio
+
+## Critérios de aceite
+
+- endpoints documentados existem em `ShowsController`, `ShowCatalogController` ou `ManualShowWatchController`
+- DTOs citados existem em `api/shows`
+- cursor é tratado como contrato opaco

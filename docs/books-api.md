@@ -26,12 +26,15 @@ As leituras são armazenadas como sessões consolidadas, não como eventos bruto
 
 ## Paginação
 
+Os endpoints paginados retornam `nextCursor`.
+
+- trate `cursor` como opaco
+- envie exatamente o `nextCursor` recebido para buscar a próxima página
+- não dependa do formato interno do cursor
+
 ### `/api/books/library`
 
-Lista a biblioteca de livros em ordem paginada, com `nextCursor` retornado pela API.
-
-- este endpoint alimenta o arquivo principal em `/books?view=archive`
-- busca em `/books?q=...` e recorte anual em `/books?year=...` continuam combinando `library`, `search`, `stats` e `year`
+Lista a biblioteca em ordem de atividade consolidada, do mais recente para o mais antigo.
 
 ### `/api/books/stats`
 
@@ -46,17 +49,17 @@ Retorna agregados do arquivo inteiro para uso de biblioteca e navegação anual.
 
 ### `/api/books/list`
 
-O cursor é baseado no `readId` da sessão de leitura, em formato `id:123`.
+Lista sessões de leitura em ordem de atividade.
 
-- use `cursor=id:123` para buscar itens com `id` menor que o último retornado
 - o filtro `status` aceita os valores do enum `BookReadStatus`
+- valores aceitos: `READ`, `CURRENTLY_READING`, `WANT_TO_READ`, `DID_NOT_FINISH`, `PAUSED`, `UNKNOWN`
 
 ## Range temporal
 
 `GET /api/books/summary` aceita:
 
-- `month`
-- `year`
+- `month`: mês UTC atual
+- `year`: ano UTC atual
 - `custom` com `start` e `end` em ISO-8601 UTC
 
 `GET /api/books/year/{year}` usa um range UTC fixo:
@@ -71,3 +74,20 @@ O cursor é baseado no `readId` da sessão de leitura, em formato `id:123`.
 - `summary` é agregado por período, não por evento bruto do provedor
 - `stats` representa o arquivo inteiro e serve melhor para biblioteca, métricas acumuladas e chips anuais
 - `list` e `stats` priorizam a data real de leitura/atividade; data de cadastro não deve empurrar itens antigos para o topo do arquivo
+
+## Invariantes
+
+- a API é read-only para livros
+- leituras são sessões consolidadas, não eventos crus de provider
+- `BookDetailsResponse.comments` pode incluir comentários cross-domain criados pela Comments API
+
+## Non-goals
+
+- este contrato não cobre importação ou sincronização Hardcover
+- este contrato não expõe `source_event_id` como identificador público
+
+## Critérios de aceite
+
+- endpoints documentados existem em `BooksController`
+- responses usam DTOs em `api/books`
+- cursor é tratado como contrato opaco
