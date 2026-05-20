@@ -1,157 +1,165 @@
-Antes de implementar ou alterar qualquer funcionalidade no Media Pulse, leia também `PRODUCT_CONSTITUTION.md`.
+Before implementing or changing any Media Pulse functionality, also read `PRODUCT_CONSTITUTION.md`.
 
-`PRODUCT_CONSTITUTION.md` define missão, princípios de produto, stack e roadmap.
-Este `GOVERNANCE.md` define regras de engenharia, arquitetura e execução.
+`PRODUCT_CONSTITUTION.md` defines the mission, product principles, stack, and roadmap.
+This `GOVERNANCE.md` defines engineering, architecture, and execution rules.
 
-Antes de implementar ou alterar qualquer funcionalidade no Media Pulse, siga estas regras.
+Before implementing or changing any Media Pulse functionality, follow these rules.
 
-# Objetivo
+# Feature Discovery
 
-Manter o projeto simples, incremental, seguro e coerente com a arquitetura já existente.
+Before starting a new feature or broad refactor, consult:
 
-# Arquitetura obrigatória
+* `docs/agents/feature-discovery.md`
 
-## 1. Namespace e estrutura
+This workflow defines how features should be refined before implementation in order to keep scope, product intent, and implementation complexity aligned.
 
-O backend vive em `dev.marcal.mediapulse.server`.
+# Objective
 
-Estrutura base esperada:
+Keep the project simple, incremental, safe, and consistent with the existing architecture.
 
-- `api/` -> contratos HTTP (request/response DTOs)
-- `config/` -> configuração Spring e binding de properties
-- `controller/` -> endpoints HTTP
-- `integration/` -> clientes e integrações externas
-- `model/` -> modelos internos de domínio e integração
-- `repository/` -> acesso a dados
-- `repository/query/` e repositórios de leitura -> consultas read-only/relatórios
-- `repository/crud/` e repositórios específicos -> persistência e lookup operacional
-- `service/` -> regras de negócio, pipelines e orquestração
-- `util/` -> helpers técnicos
+# Mandatory Architecture
 
-Não introduza uma estrutura paralela sem necessidade clara.
+## 1. Namespace and Structure
 
-## 2. Persistência
+The backend lives under `dev.marcal.mediapulse.server`.
 
-- Toda mudança de schema passa por Flyway em `server/src/main/resources/db/migration`
-- Não criar tabelas fora de migrations
-- Não depender de `ddl-auto` para evolução de schema
+Expected base structure:
 
-## 3. Estilo de código
+* `api/` -> HTTP contracts (request/response DTOs)
+* `config/` -> Spring configuration and properties binding
+* `controller/` -> HTTP endpoints
+* `integration/` -> external integrations and clients
+* `model/` -> internal domain and integration models
+* `repository/` -> data access
+* `repository/query/` and read repositories -> read-only/report queries
+* `repository/crud/` and specific repositories -> persistence and operational lookup
+* `service/` -> business rules, pipelines, and orchestration
+* `util/` -> technical helpers
 
-- Kotlin idiomático
-- DTOs e modelos simples com `data class` quando fizer sentido
-- Controllers finos
-- Regra de negócio em `service`
-- Repositórios responsáveis por acesso a dados, não por fluxo de negócio
-- Evitar classes gigantes e abstrações prematuras
+Do not introduce a parallel structure without a clear need.
 
-## 4. Testes
+## 2. Persistence
 
-Quando a mudança altera comportamento relevante, adicionar ou atualizar testes proporcionais ao risco:
+* Every schema change must go through Flyway in `server/src/main/resources/db/migration`
+* Do not create tables outside migrations
+* Do not rely on `ddl-auto` for schema evolution
 
-- teste de serviço para regra de negócio importante
-- teste de repositório para query/persistência crítica
-- teste de integração quando o contrato HTTP ou fluxo entre camadas for sensível
+## 3. Code Style
 
-Cobertura total não é requisito, mas partes críticas não devem ficar sem validação.
+* Idiomatic Kotlin
+* Simple DTOs and models using `data class` where appropriate
+* Thin controllers
+* Business rules belong in `service`
+* Repositories are responsible for data access, not business flow
+* Avoid giant classes and premature abstractions
 
-## 5. Documentação
+## 4. Tests
 
-Atualize a documentação sempre que houver mudança em:
+When a change affects relevant behavior, add or update tests proportional to the risk:
 
-- migrations
-- endpoints HTTP
-- variáveis/configurações
-- comportamento operacional relevante
-- decisões não óbvias descobertas durante debugging ou integração
+* service tests for important business rules
+* repository tests for critical query/persistence behavior
+* integration tests when HTTP contracts or cross-layer flows are sensitive
 
-Arquivos a revisar conforme o caso:
+Full coverage is not required, but critical parts should not remain unvalidated.
 
-- `README.md`
-- `docs/*.md`
-- `docs/openapi.yaml` quando o contrato publicado mudar
-- `frontend/README.md` se o fluxo de UI/local dev mudar
+## 5. Documentation
 
-## 6. Regra da simplicidade
+Update documentation whenever there are changes to:
 
-Se houver duas soluções viáveis:
+* migrations
+* HTTP endpoints
+* variables/configuration
+* relevant operational behavior
+* non-obvious decisions discovered during debugging or integration
 
-- escolha a mais simples
-- evite frameworks extras
-- evite abstrações antes da hora
+Files to review depending on the change:
 
-## 7. Regra incremental
+* `README.md`
+* `docs/*.md`
+* `docs/openapi.yaml` when the published contract changes
+* `frontend/README.md` if the UI/local dev flow changes
 
-Para mudanças maiores:
+## 6. Rule of Simplicity
 
-- escreva um checklist curto
-- explicite arquivos principais a alterar
-- cite migrations necessárias, se houver
-- confirme o critério de aceite antes de implementar
+If two viable solutions exist:
 
-## 8. Escopo
+* choose the simpler one
+* avoid extra frameworks
+* avoid premature abstractions
 
-- Não adicionar funcionalidades fora do escopo pedido
-- Não corrigir incidentalmente partes não relacionadas sem necessidade
+## 7. Incremental Rule
 
-## 9. Critérios mínimos de qualidade
+For larger changes:
 
-O resultado final deve:
+* write a short checklist
+* explicitly list the main files to be changed
+* mention required migrations, if any
+* confirm the acceptance criteria before implementation
 
-- compilar
-- subir com `./server/gradlew bootRun` quando a configuração necessária estiver presente
-- preservar separação clara de responsabilidades
-- não deixar documentação contradizendo o comportamento real do código
+## 8. Scope
 
-## 10. Finalização obrigatória
+* Do not add functionality outside the requested scope
+* Do not incidentally fix unrelated parts without necessity
 
-Após mudanças de código no backend:
+## 9. Minimum Quality Criteria
 
-- execute `./server/gradlew ktlintFormat`
-- corrija problemas revelados por formatação/checagens relacionadas
-- só finalize quando o estado estiver consistente
+The final result must:
 
-Se a tarefa for apenas documentação e nenhum arquivo Kotlin for alterado, não é necessário rodar `ktlintFormat`.
+* compile
+* start with `./server/gradlew bootRun` when the required configuration is present
+* preserve clear separation of responsibilities
+* avoid leaving documentation contradicting real code behavior
 
-## 11. Documentation-first
+## 10. Mandatory Finalization
 
-- Antes de implementar ou depurar, consulte `README.md`, `docs/` e notas de migração quando forem relevantes
-- Reutilize padrões já documentados em vez de criar caminhos paralelos
-- Se docs e código divergirem, alinhe explicitamente um dos lados
+After backend code changes:
 
-## 12. Higiene operacional
+* run `./server/gradlew ktlintFormat`
+* fix issues revealed by formatting or related checks
+* only finish when the state is consistent
 
-- Não documente segredos reais em arquivos versionados
-- Prefira variáveis de ambiente e exemplos neutros
-- Ao registrar comportamento de provedores externos, documente sintomas, hipótese/causa, decisão tomada e como validar
-- Nunca ler `server/src/main/resources/application-local.yml` para análise, documentação ou implementação
-- Trate `application-local.yml` como arquivo local do usuário para testes com dados reais, fora do escopo normal de inspeção
+If the task is documentation-only and no Kotlin file was changed, running `ktlintFormat` is not necessary.
 
-## 13. Design obrigatório
+## 11. Documentation-First
 
-Toda mudança de frontend deve consultar e seguir `DESIGN.md` antes de implementação.
+* Before implementing or debugging, consult `README.md`, `docs/`, and migration notes when relevant
+* Reuse already documented patterns instead of creating parallel paths
+* If docs and code diverge, explicitly align one side
 
-Regras:
+## 12. Operational Hygiene
 
-- `DESIGN.md` é a fonte de verdade para direção visual, UX, tom, hierarquia, grid, cor, tipografia, espaçamento e navegação
-- não introduzir padrões visuais, componentes ou fluxos que contrariem o `DESIGN.md` sem justificar explicitamente
-- preservar consistência entre páginas já implementadas
-- se código e `DESIGN.md` divergirem, alinhar explicitamente um dos lados
-- se surgir uma decisão de design não óbvia que afete padrões futuros, registrar isso em documentação
+* Do not document real secrets in versioned files
+* Prefer environment variables and neutral examples
+* When documenting external provider behavior, record symptoms, hypothesis/cause, chosen decision, and how to validate it
+* Never read `server/src/main/resources/application-local.yml` for analysis, documentation, or implementation
+* Treat `application-local.yml` as a user-local file for real-data testing, outside the normal inspection scope
 
-Antes de implementar mudanças de frontend, explicite:
+## 13. Mandatory Design
 
-1. quais partes do `DESIGN.md` guiam a solução
-2. quais arquivos principais serão alterados
-3. como a consistência visual com o que já existe será preservada
+Every frontend change must consult and follow `DESIGN.md` before implementation.
 
-# Regra para novas features
+Rules:
 
-Antes de escrever código em uma feature nova ou refactor amplo, você deve:
+* `DESIGN.md` is the source of truth for visual direction, UX, tone, hierarchy, grid, color, typography, spacing, and navigation
+* do not introduce visual patterns, components, or flows that contradict `DESIGN.md` without explicit justification
+* preserve consistency between already implemented pages
+* if code and `DESIGN.md` diverge, explicitly align one side
+* if a non-obvious design decision affecting future patterns emerges, document it
 
-1. escrever um checklist curto com no máximo 12 itens
-2. dizer quais arquivos principais serão criados/alterados
-3. informar se haverá migration
-4. confirmar o critério de aceite
+Before implementing frontend changes, explicitly state:
 
-Só então implementar.
+1. which parts of `DESIGN.md` guide the solution
+2. which main files will be changed
+3. how visual consistency with the existing product will be preserved
+
+# Rule for New Features
+
+Before writing code for a new feature or broad refactor, you must:
+
+1. write a short checklist with at most 12 items
+2. state which main files will be created/changed
+3. inform whether there will be a migration
+4. confirm the acceptance criteria
+
+Only then implement.
