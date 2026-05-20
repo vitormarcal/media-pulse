@@ -7,10 +7,6 @@
         <h1>Agora</h1>
       </div>
     </div>
-
-    <p class="header-copy">
-      Uma primeira passada de olho no que ficou aberto, voltou a aparecer e acabou de sair da frente.
-    </p>
   </header>
 </template>
 
@@ -50,14 +46,6 @@ h1 {
   font-size: clamp(2.6rem, 6vw, 5.2rem);
   line-height: 0.95;
   letter-spacing: -0.05em;
-}
-
-.header-copy {
-  max-width: 26rem;
-  margin: 0 0 6px;
-  color: var(--base-color-text-secondary);
-  font-size: 0.98rem;
-  line-height: 1.55;
 }
 
 @media (max-width: 820px) {

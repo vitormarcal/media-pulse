@@ -469,18 +469,17 @@ export function buildShowCollectionData(payload: {
   return {
     generatedAt: new Date().toISOString(),
     hero: {
-      title: 'As séries que seguem puxando você de volta',
-      intro:
-        'Um recorte só do que continua vivo na cabeça: o que ficou em aberto, o que avançou por último e o que ainda vale retomar sem esforço.',
+      title: 'Séries em andamento',
+      intro: '',
       lead: heroCandidates[0] ? toHighlight(heroCandidates[0]) : null,
       supporting: heroCandidates.slice(1, 5).map(toHighlight),
     },
     inProgress,
     recentMoments,
     context: {
-      eyebrow: 'Recorte do mês',
-      title: 'O tamanho dessa rotação recente',
-      description: 'Não para resumir o catálogo inteiro, só para situar o volume e lembrar o que ainda está em volta.',
+      eyebrow: 'Mês',
+      title: 'Rotação recente',
+      description: '',
       summary: `${formatShortNumber(payload.summary.uniqueShowsCount)} séries passaram por aqui e ${formatShortNumber(payload.summary.watchesCount)} episódios foram marcados neste recorte.`,
       metrics: buildContextMetrics(payload),
     },
@@ -513,7 +512,7 @@ export function buildShowLibraryPageData(payload: {
     return {
       hero: {
         title: `As séries em ${payload.selectedYear}`,
-        intro: 'Um corte anual para ver o que realmente passou por esse ano e o que ficou fora dele.',
+        intro: '',
         backLink: '/shows',
         backLabel: 'Voltar ao recorte',
         accentLink: '/shows',
@@ -521,7 +520,7 @@ export function buildShowLibraryPageData(payload: {
         spotlight: buildSpotlightFromCard(
           watchedItems[0] ?? unwatchedItems[0],
           `As séries em ${payload.selectedYear}`,
-          'O primeiro ponto de entrada para esse recorte anual.',
+          'Entrada do ano',
         ),
       },
       filters: {
@@ -566,7 +565,7 @@ export function buildShowLibraryPageData(payload: {
         {
           id: 'watched',
           eyebrow: 'Vistas',
-          title: 'As que realmente passaram pelo ano',
+          title: 'Vistas no ano',
           description: '',
           summary: '',
           items: watchedItems,
@@ -575,7 +574,7 @@ export function buildShowLibraryPageData(payload: {
         {
           id: 'unwatched',
           eyebrow: 'Fora da rotação',
-          title: 'O que ficou de fora nesse período',
+          title: 'Fora do período',
           description: '',
           summary: '',
           items: unwatchedItems,
@@ -595,9 +594,7 @@ export function buildShowLibraryPageData(payload: {
     return {
       hero: {
         title: payload.selectedUnwatched ? 'Séries não vistas pela busca' : 'Séries encontradas pela busca',
-        intro: payload.selectedUnwatched
-          ? 'A busca agora mostra só o que já está no catálogo, mas ainda não teve episódios vistos.'
-          : 'Quando você já sabe o nome, a página encurta o caminho e puxa o recorte certo.',
+        intro: '',
         backLink: '/shows',
         backLabel: 'Voltar ao recorte',
         accentLink: '/shows',
@@ -605,7 +602,7 @@ export function buildShowLibraryPageData(payload: {
         spotlight: buildSpotlightFromCard(
           searchItems[0],
           'A biblioteca de séries, puxada pela busca',
-          'O primeiro resultado vira a porta de entrada visual deste recorte.',
+          'Primeiro resultado',
         ),
       },
       filters: {
@@ -627,7 +624,7 @@ export function buildShowLibraryPageData(payload: {
         {
           id: 'search-results',
           eyebrow: 'Resultados',
-          title: payload.selectedUnwatched ? 'As não vistas que responderam à busca' : 'O que respondeu à busca',
+          title: payload.selectedUnwatched ? 'Não vistas encontradas' : 'Séries encontradas',
           description: '',
           summary: '',
           items: searchItems,
@@ -646,9 +643,7 @@ export function buildShowLibraryPageData(payload: {
   return {
     hero: {
       title: payload.selectedUnwatched ? 'Séries ainda não vistas' : 'Todas as séries',
-      intro: payload.selectedUnwatched
-        ? 'Um corte do catálogo para ver só o que já entrou no arquivo, mas ainda não teve episódios vistos.'
-        : 'O arquivo completo para quando você quer atravessar o acervo inteiro de uma vez.',
+      intro: '',
       backLink: '/shows',
       backLabel: 'Voltar ao recorte',
       accentLink: payload.selectedUnwatched ? '/shows' : '/shows?year=' + (years[0]?.year ?? new Date().getFullYear()),
@@ -656,7 +651,7 @@ export function buildShowLibraryPageData(payload: {
       spotlight: buildSpotlightFromCard(
         activeItems[0] ?? dormantItems[0],
         payload.selectedUnwatched ? 'Séries ainda não vistas' : 'Todas as séries',
-        'Um ponto de entrada imagético para atravessar o arquivo.',
+        'Entrada do arquivo',
       ),
     },
     filters: {
@@ -667,7 +662,7 @@ export function buildShowLibraryPageData(payload: {
     },
     context: {
       eyebrow: payload.selectedUnwatched ? 'Não vistas' : 'Arquivo',
-      title: payload.selectedUnwatched ? 'O que ainda não teve episódios vistos' : 'O tamanho do catálogo e do hábito',
+      title: payload.selectedUnwatched ? 'Sem episódio visto' : 'Catálogo e episódios',
       description: '',
       summary: payload.selectedUnwatched
         ? `${formatShortNumber(dormantItems.length)} séries já estão no catálogo sem episódios vistos ainda.`
@@ -678,9 +673,7 @@ export function buildShowLibraryPageData(payload: {
       {
         id: 'library-catalog',
         eyebrow: payload.selectedUnwatched ? 'Não vistas' : 'Arquivo',
-        title: payload.selectedUnwatched
-          ? 'As séries que ainda esperam o primeiro episódio visto'
-          : 'A parede completa do catálogo',
+        title: payload.selectedUnwatched ? 'Primeiro episódio pendente' : 'Catálogo completo',
         description: '',
         summary: '',
         items: payload.selectedUnwatched ? dormantItems : [...activeItems, ...dormantItems],

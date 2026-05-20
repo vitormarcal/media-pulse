@@ -14,7 +14,7 @@
         <div class="hero-copy">
           <p class="eyebrow">Games</p>
           <h1>{{ data.hero.title }}</h1>
-          <p>{{ data.hero.intro }}</p>
+          <p v-if="data.hero.intro">{{ data.hero.intro }}</p>
           <div class="hero-actions">
             <NuxtLink class="primary-link" :to="data.hero.accentLink">{{ data.hero.accentLabel }}</NuxtLink>
             <NuxtLink v-if="queryText || addMode" class="secondary-link" to="/games">Limpar recorte</NuxtLink>
@@ -22,7 +22,11 @@
         </div>
 
         <NuxtLink v-if="data.hero.spotlight" class="spotlight" :to="data.hero.spotlight.href">
-          <img v-if="resolveMediaUrl(data.hero.spotlight.imageUrl)" :src="resolveMediaUrl(data.hero.spotlight.imageUrl)" :alt="data.hero.spotlight.title" />
+          <img
+            v-if="resolveMediaUrl(data.hero.spotlight.imageUrl)"
+            :src="resolveMediaUrl(data.hero.spotlight.imageUrl)"
+            :alt="data.hero.spotlight.title"
+          />
           <div v-else class="spotlight-fallback">Sem imagem</div>
           <div>
             <strong>{{ data.hero.spotlight.title }}</strong>
@@ -55,8 +59,6 @@
         <SectionHeading
           eyebrow="Arquivo"
           :title="data.mode === 'search' ? 'O que respondeu à busca' : 'A parede completa de games'"
-          description=""
-          summary=""
         />
 
         <div v-if="displayItems.length" class="games-grid">
@@ -172,8 +174,7 @@ useHead({ title: 'Games · Media Pulse' })
   min-height: 28rem;
   padding: clamp(24px, 5vw, 54px);
   border-radius: 40px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
   background-size: cover;
   background-position: center;
 }

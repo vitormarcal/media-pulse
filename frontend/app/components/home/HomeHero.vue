@@ -1,9 +1,9 @@
 <template>
   <section class="hero" :style="heroShellStyle">
     <div class="hero-copy">
-      <p class="eyebrow">Página inicial</p>
+      <p class="eyebrow">Media Pulse</p>
       <h2>{{ title }}</h2>
-      <p class="intro">{{ intro }}</p>
+      <p v-if="intro" class="intro">{{ intro }}</p>
     </div>
 
     <div class="hero-grid">

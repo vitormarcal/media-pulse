@@ -21,12 +21,7 @@
         />
 
         <section class="movies-section">
-          <SectionHeading
-            eyebrow="Em circulação"
-            title="Os filmes que ainda seguem reverberando"
-            description=""
-            summary=""
-          />
+          <SectionHeading eyebrow="Em circulação" title="Ainda por perto" />
 
           <div class="strip-grid">
             <MediaStripCard
@@ -47,12 +42,7 @@
         />
 
         <section id="movies-recent" class="movies-section">
-          <SectionHeading
-            eyebrow="Sessões recentes"
-            title="O que acabou de voltar para a tela"
-            description=""
-            summary=""
-          />
+          <SectionHeading eyebrow="Sessões" title="Tela recente" />
 
           <div class="masonry-grid">
             <MediaPosterCard

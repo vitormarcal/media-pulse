@@ -1,11 +1,6 @@
 <template>
   <section class="moment-stream">
-    <SectionHeading
-      eyebrow="Agora e há pouco"
-      title="O fluxo mais recente, misturado por mídia"
-      description="A ordem real das últimas coisas que passaram por você."
-      summary="Mais memória curta do que resumo: o que acabou de tocar, terminar ou avançar."
-    />
+    <SectionHeading eyebrow="Recente" title="Últimos sinais" />
 
     <div class="list">
       <MediaStripCard v-for="item in items" :key="item.id" :item="item" variant="large" />

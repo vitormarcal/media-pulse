@@ -10,7 +10,7 @@
       <div class="copy">
         <p class="eyebrow">Séries</p>
         <h1>{{ title }}</h1>
-        <p class="intro">{{ intro }}</p>
+        <p v-if="intro" class="intro">{{ intro }}</p>
       </div>
 
       <component :is="leadWrapper" :to="lead?.href || undefined" class="lead-link">

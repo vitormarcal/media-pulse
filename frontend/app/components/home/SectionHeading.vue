@@ -11,8 +11,8 @@
 defineProps<{
   eyebrow: string
   title: string
-  description: string
-  summary: string
+  description?: string
+  summary?: string
 }>()
 </script>
 

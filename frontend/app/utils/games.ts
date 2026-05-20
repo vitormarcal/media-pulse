@@ -50,9 +50,7 @@ export function buildGamesLibraryPageData(payload: {
   return {
     hero: {
       title: payload.query ? 'Games encontrados pela busca' : 'Games',
-      intro: payload.query
-        ? 'A busca encurta o caminho para encontrar um jogo já catalogado ou iniciar a entrada manual.'
-        : 'Um catálogo manual para backlog, jornadas em andamento, finalizações e abandonos.',
+      intro: '',
       accentLink: payload.query ? `/games?q=${encodeURIComponent(payload.query)}&add=1` : '/games?add=1',
       accentLabel: 'Adicionar game',
       spotlight: items[0] ?? null,

@@ -206,8 +206,8 @@ export function buildMusicCollectionData(payload: {
   return {
     generatedAt: new Date().toISOString(),
     hero: {
-      title: 'Os discos, artistas e faixas que estão definindo o momento',
-      intro: 'Uma primeira página para reencontrar o que está em rotação sem cair num arquivo frio.',
+      title: 'Música em rotação',
+      intro: '',
       lead: heroLead,
       supporting: heroSupporting,
     },
@@ -217,9 +217,9 @@ export function buildMusicCollectionData(payload: {
     rediscoveredAlbums: payload.rediscoveredAlbums.slice(0, 8).map(rediscoveredAlbumToShelfItem),
     discoveryAlbums: payload.neverPlayedAlbums.slice(0, 8).map(neverPlayedAlbumToShelfItem),
     context: {
-      eyebrow: 'Panorama do recorte',
-      title: 'O tamanho e a textura dessa fase musical',
-      description: 'Um contexto curto para situar o peso da escuta recente.',
+      eyebrow: 'Mês',
+      title: 'Pulso musical',
+      description: '',
       summary: '',
       metrics: buildCollectionMetrics(payload),
     },
@@ -500,7 +500,7 @@ export function buildMusicLibraryPageData(payload: {
     return {
       hero: {
         title: `Música em ${payload.yearResults.year}`,
-        intro: 'Um recorte anual para reconhecer fases de escuta sem perder o peso editorial da seção.',
+        intro: '',
         backLink: '/music',
         backLabel: 'Voltar ao recorte',
         accentLink: '/music?view=archive&kind=albums',
@@ -517,7 +517,7 @@ export function buildMusicLibraryPageData(payload: {
       context: {
         eyebrow: 'Ano',
         title: `O que ${payload.yearResults.year} concentrou`,
-        description: 'O ano lido como fase de escuta.',
+        description: '',
         summary: '',
         metrics: [
           {
@@ -550,7 +550,7 @@ export function buildMusicLibraryPageData(payload: {
         {
           id: 'year-albums',
           eyebrow: 'Álbuns do ano',
-          title: 'Os discos que seguraram o centro do período',
+          title: 'Discos do período',
           description: '',
           summary: '',
           items: yearAlbums,
@@ -607,9 +607,7 @@ export function buildMusicLibraryPageData(payload: {
   return {
     hero: {
       title: isSearch ? `Busca em ${selectedCopy.name}` : selectedCopy.title,
-      intro: isSearch
-        ? `Um corte do arquivo para localizar ${selectedCopy.name} a partir da busca.`
-        : selectedCopy.description,
+      intro: '',
       backLink: '/music',
       backLabel: 'Voltar ao recorte',
       accentLink: '/music?view=archive&kind=albums',
@@ -627,10 +625,8 @@ export function buildMusicLibraryPageData(payload: {
     },
     context: {
       eyebrow: isSearch ? 'Busca' : 'Arquivo',
-      title: isSearch ? `Onde ${searchQuery} apareceu` : `Como ${selectedCopy.name} entram no seu arquivo`,
-      description: isSearch
-        ? `${formatShortNumber(items.length)} resultados na camada de ${selectedCopy.name}.`
-        : 'Navegação densa e reconhecimento rápido.',
+      title: isSearch ? `Resultado em ${selectedCopy.name}` : selectedCopy.title,
+      description: isSearch ? `${formatShortNumber(items.length)} resultados em ${selectedCopy.name}.` : '',
       summary: isSearch
         ? ''
         : `${formatShortNumber(payload.stats.total.uniqueArtistsCount)} artistas, ${formatShortNumber(payload.stats.total.uniqueAlbumsCount)} álbuns e ${formatShortNumber(payload.stats.total.uniqueTracksCount)} faixas no arquivo.`,
@@ -641,7 +637,7 @@ export function buildMusicLibraryPageData(payload: {
         id: payload.selectedKind,
         eyebrow: isSearch ? 'Resultados' : 'Arquivo principal',
         title: isSearch ? `Resultados em ${selectedCopy.name}` : selectedCopy.title,
-        description: isSearch ? '' : selectedCopy.description,
+        description: '',
         summary: isSearch ? '' : '',
         items,
         emptyMessage: isSearch

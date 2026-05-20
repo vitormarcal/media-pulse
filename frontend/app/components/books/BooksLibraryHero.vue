@@ -7,7 +7,7 @@
 
       <p class="eyebrow">Livros</p>
       <h1>{{ title }}</h1>
-      <p class="intro">{{ intro }}</p>
+      <p v-if="intro" class="intro">{{ intro }}</p>
 
       <div class="actions">
         <NuxtLink class="action-accent" :to="accentLink">

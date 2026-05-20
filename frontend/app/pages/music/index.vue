@@ -19,12 +19,7 @@
         />
 
         <section class="music-section">
-          <SectionHeading
-            eyebrow="Discos em rotação"
-            title="Os álbuns que estão sustentando o momento"
-            description=""
-            summary=""
-          />
+          <SectionHeading eyebrow="Discos" title="Em rotação" />
 
           <div class="masonry-grid">
             <MediaPosterCard
@@ -45,12 +40,7 @@
         />
 
         <section class="music-section">
-          <SectionHeading
-            eyebrow="Artistas em primeiro plano"
-            title="Quem mais puxou a escuta recente"
-            description=""
-            summary=""
-          />
+          <SectionHeading eyebrow="Artistas" title="Mais presentes" />
 
           <div class="strip-grid">
             <MusicStripCard
@@ -69,12 +59,7 @@
         </section>
 
         <section class="music-section">
-          <SectionHeading
-            eyebrow="Faixas que insistiram em voltar"
-            title="A camada fina do replay recente"
-            description=""
-            summary=""
-          />
+          <SectionHeading eyebrow="Faixas" title="Replay recente" />
 
           <div class="strip-grid">
             <MusicStripCard
@@ -92,12 +77,7 @@
         </section>
 
         <section v-if="collectionData.rediscoveredAlbums.length" class="music-section">
-          <SectionHeading
-            eyebrow="Redescobertas"
-            title="Álbuns que ficaram quietos e voltaram para perto"
-            description=""
-            summary=""
-          />
+          <SectionHeading eyebrow="Redescobertas" title="Voltaram para perto" />
 
           <div class="strip-grid">
             <MusicStripCard
@@ -115,12 +95,7 @@
         </section>
 
         <section class="music-section">
-          <SectionHeading
-            eyebrow="Fronteira de descoberta"
-            title="O que ainda está esperando a primeira audição"
-            description=""
-            summary=""
-          />
+          <SectionHeading eyebrow="Descoberta" title="Primeira audição" />
 
           <div class="strip-grid">
             <MusicStripCard

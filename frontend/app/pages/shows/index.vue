@@ -21,7 +21,7 @@
         />
 
         <section class="shows-section">
-          <SectionHeading eyebrow="Em curso" title="As séries que ainda seguem abertas" description="" summary="" />
+          <SectionHeading eyebrow="Em curso" title="Abertas agora" />
 
           <div class="strip-grid">
             <MediaStripCard v-for="item in editorialData.inProgress" :key="item.id" :item="item" variant="large" />
@@ -37,7 +37,7 @@
         />
 
         <section class="shows-section">
-          <SectionHeading eyebrow="Mais recente" title="O que acabou de passar pela tela" description="" summary="" />
+          <SectionHeading eyebrow="Recente" title="Últimos episódios" />
 
           <div class="masonry-grid">
             <MediaPosterCard

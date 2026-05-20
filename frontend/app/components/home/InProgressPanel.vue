@@ -1,11 +1,6 @@
 <template>
   <section class="in-progress">
-    <SectionHeading
-      eyebrow="Em curso"
-      title="O que ainda está aberto"
-      description="O que ficou pela metade porque ainda merece retorno."
-      summary="Séries em andamento e leituras correntes, lado a lado, para lembrar onde vale retomar."
-    />
+    <SectionHeading eyebrow="Em curso" title="Aberto agora" />
 
     <div class="grid">
       <MediaStripCard v-for="item in items" :key="item.id" :item="item" variant="large" />

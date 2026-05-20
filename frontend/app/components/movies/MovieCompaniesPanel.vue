@@ -7,13 +7,16 @@
 
     <div v-if="companies.items.length" class="chip-list">
       <NuxtLink v-for="item in companies.items" :key="item.id" :to="item.href" class="company-pill">
-        <div v-if="resolveMediaUrl(item.logoUrl)" class="logo-badge">
-          <img :src="resolveMediaUrl(item.logoUrl)" :alt="item.name" />
+        <div class="logo-badge">
+          <img v-if="resolveMediaUrl(item.logoUrl)" :src="resolveMediaUrl(item.logoUrl)" :alt="item.name" />
+          <span v-else>{{ item.name.slice(0, 1) }}</span>
         </div>
-        <span class="company-name">{{ item.name }}</span>
-        <small v-if="item.originCountry || item.typeLabel" class="company-meta">
-          {{ [item.typeLabel, item.originCountry].filter(Boolean).join(' · ') }}
-        </small>
+        <div class="company-copy">
+          <span class="company-name" :title="item.name">{{ item.name }}</span>
+          <small v-if="item.originCountry || item.typeLabel" class="company-meta">
+            {{ [item.typeLabel, item.originCountry].filter(Boolean).join(' · ') }}
+          </small>
+        </div>
       </NuxtLink>
     </div>
 
@@ -106,9 +109,11 @@ async function syncFromTmdb() {
 }
 
 .company-pill {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
+  max-width: min(100%, 19.5rem);
   padding: 8px 12px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.82);
@@ -118,20 +123,44 @@ async function syncFromTmdb() {
 .logo-badge {
   display: grid;
   place-items: center;
+  overflow: hidden;
   width: 30px;
   height: 30px;
+  flex: 0 0 30px;
   padding: 6px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--base-color-surface-warm) 76%, white);
 }
 
-.logo-badge img {
+.logo-badge img,
+.logo-badge span {
   width: 100%;
   height: 100%;
+}
+
+.logo-badge img {
   object-fit: contain;
 }
 
+.logo-badge span {
+  display: grid;
+  place-items: center;
+  color: var(--base-color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.company-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
 .company-name {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.84rem;
   font-weight: 600;
 }

@@ -338,18 +338,17 @@ export function buildBookCollectionData(payload: {
   return {
     generatedAt: new Date().toISOString(),
     hero: {
-      title: 'Os livros que ainda seguem puxando você de volta',
-      intro:
-        'Um recorte do que continua ocupando espaço na mesa: o que ainda está em curso, o que acabou de fechar e o que continua merecendo ficar à vista.',
+      title: 'Livros na mesa',
+      intro: '',
       lead: heroCandidates[0] ? toHighlight(heroCandidates[0]) : null,
       supporting: heroCandidates.slice(1, 5).map(toHighlight),
     },
     inProgress,
     recentFinishes,
     context: {
-      eyebrow: 'Recorte do mês',
-      title: 'O tamanho dessa mesa de leitura',
-      description: 'Um recorte rápido do que ainda está aberto e do que acabou de fechar.',
+      eyebrow: 'Mês',
+      title: 'Mesa de leitura',
+      description: '',
       summary: '',
       metrics: buildContextMetrics(payload),
     },
@@ -381,7 +380,7 @@ export function buildBookLibraryPageData(payload: {
     return {
       hero: {
         title: `Livros em ${payload.selectedYear}`,
-        intro: 'Um recorte anual da estante para ver o que andou, fechou ou ficou em suspenso.',
+        intro: '',
         backLink: '/books',
         backLabel: 'Voltar ao recorte',
         accentLink: '/books?view=archive',
@@ -389,7 +388,7 @@ export function buildBookLibraryPageData(payload: {
         spotlight: buildSpotlightFromCard(
           currentItems[0] ?? finishedItems[0] ?? pausedItems[0] ?? wantItems[0] ?? dnfItems[0],
           `A biblioteca de livros em ${payload.selectedYear}`,
-          'O primeiro ponto de entrada para esse recorte anual.',
+          'Entrada do ano',
         ),
       },
       filters: {
@@ -400,7 +399,7 @@ export function buildBookLibraryPageData(payload: {
       context: {
         eyebrow: 'Ano',
         title: `O que ${payload.selectedYear} concentrou`,
-        description: 'O ano lido como memória de estante.',
+        description: '',
         summary: '',
         metrics: [
           {
@@ -436,7 +435,7 @@ export function buildBookLibraryPageData(payload: {
         {
           id: 'year-current',
           eyebrow: 'Em curso',
-          title: 'Os que seguiram abertos nesse ano',
+          title: 'Abertos no ano',
           description: '',
           summary: '',
           items: currentItems,
@@ -445,7 +444,7 @@ export function buildBookLibraryPageData(payload: {
         {
           id: 'year-finished',
           eyebrow: 'Concluídos',
-          title: 'Os que realmente fecharam no período',
+          title: 'Fechados no período',
           description: '',
           summary: '',
           items: finishedItems,
@@ -454,7 +453,7 @@ export function buildBookLibraryPageData(payload: {
         {
           id: 'year-paused',
           eyebrow: 'Pausados e interrompidos',
-          title: 'O que perdeu ritmo no caminho',
+          title: 'Pausados no caminho',
           description: '',
           summary: '',
           items: [...pausedItems, ...dnfItems],
@@ -463,7 +462,7 @@ export function buildBookLibraryPageData(payload: {
         {
           id: 'year-want',
           eyebrow: 'Entrou na pilha',
-          title: 'O que apareceu como intenção de leitura',
+          title: 'Intenção de leitura',
           description: '',
           summary: '',
           items: wantItems,
@@ -481,7 +480,7 @@ export function buildBookLibraryPageData(payload: {
     return {
       hero: {
         title: 'Busca de livros',
-        intro: 'Quando você já sabe o que quer reencontrar, a página vira arquivo de consulta.',
+        intro: '',
         backLink: '/books',
         backLabel: 'Voltar ao recorte',
         accentLink: '/books?view=archive',
@@ -489,7 +488,7 @@ export function buildBookLibraryPageData(payload: {
         spotlight: buildSpotlightFromCard(
           searchItems[0],
           'A biblioteca de livros, puxada pela busca',
-          'O primeiro resultado vira a porta de entrada visual deste recorte.',
+          'Primeiro resultado',
         ),
       },
       filters: {
@@ -499,7 +498,7 @@ export function buildBookLibraryPageData(payload: {
       },
       context: {
         eyebrow: 'Busca',
-        title: 'A estante afunilada pelo título',
+        title: 'Resultado da busca',
         description: `${formatShortNumber(payload.searchResults.books.length)} livros encontrados para "${payload.query}".`,
         summary: '',
         metrics: buildLibraryMetrics(payload.stats),
@@ -508,7 +507,7 @@ export function buildBookLibraryPageData(payload: {
         {
           id: 'search-results',
           eyebrow: 'Resultados',
-          title: 'O que respondeu à busca',
+          title: 'Livros encontrados',
           description: '',
           summary: '',
           items: searchItems,
@@ -527,7 +526,7 @@ export function buildBookLibraryPageData(payload: {
   return {
     hero: {
       title: 'Todos os livros',
-      intro: 'O arquivo completo para atravessar a estante inteira com mais calma.',
+      intro: '',
       backLink: '/books',
       backLabel: 'Voltar ao recorte',
       accentLink: `/books?year=${featuredYear}`,
@@ -535,7 +534,7 @@ export function buildBookLibraryPageData(payload: {
       spotlight: buildSpotlightFromCard(
         activeItems[0] ?? dormantItems[0],
         'A biblioteca inteira de livros',
-        'Um ponto de entrada imagético para atravessar o arquivo.',
+        'Entrada do arquivo',
       ),
     },
     filters: {
@@ -545,7 +544,7 @@ export function buildBookLibraryPageData(payload: {
     },
     context: {
       eyebrow: 'Arquivo',
-      title: 'A estante inteira em uso agora',
+      title: 'Estante inteira',
       description: `${formatShortNumber(payload.stats.total.booksCount)} livros no arquivo e ${formatShortNumber(payload.stats.total.readsCount)} registros acumulados.`,
       summary: '',
       metrics: buildLibraryMetrics(payload.stats),

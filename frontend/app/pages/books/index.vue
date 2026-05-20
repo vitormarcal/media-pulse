@@ -19,12 +19,7 @@
         />
 
         <section class="books-section">
-          <SectionHeading
-            eyebrow="Em leitura"
-            title="Os livros que ainda seguem abertos"
-            description="Os que continuam pedindo mais algumas páginas e ainda merecem ficar na superfície."
-            summary="Mais uma mesa de retorno do que uma estante completa."
-          />
+          <SectionHeading eyebrow="Em leitura" title="Abertos agora" />
 
           <div class="strip-grid">
             <MediaStripCard v-for="item in collectionData.inProgress" :key="item.id" :item="item" variant="large" />
@@ -40,12 +35,7 @@
         />
 
         <section id="books-finished" class="books-section">
-          <SectionHeading
-            eyebrow="Fechados por último"
-            title="O que acabou de sair da pilha mental"
-            description="Uma parede curta dos livros concluídos recentemente, organizada para reconhecimento rápido e navegação direta."
-            summary="Aqui o fechamento recente vale mais do que qualquer taxonomia de estante."
-          />
+          <SectionHeading eyebrow="Fechados" title="Últimos livros" />
 
           <div class="masonry-grid">
             <MediaPosterCard
