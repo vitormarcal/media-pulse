@@ -175,6 +175,7 @@ class TvShowQueryRepositoryTest {
                         "1418",
                     ),
                 ),
+                listOf(100L, 101L),
                 listOf(
                     arrayOf(
                         99L,
@@ -217,8 +218,8 @@ class TvShowQueryRepositoryTest {
         assertEquals(java.time.LocalDate.parse("2007-09-24"), response.episodes.first().originallyAvailableAt)
         assertEquals(Instant.parse("2024-01-03T14:35:00Z"), response.lastWatchedAt)
         verify(exactly = 1) { query.setParameter("slug", "the-big-bang-theory") }
-        verify(exactly = 2) { query.setParameter("showId", 10L) }
-        verify(exactly = 2) { query.setParameter("seasonNumber", 1) }
+        verify(exactly = 3) { query.setParameter("showId", 10L) }
+        verify(exactly = 3) { query.setParameter("seasonNumber", 1) }
     }
 
     @Test

@@ -16,6 +16,7 @@ No frontend atual, `/music` concentra tanto o recorte editorial quanto o arquivo
 | `GET /api/music/stats` | - | `MusicStatsResponse` |
 | `GET /api/music/year/{year}` | `limitAlbums=80`, `limitArtists=12`, `limitTracks=12` | `MusicByYearResponse` |
 | `GET /api/music/recent-albums` | `limit=20`, `cursor?` | `RecentAlbumsPageResponse` |
+| `GET /api/music/albums/rediscovered` | `limit=8` | `RediscoveredAlbumResponse[]` |
 | `GET /api/music/library/artists` | `limit=20`, `cursor?` | `ArtistLibraryPageResponse` |
 | `GET /api/music/library/albums` | `limit=20`, `cursor?` | `AlbumLibraryPageResponse` |
 | `GET /api/music/library/tracks` | `limit=20`, `cursor?` | `TrackLibraryPageResponse` |
@@ -71,6 +72,17 @@ Os endpoints de ranking e análise por período exigem `start` e `end` explícit
 - início: `YYYY-01-01T00:00:00Z`
 - fim: `YYYY-12-31T23:59:59Z`
 
+`GET /api/music/albums/rediscovered` calcula redescobertas em relação ao momento da requisição. A primeira heurística é interna ao backend:
+
+- janela recente: últimos 30 dias
+- mínimo histórico: 5 plays antes da janela recente
+- mínimo recente: 2 plays dentro da janela recente
+- gap mínimo: 90 dias entre o último play histórico e o primeiro play recente
+
+Os resultados são ordenados por força de redescoberta, usando um score interno simples: `quietGapDays * ln(historicalPlayCount + 1) * ln(recentPlayCount + 1)`. Esse score não é exposto no contrato; ele só prioriza retornos com gap longo, histórico relevante e atividade recente real.
+
+Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, último play histórico, primeiro play recente, play mais recente e `quietGapDays`.
+
 ## Termos de álbuns
 
 Álbuns podem receber termos locais editáveis.
@@ -85,6 +97,7 @@ Os endpoints de ranking e análise por período exigem `start` e `end` explícit
 
 - páginas de artista, álbum e faixa retornam visão agregada do histórico, não eventos crus
 - endpoints de coverage comparam catálogo conhecido com o que já foi ouvido
+- `albums/rediscovered` opera só sobre histórico local já importado, sem chamadas a provedores externos
 - `genres/recent` usa os últimos plays, não uma janela por data
 - `stats` existe para sustentar navegação anual e visão consolidada da library
 - `year/{year}` é centrado em álbuns; artistas e faixas entram como contexto editorial do mesmo período

@@ -53,6 +53,11 @@ class MusicSummaryController(
         @RequestParam(required = false) cursor: String?,
     ): RecentAlbumsPageResponse = repository.getRecentAlbums(limit, cursor)
 
+    @GetMapping("/albums/rediscovered")
+    fun rediscoveredAlbums(
+        @RequestParam(defaultValue = "8") limit: Int,
+    ) = repository.getRediscoveredAlbums(normalizeLimit("limit", limit))
+
     @GetMapping("/library/artists")
     fun artistLibrary(
         @RequestParam(defaultValue = "20") limit: Int,

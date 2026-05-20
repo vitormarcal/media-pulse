@@ -27,6 +27,7 @@ import type {
   MusicLibraryYearChip,
   MusicSearchResponse,
   MusicStatsResponse,
+  RediscoveredAlbumResponse,
   TopAlbumResponse,
   TopArtistResponse,
   TopTrackResponse,
@@ -101,6 +102,20 @@ function topTrackToShelfItem(track: TopTrackResponse): EditorialShelfItem {
     href: null,
     meta: `${formatShortNumber(track.playCount)} plays`,
     detail: 'Faixa mais recorrente do período',
+  }
+}
+
+function rediscoveredAlbumToShelfItem(album: RediscoveredAlbumResponse): EditorialShelfItem {
+  return {
+    id: `rediscovered-${album.albumId}`,
+    type: 'music',
+    title: album.albumTitle,
+    subtitle: album.year ? `${album.artistName} · ${album.year}` : album.artistName,
+    imageUrl: album.coverUrl,
+    href: `/music/albums/${album.albumId}`,
+    meta: `${formatShortNumber(album.recentPlayCount)} plays recentes`,
+    detail: `${formatShortNumber(album.quietGapDays)} dias quieto`,
+    timestamp: album.latestPlay,
   }
 }
 
@@ -181,6 +196,7 @@ export function buildMusicCollectionData(payload: {
   recentAlbums: RecentAlbumsPageResponse
   topArtists: TopArtistResponse[]
   topTracks: TopTrackResponse[]
+  rediscoveredAlbums: RediscoveredAlbumResponse[]
   neverPlayedAlbums: TopAlbumResponse[]
 }): MusicCollectionData {
   const featuredAlbums = sortByTimestamp(payload.recentAlbums.items.map(recentAlbumToShelfItem)).slice(0, 6)
@@ -198,6 +214,7 @@ export function buildMusicCollectionData(payload: {
     featuredAlbums,
     topArtists: payload.topArtists.slice(0, 6).map(topArtistToShelfItem),
     topTracks: payload.topTracks.slice(0, 6).map(topTrackToShelfItem),
+    rediscoveredAlbums: payload.rediscoveredAlbums.slice(0, 8).map(rediscoveredAlbumToShelfItem),
     discoveryAlbums: payload.neverPlayedAlbums.slice(0, 8).map(neverPlayedAlbumToShelfItem),
     context: {
       eyebrow: 'Panorama do recorte',

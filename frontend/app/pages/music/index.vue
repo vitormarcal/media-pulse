@@ -91,6 +91,29 @@
           </div>
         </section>
 
+        <section v-if="collectionData.rediscoveredAlbums.length" class="music-section">
+          <SectionHeading
+            eyebrow="Redescobertas"
+            title="Álbuns que ficaram quietos e voltaram para perto"
+            description=""
+            summary=""
+          />
+
+          <div class="strip-grid">
+            <MusicStripCard
+              v-for="item in collectionData.rediscoveredAlbums"
+              :key="item.id"
+              kicker="Retorno"
+              :title="item.title"
+              :subtitle="item.subtitle"
+              :meta="item.meta"
+              :detail="item.detail"
+              :image-url="item.imageUrl"
+              :href="item.href"
+            />
+          </div>
+        </section>
+
         <section class="music-section">
           <SectionHeading
             eyebrow="Fronteira de descoberta"

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.68
+  version: 1.0.0-beta.75
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -322,6 +322,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RecentAlbumsPageResponse"
+  /api/music/albums/rediscovered:
+    get:
+      summary: Rediscovered albums
+      tags: [Music]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 8
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RediscoveredAlbumResponse"
   /api/music/library/artists:
     get:
       summary: Artist music library
@@ -3312,6 +3332,54 @@ components:
           type: integer
           format: int64
       required: [albumId, albumTitle, artistId, artistName, lastPlayed, playCount]
+    RediscoveredAlbumResponse:
+      type: object
+      properties:
+        albumId:
+          type: integer
+          format: int64
+        albumTitle:
+          type: string
+        artistId:
+          type: integer
+          format: int64
+        artistName:
+          type: string
+        year:
+          type: integer
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        historicalPlayCount:
+          type: integer
+          format: int64
+        recentPlayCount:
+          type: integer
+          format: int64
+        lastHistoricalPlay:
+          type: string
+          format: date-time
+        firstRecentPlay:
+          type: string
+          format: date-time
+        latestPlay:
+          type: string
+          format: date-time
+        quietGapDays:
+          type: integer
+          format: int64
+      required:
+        - albumId
+        - albumTitle
+        - artistId
+        - artistName
+        - historicalPlayCount
+        - recentPlayCount
+        - lastHistoricalPlay
+        - firstRecentPlay
+        - latestPlay
+        - quietGapDays
     TopArtistResponse:
       type: object
       properties:

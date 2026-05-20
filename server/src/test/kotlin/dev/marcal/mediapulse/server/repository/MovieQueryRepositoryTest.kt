@@ -151,6 +151,10 @@ class MovieQueryRepositoryTest {
                 emptyList<Any>(),
                 emptyList<Any>(),
                 emptyList<Any>(),
+                emptyList<Any>(),
+                emptyList<Any>(),
+                emptyList<Any>(),
+                emptyList<Any>(),
                 listOf(
                     arrayOf(10L, "Matrix", "The Matrix", "the-matrix", 1999, "/covers/matrix.jpg", true),
                     arrayOf(11L, "Matrix Reloaded", "The Matrix Reloaded", "matrix-reloaded", 2003, "/covers/reloaded.jpg", false),

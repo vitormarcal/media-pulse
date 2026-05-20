@@ -29,6 +29,7 @@ import dev.marcal.mediapulse.server.api.music.RangeDto
 import dev.marcal.mediapulse.server.api.music.RecentAlbumResponse
 import dev.marcal.mediapulse.server.api.music.RecentAlbumsPageResponse
 import dev.marcal.mediapulse.server.api.music.RecentGenreResponse
+import dev.marcal.mediapulse.server.api.music.RediscoveredAlbumResponse
 import dev.marcal.mediapulse.server.api.music.SearchAlbumRow
 import dev.marcal.mediapulse.server.api.music.SearchResponse
 import dev.marcal.mediapulse.server.api.music.SearchTrackRow
@@ -51,6 +52,7 @@ import org.springframework.stereotype.Repository
 import org.springframework.web.server.ResponseStatusException
 import java.sql.Date
 import java.sql.Timestamp
+import java.time.Duration
 import java.time.Instant
 
 @Repository
@@ -59,6 +61,13 @@ class MusicQueryRepository(
     private val mediaCommentQueryRepository: MediaCommentQueryRepository,
     private val mediaRatingQueryRepository: MediaRatingQueryRepository,
 ) {
+    private companion object {
+        private const val REDISCOVERED_RECENT_WINDOW_DAYS = 30L
+        private const val REDISCOVERED_MIN_HISTORICAL_PLAYS = 5L
+        private const val REDISCOVERED_MIN_RECENT_PLAYS = 2L
+        private const val REDISCOVERED_MIN_GAP_DAYS = 90L
+    }
+
     fun getArtistLibrary(
         limit: Int,
         cursor: String?,
@@ -615,6 +624,99 @@ class MusicQueryRepository(
             items = items,
             nextCursor = if (hasMore) nextCursor else null,
         )
+    }
+
+    fun getRediscoveredAlbums(limit: Int): List<RediscoveredAlbumResponse> {
+        val resolvedLimit = limit.coerceIn(1, 1000)
+        val recentStart = Instant.now().minus(Duration.ofDays(REDISCOVERED_RECENT_WINDOW_DAYS))
+        return entityManager
+            .createNativeQuery(
+                """
+                WITH album_activity AS (
+                  SELECT
+                    al.id AS album_id,
+                    al.title AS album_title,
+                    a.id AS artist_id,
+                    a.name AS artist_name,
+                    al.year AS album_year,
+                    al.cover_url,
+                    COUNT(tp.id) FILTER (WHERE tp.played_at < :recentStart) AS historical_play_count,
+                    COUNT(tp.id) FILTER (WHERE tp.played_at >= :recentStart) AS recent_play_count,
+                    MAX(tp.played_at) FILTER (WHERE tp.played_at < :recentStart) AS last_historical_play,
+                    MIN(tp.played_at) FILTER (WHERE tp.played_at >= :recentStart) AS first_recent_play,
+                    MAX(tp.played_at) FILTER (WHERE tp.played_at >= :recentStart) AS latest_play
+                  FROM albums al
+                  JOIN artists a ON a.id = al.artist_id
+                  LEFT JOIN track_playbacks tp ON tp.album_id = al.id
+                  GROUP BY al.id, al.title, a.id, a.name, al.year, al.cover_url
+                )
+                , album_candidates AS (
+                  SELECT
+                    album_id,
+                    album_title,
+                    artist_id,
+                    artist_name,
+                    album_year,
+                    cover_url,
+                    historical_play_count,
+                    recent_play_count,
+                    last_historical_play,
+                    first_recent_play,
+                    latest_play,
+                    CAST(FLOOR(EXTRACT(EPOCH FROM (first_recent_play - last_historical_play)) / 86400) AS BIGINT) AS quiet_gap_days
+                  FROM album_activity
+                  WHERE historical_play_count >= :minHistoricalPlays
+                    AND recent_play_count >= :minRecentPlays
+                    AND last_historical_play IS NOT NULL
+                    AND first_recent_play IS NOT NULL
+                    AND EXTRACT(EPOCH FROM (first_recent_play - last_historical_play)) >= :minGapSeconds
+                )
+                SELECT
+                  album_id,
+                  album_title,
+                  artist_id,
+                  artist_name,
+                  album_year,
+                  cover_url,
+                  historical_play_count,
+                  recent_play_count,
+                  last_historical_play,
+                  first_recent_play,
+                  latest_play,
+                  quiet_gap_days
+                FROM album_candidates
+                ORDER BY
+                  quiet_gap_days * LN(historical_play_count + 1) * LN(recent_play_count + 1) DESC,
+                  quiet_gap_days DESC,
+                  historical_play_count DESC,
+                  recent_play_count DESC,
+                  latest_play DESC,
+                  album_id DESC
+                LIMIT :limit
+                """.trimIndent(),
+            ).setParameter("recentStart", Timestamp.from(recentStart))
+            .setParameter("minHistoricalPlays", REDISCOVERED_MIN_HISTORICAL_PLAYS)
+            .setParameter("minRecentPlays", REDISCOVERED_MIN_RECENT_PLAYS)
+            .setParameter("minGapSeconds", Duration.ofDays(REDISCOVERED_MIN_GAP_DAYS).seconds)
+            .setParameter("limit", resolvedLimit)
+            .resultList
+            .map {
+                val row = it as Array<*>
+                RediscoveredAlbumResponse(
+                    albumId = (row[0] as Number).toLong(),
+                    albumTitle = row[1] as String,
+                    artistId = (row[2] as Number).toLong(),
+                    artistName = row[3] as String,
+                    year = (row[4] as Number?)?.toInt(),
+                    coverUrl = row[5] as String?,
+                    historicalPlayCount = (row[6] as Number).toLong(),
+                    recentPlayCount = (row[7] as Number).toLong(),
+                    lastHistoricalPlay = asInstant(row[8])!!,
+                    firstRecentPlay = asInstant(row[9])!!,
+                    latestPlay = asInstant(row[10])!!,
+                    quietGapDays = (row[11] as Number).toLong(),
+                )
+            }
     }
 
     fun getTopArtists(

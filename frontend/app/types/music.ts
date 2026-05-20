@@ -124,6 +124,21 @@ export interface TopTrackResponse {
   playCount: number
 }
 
+export interface RediscoveredAlbumResponse {
+  albumId: number
+  albumTitle: string
+  artistId: number
+  artistName: string
+  year: number | null
+  coverUrl: string | null
+  historicalPlayCount: number
+  recentPlayCount: number
+  lastHistoricalPlay: string
+  firstRecentPlay: string
+  latestPlay: string
+  quietGapDays: number
+}
+
 export interface ArtistLibraryRow {
   artistId: number
   artistName: string
@@ -394,6 +409,7 @@ export interface MusicCollectionData {
   featuredAlbums: EditorialShelfItem[]
   topArtists: EditorialShelfItem[]
   topTracks: EditorialShelfItem[]
+  rediscoveredAlbums: EditorialShelfItem[]
   discoveryAlbums: EditorialShelfItem[]
   context: {
     eyebrow: string
