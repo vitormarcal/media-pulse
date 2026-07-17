@@ -13,7 +13,24 @@ import java.time.Instant
 class AlbumListQueryRepository(
     private val entityManager: EntityManager,
 ) {
-    fun listAll(): List<AlbumListSummaryDto> {
+    fun listAll(): List<AlbumListSummaryDto> = listSummaries()
+
+    fun listsForAlbum(albumId: Long): List<AlbumListSummaryDto> =
+        listSummaries(
+            where =
+                """
+                WHERE EXISTS (
+                  SELECT 1 FROM album_list_items membership
+                  WHERE membership.list_id = al.id AND membership.album_id = :albumId
+                )
+                """.trimIndent(),
+            albumId = albumId,
+        )
+
+    private fun listSummaries(
+        where: String = "",
+        albumId: Long? = null,
+    ): List<AlbumListSummaryDto> {
         val rows =
             entityManager
                 .createNativeQuery(
@@ -22,10 +39,12 @@ class AlbumListQueryRepository(
                            COUNT(ali.id), COUNT(ali.listened_at), al.updated_at
                     FROM album_lists al
                     LEFT JOIN album_list_items ali ON ali.list_id = al.id
+                    $where
                     GROUP BY al.id
                     ORDER BY al.updated_at DESC, al.id DESC
                     """.trimIndent(),
-                ).resultList
+                ).let { query -> albumId?.let { query.setParameter("albumId", it) } ?: query }
+                .resultList
         return rows.map { row ->
             val fields = row as Array<*>
             val listId = (fields[0] as Number).toLong()

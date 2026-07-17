@@ -741,6 +741,7 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
     })),
     comments: album.comments,
     musicBrainz: album.musicBrainz,
+    lists: album.lists,
   }
 }
 

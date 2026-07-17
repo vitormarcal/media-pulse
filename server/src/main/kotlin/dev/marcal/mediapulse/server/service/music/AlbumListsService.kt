@@ -29,6 +29,9 @@ class AlbumListsService(
     fun listAll(): List<AlbumListSummaryDto> = queryRepository.listAll()
 
     @Transactional(readOnly = true)
+    fun listsForAlbum(albumId: Long): List<AlbumListSummaryDto> = queryRepository.listsForAlbum(albumId)
+
+    @Transactional(readOnly = true)
     fun details(slug: String): AlbumListDetailsResponse = queryRepository.details(slug)
 
     @Transactional

@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.service.music
 import dev.marcal.mediapulse.server.api.music.AlbumListDetailsResponse
 import dev.marcal.mediapulse.server.api.music.AlbumListListenedRequest
 import dev.marcal.mediapulse.server.api.music.AlbumListOrderRequest
+import dev.marcal.mediapulse.server.api.music.AlbumListSummaryDto
 import dev.marcal.mediapulse.server.model.music.AlbumList
 import dev.marcal.mediapulse.server.repository.AlbumListQueryRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumListItemCrudRepository
@@ -12,7 +13,9 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import java.util.Optional
+import kotlin.test.assertEquals
 
 class AlbumListsServiceTest {
     private val listRepository = mockk<AlbumListRepository>(relaxed = true)
@@ -22,6 +25,18 @@ class AlbumListsServiceTest {
     private val service = AlbumListsService(listRepository, albumRepository, itemRepository, queryRepository)
     private val list = AlbumList(id = 4, name = "Essenciais", normalizedName = "essenciais", slug = "essenciais")
     private val details = AlbumListDetailsResponse(4, "Essenciais", "essenciais", null, 3, 0, emptyList())
+
+    @Test
+    fun `lists for album delegates to the membership query`() {
+        val expected =
+            listOf(
+                AlbumListSummaryDto(4, "Essenciais", "essenciais", null, 3, 1, emptyList(), Instant.EPOCH),
+            )
+        every { queryRepository.listsForAlbum(10) } returns expected
+
+        assertEquals(expected, service.listsForAlbum(10))
+        verify(exactly = 1) { queryRepository.listsForAlbum(10) }
+    }
 
     @Test
     fun `update order requires and persists the complete item set`() {

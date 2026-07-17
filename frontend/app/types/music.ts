@@ -32,6 +32,7 @@ export interface AlbumPageResponse {
   terms: AlbumTermDto[]
   comments: MediaCommentDto[]
   musicBrainz: MusicBrainzLink | null
+  lists: AlbumListSummaryDto[]
 }
 
 export interface MusicBrainzLink {
@@ -445,6 +446,7 @@ export interface AlbumPageData {
   recentDays: AlbumDayModel[]
   comments: MediaCommentDto[]
   musicBrainz: MusicBrainzLink | null
+  lists: AlbumListSummaryDto[]
 }
 
 export interface AlbumTermPageData {

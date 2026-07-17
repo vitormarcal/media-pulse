@@ -17,6 +17,7 @@ import dev.marcal.mediapulse.server.api.music.SearchResponse
 import dev.marcal.mediapulse.server.api.music.TrackLibraryPageResponse
 import dev.marcal.mediapulse.server.api.music.TrackPageResponse
 import dev.marcal.mediapulse.server.repository.MusicQueryRepository
+import dev.marcal.mediapulse.server.service.music.AlbumListsService
 import dev.marcal.mediapulse.server.service.music.AlbumTermsService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -36,6 +37,7 @@ import kotlin.math.min
 class MusicSummaryController(
     private val repository: MusicQueryRepository,
     private val albumTermsService: AlbumTermsService,
+    private val albumListsService: AlbumListsService,
 ) {
     @GetMapping("/summary")
     fun summary(
@@ -132,7 +134,7 @@ class MusicSummaryController(
     @GetMapping("/albums/{albumId}")
     fun albumPage(
         @PathVariable albumId: Long,
-    ): AlbumPageResponse = repository.getAlbumPage(albumId)
+    ): AlbumPageResponse = repository.getAlbumPage(albumId).copy(lists = albumListsService.listsForAlbum(albumId))
 
     @GetMapping("/terms/{kind}/{slug}")
     fun albumTermPage(

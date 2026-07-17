@@ -20,6 +20,7 @@ data class AlbumPageResponse(
     val terms: List<AlbumTermDto> = emptyList(),
     val comments: List<MediaCommentDto> = emptyList(),
     val musicBrainz: MusicBrainzLinkDto? = null,
+    val lists: List<AlbumListSummaryDto> = emptyList(),
 )
 
 data class AlbumTrackRow(
