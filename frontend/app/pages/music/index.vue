@@ -1,7 +1,5 @@
 <template>
   <main class="music-page">
-    <AddMusicBrainzArtistPanel />
-
     <div v-if="status === 'pending'" class="state-card">
       <p>Montando a página de música...</p>
     </div>
@@ -19,6 +17,8 @@
           :lead="collectionData.hero.lead"
           :supporting="collectionData.hero.supporting"
         />
+
+        <AddMusicBrainzArtistPanel />
 
         <section class="music-section">
           <SectionHeading eyebrow="Discos" title="Em rotação" />
@@ -127,6 +127,8 @@
           :utility-label="libraryData.hero.utilityLabel"
           :spotlight="libraryData.hero.spotlight"
         />
+
+        <AddMusicBrainzArtistPanel />
 
         <MusicLibraryFilters
           :query="libraryData.filters.query"
