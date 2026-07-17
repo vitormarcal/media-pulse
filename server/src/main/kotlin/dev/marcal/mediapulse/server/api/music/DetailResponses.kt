@@ -15,6 +15,7 @@ data class ArtistPageResponse(
     val albums: List<ArtistAlbumRow>,
     val topTracks: List<ArtistTrackRow>,
     val playsByDay: List<PlaysByDayRow>,
+    val musicBrainz: MusicBrainzLinkDto? = null,
 )
 
 data class ArtistAlbumRow(

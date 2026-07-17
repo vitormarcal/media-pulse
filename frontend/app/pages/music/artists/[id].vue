@@ -14,6 +14,8 @@
 
       <ArtistContextPanel :stats="data.stats" :recent-days="data.recentDays" />
 
+      <ArtistMusicBrainzPanel :artist-id="Number(data.id)" :link="data.musicBrainz" @applied="refresh" />
+
       <MusicLibraryGrid
         eyebrow="Álbuns"
         title="Os discos que realmente carregaram esse nome"
@@ -32,13 +34,14 @@
 import ArtistContextPanel from '~/components/music/ArtistContextPanel.vue'
 import ArtistPageHero from '~/components/music/ArtistPageHero.vue'
 import ArtistTrackList from '~/components/music/ArtistTrackList.vue'
+import ArtistMusicBrainzPanel from '~/components/music/ArtistMusicBrainzPanel.vue'
 import MusicLibraryGrid from '~/components/music/MusicLibraryGrid.vue'
 import { useArtistPageData } from '~/composables/useArtistPageData'
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))
 
-const { data, error, status } = await useArtistPageData(id.value)
+const { data, error, status, refresh } = await useArtistPageData(id.value)
 
 useHead(() => ({
   title: data.value ? `${data.value.title} · Media Pulse` : 'Artista · Media Pulse',

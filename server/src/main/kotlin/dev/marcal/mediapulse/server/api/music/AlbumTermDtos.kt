@@ -7,6 +7,7 @@ enum class AlbumTermKindDto {
 
 enum class AlbumTermSourceDto {
     USER,
+    MUSICBRAINZ,
 }
 
 data class AlbumTermDto(

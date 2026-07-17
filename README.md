@@ -50,6 +50,7 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `V15__add_movie_collections.sql`
 - `V29__create_games_schema.sql`
 - `V30__add_album_lists.sql`
+- `V31__type_musicbrainz_external_identifiers.sql`
 
 ## Configuração
 
@@ -162,6 +163,9 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `GET /api/music/library/tracks`
 - `GET /api/music/search`
 - `GET /api/music/albums/{albumId}`
+- `GET /api/music/albums/{albumId}/musicbrainz/candidates`
+- `GET /api/music/albums/{albumId}/musicbrainz/preview`
+- `POST /api/music/albums/{albumId}/musicbrainz`
 - `GET /api/music/lists`
 - `GET /api/music/lists/{slug}`
 - `POST /api/music/lists`
@@ -172,6 +176,8 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `PUT /api/music/lists/{listId}/order`
 - `PATCH /api/music/lists/{listId}/albums/{albumId}/listened`
 - `GET /api/music/artists/{artistId}`
+- `GET /api/music/artists/{artistId}/musicbrainz/candidates`
+- `POST /api/music/artists/{artistId}/musicbrainz`
 - `GET /api/music/tracks/{trackId}`
 - `GET /api/music/tops/artists`
 - `GET /api/music/tops/albums`

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.76
+  version: 1.0.0-beta.77
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -31,6 +31,83 @@ tags:
   - name: Ratings
     description: Manual ratings attached to media details.
 paths:
+  /api/music/albums/{albumId}/musicbrainz/candidates:
+    get:
+      tags: [Music]
+      summary: Search MusicBrainz release-group candidates for a local album
+      parameters:
+        - in: path
+          name: albumId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200': { description: Candidate list; no local data is changed }
+  /api/music/albums/{albumId}/musicbrainz/preview:
+    get:
+      tags: [Music]
+      summary: Preview MusicBrainz album enrichment
+      parameters:
+        - in: path
+          name: albumId
+          required: true
+          schema: { type: integer, format: int64 }
+        - in: query
+          name: releaseGroupMbid
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Read-only enrichment preview }
+  /api/music/albums/{albumId}/musicbrainz:
+    post:
+      tags: [Music]
+      summary: Confirm and apply MusicBrainz album enrichment
+      parameters:
+        - in: path
+          name: albumId
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [releaseGroupMbid]
+              properties:
+                releaseGroupMbid: { type: string }
+      responses:
+        '200': { description: Enrichment applied }
+  /api/music/artists/{artistId}/musicbrainz/candidates:
+    get:
+      tags: [Music]
+      summary: Search MusicBrainz artist candidates
+      parameters:
+        - in: path
+          name: artistId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200': { description: Candidate list; no local data is changed }
+  /api/music/artists/{artistId}/musicbrainz:
+    post:
+      tags: [Music]
+      summary: Confirm a MusicBrainz artist link
+      parameters:
+        - in: path
+          name: artistId
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [artistMbid]
+              properties:
+                artistMbid: { type: string }
+      responses:
+        '200': { description: Artist link applied }
   /api/music/lists:
     get:
       summary: List album lists

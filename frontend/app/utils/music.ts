@@ -697,7 +697,13 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
               hiddenGlobally: term.hiddenGlobally,
               hiddenForAlbum: term.hiddenForAlbum,
               active: term.active,
-              stateLabel: term.active ? 'Manual' : term.hiddenGlobally ? 'Oculto globalmente' : 'Oculto neste álbum',
+              stateLabel: term.active
+                ? term.source === 'MUSICBRAINZ'
+                  ? 'MusicBrainz'
+                  : 'Manual'
+                : term.hiddenGlobally
+                  ? 'Oculto globalmente'
+                  : 'Oculto neste álbum',
             })),
         },
         {
@@ -716,7 +722,13 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
               hiddenGlobally: term.hiddenGlobally,
               hiddenForAlbum: term.hiddenForAlbum,
               active: term.active,
-              stateLabel: term.active ? 'Manual' : term.hiddenGlobally ? 'Oculto globalmente' : 'Oculto neste álbum',
+              stateLabel: term.active
+                ? term.source === 'MUSICBRAINZ'
+                  ? 'MusicBrainz'
+                  : 'Manual'
+                : term.hiddenGlobally
+                  ? 'Oculto globalmente'
+                  : 'Oculto neste álbum',
             })),
         },
       ],
@@ -728,6 +740,7 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
       plays: day.plays,
     })),
     comments: album.comments,
+    musicBrainz: album.musicBrainz,
   }
 }
 
@@ -792,5 +805,6 @@ export function buildArtistPageData(artist: ArtistPageResponse): ArtistPageData 
       label: day.day,
       plays: day.plays,
     })),
+    musicBrainz: artist.musicBrainz,
   }
 }

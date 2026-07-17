@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.repository.crud
 
 import dev.marcal.mediapulse.server.model.EntityType
+import dev.marcal.mediapulse.server.model.ExternalEntityType
 import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import org.springframework.data.repository.CrudRepository
@@ -26,5 +27,18 @@ interface ExternalIdentifierRepository : CrudRepository<ExternalIdentifier, Long
         entityType: EntityType,
         provider: Provider,
         entityId: Long,
+    ): ExternalIdentifier?
+
+    fun findByEntityTypeAndEntityIdAndProviderAndExternalEntityType(
+        entityType: EntityType,
+        entityId: Long,
+        provider: Provider,
+        externalEntityType: ExternalEntityType,
+    ): ExternalIdentifier?
+
+    fun findByEntityTypeAndEntityIdAndProviderAndExternalEntityTypeIsNull(
+        entityType: EntityType,
+        entityId: Long,
+        provider: Provider,
     ): ExternalIdentifier?
 }

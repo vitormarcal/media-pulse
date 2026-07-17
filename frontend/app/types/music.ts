@@ -31,10 +31,41 @@ export interface AlbumPageResponse {
   playsByDay: PlaysByDayRow[]
   terms: AlbumTermDto[]
   comments: MediaCommentDto[]
+  musicBrainz: MusicBrainzLink | null
+}
+
+export interface MusicBrainzLink {
+  mbid: string
+  entityType: string
+}
+
+export interface MusicBrainzAlbumCandidate {
+  releaseGroupMbid: string
+  title: string
+  artistName: string
+  artistMbid: string | null
+  firstReleaseYear: number | null
+  primaryType: string | null
+  disambiguation: string | null
+}
+
+export interface MusicBrainzAlbumPreview {
+  candidate: MusicBrainzAlbumCandidate
+  genres: string[]
+  tags: string[]
+  changes: string[]
+  preservedFields: string[]
+}
+
+export interface MusicBrainzArtistCandidate {
+  artistMbid: string
+  name: string
+  disambiguation: string | null
+  country: string | null
 }
 
 export type AlbumTermKind = 'GENRE' | 'TAG'
-export type AlbumTermSource = 'USER'
+export type AlbumTermSource = 'USER' | 'MUSICBRAINZ'
 
 export interface AlbumTermDto {
   id: number
@@ -95,6 +126,7 @@ export interface ArtistPageResponse {
     lastPlayed: string | null
   }>
   playsByDay: PlaysByDayRow[]
+  musicBrainz: MusicBrainzLink | null
 }
 
 export interface TopArtistResponse {
@@ -382,6 +414,7 @@ export interface AlbumPageData {
   tracks: AlbumTrackModel[]
   recentDays: AlbumDayModel[]
   comments: MediaCommentDto[]
+  musicBrainz: MusicBrainzLink | null
 }
 
 export interface AlbumTermPageData {
@@ -422,6 +455,7 @@ export interface ArtistPageData {
   albums: MusicLibraryCardModel[]
   topTracks: ArtistTrackModel[]
   recentDays: AlbumDayModel[]
+  musicBrainz: MusicBrainzLink | null
 }
 
 export interface MusicCollectionContextMetric {

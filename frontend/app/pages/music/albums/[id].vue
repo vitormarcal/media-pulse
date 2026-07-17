@@ -25,6 +25,8 @@
 
       <AlbumContextPanel :stats="data.stats" :recent-days="data.recentDays" />
 
+      <AlbumMusicBrainzPanel v-if="editMode" :album-id="Number(data.id)" :link="data.musicBrainz" @applied="refresh" />
+
       <MediaRatingPanel
         media-type="albums"
         :entity-id="Number(data.id)"
@@ -50,6 +52,7 @@
 <script setup lang="ts">
 import AlbumContextPanel from '~/components/music/AlbumContextPanel.vue'
 import AlbumPageHero from '~/components/music/AlbumPageHero.vue'
+import AlbumMusicBrainzPanel from '~/components/music/AlbumMusicBrainzPanel.vue'
 import AlbumTrackList from '~/components/music/AlbumTrackList.vue'
 import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
 import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'

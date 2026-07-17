@@ -40,7 +40,12 @@ No frontend atual, `/music` concentra tanto o recorte editorial quanto o arquivo
 | `GET /api/music/library/tracks` | `limit=20`, `cursor?` | `TrackLibraryPageResponse` |
 | `GET /api/music/search` | `q`, `limit=10` | `SearchResponse` |
 | `GET /api/music/albums/{albumId}` | `albumId` | `AlbumPageResponse` |
+| `GET /api/music/albums/{albumId}/musicbrainz/candidates` | `albumId` | Candidatos de release group sem alterar dados locais. |
+| `GET /api/music/albums/{albumId}/musicbrainz/preview` | `albumId`, `releaseGroupMbid` | Prévia das mudanças e campos preservados. |
+| `POST /api/music/albums/{albumId}/musicbrainz` | body com `releaseGroupMbid` | Confirma o vínculo e aplica ano ausente e termos. |
 | `GET /api/music/artists/{artistId}` | `artistId` | `ArtistPageResponse` |
+| `GET /api/music/artists/{artistId}/musicbrainz/candidates` | `artistId` | Candidatos de artista sem alterar dados locais. |
+| `POST /api/music/artists/{artistId}/musicbrainz` | body com `artistMbid` | Confirma ou troca o vínculo do artista. |
 | `GET /api/music/tracks/{trackId}` | `trackId` | `TrackPageResponse` |
 | `GET /api/music/terms/{kind}/{slug}` | `kind=GENRE|TAG`, `slug` | `AlbumTermDetailsResponse` |
 | `GET /api/music/terms/search` | `q`, `kind=GENRE|TAG`, `limit=10` | `AlbumTermSuggestionDto[]` |
@@ -126,6 +131,10 @@ Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, últ
 - playbacks são agregados para as respostas públicas
 - rankings e análises por período exigem `start` e `end` explícitos quando o endpoint não tem `range`
 - endpoints de termos de álbum operam sobre catálogo local
+- a identidade MusicBrainz canônica de álbum é um `release-group`; `release` identifica uma edição
+- busca e prévia MusicBrainz são read-only e toda correspondência exige confirmação do owner
+- o enriquecimento não sobrescreve título, artista, capa, tracklist ou ano já preenchido
+- identificadores MusicBrainz legados permanecem sem tipo até serem resolvidos como release
 
 ## Non-goals
 

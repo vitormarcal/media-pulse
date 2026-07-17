@@ -18,6 +18,7 @@ import dev.marcal.mediapulse.server.api.music.ArtistLibraryRow
 import dev.marcal.mediapulse.server.api.music.ArtistPageResponse
 import dev.marcal.mediapulse.server.api.music.ArtistTrackRow
 import dev.marcal.mediapulse.server.api.music.IdName
+import dev.marcal.mediapulse.server.api.music.MusicBrainzLinkDto
 import dev.marcal.mediapulse.server.api.music.MusicByYearResponse
 import dev.marcal.mediapulse.server.api.music.MusicByYearStatsDto
 import dev.marcal.mediapulse.server.api.music.MusicStatsResponse
@@ -46,6 +47,9 @@ import dev.marcal.mediapulse.server.api.music.TrackPlayRow
 import dev.marcal.mediapulse.server.api.music.TrendingGenreResponse
 import dev.marcal.mediapulse.server.api.music.UnderplayedGenreResponse
 import dev.marcal.mediapulse.server.model.EntityType
+import dev.marcal.mediapulse.server.model.ExternalEntityType
+import dev.marcal.mediapulse.server.model.Provider
+import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import jakarta.persistence.EntityManager
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
@@ -60,6 +64,7 @@ class MusicQueryRepository(
     private val entityManager: EntityManager,
     private val mediaCommentQueryRepository: MediaCommentQueryRepository,
     private val mediaRatingQueryRepository: MediaRatingQueryRepository,
+    private val externalIdentifierRepository: ExternalIdentifierRepository,
 ) {
     private companion object {
         private const val REDISCOVERED_RECENT_WINDOW_DAYS = 30L
@@ -1077,6 +1082,7 @@ class MusicQueryRepository(
             playsByDay = days,
             terms = getAlbumTerms(albumId),
             comments = comments,
+            musicBrainz = musicBrainzLink(EntityType.ALBUM, albumId, ExternalEntityType.RELEASE_GROUP),
         )
     }
 
@@ -1387,8 +1393,22 @@ class MusicQueryRepository(
             albums = albums,
             topTracks = topTracks,
             playsByDay = days,
+            musicBrainz = musicBrainzLink(EntityType.ARTIST, artistId, ExternalEntityType.ARTIST),
         )
     }
+
+    private fun musicBrainzLink(
+        entityType: EntityType,
+        entityId: Long,
+        externalType: ExternalEntityType,
+    ): MusicBrainzLinkDto? =
+        externalIdentifierRepository
+            .findByEntityTypeAndEntityIdAndProviderAndExternalEntityType(
+                entityType,
+                entityId,
+                Provider.MUSICBRAINZ,
+                externalType,
+            )?.let { MusicBrainzLinkDto(it.externalId, externalType.name) }
 
     fun getTrackPage(trackId: Long): TrackPageResponse {
         val header =

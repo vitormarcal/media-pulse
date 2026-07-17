@@ -36,6 +36,16 @@ class AlbumTermsService(
     }
 
     @Transactional
+    fun addMusicBrainzTerms(
+        album: Album,
+        genres: Collection<String>,
+        tags: Collection<String>,
+    ) {
+        genres.forEach { upsertTermAndAssignment(album, AlbumTermKind.GENRE, it, AlbumTermSource.MUSICBRAINZ) }
+        tags.forEach { upsertTermAndAssignment(album, AlbumTermKind.TAG, it, AlbumTermSource.MUSICBRAINZ) }
+    }
+
+    @Transactional
     fun updateGlobalVisibility(
         termId: Long,
         hidden: Boolean,

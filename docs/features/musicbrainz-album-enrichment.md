@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposta mínima aprovada para implementação futura.
+Primeiro corte implementado.
 
 Esta spec registra a decisão de começar pelo enriquecimento assistido de um álbum já existente. A criação manual de artistas e a importação de discografias ficam para incrementos posteriores.
 

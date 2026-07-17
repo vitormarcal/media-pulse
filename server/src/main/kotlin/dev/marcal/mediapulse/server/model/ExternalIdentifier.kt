@@ -27,6 +27,9 @@ data class ExternalIdentifier(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val provider: Provider,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "external_entity_type")
+    val externalEntityType: ExternalEntityType? = null,
     @Column(name = "external_id", nullable = false)
     val externalId: String,
     @Column(name = "created_at") val createdAt: Instant = Instant.now(),

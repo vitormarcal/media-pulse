@@ -1,7 +1,9 @@
 package dev.marcal.mediapulse.server.integration.musicbrainz
 
 import dev.marcal.mediapulse.server.config.MusicBrainzProperties
+import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistSearchResponse
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbReleaseGroupResponse
+import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbReleaseGroupSearchResponse
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbReleaseResponse
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -45,12 +47,15 @@ class MusicBrainzApiClient(
     private fun url(
         path: String,
         inc: String,
+        query: Map<String, String> = emptyMap(),
     ): String =
         UriComponentsBuilder
             .fromHttpUrl(props.baseUrl)
             .path(path)
-            .queryParam("inc", inc)
-            .queryParam("fmt", "json")
+            .apply {
+                if (inc.isNotBlank()) queryParam("inc", inc)
+                query.forEach { (key, value) -> queryParam(key, value) }
+            }.queryParam("fmt", "json")
             .build()
             .toUriString()
 
@@ -72,8 +77,9 @@ class MusicBrainzApiClient(
         inc: String,
         clazz: Class<T>,
         mbid: String,
+        query: Map<String, String> = emptyMap(),
     ): T {
-        val fullUrl = url(path, inc)
+        val fullUrl = url(path, inc, query)
 
         var attempt = 0
         while (true) {
@@ -176,6 +182,51 @@ class MusicBrainzApiClient(
             }
         }
     }
+
+    suspend fun searchReleaseGroups(
+        albumTitle: String,
+        artistName: String,
+        limit: Int = 8,
+    ) = mbGet(
+        path = "/ws/2/release-group",
+        inc = "artist-credits",
+        clazz = MbReleaseGroupSearchResponse::class.java,
+        mbid = "search",
+        query =
+            mapOf(
+                "query" to "releasegroup:${lucene(albumTitle)} AND artist:${lucene(artistName)}",
+                "limit" to limit.coerceIn(1, 10).toString(),
+            ),
+    ).releaseGroups
+
+    suspend fun getReleaseGroup(mbid: String) =
+        mbGet(
+            path = "/ws/2/release-group/$mbid",
+            inc = "artist-credits+genres+tags",
+            clazz = dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbReleaseGroupCandidate::class.java,
+            mbid = mbid,
+        )
+
+    suspend fun searchArtists(
+        name: String,
+        limit: Int = 8,
+    ) = mbGet(
+        path = "/ws/2/artist",
+        inc = "",
+        clazz = MbArtistSearchResponse::class.java,
+        mbid = "search",
+        query = mapOf("query" to "artist:${lucene(name)}", "limit" to limit.coerceIn(1, 10).toString()),
+    ).artists
+
+    suspend fun resolveReleaseGroupFromRelease(mbid: String): String? =
+        mbGet(
+            path = "/ws/2/release/$mbid",
+            inc = "release-groups",
+            clazz = MbReleaseResponse::class.java,
+            mbid = mbid,
+        ).releaseGroup?.id
+
+    private fun lucene(value: String): String = "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
     suspend fun getAlbumGenreNamesByMbid(
         albumMbid: String,
