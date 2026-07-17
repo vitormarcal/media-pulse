@@ -208,6 +208,39 @@ export interface MusicSearchResponse {
   }>
 }
 
+export interface AlbumListSummaryDto {
+  listId: number
+  name: string
+  slug: string
+  description: string | null
+  itemCount: number
+  listenedCount: number
+  coverUrls: string[]
+  updatedAt: string
+}
+
+export interface AlbumListItemDto {
+  albumId: number
+  albumTitle: string
+  artistId: number
+  artistName: string
+  year: number | null
+  coverUrl: string | null
+  position: number
+  listenedAt: string | null
+  rating: number | null
+}
+
+export interface AlbumListDetailsResponse {
+  listId: number
+  name: string
+  slug: string
+  description: string | null
+  itemCount: number
+  listenedCount: number
+  items: AlbumListItemDto[]
+}
+
 export interface MusicByYearResponse {
   year: number
   range: {

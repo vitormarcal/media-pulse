@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.75
+  version: 1.0.0-beta.76
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -31,6 +31,152 @@ tags:
   - name: Ratings
     description: Manual ratings attached to media details.
 paths:
+  /api/music/lists:
+    get:
+      summary: List album lists
+      tags: [Music]
+      responses:
+        "200":
+          description: Album lists ordered by latest update
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AlbumListSummary"
+    post:
+      summary: Create an album list
+      tags: [Music]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlbumListWriteRequest"
+      responses:
+        "201":
+          description: Created album list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumListDetails"
+  /api/music/lists/{slug}:
+    get:
+      summary: Album list details
+      tags: [Music]
+      parameters:
+        - $ref: "#/components/parameters/AlbumListSlug"
+      responses:
+        "200":
+          description: Album list with contextual listening state and global ratings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumListDetails"
+  /api/music/lists/{listId}:
+    put:
+      summary: Update an album list
+      tags: [Music]
+      parameters:
+        - $ref: "#/components/parameters/AlbumListId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlbumListWriteRequest"
+      responses:
+        "200":
+          description: Updated list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumListDetails"
+    delete:
+      summary: Delete an album list
+      tags: [Music]
+      parameters:
+        - $ref: "#/components/parameters/AlbumListId"
+      responses:
+        "204":
+          description: Deleted
+  /api/music/lists/{listId}/albums/{albumId}:
+    post:
+      summary: Add a local album to a list
+      tags: [Music]
+      parameters:
+        - $ref: "#/components/parameters/AlbumListId"
+        - $ref: "#/components/parameters/AlbumId"
+      responses:
+        "200":
+          description: Updated list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumListDetails"
+    delete:
+      summary: Remove an album from a list
+      tags: [Music]
+      parameters:
+        - $ref: "#/components/parameters/AlbumListId"
+        - $ref: "#/components/parameters/AlbumId"
+      responses:
+        "200":
+          description: Updated list with normalized positions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumListDetails"
+  /api/music/lists/{listId}/order:
+    put:
+      summary: Replace the complete editorial order
+      tags: [Music]
+      parameters:
+        - $ref: "#/components/parameters/AlbumListId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [albumIds]
+              properties:
+                albumIds:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+      responses:
+        "200":
+          description: Reordered list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumListDetails"
+  /api/music/lists/{listId}/albums/{albumId}/listened:
+    patch:
+      summary: Mark or unmark an album as listened in this list
+      tags: [Music]
+      parameters:
+        - $ref: "#/components/parameters/AlbumListId"
+        - $ref: "#/components/parameters/AlbumId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [listened]
+              properties:
+                listened:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated contextual listening state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumListDetails"
   /api/books/year/{year}:
     get:
       summary: Books year reads
@@ -2622,7 +2768,115 @@ paths:
           description: Media not found.
 
 components:
+  parameters:
+    AlbumListId:
+      name: listId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    AlbumListSlug:
+      name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+    AlbumId:
+      name: albumId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
   schemas:
+    AlbumListWriteRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+    AlbumListSummary:
+      type: object
+      required: [listId, name, slug, itemCount, listenedCount, coverUrls, updatedAt]
+      properties:
+        listId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        itemCount:
+          type: integer
+        listenedCount:
+          type: integer
+        coverUrls:
+          type: array
+          items:
+            type: string
+        updatedAt:
+          type: string
+          format: date-time
+    AlbumListItem:
+      type: object
+      required: [albumId, albumTitle, artistId, artistName, position]
+      properties:
+        albumId:
+          type: integer
+          format: int64
+        albumTitle:
+          type: string
+        artistId:
+          type: integer
+          format: int64
+        artistName:
+          type: string
+        year:
+          type: integer
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        position:
+          type: integer
+        listenedAt:
+          type: string
+          format: date-time
+          nullable: true
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+    AlbumListDetails:
+      type: object
+      required: [listId, name, slug, itemCount, listenedCount, items]
+      properties:
+        listId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        itemCount:
+          type: integer
+        listenedCount:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlbumListItem"
     CreateMediaCommentRequest:
       type: object
       properties:

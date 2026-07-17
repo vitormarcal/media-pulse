@@ -4,6 +4,8 @@
       <NuxtLink class="back-link" to="/"> Voltar para a capa </NuxtLink>
 
       <NuxtLink class="section-link" to="/music?view=archive&kind=albums"> Abrir arquivo inteiro </NuxtLink>
+
+      <NuxtLink class="back-link" to="/music/lists"> Listas de álbuns </NuxtLink>
     </div>
 
     <div class="hero-grid">

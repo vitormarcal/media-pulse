@@ -1,5 +1,23 @@
 # Music API
 
+## Listas de álbuns
+
+Listas são recortes pessoais e mutáveis formados por álbuns já presentes no acervo local. A ordem editorial fica armazenada em `album_list_items.position`; ordenar a interface por marcação ou avaliação não altera essa sequência.
+
+| Método | Endpoint | Comportamento |
+|---|---|---|
+| `GET` | `/api/music/lists` | Lista os recortes com progresso e até três capas. |
+| `GET` | `/api/music/lists/{slug}` | Retorna detalhes, itens, posição, `listenedAt` e avaliação global. |
+| `POST` | `/api/music/lists` | Cria com body `{ "name": "...", "description": "..." }`. |
+| `PUT` | `/api/music/lists/{listId}` | Atualiza nome e descrição. |
+| `DELETE` | `/api/music/lists/{listId}` | Exclui o recorte e seus itens, sem excluir álbuns. |
+| `POST` | `/api/music/lists/{listId}/albums/{albumId}` | Adiciona um álbum local ao fim da lista. |
+| `DELETE` | `/api/music/lists/{listId}/albums/{albumId}` | Remove o item e normaliza posições. |
+| `PUT` | `/api/music/lists/{listId}/order` | Salva a ordem completa com body `{ "albumIds": [3, 1, 2] }`. |
+| `PATCH` | `/api/music/lists/{listId}/albums/{albumId}/listened` | Marca ou desmarca com body `{ "listened": true }`. |
+
+`listenedAt` representa apenas o estado atual e é apagado ao desmarcar; não existe histórico de marcações. `rating` vem da avaliação global `ALBUM` em `media_ratings`.
+
 A Music API expõe exploração read-only da biblioteca, escuta recente, rankings, cobertura e páginas de detalhe.
 
 No frontend atual, `/music` concentra tanto o recorte editorial quanto o arquivo completo:

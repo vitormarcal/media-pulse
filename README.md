@@ -49,6 +49,7 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `V14__create_music_duplicate_review_state.sql`
 - `V15__add_movie_collections.sql`
 - `V29__create_games_schema.sql`
+- `V30__add_album_lists.sql`
 
 ## Configuração
 
@@ -161,6 +162,15 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `GET /api/music/library/tracks`
 - `GET /api/music/search`
 - `GET /api/music/albums/{albumId}`
+- `GET /api/music/lists`
+- `GET /api/music/lists/{slug}`
+- `POST /api/music/lists`
+- `PUT /api/music/lists/{listId}`
+- `DELETE /api/music/lists/{listId}`
+- `POST /api/music/lists/{listId}/albums/{albumId}`
+- `DELETE /api/music/lists/{listId}/albums/{albumId}`
+- `PUT /api/music/lists/{listId}/order`
+- `PATCH /api/music/lists/{listId}/albums/{albumId}/listened`
 - `GET /api/music/artists/{artistId}`
 - `GET /api/music/tracks/{trackId}`
 - `GET /api/music/tops/artists`

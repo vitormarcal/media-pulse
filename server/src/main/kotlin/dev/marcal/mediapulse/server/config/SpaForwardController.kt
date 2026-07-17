@@ -29,6 +29,8 @@ class SpaForwardController {
         "/games/{slug}",
         "/games/{slug}/",
         "/music/albums/{id}",
+        "/music/lists",
+        "/music/lists/{slug}",
         "/music/terms/{kind}/{slug}",
         "/music/admin/duplicates",
     )
