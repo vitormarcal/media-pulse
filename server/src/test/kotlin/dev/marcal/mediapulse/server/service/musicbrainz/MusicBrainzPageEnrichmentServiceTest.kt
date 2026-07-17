@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.service.musicbrainz
 
 import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzApiClient
+import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistCandidate
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistCredit
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistRef
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbReleaseGroupCandidate
@@ -95,4 +96,120 @@ class MusicBrainzPageEnrichmentServiceTest {
 
         verify(exactly = 0) { externalIds.save(any()) }
     }
+
+    @Test
+    fun `creating an artist reuses the canonical name match and stores typed identity`() =
+        runBlocking {
+            coEvery { client.getArtist("artist-1") } returns MbArtistCandidate("artist-1", "Artist")
+            every { externalIds.findByProviderAndExternalId(any(), "artist-1") } returns null
+            every { artists.findByFingerprint(any()) } returns artist
+            every { externalIds.findByEntityTypeAndEntityIdAndProviderAndExternalEntityType(any(), any(), any(), any()) } returns null
+            every { externalIds.save(any()) } answers { firstArg() }
+
+            val result = service.createArtist("artist-1")
+
+            assertEquals(20, result.artistId)
+            assertEquals(false, result.created)
+            verify(exactly = 0) { artists.save(any()) }
+            verify(exactly = 1) { externalIds.save(any()) }
+        }
+
+    @Test
+    fun `discography separates possible matches from missing albums`() =
+        runBlocking {
+            val missing = candidate.copy(id = "rg-2", title = "Another Album", firstReleaseDate = "2005")
+            every { artists.findById(20) } returns Optional.of(artist)
+            every { externalIds.findByEntityTypeAndEntityIdAndProviderAndExternalEntityType(any(), any(), any(), any()) } answers {
+                if (firstArg<dev.marcal.mediapulse.server.model.EntityType>() == dev.marcal.mediapulse.server.model.EntityType.ARTIST) {
+                    ExternalIdentifier(
+                        entityType = dev.marcal.mediapulse.server.model.EntityType.ARTIST,
+                        entityId = 20,
+                        provider = dev.marcal.mediapulse.server.model.Provider.MUSICBRAINZ,
+                        externalEntityType = dev.marcal.mediapulse.server.model.ExternalEntityType.ARTIST,
+                        externalId = "artist-1",
+                    )
+                } else {
+                    null
+                }
+            }
+            every { albums.findAllByArtistId(20) } returns listOf(album.copy(year = 2001))
+            coEvery { client.getArtistReleaseGroups("artist-1") } returns listOf(candidate, missing)
+            every { externalIds.findByProviderAndExternalId(any(), "rg-1") } returns null
+            every { externalIds.findByProviderAndExternalId(any(), "rg-2") } returns null
+
+            val result = service.getArtistDiscography(20)
+
+            assertEquals(dev.marcal.mediapulse.server.api.music.MusicBrainzDiscographyStatus.POSSIBLE_MATCH, result.items[0].status)
+            assertEquals(dev.marcal.mediapulse.server.api.music.MusicBrainzDiscographyStatus.MISSING, result.items[1].status)
+            assertEquals(1, result.creatableCount)
+        }
+
+    @Test
+    fun `discography import skips an already linked release group`() =
+        runBlocking {
+            every { artists.findById(20) } returns Optional.of(artist)
+            every { externalIds.findByEntityTypeAndEntityIdAndProviderAndExternalEntityType(any(), any(), any(), any()) } answers {
+                if (firstArg<dev.marcal.mediapulse.server.model.EntityType>() == dev.marcal.mediapulse.server.model.EntityType.ARTIST) {
+                    ExternalIdentifier(
+                        entityType = dev.marcal.mediapulse.server.model.EntityType.ARTIST,
+                        entityId = 20,
+                        provider = dev.marcal.mediapulse.server.model.Provider.MUSICBRAINZ,
+                        externalEntityType = dev.marcal.mediapulse.server.model.ExternalEntityType.ARTIST,
+                        externalId = "artist-1",
+                    )
+                } else {
+                    null
+                }
+            }
+            coEvery { client.getArtistReleaseGroups("artist-1") } returns listOf(candidate)
+            every { albums.findAllByArtistId(20) } returns listOf(album)
+            every { externalIds.findByProviderAndExternalId(any(), "rg-1") } returns
+                ExternalIdentifier(
+                    entityType = dev.marcal.mediapulse.server.model.EntityType.ALBUM,
+                    entityId = 10,
+                    provider = dev.marcal.mediapulse.server.model.Provider.MUSICBRAINZ,
+                    externalEntityType = dev.marcal.mediapulse.server.model.ExternalEntityType.RELEASE_GROUP,
+                    externalId = "rg-1",
+                )
+
+            val result = service.importArtistDiscography(20, listOf("rg-1"))
+
+            assertEquals(emptyList(), result.createdAlbumIds)
+            assertEquals(listOf("rg-1"), result.skippedReleaseGroupMbids)
+            verify(exactly = 0) { albums.save(any()) }
+        }
+
+    @Test
+    fun `discography import creates a missing album with typed link and terms`() =
+        runBlocking {
+            val imported = album.copy(id = 30, title = "Another Album", titleKey = "another album", year = 2005)
+            val missing = candidate.copy(id = "rg-2", title = "Another Album", firstReleaseDate = "2005")
+            every { artists.findById(20) } returns Optional.of(artist)
+            every { externalIds.findByEntityTypeAndEntityIdAndProviderAndExternalEntityType(any(), any(), any(), any()) } answers {
+                if (firstArg<dev.marcal.mediapulse.server.model.EntityType>() == dev.marcal.mediapulse.server.model.EntityType.ARTIST) {
+                    ExternalIdentifier(
+                        entityType = dev.marcal.mediapulse.server.model.EntityType.ARTIST,
+                        entityId = 20,
+                        provider = dev.marcal.mediapulse.server.model.Provider.MUSICBRAINZ,
+                        externalEntityType = dev.marcal.mediapulse.server.model.ExternalEntityType.ARTIST,
+                        externalId = "artist-1",
+                    )
+                } else {
+                    null
+                }
+            }
+            coEvery { client.getArtistReleaseGroups("artist-1") } returns listOf(missing)
+            coEvery { client.getReleaseGroup("rg-2") } returns missing
+            every { albums.findAllByArtistId(20) } returns emptyList()
+            every { externalIds.findByProviderAndExternalId(any(), "rg-2") } returns null
+            every { albums.save(any()) } returns imported
+            every { externalIds.save(any()) } answers { firstArg() }
+            every { terms.addMusicBrainzTerms(imported, listOf("rock"), listOf("indie")) } just runs
+
+            val result = service.importArtistDiscography(20, listOf("rg-2"))
+
+            assertEquals(listOf(30L), result.createdAlbumIds)
+            verify(exactly = 1) { externalIds.save(match { it.externalEntityType?.name == "RELEASE_GROUP" }) }
+            verify(exactly = 1) { terms.addMusicBrainzTerms(imported, listOf("rock"), listOf("indie")) }
+        }
 }

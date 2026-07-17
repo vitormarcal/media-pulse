@@ -64,6 +64,36 @@ export interface MusicBrainzArtistCandidate {
   country: string | null
 }
 
+export interface MusicBrainzArtistCreateResult {
+  artistId: number
+  artistMbid: string
+  created: boolean
+}
+
+export type MusicBrainzDiscographyStatus = 'LINKED' | 'POSSIBLE_MATCH' | 'MISSING'
+
+export interface MusicBrainzDiscographyItem {
+  releaseGroupMbid: string
+  title: string
+  firstReleaseYear: number | null
+  primaryType: string | null
+  disambiguation: string | null
+  status: MusicBrainzDiscographyStatus
+  localAlbumId: number | null
+}
+
+export interface MusicBrainzDiscographyPreview {
+  artistId: number
+  items: MusicBrainzDiscographyItem[]
+  creatableCount: number
+}
+
+export interface MusicBrainzDiscographyImportResult {
+  artistId: number
+  createdAlbumIds: number[]
+  skippedReleaseGroupMbids: string[]
+}
+
 export type AlbumTermKind = 'GENRE' | 'TAG'
 export type AlbumTermSource = 'USER' | 'MUSICBRAINZ'
 

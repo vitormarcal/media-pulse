@@ -218,6 +218,25 @@ class MusicBrainzApiClient(
         query = mapOf("query" to "artist:${lucene(name)}", "limit" to limit.coerceIn(1, 10).toString()),
     ).artists
 
+    suspend fun getArtist(mbid: String) =
+        mbGet(
+            path = "/ws/2/artist/$mbid",
+            inc = "",
+            clazz = dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistCandidate::class.java,
+            mbid = mbid,
+        )
+
+    suspend fun getArtistReleaseGroups(
+        artistMbid: String,
+        limit: Int = 100,
+    ) = mbGet(
+        path = "/ws/2/release-group",
+        inc = "artist-credits",
+        clazz = MbReleaseGroupSearchResponse::class.java,
+        mbid = artistMbid,
+        query = mapOf("artist" to artistMbid, "limit" to limit.coerceIn(1, 100).toString()),
+    ).releaseGroups
+
     suspend fun resolveReleaseGroupFromRelease(mbid: String): String? =
         mbGet(
             path = "/ws/2/release/$mbid",

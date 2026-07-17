@@ -2,7 +2,7 @@
 
 ## Status
 
-Primeiro corte implementado.
+Primeiro corte implementado. O segundo corte também permite criar um artista a partir do MusicBrainz e importar release groups selecionados de sua discografia.
 
 Esta spec registra a decisão de começar pelo enriquecimento assistido de um álbum já existente. A criação manual de artistas e a importação de discografias ficam para incrementos posteriores.
 
@@ -151,4 +151,4 @@ Artista local
           -> importar tracklist e capa
 ```
 
-A próxima decisão de produto, depois deste incremento, será se a importação de discografia deve começar pela criação manual de um artista ou pela ação `Buscar outros discos deste artista` em um artista já vinculado.
+O fluxo `Adicionar artista` pesquisa e confirma uma identidade MusicBrainz antes de criar o registro local. Em seguida, `Buscar outros discos deste artista` classifica release groups como já vinculados, possível correspondência ou ausentes. Somente ausentes podem ser importados; álbuns e EPs aparecem por padrão e singles são opt-in. A importação cria álbum, ano, vínculo `RELEASE_GROUP` e termos MusicBrainz, sem capa, edição ou tracklist.

@@ -1,5 +1,7 @@
 <template>
   <main class="music-page">
+    <AddMusicBrainzArtistPanel />
+
     <div v-if="status === 'pending'" class="state-card">
       <p>Montando a página de música...</p>
     </div>
@@ -166,6 +168,7 @@
 <script setup lang="ts">
 import MediaPosterCard from '~/components/home/MediaPosterCard.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
+import AddMusicBrainzArtistPanel from '~/components/music/AddMusicBrainzArtistPanel.vue'
 import MusicCollectionContext from '~/components/music/MusicCollectionContext.vue'
 import MusicCollectionHero from '~/components/music/MusicCollectionHero.vue'
 import MusicLibraryFilters from '~/components/music/MusicLibraryFilters.vue'

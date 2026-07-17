@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.77
+  version: 1.0.0-beta.78
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -31,6 +31,68 @@ tags:
   - name: Ratings
     description: Manual ratings attached to media details.
 paths:
+  /api/music/musicbrainz/artists/candidates:
+    get:
+      tags: [Music]
+      summary: Search MusicBrainz candidates before creating a local artist
+      parameters:
+        - in: query
+          name: query
+          required: true
+          schema: { type: string, minLength: 2 }
+      responses:
+        '200': { description: Read-only artist candidate list }
+  /api/music/musicbrainz/artists:
+    post:
+      tags: [Music]
+      summary: Create or reuse a local artist from a confirmed MusicBrainz identity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [artistMbid]
+              properties:
+                artistMbid: { type: string }
+      responses:
+        '200': { description: Artist created or reused }
+        '409': { description: MBID already belongs to another local entity }
+  /api/music/artists/{artistId}/musicbrainz/discography:
+    get:
+      tags: [Music]
+      summary: Preview and classify the linked artist release groups
+      parameters:
+        - in: path
+          name: artistId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200': { description: Items classified as LINKED, POSSIBLE_MATCH, or MISSING }
+        '409': { description: Artist is not linked to MusicBrainz }
+  /api/music/artists/{artistId}/musicbrainz/discography/import:
+    post:
+      tags: [Music]
+      summary: Import selected missing release groups for a linked artist
+      parameters:
+        - in: path
+          name: artistId
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [releaseGroupMbids]
+              properties:
+                releaseGroupMbids:
+                  type: array
+                  maxItems: 50
+                  items: { type: string }
+      responses:
+        '200': { description: Missing albums created; linked or possible matches skipped }
   /api/music/albums/{albumId}/musicbrainz/candidates:
     get:
       tags: [Music]

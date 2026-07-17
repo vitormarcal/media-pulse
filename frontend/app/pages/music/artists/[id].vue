@@ -16,6 +16,12 @@
 
       <ArtistMusicBrainzPanel :artist-id="Number(data.id)" :link="data.musicBrainz" @applied="refresh" />
 
+      <ArtistMusicBrainzDiscography
+        :artist-id="Number(data.id)"
+        :linked="Boolean(data.musicBrainz)"
+        @imported="refresh"
+      />
+
       <MusicLibraryGrid
         eyebrow="Álbuns"
         title="Os discos que realmente carregaram esse nome"
@@ -35,6 +41,7 @@ import ArtistContextPanel from '~/components/music/ArtistContextPanel.vue'
 import ArtistPageHero from '~/components/music/ArtistPageHero.vue'
 import ArtistTrackList from '~/components/music/ArtistTrackList.vue'
 import ArtistMusicBrainzPanel from '~/components/music/ArtistMusicBrainzPanel.vue'
+import ArtistMusicBrainzDiscography from '~/components/music/ArtistMusicBrainzDiscography.vue'
 import MusicLibraryGrid from '~/components/music/MusicLibraryGrid.vue'
 import { useArtistPageData } from '~/composables/useArtistPageData'
 

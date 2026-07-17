@@ -134,6 +134,8 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 
 ### MusicBrainz e HTTP clients
 
+A interface de música permite adicionar um artista confirmando um candidato do MusicBrainz e, na página do artista vinculado, buscar outros release groups. A importação é seletiva e idempotente: cria somente discos ausentes e preserva possíveis correspondências para revisão manual.
+
 - `MB_IMPORT_ENABLED`
 - `MB_ENRICH_BATCH_SIZE`
 - `MB_ENRICH_MAX_TAGS`

@@ -38,6 +38,48 @@ data class MusicBrainzArtistApplyRequest(
     val artistMbid: String,
 )
 
+data class MusicBrainzArtistCreateRequest(
+    val artistMbid: String,
+)
+
+data class MusicBrainzArtistCreateResult(
+    val artistId: Long,
+    val artistMbid: String,
+    val created: Boolean,
+)
+
+enum class MusicBrainzDiscographyStatus {
+    LINKED,
+    POSSIBLE_MATCH,
+    MISSING,
+}
+
+data class MusicBrainzDiscographyItemDto(
+    val releaseGroupMbid: String,
+    val title: String,
+    val firstReleaseYear: Int?,
+    val primaryType: String?,
+    val disambiguation: String?,
+    val status: MusicBrainzDiscographyStatus,
+    val localAlbumId: Long? = null,
+)
+
+data class MusicBrainzDiscographyPreviewResponse(
+    val artistId: Long,
+    val items: List<MusicBrainzDiscographyItemDto>,
+    val creatableCount: Int,
+)
+
+data class MusicBrainzDiscographyImportRequest(
+    val releaseGroupMbids: List<String>,
+)
+
+data class MusicBrainzDiscographyImportResult(
+    val artistId: Long,
+    val createdAlbumIds: List<Long>,
+    val skippedReleaseGroupMbids: List<String>,
+)
+
 data class MusicBrainzEnrichmentResult(
     val albumId: Long? = null,
     val artistId: Long,

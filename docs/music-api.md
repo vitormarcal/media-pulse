@@ -135,11 +135,16 @@ Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, últ
 - busca e prévia MusicBrainz são read-only e toda correspondência exige confirmação do owner
 - o enriquecimento não sobrescreve título, artista, capa, tracklist ou ano já preenchido
 - identificadores MusicBrainz legados permanecem sem tipo até serem resolvidos como release
+- `POST /api/music/musicbrainz/artists` cria ou reutiliza um artista somente após validar o MBID no MusicBrainz
+- `GET /api/music/artists/{artistId}/musicbrainz/discography` é uma prévia read-only que classifica release groups
+- `POST /api/music/artists/{artistId}/musicbrainz/discography/import` aceita até 50 MBIDs pertencentes ao artista e cria somente itens classificados como ausentes
+- possíveis correspondências locais nunca são mescladas automaticamente durante a importação de discografia
 
 ## Non-goals
 
 - este contrato não cobre importação Spotify/Plex; endpoints operacionais ficam em `operations-api.md`
 - termos de álbum não documentam enriquecimento externo automático
+- importação de discografia não escolhe release, capa ou tracklist
 
 ## Critérios de aceite
 

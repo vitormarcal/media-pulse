@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 
 interface AlbumRepository : JpaRepository<Album, Long> {
+    fun findAllByArtistId(artistId: Long): List<Album>
+
     fun findByFingerprint(fingerprint: String): Album?
 
     fun findByArtistIdAndTitleKeyAndYear(
