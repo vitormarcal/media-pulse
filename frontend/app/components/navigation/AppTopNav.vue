@@ -27,8 +27,8 @@ const items = [
   { label: 'Música', href: '/music' },
   { label: 'Séries', href: '/shows' },
   { label: 'Filmes', href: '/movies' },
-  { label: 'Games', href: '/games' },
   { label: 'Livros', href: '/books' },
+  { label: 'Games', href: '/games' },
 ]
 </script>
 

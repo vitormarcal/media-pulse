@@ -14,7 +14,15 @@ import type {
   ShowsRecentResponse,
   ShowsSummaryResponse,
 } from '~/types/home'
+import type { GameLibraryCardDto, GamesLibraryResponse, GamesStatsResponse } from '~/types/games'
 import { formatRelativeDate, formatShortNumber } from '~/utils/formatting'
+
+const gameStatusLabels = {
+  PLAYING: 'Jogando',
+  BACKLOG: 'Backlog',
+  COMPLETED: 'Finalizado',
+  ABANDONED: 'Abandonado',
+} as const
 
 function mediaLabel(type: EditorialMediaType) {
   switch (type) {
@@ -26,6 +34,8 @@ function mediaLabel(type: EditorialMediaType) {
       return 'Filme'
     case 'book':
       return 'Livro'
+    case 'game':
+      return 'Game'
   }
 }
 
@@ -129,6 +139,20 @@ function recentAlbumToShelfItem(album: RecentAlbumsPageResponse['items'][number]
   }
 }
 
+function gameToShelfItem(game: GameLibraryCardDto): EditorialShelfItem {
+  return {
+    id: `game-${game.gameId}`,
+    type: 'game',
+    title: game.title,
+    subtitle: game.year ? String(game.year) : 'Game',
+    imageUrl: game.coverUrl,
+    href: `/games/${game.slug || game.gameId}`,
+    meta: game.currentStatus ? gameStatusLabels[game.currentStatus] : `${game.sessionCount} sessões`,
+    detail: game.latestSessionAt ? formatRelativeDate(game.latestSessionAt) : 'Sem sessão registrada',
+    timestamp: game.latestSessionAt,
+  }
+}
+
 function toHighlight(item: EditorialShelfItem): EditorialHighlight {
   return {
     id: item.id,
@@ -154,17 +178,21 @@ export function buildHomePageData(payload: {
   booksSummary: BooksSummaryResponse
   readingBooks: BooksListResponse
   finishedBooks: BooksListResponse
+  gamesStats: GamesStatsResponse
+  gamesLibrary: GamesLibraryResponse
 }): HomePageData {
-  const inProgress = [
+  const inProgress = sortByTimestamp([
     ...payload.currentShows.map(currentShowToShelfItem),
     ...payload.readingBooks.items.map(bookToShelfItem),
-  ].slice(0, 8)
+    ...payload.gamesLibrary.items.filter((game) => game.currentStatus === 'PLAYING').map(gameToShelfItem),
+  ]).slice(0, 8)
 
   const recentMoments = sortByTimestamp([
     ...payload.recentAlbums.items.map(recentAlbumToShelfItem),
     ...payload.recentMovies.items.map(recentMovieToShelfItem),
     ...payload.recentShows.items.map(recentShowToShelfItem),
     ...payload.finishedBooks.items.map(bookToShelfItem),
+    ...payload.gamesLibrary.items.filter((game) => game.latestSessionAt).map(gameToShelfItem),
   ]).slice(0, 12)
 
   const heroCandidates = sortByTimestamp([...inProgress, ...recentMoments])
@@ -217,6 +245,14 @@ export function buildHomePageData(payload: {
           ...payload.readingBooks.items.slice(0, 3).map(bookToShelfItem),
           ...payload.finishedBooks.items.slice(0, 3).map(bookToShelfItem),
         ],
+      },
+      {
+        id: 'games',
+        eyebrow: 'Games',
+        title: 'Controles à mão',
+        description: '',
+        summary: `${formatShortNumber(payload.gamesStats.totalGamesCount)} games · ${formatShortNumber(payload.gamesStats.sessionsCount)} sessões`,
+        items: payload.gamesLibrary.items.slice(0, 6).map(gameToShelfItem),
       },
     ],
   }

@@ -49,7 +49,7 @@ useHead({
   meta: [
     {
       name: 'description',
-      content: 'Uma home editorial para acompanhar música, filmes, séries e livros sem cara de dashboard.',
+      content: 'Uma home editorial para acompanhar música, filmes, séries, livros e games sem cara de dashboard.',
     },
   ],
 })

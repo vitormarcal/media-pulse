@@ -10,6 +10,7 @@ import type {
   ShowsRecentResponse,
   ShowsSummaryResponse,
 } from '~/types/home'
+import type { GamesLibraryResponse, GamesStatsResponse } from '~/types/games'
 import { buildHomePageData } from '~/utils/home'
 
 export async function fetchHomePageData(): Promise<HomePageData> {
@@ -27,6 +28,8 @@ export async function fetchHomePageData(): Promise<HomePageData> {
     booksSummary,
     readingBooks,
     finishedBooks,
+    gamesStats,
+    gamesLibrary,
   ] = await Promise.all([
     $fetch<MusicSummaryResponse>('/api/music/summary', { baseURL: apiBase, query: { range: 'month' } }),
     $fetch<RecentAlbumsPageResponse>('/api/music/recent-albums', { baseURL: apiBase, query: { limit: 6 } }),
@@ -44,6 +47,8 @@ export async function fetchHomePageData(): Promise<HomePageData> {
       query: { status: 'CURRENTLY_READING', limit: 4 },
     }),
     $fetch<BooksListResponse>('/api/books/list', { baseURL: apiBase, query: { status: 'READ', limit: 4 } }),
+    $fetch<GamesStatsResponse>('/api/games/stats', { baseURL: apiBase }),
+    $fetch<GamesLibraryResponse>('/api/games/library', { baseURL: apiBase, query: { limit: 6 } }),
   ])
 
   return buildHomePageData({
@@ -57,6 +62,8 @@ export async function fetchHomePageData(): Promise<HomePageData> {
     booksSummary,
     readingBooks,
     finishedBooks,
+    gamesStats,
+    gamesLibrary,
   })
 }
 

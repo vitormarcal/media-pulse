@@ -7,7 +7,7 @@
           v-model="localQuery"
           class="search-input"
           type="text"
-          placeholder="Buscar séries, filmes, livros, álbuns..."
+          placeholder="Buscar músicas, séries, filmes, livros e games..."
         />
         <button type="button" class="close-button" @click="$emit('close')">Fechar</button>
       </div>

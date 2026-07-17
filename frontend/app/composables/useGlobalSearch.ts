@@ -30,50 +30,6 @@ export async function fetchGlobalSearch(query: string): Promise<GlobalSearchData
 
   const groups = [
     group(
-      'shows',
-      'Séries',
-      shows.shows.map((item) => ({
-        id: `show-${item.showId}`,
-        kind: 'show',
-        title: item.title,
-        subtitle: item.year ? String(item.year) : 'Série',
-        href: item.slug ? `/shows/${item.slug}` : null,
-      })),
-    ),
-    group(
-      'movies',
-      'Filmes',
-      movies.movies.map((item) => ({
-        id: `movie-${item.movieId}`,
-        kind: 'movie',
-        title: item.title,
-        subtitle: item.year ? String(item.year) : 'Filme',
-        href: item.slug ? `/movies/${item.slug}` : null,
-      })),
-    ),
-    group(
-      'games',
-      'Games',
-      games.games.map((item) => ({
-        id: `game-${item.gameId}`,
-        kind: 'game',
-        title: item.title,
-        subtitle: item.year ? String(item.year) : 'Game',
-        href: item.slug ? `/games/${item.slug}` : `/games/${item.gameId}`,
-      })),
-    ),
-    group(
-      'books',
-      'Livros',
-      books.books.map((item) => ({
-        id: `book-${item.bookId}`,
-        kind: 'book',
-        title: item.title,
-        subtitle: item.authors.map((author) => author.name).join(', ') || 'Livro',
-        href: `/books/${item.slug}`,
-      })),
-    ),
-    group(
       'albums',
       'Álbuns',
       music.albums.map((item) => ({
@@ -107,6 +63,39 @@ export async function fetchGlobalSearch(query: string): Promise<GlobalSearchData
       })),
     ),
     group(
+      'shows',
+      'Séries',
+      shows.shows.map((item) => ({
+        id: `show-${item.showId}`,
+        kind: 'show',
+        title: item.title,
+        subtitle: item.year ? String(item.year) : 'Série',
+        href: item.slug ? `/shows/${item.slug}` : null,
+      })),
+    ),
+    group(
+      'movies',
+      'Filmes',
+      movies.movies.map((item) => ({
+        id: `movie-${item.movieId}`,
+        kind: 'movie',
+        title: item.title,
+        subtitle: item.year ? String(item.year) : 'Filme',
+        href: item.slug ? `/movies/${item.slug}` : null,
+      })),
+    ),
+    group(
+      'books',
+      'Livros',
+      books.books.map((item) => ({
+        id: `book-${item.bookId}`,
+        kind: 'book',
+        title: item.title,
+        subtitle: item.authors.map((author) => author.name).join(', ') || 'Livro',
+        href: `/books/${item.slug}`,
+      })),
+    ),
+    group(
       'authors',
       'Autores',
       books.authors.map((item) => ({
@@ -115,6 +104,17 @@ export async function fetchGlobalSearch(query: string): Promise<GlobalSearchData
         title: item.name,
         subtitle: 'Autor',
         href: `/books/authors/${item.id}`,
+      })),
+    ),
+    group(
+      'games',
+      'Games',
+      games.games.map((item) => ({
+        id: `game-${item.gameId}`,
+        kind: 'game',
+        title: item.title,
+        subtitle: item.year ? String(item.year) : 'Game',
+        href: item.slug ? `/games/${item.slug}` : `/games/${item.gameId}`,
       })),
     ),
   ].filter((group) => group.items.length > 0)
