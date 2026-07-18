@@ -1,11 +1,6 @@
 <template>
   <section class="context-panel">
-    <SectionHeading
-      eyebrow="Contexto"
-      title="Como esse disco apareceu no seu recorte recente"
-      description="O essencial para situar o peso do álbum sem transformar a página em painel."
-      summary="A repetição e a ordem das faixas dizem mais do que um número isolado."
-    />
+    <SectionHeading eyebrow="Histórico" title="Atividade" />
 
     <div class="panel-grid">
       <article class="stats-card">
@@ -26,7 +21,7 @@
             <strong>{{ day.plays }}</strong>
           </div>
         </div>
-        <p v-else class="days-empty">Ainda não há recorte diário suficiente para mostrar aqui.</p>
+        <p v-else class="days-empty">Nenhum play registrado.</p>
       </article>
     </div>
   </section>

@@ -2,12 +2,7 @@
   <section class="lists-panel">
     <SectionHeading
       eyebrow="Listas de álbuns"
-      :title="lists.length ? 'Recortes que incluem este álbum' : 'Este álbum ainda está fora das listas'"
-      :description="
-        lists.length
-          ? 'Listas manuais criam caminhos próprios pela coleção, com contexto e ordem definidos por você.'
-          : 'Adicione o álbum a uma lista para conectá-lo a um recorte editorial da coleção.'
-      "
+      title="Listas"
       :summary="lists.length ? `${lists.length} ${lists.length === 1 ? 'lista' : 'listas'}` : ''"
     />
 
@@ -53,7 +48,7 @@
     <div v-if="editing" class="editor-panel">
       <div>
         <p class="editor-eyebrow">Ajustes</p>
-        <h3>Organizar este álbum em listas</h3>
+        <h3>Organizar listas</h3>
       </div>
 
       <div v-if="availableLists.length" class="available-lists">

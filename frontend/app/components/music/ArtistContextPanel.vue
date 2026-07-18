@@ -1,11 +1,6 @@
 <template>
   <section class="context-panel">
-    <SectionHeading
-      eyebrow="Contexto"
-      title="O peso desse artista dentro do arquivo"
-      description="Uma leitura curta da recorrência, da cobertura da library e do rastro mais recente."
-      summary="Menos biografia, mais presença real no seu histórico."
-    />
+    <SectionHeading eyebrow="Histórico" title="Atividade" />
 
     <div class="panel-grid">
       <article class="stats-card">
@@ -29,7 +24,7 @@
             <strong>{{ day.plays }}</strong>
           </div>
         </div>
-        <p v-else class="days-empty">Ainda não há recorte diário suficiente para mostrar aqui.</p>
+        <p v-else class="days-empty">Nenhum play registrado.</p>
       </article>
     </div>
   </section>

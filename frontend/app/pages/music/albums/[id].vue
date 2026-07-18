@@ -33,15 +33,15 @@
         media-type="albums"
         :entity-id="Number(data.id)"
         :initial-rating="data.rating"
-        title="Força real desse álbum"
-        description="Use a nota para separar disco só bom de disco que realmente continua pedindo retorno."
+        title="Avaliação"
+        description=""
       />
 
       <MediaCommentsPanel
         :entity-id="Number(data.id)"
         media-type="albums"
         title="Impressões do álbum"
-        description="Espaço para primeira audição, redescobertas tardias e qualquer mudança de leitura conforme o disco volta para a rotação."
+        description=""
         :comments="data.comments"
         empty-label="Nenhuma impressão manual registrada para este álbum ainda."
       />

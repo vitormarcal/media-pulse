@@ -1,13 +1,8 @@
 <template>
   <section class="track-list">
-    <SectionHeading
-      eyebrow="Faixas"
-      title="O que mais voltou dentro desse nome"
-      description="As músicas que puxaram esse artista com mais força no arquivo."
-      summary="Faixa como detalhe recorrente, não como ruído."
-    />
+    <SectionHeading eyebrow="Faixas" title="Mais tocadas" />
 
-    <p v-if="!tracks.length" class="empty-state">Nenhuma faixa apareceu com peso suficiente para destacar aqui.</p>
+    <p v-if="!tracks.length" class="empty-state">Nenhuma faixa encontrada.</p>
 
     <div v-else class="tracks">
       <article v-for="track in tracks" :key="track.id" class="track-row">

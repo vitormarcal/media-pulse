@@ -24,9 +24,9 @@
 
       <MusicLibraryGrid
         eyebrow="Álbuns"
-        title="Os discos que realmente carregaram esse nome"
-        description="A discografia que apareceu de fato no seu arquivo, com peso de repetição e cobertura."
-        summary="Álbum continua sendo o eixo principal de leitura mesmo dentro da página de artista."
+        title="Discografia"
+        description=""
+        summary=""
         :items="data.albums"
         empty-message="Nenhum álbum apareceu para esse artista."
       />

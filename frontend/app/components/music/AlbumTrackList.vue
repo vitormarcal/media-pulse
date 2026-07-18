@@ -1,11 +1,6 @@
 <template>
   <section class="track-list">
-    <SectionHeading
-      eyebrow="Faixas"
-      title="As faixas que sustentam o álbum"
-      description="Tracklist e sinais de repetição em uma leitura direta, sem sobrecarregar a página."
-      summary="Aqui o peso está nas músicas, não no chrome."
-    />
+    <SectionHeading eyebrow="Álbum" title="Faixas" />
 
     <div class="tracks">
       <article v-for="track in tracks" :key="track.id" class="track-row">

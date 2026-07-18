@@ -1,12 +1,6 @@
 <template>
   <section class="rating-panel" :class="{ compact }">
-    <SectionHeading
-      v-if="!compact"
-      eyebrow="Avaliação"
-      :title="title"
-      :description="description"
-      summary="A nota precisa ser rápida de usar no dia a dia, mas firme o bastante para sustentar consistência ao longo do tempo."
-    />
+    <SectionHeading v-if="!compact" eyebrow="Avaliação" :title="title" :description="description" />
 
     <div class="rating-card" :class="{ compact }">
       <template v-if="compact">
@@ -42,7 +36,7 @@
               <div>
                 <p class="current-title">{{ currentScaleItem?.title ?? 'Ainda sem nota' }}</p>
                 <span class="current-copy">
-                  {{ currentScaleItem?.description ?? 'Use a escala abaixo para marcar o peso real dessa obra.' }}
+                  {{ currentScaleItem?.description ?? 'Escolha uma nota abaixo.' }}
                 </span>
               </div>
             </div>
@@ -65,11 +59,7 @@
         </div>
 
         <p class="scale-copy">
-          {{
-            currentScaleItem
-              ? currentScaleItem.description
-              : 'Escolha uma nota. O critério mais importante aqui é manter o uso consistente entre obras.'
-          }}
+          {{ currentScaleItem ? currentScaleItem.description : 'Escolha uma nota.' }}
         </p>
 
         <div class="scale-anchors">
@@ -163,8 +153,7 @@ const props = withDefaults(
   }>(),
   {
     title: 'Como essa obra fica na sua escala',
-    description:
-      'A nota deve te ajudar a distinguir algo só bom de algo que realmente merece ocupar espaço maior no seu repertório.',
+    description: '',
     label: 'Sua nota',
     compact: false,
   },
