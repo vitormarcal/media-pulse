@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.service.plex.import
 
+import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzApiClient
 import dev.marcal.mediapulse.server.integration.plex.PlexApiClient
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexAlbum
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexArtist
@@ -34,6 +35,9 @@ class PlexMusicImportServiceTest {
 
     @MockK lateinit var albumGenreService: AlbumGenreService
 
+    @MockK(relaxed = true)
+    lateinit var musicBrainzApiClient: MusicBrainzApiClient
+
     private lateinit var service: PlexMusicImportService
 
     @BeforeEach
@@ -45,6 +49,7 @@ class PlexMusicImportServiceTest {
                 canonical = canonical,
                 plexArtworkService = plexArtworkService,
                 albumGenreService = albumGenreService,
+                musicBrainzApiClient = musicBrainzApiClient,
             )
         stubEnsureTrackInAlbumThroughEnsureTrack()
     }
@@ -275,6 +280,7 @@ class PlexMusicImportServiceTest {
 
             // Mock canonical service with MBID verification
             every { canonical.ensureArtist(name = "Artist", musicbrainzId = "artist-mbid-123", spotifyId = null) } returns artist
+            coEvery { musicBrainzApiClient.resolveReleaseGroupFromRelease("album-mbid-456") } returns "release-group-456"
             every {
                 canonical.ensureAlbum(
                     artist = artist,
@@ -283,6 +289,7 @@ class PlexMusicImportServiceTest {
                     coverUrl = null,
                     musicbrainzId = "album-mbid-456",
                     spotifyId = null,
+                    musicbrainzReleaseGroupId = "release-group-456",
                 )
             } returns album
             every {
@@ -322,8 +329,10 @@ class PlexMusicImportServiceTest {
                     coverUrl = null,
                     musicbrainzId = "album-mbid-456",
                     spotifyId = null,
+                    musicbrainzReleaseGroupId = "release-group-456",
                 )
             }
+            coVerify(exactly = 1) { musicBrainzApiClient.resolveReleaseGroupFromRelease("album-mbid-456") }
             coVerify(exactly = 1) {
                 canonical.ensureTrack(
                     artist = artist,
@@ -331,6 +340,33 @@ class PlexMusicImportServiceTest {
                     durationMs = 180000,
                     musicbrainzId = "track-mbid-789",
                     spotifyId = null,
+                )
+            }
+
+            coEvery { musicBrainzApiClient.resolveReleaseGroupFromRelease("album-mbid-456") } returns null
+            every {
+                canonical.ensureAlbum(
+                    artist = artist,
+                    title = "Album",
+                    year = 2020,
+                    coverUrl = null,
+                    musicbrainzId = null,
+                    spotifyId = null,
+                    musicbrainzReleaseGroupId = null,
+                )
+            } returns album
+
+            service.importAllMusicLibrary(sectionKey = sectionKey, pageSize = 200)
+
+            coVerify(exactly = 1) {
+                canonical.ensureAlbum(
+                    artist = artist,
+                    title = "Album",
+                    year = 2020,
+                    coverUrl = null,
+                    musicbrainzId = null,
+                    spotifyId = null,
+                    musicbrainzReleaseGroupId = null,
                 )
             }
         }

@@ -1,6 +1,6 @@
 package dev.marcal.mediapulse.server.repository
 
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
+import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -18,13 +18,13 @@ class MusicQueryRepositoryTest {
     private val em = mockk<EntityManager>()
     private val mediaCommentQueryRepository = mockk<MediaCommentQueryRepository>()
     private val mediaRatingQueryRepository = mockk<MediaRatingQueryRepository>()
-    private val externalIdentifierRepository = mockk<ExternalIdentifierRepository>(relaxed = true)
+    private val albumRepository = mockk<AlbumRepository>(relaxed = true)
     private val query = mockk<Query>(relaxed = true)
     private lateinit var repository: MusicQueryRepository
 
     @BeforeEach
     fun setUp() {
-        repository = MusicQueryRepository(em, mediaCommentQueryRepository, mediaRatingQueryRepository, externalIdentifierRepository)
+        repository = MusicQueryRepository(em, mediaCommentQueryRepository, mediaRatingQueryRepository, albumRepository)
         every { em.createQuery(any<String>(), any<Class<*>>()) } returns mockk(relaxed = true)
         every { em.createNativeQuery(any<String>()) } returns query
         every { query.setParameter(any<String>(), any()) } returns query

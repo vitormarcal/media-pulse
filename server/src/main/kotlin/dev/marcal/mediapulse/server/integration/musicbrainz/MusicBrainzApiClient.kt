@@ -314,4 +314,24 @@ class MusicBrainzApiClient(
         logger.info("MusicBrainz genre lookup finished | mbid={} | finalTags={}", albumMbid, finalTags)
         return finalTags
     }
+
+    suspend fun getReleaseGroupGenreNamesByMbid(
+        releaseGroupMbid: String,
+        max: Int,
+    ): List<String> {
+        val releaseGroup =
+            mbGet(
+                path = "/ws/2/release-group/$releaseGroupMbid",
+                inc = "genres+tags",
+                clazz = MbReleaseGroupResponse::class.java,
+                mbid = releaseGroupMbid,
+            )
+        return buildList {
+            releaseGroup.genres.orEmpty().forEach { it.name?.let(::add) }
+            releaseGroup.tags.orEmpty().forEach { it.name?.let(::add) }
+        }.map { it.lowercase().trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .take(max)
+    }
 }

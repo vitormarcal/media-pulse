@@ -28,6 +28,8 @@ data class Album(
     val year: Int? = null,
     @Column(name = "cover_url")
     val coverUrl: String? = null,
+    @Column(name = "musicbrainz_release_group_id", unique = true)
+    val musicbrainzReleaseGroupId: String? = null,
     @Column(nullable = false, unique = true)
     val fingerprint: String,
     @Column(name = "created_at")

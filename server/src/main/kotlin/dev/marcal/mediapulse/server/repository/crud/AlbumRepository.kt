@@ -11,6 +11,8 @@ interface AlbumRepository : JpaRepository<Album, Long> {
 
     fun findByFingerprint(fingerprint: String): Album?
 
+    fun findByMusicbrainzReleaseGroupId(musicbrainzReleaseGroupId: String): Album?
+
     fun findByArtistIdAndTitleKeyAndYear(
         artistId: Long,
         titleKey: String,

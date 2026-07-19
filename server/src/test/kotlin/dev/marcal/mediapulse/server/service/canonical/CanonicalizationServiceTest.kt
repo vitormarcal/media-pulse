@@ -4,9 +4,12 @@ import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.music.Album
+import dev.marcal.mediapulse.server.model.music.AlbumMusicBrainzReleaseId
 import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.model.music.Track
+import dev.marcal.mediapulse.server.repository.crud.AlbumMusicBrainzReleaseIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
+import dev.marcal.mediapulse.server.repository.crud.AlbumSpotifyIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumTrackCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.ArtistRepository
 import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
@@ -20,6 +23,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.dao.DataIntegrityViolationException
 import java.time.Instant
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 class CanonicalizationServiceTest {
@@ -38,11 +42,21 @@ class CanonicalizationServiceTest {
     @MockK
     lateinit var albumTrackRepo: AlbumTrackCrudRepository
 
+    @MockK(relaxed = true)
+    lateinit var albumSpotifyIds: AlbumSpotifyIdRepository
+
+    @MockK(relaxed = true)
+    lateinit var albumMusicBrainzReleaseIds: AlbumMusicBrainzReleaseIdRepository
+
     private lateinit var service: CanonicalizationService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { albumSpotifyIds.findBySpotifyId(any()) } returns null
+        every { albumMusicBrainzReleaseIds.findByReleaseId(any()) } returns null
+        every { albumSpotifyIds.save(any()) } answers { firstArg() }
+        every { albumMusicBrainzReleaseIds.save(any()) } answers { firstArg() }
         service =
             CanonicalizationService(
                 artistRepo = artistRepo,
@@ -50,6 +64,8 @@ class CanonicalizationServiceTest {
                 trackRepo = trackRepo,
                 extRepo = extRepo,
                 albumTrackRepo = albumTrackRepo,
+                albumSpotifyIds = albumSpotifyIds,
+                albumMusicBrainzReleaseIds = albumMusicBrainzReleaseIds,
             )
     }
 
@@ -143,15 +159,8 @@ class CanonicalizationServiceTest {
                 coverUrl = "url",
                 fingerprint = "fpalbum",
             )
-        val externalId =
-            ExternalIdentifier(
-                entityType = EntityType.ALBUM,
-                entityId = 210L,
-                provider = Provider.MUSICBRAINZ,
-                externalId = "mb-album-123",
-            )
-
-        every { extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, "mb-album-123") } returns externalId
+        every { albumMusicBrainzReleaseIds.findByReleaseId("mb-album-123") } returns
+            AlbumMusicBrainzReleaseId(albumId = 210L, releaseId = "mb-album-123")
         every { albumRepo.findById(210L) } returns java.util.Optional.of(existingAlbum)
 
         val result =
@@ -363,24 +372,7 @@ class CanonicalizationServiceTest {
                 fingerprint = "fpalbum",
             )
 
-        every { extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, any()) } returns null
-        every { extRepo.findByProviderAndExternalId(Provider.SPOTIFY, any()) } returns null
         every { albumRepo.findByArtistIdAndTitleKeyAndYear(206L, "album", 2020) } returns album
-        every { extRepo.save(any()) } returnsMany
-            listOf(
-                ExternalIdentifier(
-                    entityType = EntityType.ALBUM,
-                    entityId = 216L,
-                    provider = Provider.MUSICBRAINZ,
-                    externalId = "mb-album-456",
-                ),
-                ExternalIdentifier(
-                    entityType = EntityType.ALBUM,
-                    entityId = 216L,
-                    provider = Provider.SPOTIFY,
-                    externalId = "sp-album-456",
-                ),
-            )
 
         service.ensureAlbum(
             artist = artist,
@@ -391,7 +383,38 @@ class CanonicalizationServiceTest {
             spotifyId = "sp-album-456",
         )
 
-        verify(exactly = 2) { extRepo.save(any()) }
+        verify(exactly = 1) { albumMusicBrainzReleaseIds.save(match { it.releaseId == "mb-album-456" }) }
+        verify(exactly = 1) { albumSpotifyIds.save(match { it.spotifyId == "sp-album-456" }) }
+    }
+
+    @Test
+    fun `should reject release alias when matched album belongs to another release group`() {
+        val artist = Artist(id = 206L, name = "Artist", fingerprint = "fp206")
+        val album =
+            Album(
+                id = 216L,
+                artistId = 206L,
+                title = "Album",
+                titleKey = "album",
+                year = 2020,
+                fingerprint = "fpalbum",
+                musicbrainzReleaseGroupId = "existing-group",
+            )
+        every { albumRepo.findByMusicbrainzReleaseGroupId("incoming-group") } returns null
+        every { albumRepo.findByArtistIdAndTitleKeyAndYear(206L, "album", 2020) } returns album
+
+        assertFailsWith<DataIntegrityViolationException> {
+            service.ensureAlbum(
+                artist = artist,
+                title = "Album",
+                year = 2020,
+                coverUrl = null,
+                musicbrainzId = "incoming-release",
+                musicbrainzReleaseGroupId = "incoming-group",
+            )
+        }
+
+        verify(exactly = 0) { albumMusicBrainzReleaseIds.save(any()) }
     }
 
     // ==================== ensureTrack Tests ====================

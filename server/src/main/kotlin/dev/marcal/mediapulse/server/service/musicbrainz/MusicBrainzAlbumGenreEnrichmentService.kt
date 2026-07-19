@@ -3,12 +3,10 @@ package dev.marcal.mediapulse.server.service.musicbrainz
 import dev.marcal.mediapulse.server.config.MusicBrainzProperties
 import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzApiClient
 import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzClientException
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.music.GenreSource
 import dev.marcal.mediapulse.server.repository.crud.AlbumGenreSyncStateRepository
+import dev.marcal.mediapulse.server.repository.crud.AlbumMusicBrainzReleaseIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.query.AlbumQueryRepository
 import dev.marcal.mediapulse.server.service.music.AlbumGenreService
 import kotlinx.coroutines.CoroutineScope
@@ -24,7 +22,7 @@ class MusicBrainzAlbumGenreEnrichmentService(
     private val props: MusicBrainzProperties,
     private val albumQuery: AlbumQueryRepository,
     private val albumRepo: AlbumRepository,
-    private val extIds: ExternalIdentifierRepository,
+    private val albumReleaseIds: AlbumMusicBrainzReleaseIdRepository,
     private val syncRepo: AlbumGenreSyncStateRepository,
     private val musicBrainzApiClient: MusicBrainzApiClient,
     private val albumGenreService: AlbumGenreService,
@@ -223,25 +221,26 @@ class MusicBrainzAlbumGenreEnrichmentService(
             return Outcome.SkippedDone
         }
 
-        val externalIdentifier =
-            extIds.findFirstByEntityTypeAndProviderAndEntityId(
-                entityType = EntityType.ALBUM,
-                entityId = albumId,
-                provider = Provider.MUSICBRAINZ,
-            )
+        val album = albumRepo.findById(albumId).orElse(null)
+        val releaseGroupId = album?.musicbrainzReleaseGroupId
+        val releaseId = albumReleaseIds.findFirstByAlbumIdOrderByIdAsc(albumId)?.releaseId
 
-        if (externalIdentifier == null) {
+        if (releaseGroupId == null && releaseId == null) {
             logger.info("Album {} skipped | reason=NO_MBID", albumId)
             syncRepo.markDone(albumId, source.name, "NO_MBID")
             return Outcome.SkippedNoMbid
         }
 
-        val mbid = externalIdentifier.externalId
+        val mbid = releaseGroupId ?: releaseId!!
 
         return try {
-            val tags = musicBrainzApiClient.getAlbumGenreNamesByMbid(mbid, max = props.enrich.maxTags)
+            val tags =
+                if (releaseGroupId != null) {
+                    musicBrainzApiClient.getReleaseGroupGenreNamesByMbid(releaseGroupId, max = props.enrich.maxTags)
+                } else {
+                    musicBrainzApiClient.getAlbumGenreNamesByMbid(releaseId!!, max = props.enrich.maxTags)
+                }
 
-            val album = albumRepo.findById(albumId).orElse(null)
             if (album == null) {
                 logger.warn("Album {} skipped | reason=ALBUM_NOT_FOUND_LOCAL | mbid={}", albumId, mbid)
                 syncRepo.markDone(albumId, source.name, "ALBUM_NOT_FOUND_LOCAL")

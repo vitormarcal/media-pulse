@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.service.plex.import
 
+import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzApiClient
 import dev.marcal.mediapulse.server.integration.plex.PlexApiClient
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
 import dev.marcal.mediapulse.server.model.music.Album
@@ -18,6 +19,7 @@ class PlexMusicImportService(
     private val canonical: CanonicalizationService,
     private val plexArtworkService: PlexArtworkService,
     private val albumGenreService: AlbumGenreService,
+    private val musicBrainzApiClient: MusicBrainzApiClient,
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(this::class.java)
@@ -108,6 +110,19 @@ class PlexMusicImportService(
                 stats.albumsSeen++
 
                 val mbidAlbum = PlexGuidUtil.firstValue(al.guids, "mbid")
+                val releaseGroupMbid =
+                    mbidAlbum?.let { releaseId ->
+                        try {
+                            musicBrainzApiClient.resolveReleaseGroupFromRelease(releaseId)
+                        } catch (exception: Exception) {
+                            logger.warn(
+                                "MusicBrainz release group resolution failed; release alias will not be linked. releaseId={}",
+                                releaseId,
+                                exception,
+                            )
+                            null
+                        }
+                    }
 
                 val album =
                     canonical.ensureAlbum(
@@ -115,8 +130,9 @@ class PlexMusicImportService(
                         title = al.title,
                         year = al.year,
                         coverUrl = null,
-                        musicbrainzId = mbidAlbum,
+                        musicbrainzId = mbidAlbum?.takeIf { releaseGroupMbid != null },
                         spotifyId = null,
+                        musicbrainzReleaseGroupId = releaseGroupMbid,
                     )
 
                 val genreNames =

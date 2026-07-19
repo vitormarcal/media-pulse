@@ -37,7 +37,7 @@ class SpotifyAlbumTracklistBackfillService(
     /**
      * Backfills disc/track positions for albums that:
      * - have some album_tracks with NULL position
-     * - have a Spotify album id in external_identifiers
+     * - have a Spotify album alias in album_spotify_ids
      *
      * Robust version:
      * - Always uses the canonical album artist (albums.artist_id) as the Track artist.

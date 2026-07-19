@@ -54,7 +54,7 @@ Estados possíveis:
 | 4 | Séries | Moderado | CONCLUÍDO | `tv_shows.tmdb_id`, `tv_shows.tvdb_id` e `tv_shows.imdb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V36`. |
 | 5 | Episódios | Moderado/alto | CONCLUÍDO | `tv_episodes.tmdb_id`, `tv_episodes.tvdb_id` e `tv_episodes.imdb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V37`. |
 | 6 | Artistas | Moderado | CONCLUÍDO | `artists.spotify_id` e `artists.musicbrainz_artist_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V38`. |
-| 7 | Álbuns | Alto | NÃO INICIADO | Colunas para Spotify e MusicBrainz ou tabela específica, conforme cardinalidade | Separar `RELEASE_GROUP` de `RELEASE`; confirmar se um álbum possui vários releases. |
+| 7 | Álbuns | Alto | CONCLUÍDO | `albums.musicbrainz_release_group_id`, `album_spotify_ids` e `album_musicbrainz_release_ids` | Release group é a identidade canônica; Spotify e releases são aliases técnicos. Vínculos genéricos são removidos pela migration `V39`. |
 | 8 | Faixas | Alto | NÃO INICIADO | `track_spotify_ids` e `track_musicbrainz_recording_ids` | Relações `0..N` confirmadas; uma coluna escalar causaria perda de dados. |
 | 9 | Limpeza compartilhada | Alto | NÃO INICIADO | Remoção de `external_identifiers` e do modelo genérico | Somente depois de todas as etapas anteriores estarem concluídas. |
 
@@ -64,9 +64,9 @@ Estados possíveis:
 |---|---|
 | `ARTIST / SPOTIFY` | `artists.spotify_id` |
 | `ARTIST / MUSICBRAINZ / ARTIST` | `artists.musicbrainz_artist_id` |
-| `ALBUM / SPOTIFY` | `albums.spotify_id`, se a cardinalidade permitir |
-| `ALBUM / MUSICBRAINZ / RELEASE_GROUP` | `albums.musicbrainz_release_group_id`, se a cardinalidade permitir |
-| `ALBUM / MUSICBRAINZ / RELEASE` | `albums.musicbrainz_release_id` ou tabela específica |
+| `ALBUM / SPOTIFY` | `album_spotify_ids` como aliases técnicos `0..N` |
+| `ALBUM / MUSICBRAINZ / RELEASE_GROUP` | `albums.musicbrainz_release_group_id` como identidade canônica `0..1` |
+| `ALBUM / MUSICBRAINZ / RELEASE` | `album_musicbrainz_release_ids` como aliases técnicos `0..N` |
 | `TRACK / SPOTIFY` | `track_spotify_ids` |
 | `TRACK / MUSICBRAINZ / RECORDING` | `track_musicbrainz_recording_ids` |
 | `BOOK_EDITION / ISBN_10` | `book_editions.isbn_10` |
@@ -87,6 +87,26 @@ MusicBrainz legado com `external_entity_type IS NULL` será tratado por contexto
 - `ARTIST` como candidato a `ARTIST`;
 - `ALBUM` como candidato a `RELEASE`;
 - `TRACK` como candidato a `RECORDING`.
+
+### Identidade canônica e aliases técnicos de álbuns
+
+Para o produto, um álbum representa o trabalho geral, sem distinguir país, mídia, reedição, remaster ou outra edição comercial. Por isso, o identificador MusicBrainz canônico de `albums` é o `RELEASE_GROUP`: ele representa o conceito geral do álbum e pode agrupar vários `RELEASE`.
+
+MusicBrainz `RELEASE` e IDs de álbum do Spotify são aliases técnicos de ingestão, não identidades funcionais exibidas pelo produto. Eles devem ser preservados em relações `0..N` porque Plex ou Spotify podem fornecer IDs diferentes para edições que convergem no mesmo álbum canônico. Esses aliases permitem deduplicar novas importações e localizar o álbum sem repetir resolução remota, mas não significam que o Media Pulse acompanhe qual edição específica pertence ao usuário.
+
+O fluxo esperado é:
+
+1. receber um release MusicBrainz do Plex ou um ID de álbum do Spotify;
+2. localizar o álbum por um alias já conhecido quando possível;
+3. para um release MusicBrainz novo, resolver seu `RELEASE_GROUP`;
+4. usar `albums.musicbrainz_release_group_id` como identidade canônica;
+5. manter o ID recebido somente como alias técnico associado ao álbum.
+
+### Evolução futura dos aliases Spotify
+
+A seleção da edição Spotify usada como fonte de tracklist não faz parte desta migração e não bloqueia sua conclusão. O comportamento atual, que pode processar mais de um alias do mesmo álbum no backfill, já existia em `external_identifiers` e foi preservado.
+
+Uma futura evolução do domínio Spotify deve permitir associar aliases manualmente ao mesmo álbum canônico, especialmente para remasters, relançamentos, edições regionais e mudanças de ID ao longo do tempo. Essa feature também deverá definir qual alias fornece a tracklist principal, impedir que tracklists de edições diferentes disputem posições e oferecer revisão antes de unir trabalhos potencialmente distintos. A referência conceitual é o tratamento de títulos alternativos no domínio de livros: uma entidade canônica com múltiplas representações conhecidas.
 
 ## Critério global de conclusão
 
@@ -295,3 +315,43 @@ Ao avançar uma etapa, atualizar sua linha na tabela de status e adicionar uma e
 - os contratos HTTP existentes foram preservados;
 - validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: build concluído com sucesso;
 - etapa marcada como `CONCLUÍDO`: o domínio de artistas não lê nem grava `external_identifiers`.
+
+### 2026-07-19 — Auditoria de dados de álbuns
+
+- etapa movida para `EM AUDITORIA`;
+- existem 12.218 álbuns e 790 vínculos `ALBUM` em `external_identifiers`, distribuídos entre 754 álbuns;
+- os vínculos incluem 670 identificadores Spotify em 666 álbuns, 35 MusicBrainz `RELEASE_GROUP`, três MusicBrainz `RELEASE` e 82 MusicBrainz legados sem tipo;
+- quatro álbuns possuem dois identificadores Spotify válidos cada; todos possuem faixas e histórico de reprodução Spotify, confirmando que uma coluna escalar causaria perda de dados;
+- não foram encontradas referências órfãs, duplicidades globais, providers ou tipos inesperados, valores nulos, vazios, com espaços ou em formato inválido;
+- os 82 MusicBrainz legados são tratados como candidatos a `RELEASE`: 79 aparecem isoladamente e três coexistem com um `RELEASE_GROUP`, sem conflito com identificadores tipados;
+- 85 álbuns possuem um MusicBrainz release legado ou tipado, 35 possuem release group, 79 possuem release sem release group e 29 possuem release group sem release;
+- o índice único tipado atual limita artificialmente cada álbum a um identificador por tipo MusicBrainz e não comprova a cardinalidade natural de releases;
+- o destino indicado pela auditoria é `albums.musicbrainz_release_group_id` para a relação `0..1`, `album_spotify_ids` para Spotify `0..N` e `album_musicbrainz_release_ids` para releases `0..N`;
+- a identidade canônica do produto foi definida como MusicBrainz `RELEASE_GROUP`; releases MusicBrainz e IDs Spotify são aliases técnicos de ingestão e não representam edições acompanhadas pelo produto;
+- `PlexMusicImportService` extrai o primeiro GUID `mbid` do álbum e o entrega sem tipo para `CanonicalizationService`; o fluxo de scrobble Plex não fornece atualmente MBID de álbum;
+- `SpotifyPlaybackService` entrega o ID do álbum Spotify para canonicalização; `SpotifyExtendedPlaybackService` não possui ID de álbum e deduplica pelo artista e título normalizado;
+- `CanonicalizationService.ensureAlbum` procura primeiro pelo MusicBrainz ou Spotify ID recebido, depois por artista, título e ano, e por fim pelo fingerprint; ao gravar, ambos os providers ainda são persistidos sem tipo pela função genérica `safeLink`;
+- `MusicBrainzPageEnrichmentService` pesquisa, aplica e importa discografia por `RELEASE_GROUP`, usa esse vínculo para reconhecer itens já associados e reconcilia um MusicBrainz legado consultando-o como `RELEASE` para obter o release group;
+- `MusicBrainzAlbumGenreEnrichmentService` lê o primeiro vínculo MusicBrainz do álbum sem distinguir tipo, enquanto `MusicBrainzApiClient.getAlbumGenreNamesByMbid` pressupõe que o ID recebido seja um `RELEASE`; esse comportamento é ambíguo e pode falhar para álbuns que possuem somente `RELEASE_GROUP`;
+- `MusicQueryRepository` expõe na página do álbum apenas o vínculo MusicBrainz `RELEASE_GROUP`, comportamento alinhado à identidade canônica escolhida;
+- `SpotifyBackfillQueryRepository` lê todos os IDs Spotify de álbum para completar posições de faixas; álbuns com múltiplos aliases podem aparecer mais de uma vez e o comportamento deve continuar seguro e idempotente;
+- `MusicDuplicateReviewRepository` usa `external_identifiers` apenas para vínculos de faixas e não depende dos identificadores de álbum nesta etapa;
+- os testes diretamente afetados estão em `CanonicalizationServiceTest`, `MusicBrainzPageEnrichmentServiceTest`, `MusicBrainzAlbumGenreEnrichmentServiceTest` e nos fluxos de importação/reprodução Plex e Spotify; a consulta da página do álbum também deve validar a exposição do release group canônico;
+- a auditoria de dados e usos no código foi concluída; nenhuma alteração de schema ou comportamento foi realizada.
+
+### 2026-07-19 — Conclusão de álbuns
+
+- criada a migration `V39__migrate_album_external_identifiers.sql`;
+- adicionada a coluna anulável e única `albums.musicbrainz_release_group_id`, usada como identidade canônica do trabalho geral;
+- criadas `album_spotify_ids` e `album_musicbrainz_release_ids` com chaves estrangeiras reais para `albums`, unicidade global do ID externo e suporte a aliases `0..N`;
+- a migration valida combinações, formatos, referências órfãs e cardinalidade de release group antes da cópia e confere as contagens antes de remover a origem;
+- 670 IDs Spotify são copiados para `album_spotify_ids`, 85 releases MusicBrainz tipados ou legados para `album_musicbrainz_release_ids` e 35 release groups para a coluna canônica;
+- os registros `ALBUM` são removidos de `external_identifiers` somente depois da cópia validada; a tabela genérica permanece para a futura etapa de faixas;
+- a canonicalização passou a deduplicar álbuns pelos aliases específicos e continua usando artista, título, ano e fingerprint como fallbacks;
+- a importação da biblioteca Plex resolve o release group antes da canonicalização e somente associa o release como alias técnico quando essa validação tem sucesso; divergências com um release group já associado são rejeitadas antes da gravação do alias, e o scrobble Plex continua sem MBID de álbum;
+- aplicação e importação de discografia MusicBrainz passaram a ler e gravar diretamente `albums.musicbrainz_release_group_id`;
+- o enriquecimento de gêneros passou a consultar diretamente o release group canônico quando disponível e a usar um release técnico somente como fallback;
+- a página do álbum continua expondo somente o release group, e o backfill Spotify passou a ler `album_spotify_ids` preservando o suporte a múltiplos aliases;
+- testes de canonicalização, resolução de release group, enriquecimento de gêneros, importação Plex e consultas foram adaptados ao novo modelo; a cobertura anterior de página, idempotência, artista, discografia, estados vazios e falhas temporárias MusicBrainz foi preservada;
+- validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: 268 testes concluídos e build bem-sucedido;
+- etapa marcada como `CONCLUÍDO`: o domínio de álbuns não lê nem grava `external_identifiers`.

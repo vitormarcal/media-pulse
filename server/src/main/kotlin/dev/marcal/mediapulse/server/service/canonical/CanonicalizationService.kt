@@ -4,9 +4,13 @@ import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.music.Album
+import dev.marcal.mediapulse.server.model.music.AlbumMusicBrainzReleaseId
+import dev.marcal.mediapulse.server.model.music.AlbumSpotifyId
 import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.model.music.Track
+import dev.marcal.mediapulse.server.repository.crud.AlbumMusicBrainzReleaseIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
+import dev.marcal.mediapulse.server.repository.crud.AlbumSpotifyIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumTrackCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.ArtistRepository
 import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
@@ -25,6 +29,8 @@ class CanonicalizationService(
     private val trackRepo: TrackRepository,
     private val extRepo: ExternalIdentifierRepository,
     private val albumTrackRepo: AlbumTrackCrudRepository,
+    private val albumSpotifyIds: AlbumSpotifyIdRepository,
+    private val albumMusicBrainzReleaseIds: AlbumMusicBrainzReleaseIdRepository,
 ) {
     @Transactional
     fun ensureArtist(
@@ -70,16 +76,8 @@ class CanonicalizationService(
         coverUrl: String?,
         musicbrainzId: String? = null,
         spotifyId: String? = null,
+        musicbrainzReleaseGroupId: String? = null,
     ): Album {
-        fun findByExternal(
-            provider: Provider,
-            externalId: String,
-        ): Album? {
-            val ext = extRepo.findByProviderAndExternalId(provider, externalId) ?: return null
-            if (ext.entityType != EntityType.ALBUM) return null
-            return albumRepo.findById(ext.entityId).orElse(null)
-        }
-
         val titleKey = TitleKeyUtil.albumTitleKey(title).ifBlank { "unknown" }
         val fp = FingerprintUtil.albumFp(titleKey, artist.id)
 
@@ -88,8 +86,9 @@ class CanonicalizationService(
                 ?: albumRepo.findFirstByArtistIdAndTitleKeyAndYearIsNullOrderByIdAsc(artist.id, titleKey)
 
         val byExternal =
-            musicbrainzId?.let { findByExternal(Provider.MUSICBRAINZ, it) }
-                ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
+            musicbrainzReleaseGroupId?.let(albumRepo::findByMusicbrainzReleaseGroupId)
+                ?: musicbrainzId?.let(albumMusicBrainzReleaseIds::findByReleaseId)?.let { albumRepo.findById(it.albumId).orElse(null) }
+                ?: spotifyId?.let(albumSpotifyIds::findBySpotifyId)?.let { albumRepo.findById(it.albumId).orElse(null) }
 
         val byExactYear =
             if (byExternal == null && year != null) {
@@ -133,10 +132,24 @@ class CanonicalizationService(
                 created
             }
 
-        musicbrainzId?.let { safeLink(EntityType.ALBUM, album.id, Provider.MUSICBRAINZ, it) }
-        spotifyId?.let { safeLink(EntityType.ALBUM, album.id, Provider.SPOTIFY, it) }
+        if (
+            musicbrainzReleaseGroupId != null &&
+            album.musicbrainzReleaseGroupId != null &&
+            album.musicbrainzReleaseGroupId != musicbrainzReleaseGroupId
+        ) {
+            throw DataIntegrityViolationException("MusicBrainz release belongs to a different release group")
+        }
+        val albumWithReleaseGroup =
+            if (musicbrainzReleaseGroupId != null && album.musicbrainzReleaseGroupId == null) {
+                albumRepo.save(album.copy(musicbrainzReleaseGroupId = musicbrainzReleaseGroupId, updatedAt = Instant.now()))
+            } else {
+                album
+            }
 
-        return album
+        musicbrainzId?.let { linkAlbumMusicBrainzRelease(albumWithReleaseGroup.id, it) }
+        spotifyId?.let { linkAlbumSpotifyId(albumWithReleaseGroup.id, it) }
+
+        return albumWithReleaseGroup
     }
 
     /**
@@ -297,6 +310,27 @@ class CanonicalizationService(
                     externalId = externalId,
                 ),
             )
+        }
+    }
+
+    private fun linkAlbumSpotifyId(
+        albumId: Long,
+        spotifyId: String,
+    ) {
+        if (albumSpotifyIds.findBySpotifyId(spotifyId) == null) {
+            albumSpotifyIds.save(AlbumSpotifyId(albumId = albumId, spotifyId = spotifyId))
+        }
+    }
+
+    private fun linkAlbumMusicBrainzRelease(
+        albumId: Long,
+        releaseId: String,
+    ) {
+        val existing = albumMusicBrainzReleaseIds.findByReleaseId(releaseId)
+        if (existing == null) {
+            albumMusicBrainzReleaseIds.save(AlbumMusicBrainzReleaseId(albumId = albumId, releaseId = releaseId))
+        } else if (existing.albumId != albumId) {
+            throw DataIntegrityViolationException("MusicBrainz release alias is linked to another album")
         }
     }
 }

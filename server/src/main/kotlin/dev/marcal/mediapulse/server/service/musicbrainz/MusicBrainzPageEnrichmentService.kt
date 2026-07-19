@@ -10,15 +10,11 @@ import dev.marcal.mediapulse.server.api.music.MusicBrainzDiscographyPreviewRespo
 import dev.marcal.mediapulse.server.api.music.MusicBrainzDiscographyStatus
 import dev.marcal.mediapulse.server.api.music.MusicBrainzEnrichmentResult
 import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzApiClient
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalEntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.music.Album
 import dev.marcal.mediapulse.server.model.music.Artist
+import dev.marcal.mediapulse.server.repository.crud.AlbumMusicBrainzReleaseIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import dev.marcal.mediapulse.server.repository.crud.ArtistRepository
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.service.music.AlbumTermsService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.TitleKeyUtil
@@ -32,7 +28,7 @@ class MusicBrainzPageEnrichmentService(
     private val client: MusicBrainzApiClient,
     private val albums: AlbumRepository,
     private val artists: ArtistRepository,
-    private val externalIds: ExternalIdentifierRepository,
+    private val albumReleaseIds: AlbumMusicBrainzReleaseIdRepository,
     private val albumTermsService: AlbumTermsService,
 ) {
     suspend fun searchNewArtist(query: String): List<MusicBrainzArtistCandidateDto> {
@@ -95,14 +91,14 @@ class MusicBrainzPageEnrichmentService(
     ): MusicBrainzEnrichmentResult {
         val preview = previewAlbum(albumId, releaseGroupMbid)
         val album = requireAlbum(albumId)
-        link(EntityType.ALBUM, album.id, ExternalEntityType.RELEASE_GROUP, preview.candidate.releaseGroupMbid)
+        linkReleaseGroup(album.id, preview.candidate.releaseGroupMbid)
         preview.candidate.artistMbid?.let { linkArtist(album.artistId, it) }
         val yearAdded =
             album.year == null &&
                 preview.candidate.firstReleaseYear != null &&
                 albums.promoteNullYear(album.id, preview.candidate.firstReleaseYear) > 0
         albumTermsService.addMusicBrainzTerms(album, preview.genres, preview.tags)
-        reconcileLegacyRelease(album.id)
+        reconcileReleaseGroup(album.id)
         return MusicBrainzEnrichmentResult(
             albumId = album.id,
             artistId = album.artistId,
@@ -182,7 +178,7 @@ class MusicBrainzPageEnrichmentService(
                         fingerprint = FingerprintUtil.albumFp(titleKey, artist.id),
                     ),
                 )
-            link(EntityType.ALBUM, album.id, ExternalEntityType.RELEASE_GROUP, mbid)
+            linkReleaseGroup(album.id, mbid)
             albumTermsService.addMusicBrainzTerms(album, genres, tags)
             createdIds += album.id
         }
@@ -193,8 +189,7 @@ class MusicBrainzPageEnrichmentService(
         candidate: dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbReleaseGroupCandidate,
         localAlbums: List<Album>,
     ): MusicBrainzDiscographyItemDto {
-        val linked = externalIds.findByProviderAndExternalId(Provider.MUSICBRAINZ, candidate.id)
-        val linkedAlbum = linked?.takeIf { it.entityType == EntityType.ALBUM }?.entityId
+        val linkedAlbum = albums.findByMusicbrainzReleaseGroupId(candidate.id)?.id
         val titleKey = TitleKeyUtil.albumTitleKey(candidate.title)
         val year = candidate.firstReleaseDate?.take(4)?.toIntOrNull()
         val possible = localAlbums.firstOrNull { it.titleKey == titleKey }
@@ -235,59 +230,29 @@ class MusicBrainzPageEnrichmentService(
         }
     }
 
-    private suspend fun reconcileLegacyRelease(albumId: Long) {
-        val legacy =
-            externalIds.findByEntityTypeAndEntityIdAndProviderAndExternalEntityTypeIsNull(
-                EntityType.ALBUM,
-                albumId,
-                Provider.MUSICBRAINZ,
-            ) ?: return
+    suspend fun reconcileReleaseGroup(albumId: Long) {
+        val legacy = albumReleaseIds.findFirstByAlbumIdOrderByIdAsc(albumId) ?: return
         try {
-            val releaseGroupId = client.resolveReleaseGroupFromRelease(legacy.externalId) ?: return
-            externalIds.save(legacy.copy(externalEntityType = ExternalEntityType.RELEASE))
-            val releaseGroup =
-                externalIds.findByEntityTypeAndEntityIdAndProviderAndExternalEntityType(
-                    EntityType.ALBUM,
-                    albumId,
-                    Provider.MUSICBRAINZ,
-                    ExternalEntityType.RELEASE_GROUP,
-                )
-            if (releaseGroup == null) link(EntityType.ALBUM, albumId, ExternalEntityType.RELEASE_GROUP, releaseGroupId)
+            val releaseGroupId = client.resolveReleaseGroupFromRelease(legacy.releaseId) ?: return
+            if (albums.findById(albumId).orElseThrow().musicbrainzReleaseGroupId == null) {
+                linkReleaseGroup(albumId, releaseGroupId)
+            }
         } catch (_: Exception) {
             // Preserve unresolved legacy identifiers for explicit review.
         }
     }
 
-    private fun link(
-        entityType: EntityType,
-        entityId: Long,
-        externalType: ExternalEntityType,
+    private fun linkReleaseGroup(
+        albumId: Long,
         mbid: String,
     ) {
-        val current =
-            externalIds.findByEntityTypeAndEntityIdAndProviderAndExternalEntityType(
-                entityType,
-                entityId,
-                Provider.MUSICBRAINZ,
-                externalType,
-            )
-        if (current?.externalId == mbid) return
+        val album = requireAlbum(albumId)
+        if (album.musicbrainzReleaseGroupId == mbid) return
+        if (albums.findByMusicbrainzReleaseGroupId(mbid)?.id?.let { it != albumId } == true) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "MusicBrainz identifier is linked to another local entity")
+        }
         try {
-            val legacyWithSameMbid = externalIds.findByProviderAndExternalId(Provider.MUSICBRAINZ, mbid)
-            if (current == null && legacyWithSameMbid?.entityType == entityType && legacyWithSameMbid.entityId == entityId) {
-                externalIds.save(legacyWithSameMbid.copy(externalEntityType = externalType))
-                return
-            }
-            externalIds.save(
-                current?.copy(externalId = mbid)
-                    ?: ExternalIdentifier(
-                        entityType = entityType,
-                        entityId = entityId,
-                        provider = Provider.MUSICBRAINZ,
-                        externalEntityType = externalType,
-                        externalId = mbid,
-                    ),
-            )
+            albums.save(album.copy(musicbrainzReleaseGroupId = mbid, updatedAt = java.time.Instant.now()))
         } catch (e: DataIntegrityViolationException) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "MusicBrainz identifier is linked to another local entity", e)
         }
