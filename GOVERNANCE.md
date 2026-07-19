@@ -9,7 +9,7 @@ Before implementing or changing any Media Pulse functionality, follow these rule
 
 Before starting a new feature or broad refactor, consult:
 
-* `docs/agents/feature-discovery.md`
+* `docs/feature-discovery.md`
 
 This workflow defines how features should be refined before implementation in order to keep scope, product intent, and implementation complexity aligned.
 
