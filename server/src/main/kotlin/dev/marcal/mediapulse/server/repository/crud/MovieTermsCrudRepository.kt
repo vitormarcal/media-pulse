@@ -16,13 +16,10 @@ class MovieTermsCrudRepository(
         entityManager
             .createNativeQuery(
                 """
-                SELECT m.id, ei.external_id
+                SELECT m.id, m.tmdb_id
                 FROM movies m
-                JOIN external_identifiers ei
-                  ON ei.entity_type = 'MOVIE'
-                 AND ei.entity_id = m.id
-                 AND ei.provider = 'TMDB'
                 WHERE m.terms_synced_at IS NULL
+                  AND m.tmdb_id IS NOT NULL
                 ORDER BY m.id ASC
                 LIMIT :limit
                 """.trimIndent(),
@@ -43,11 +40,8 @@ class MovieTermsCrudRepository(
                     """
                     SELECT COUNT(*)
                     FROM movies m
-                    JOIN external_identifiers ei
-                      ON ei.entity_type = 'MOVIE'
-                     AND ei.entity_id = m.id
-                     AND ei.provider = 'TMDB'
                     WHERE m.terms_synced_at IS NULL
+                      AND m.tmdb_id IS NOT NULL
                     """.trimIndent(),
                 ).singleResult as Number
         ).toLong()

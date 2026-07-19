@@ -172,7 +172,7 @@ Visibilidade:
 
 `POST /api/movies/{movieId}/terms/sync-tmdb` sincroniza termos do TMDb para o filme.
 
-- exige vínculo `TMDB` já presente em `external_identifiers`
+- exige `movies.tmdb_id` já preenchido
 - reaproveita termos existentes por `(kind, normalized_name)`
 - reativa termos/vínculos que estavam ocultos
 - importa `genres` como `GENRE` e `keywords` como `TAG`
@@ -365,7 +365,7 @@ Filmes podem ser vinculados a uma coleção oficial do TMDb, como `The Matrix Co
 `GET /api/movies/collections/{collectionId}/tmdb-members` busca os membros da coleção no TMDb sob demanda.
 
 - não persiste snapshot dos membros externos
-- cruza os membros retornados com `external_identifiers` locais por `Provider.TMDB`
+- cruza os membros retornados com `movies.tmdb_id`
 - cada membro informa `inCatalog`, `localMovieId`, `localSlug` e `tmdbUrl`
 - a UI usa esse payload para mostrar filmes ausentes e permitir adição explícita ao catálogo
 

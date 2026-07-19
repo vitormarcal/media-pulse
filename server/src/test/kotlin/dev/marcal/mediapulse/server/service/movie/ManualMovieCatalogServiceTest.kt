@@ -3,13 +3,9 @@ package dev.marcal.mediapulse.server.service.movie
 import dev.marcal.mediapulse.server.config.TmdbProperties
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbImageClient
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.image.ImageContent
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieTitleSource
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieCollectionCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
@@ -35,7 +31,6 @@ class ManualMovieCatalogServiceTest {
     private lateinit var movieTitleCrudRepository: MovieTitleCrudRepository
     private lateinit var movieCollectionCrudRepository: MovieCollectionCrudRepository
     private lateinit var movieImageCrudRepository: MovieImageCrudRepository
-    private lateinit var externalIdentifierRepository: ExternalIdentifierRepository
     private lateinit var tmdbApiClient: TmdbApiClient
     private lateinit var tmdbImageClient: TmdbImageClient
     private lateinit var imageStorageService: ImageStorageService
@@ -47,11 +42,12 @@ class ManualMovieCatalogServiceTest {
         movieTitleCrudRepository = mockk(relaxed = true)
         movieCollectionCrudRepository = mockk(relaxed = true)
         movieImageCrudRepository = mockk(relaxed = true)
-        externalIdentifierRepository = mockk(relaxed = true)
         tmdbApiClient = mockk(relaxed = true)
         tmdbImageClient = mockk(relaxed = true)
         imageStorageService = mockk(relaxed = true)
         every { movieRepository.save(any()) } answers { invocation.args[0] as Movie }
+        every { movieRepository.findByTmdbId(any()) } returns null
+        every { movieRepository.findByImdbId(any()) } returns null
 
         service =
             ManualMovieCatalogService(
@@ -59,7 +55,6 @@ class ManualMovieCatalogServiceTest {
                 movieTitleCrudRepository = movieTitleCrudRepository,
                 movieCollectionCrudRepository = movieCollectionCrudRepository,
                 movieImageCrudRepository = movieImageCrudRepository,
-                externalIdentifierRepository = externalIdentifierRepository,
                 tmdbApiClient = tmdbApiClient,
                 tmdbImageClient = tmdbImageClient,
                 imageStorageService = imageStorageService,
@@ -72,7 +67,6 @@ class ManualMovieCatalogServiceTest {
         val movie = Movie(id = 11, originalTitle = "Dune", year = 2021, slug = "dune", fingerprint = "fp")
         val request = ManualMovieCatalogService.MovieCatalogUpsertRequest(title = "Dune", year = 2021)
 
-        every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
         every { movieRepository.findByFingerprint(any()) } returnsMany listOf(null, movie)
         every { movieRepository.save(any()) } returns movie
         every { movieRepository.findById(11) } returns Optional.of(movie)
@@ -97,22 +91,13 @@ class ManualMovieCatalogServiceTest {
 
     @Test
     fun `prioriza match por tmdbId antes do fingerprint`() {
-        val existingMovie = Movie(id = 77, originalTitle = "Old", year = 2020, fingerprint = "fp-old")
+        val existingMovie = Movie(id = 77, originalTitle = "Old", year = 2020, tmdbId = "999", fingerprint = "fp-old")
 
-        every {
-            externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(EntityType.MOVIE, Provider.TMDB, "999")
-        } returns ExternalIdentifier(entityType = EntityType.MOVIE, entityId = 77, provider = Provider.TMDB, externalId = "999")
+        every { movieRepository.findByTmdbId("999") } returns existingMovie
         every { tmdbApiClient.fetchMovieDetails("999") } returns null
         every { movieRepository.findById(any()) } returns Optional.of(existingMovie)
         every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
         every { movieImageCrudRepository.existsByMovieIdAndIsPrimaryTrue(77) } returns true
-        every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns
-            ExternalIdentifier(
-                entityType = EntityType.MOVIE,
-                entityId = 77,
-                provider = Provider.TMDB,
-                externalId = "999",
-            )
 
         val result =
             service.resolveOrCreate(
@@ -132,7 +117,6 @@ class ManualMovieCatalogServiceTest {
     fun `insere capa tmdb apenas quando nao existe imagem primaria`() {
         val movie = Movie(id = 51, originalTitle = "Dune", year = 2021, slug = "dune", coverUrl = null, fingerprint = "fp")
 
-        every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
         every { movieRepository.findByFingerprint(any()) } returns movie
         every { movieRepository.findById(51) } returns Optional.of(movie.copy(coverUrl = "/covers/tmdb/movies/51/51_dune_poster.jpg"))
         every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
@@ -159,8 +143,6 @@ class ManualMovieCatalogServiceTest {
         every { movieImageCrudRepository.insertIgnore(any(), any(), any()) } just runs
         every { movieRepository.save(match { it.id == 51L && it.coverUrl == "/covers/tmdb/movies/51/51_dune_poster.jpg" }) } returns
             movie.copy(coverUrl = "/covers/tmdb/movies/51/51_dune_poster.jpg")
-        every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
-        every { externalIdentifierRepository.save(any()) } returns mockk()
 
         val result =
             service.resolveOrCreate(
@@ -188,7 +170,7 @@ class ManualMovieCatalogServiceTest {
                 "/covers/tmdb/movies/51/51_dune_poster.jpg",
             )
         }
-        verify(exactly = 1) { movieRepository.save(match { it.id == 51L && it.coverUrl != null }) }
+        verify(exactly = 1) { movieRepository.save(match { it.id == 51L && it.coverUrl != null && it.tmdbId == null }) }
     }
 
     @Test
@@ -204,7 +186,6 @@ class ManualMovieCatalogServiceTest {
                 fingerprint = "fp",
             )
 
-        every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
         every { tmdbApiClient.fetchMovieDetails("693134") } returns
             TmdbApiClient.TmdbMovieDetails(
                 title = "Dune: Part Two",
@@ -219,8 +200,6 @@ class ManualMovieCatalogServiceTest {
         every { movieRepository.save(any()) } returns savedMovie
         every { movieRepository.findById(90) } returns Optional.of(savedMovie)
         every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
-        every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
-        every { externalIdentifierRepository.save(any()) } returns mockk()
 
         service.resolveOrCreate(
             ManualMovieCatalogService.MovieCatalogUpsertRequest(
@@ -234,6 +213,7 @@ class ManualMovieCatalogServiceTest {
             movieRepository.save(
                 match {
                     it.originalTitle == "Dune: Part Two" &&
+                        it.id == 0L &&
                         it.year == 2024 &&
                         it.description == "Paul Atreides unites with Chani." &&
                         it.slug == "dune-part-two"
@@ -256,7 +236,6 @@ class ManualMovieCatalogServiceTest {
             )
         val linkedMovie = savedMovie.copy(collectionId = 12)
 
-        every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
         every { tmdbApiClient.fetchMovieDetails("603") } returns
             TmdbApiClient.TmdbMovieDetails(
                 title = "The Matrix",
@@ -275,12 +254,21 @@ class ManualMovieCatalogServiceTest {
                     ),
             )
         every { movieRepository.findByFingerprint(any()) } returns null
-        every { movieRepository.save(any()) } returnsMany listOf(savedMovie, linkedMovie)
-        every { movieRepository.findById(91) } returns Optional.of(linkedMovie)
+        every { movieRepository.save(any()) } returnsMany
+            listOf(
+                savedMovie,
+                savedMovie.copy(tmdbId = "603"),
+                savedMovie.copy(tmdbId = "603", imdbId = "tt0133093"),
+                linkedMovie,
+            )
+        every { movieRepository.findById(91) } returnsMany
+            listOf(
+                Optional.of(savedMovie),
+                Optional.of(savedMovie.copy(tmdbId = "603")),
+                Optional.of(linkedMovie),
+            )
         every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
         every { movieCollectionCrudRepository.upsertFromTmdb(any(), any(), any(), any()) } returns 12
-        every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
-        every { externalIdentifierRepository.save(any()) } returns mockk()
 
         val result =
             service.resolveOrCreate(
@@ -306,7 +294,6 @@ class ManualMovieCatalogServiceTest {
     fun `falha quando external id ja pertence a outro filme`() {
         val movie = Movie(id = 51, originalTitle = "Dune", year = 2021, slug = "dune", coverUrl = null, fingerprint = "fp")
 
-        every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
         every { movieRepository.findByFingerprint(any()) } returns movie
         every { movieRepository.findById(51) } returns Optional.of(movie)
         every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
@@ -320,15 +307,8 @@ class ManualMovieCatalogServiceTest {
                 posterPath = null,
                 backdropPath = null,
             )
-        every {
-            externalIdentifierRepository.findByProviderAndExternalId(Provider.TMDB, "222")
-        } returns
-            ExternalIdentifier(
-                entityType = EntityType.MOVIE,
-                entityId = 99,
-                provider = Provider.TMDB,
-                externalId = "222",
-            )
+        every { movieRepository.findByTmdbId("222") } returnsMany
+            listOf(null, Movie(id = 99, originalTitle = "Other", fingerprint = "other"))
 
         val exception =
             kotlin

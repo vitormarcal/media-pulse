@@ -3,12 +3,9 @@ package dev.marcal.mediapulse.server.service.movie
 import dev.marcal.mediapulse.server.config.TmdbProperties
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbImageClient
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieTitleSource
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieCollectionCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
@@ -28,7 +25,6 @@ class ManualMovieCatalogService(
     private val movieTitleCrudRepository: MovieTitleCrudRepository,
     private val movieCollectionCrudRepository: MovieCollectionCrudRepository,
     private val movieImageCrudRepository: MovieImageCrudRepository,
-    private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val tmdbApiClient: TmdbApiClient,
     private val tmdbImageClient: TmdbImageClient,
     private val imageStorageService: ImageStorageService,
@@ -257,42 +253,49 @@ class ManualMovieCatalogService(
     private fun findMovieByExternalId(
         provider: Provider,
         externalId: String,
-    ): Movie? {
-        val externalIdentifier =
-            externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
-                entityType = EntityType.MOVIE,
-                provider = provider,
-                externalId = externalId,
-            ) ?: return null
-
-        return movieRepository.findById(externalIdentifier.entityId).orElse(null)
-    }
+    ): Movie? =
+        when (provider) {
+            Provider.TMDB -> movieRepository.findByTmdbId(externalId)
+            Provider.IMDB -> movieRepository.findByImdbId(externalId)
+            else -> throw IllegalArgumentException("Unsupported movie identifier provider: $provider")
+        }
 
     private fun safeLink(
         movieId: Long,
         provider: Provider,
         externalId: String,
     ) {
-        val existing = externalIdentifierRepository.findByProviderAndExternalId(provider, externalId)
-        if (existing != null) {
-            if (existing.entityType == EntityType.MOVIE && existing.entityId == movieId) {
-                return
+        val normalizedExternalId = externalId.trim().ifBlank { return }
+        val movie = movieRepository.findById(movieId).orElseThrow()
+        val currentExternalId =
+            when (provider) {
+                Provider.TMDB -> movie.tmdbId
+                Provider.IMDB -> movie.imdbId
+                else -> throw IllegalArgumentException("Unsupported movie identifier provider: $provider")
             }
-
+        if (currentExternalId == normalizedExternalId) return
+        if (currentExternalId != null) {
             throw ResponseStatusException(
                 HttpStatus.CONFLICT,
-                "${provider.name} $externalId já está vinculado a outra entidade",
+                "Filme já possui ${provider.name} $currentExternalId",
             )
         }
 
-        externalIdentifierRepository.save(
-            ExternalIdentifier(
-                entityType = EntityType.MOVIE,
-                entityId = movieId,
-                provider = provider,
-                externalId = externalId,
-            ),
-        )
+        val existing = findMovieByExternalId(provider, normalizedExternalId)
+        if (existing != null) {
+            throw ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "${provider.name} $normalizedExternalId já está vinculado a outro filme",
+            )
+        }
+
+        val updated =
+            when (provider) {
+                Provider.TMDB -> movie.copy(tmdbId = normalizedExternalId, updatedAt = Instant.now())
+                Provider.IMDB -> movie.copy(imdbId = normalizedExternalId, updatedAt = Instant.now())
+                else -> throw IllegalArgumentException("Unsupported movie identifier provider: $provider")
+            }
+        movieRepository.save(updated)
     }
 
     private fun fillMissingMovieMetadata(

@@ -33,6 +33,10 @@ data class Movie(
     val creditsSyncedAt: Instant? = null,
     @Column(name = "companies_synced_at")
     val companiesSyncedAt: Instant? = null,
+    @Column(name = "tmdb_id", unique = true)
+    val tmdbId: String? = null,
+    @Column(name = "imdb_id", unique = true)
+    val imdbId: String? = null,
     @Column(nullable = false, unique = true)
     val fingerprint: String,
     @Column(name = "created_at")

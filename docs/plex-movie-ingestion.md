@@ -19,7 +19,7 @@ Plex payload -> Media Pulse domain:
 - `Metadata.summary` -> `movies.description`
 - `Metadata.title` -> `movie_titles.title` (localized/alternate title)
 - `Metadata.lastViewedAt` -> `movie_watches.watched_at`
-- `Metadata.Guid` with `tmdb://` and `imdb://` -> `external_identifiers` (`entity_type=MOVIE`)
+- `Metadata.Guid` with `tmdb://` and `imdb://` -> `movies.tmdb_id` and `movies.imdb_id`
 - `Metadata.Image[]` + `Metadata.thumb` -> downloaded from Plex and stored locally
 
 ## Canonical identity
@@ -28,7 +28,7 @@ Movie identity uses fingerprint by `original_title + year`.
 
 - Plex `ratingKey` and `plex://...` GUIDs are never persisted or used for reconciliation.
 - `ratingKey` is used only in memory while navigating the current Plex API import.
-- Third-party IDs (TMDB/IMDB) are stored as external identifiers when available.
+- Third-party IDs are stored in `movies.tmdb_id` and `movies.imdb_id` when available.
 
 ## Tables
 
@@ -37,7 +37,7 @@ Movie identity uses fingerprint by `original_title + year`.
 - `movie_watches`
 - `movie_images`
 
-Migrations: `V7__create_movies_schema.sql`, `V8__add_movie_images.sql`, `V9__add_slug_to_movies.sql`.
+Migrations: `V7__create_movies_schema.sql`, `V8__add_movie_images.sql`, `V9__add_slug_to_movies.sql`, `V35__migrate_movie_external_identifiers.sql`.
 
 ## Movie images
 

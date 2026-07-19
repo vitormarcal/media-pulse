@@ -16,13 +16,10 @@ class MovieCreditsCrudRepository(
         entityManager
             .createNativeQuery(
                 """
-                SELECT m.id, ei.external_id
+                SELECT m.id, m.tmdb_id
                 FROM movies m
-                JOIN external_identifiers ei
-                  ON ei.entity_type = 'MOVIE'
-                 AND ei.entity_id = m.id
-                 AND ei.provider = 'TMDB'
                 WHERE m.credits_synced_at IS NULL
+                  AND m.tmdb_id IS NOT NULL
                 ORDER BY m.id ASC
                 LIMIT :limit
                 """.trimIndent(),
@@ -43,11 +40,8 @@ class MovieCreditsCrudRepository(
                     """
                     SELECT COUNT(*)
                     FROM movies m
-                    JOIN external_identifiers ei
-                      ON ei.entity_type = 'MOVIE'
-                     AND ei.entity_id = m.id
-                     AND ei.provider = 'TMDB'
                     WHERE m.credits_synced_at IS NULL
+                      AND m.tmdb_id IS NOT NULL
                     """.trimIndent(),
                 ).singleResult as Number
         ).toInt()
@@ -77,12 +71,9 @@ class MovieCreditsCrudRepository(
         return entityManager
             .createNativeQuery(
                 """
-                SELECT ei.external_id, m.id, m.slug
-                FROM external_identifiers ei
-                JOIN movies m ON m.id = ei.entity_id
-                WHERE ei.entity_type = 'MOVIE'
-                  AND ei.provider = 'TMDB'
-                  AND ei.external_id IN (:tmdbIds)
+                SELECT m.tmdb_id, m.id, m.slug
+                FROM movies m
+                WHERE m.tmdb_id IN (:tmdbIds)
                 """.trimIndent(),
             ).setParameter("tmdbIds", normalizedIds)
             .resultList

@@ -1,12 +1,9 @@
 package dev.marcal.mediapulse.server.service.plex
 
 import dev.marcal.mediapulse.server.controller.webhook.dto.PlexWebhookPayload
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieWatch
 import dev.marcal.mediapulse.server.model.movie.MovieWatchSource
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTitleCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieWatchCrudRepository
@@ -30,7 +27,6 @@ class PlexMovieWatchServiceTest {
     private lateinit var movieRepository: MovieRepository
     private lateinit var movieTitleCrudRepository: MovieTitleCrudRepository
     private lateinit var movieWatchCrudRepository: MovieWatchCrudRepository
-    private lateinit var externalIdentifierRepository: ExternalIdentifierRepository
     private lateinit var plexMovieArtworkService: PlexMovieArtworkService
     private lateinit var service: PlexMovieWatchService
 
@@ -39,15 +35,15 @@ class PlexMovieWatchServiceTest {
         movieRepository = mockk(relaxed = true)
         movieTitleCrudRepository = mockk(relaxed = true)
         movieWatchCrudRepository = mockk(relaxed = true)
-        externalIdentifierRepository = mockk(relaxed = true)
         plexMovieArtworkService = mockk(relaxed = true)
+        every { movieRepository.findByTmdbId(any()) } returns null
+        every { movieRepository.findByImdbId(any()) } returns null
 
         service =
             PlexMovieWatchService(
                 movieRepository = movieRepository,
                 movieTitleCrudRepository = movieTitleCrudRepository,
                 movieWatchCrudRepository = movieWatchCrudRepository,
-                externalIdentifierRepository = externalIdentifierRepository,
                 plexMovieArtworkService = plexMovieArtworkService,
             )
     }
@@ -63,16 +59,20 @@ class PlexMovieWatchServiceTest {
                     originalTitle = "Eyes Wide Shut",
                     year = 1999,
                     description = "desc",
+                    slug = "eyes-wide-shut",
                     fingerprint = "fp",
                 )
 
             every { movieRepository.findByFingerprint(any()) } returns null
             every { movieRepository.findByMovieTitleAndYear(any(), any()) } returns null
-            every { movieRepository.save(capture(savedMovie)) } returns persistedMovie
+            every { movieRepository.save(capture(savedMovie)) } answers {
+                val candidate = firstArg<Movie>()
+                if (candidate.id == 0L) persistedMovie else candidate
+            }
+            every { movieRepository.findById(42) } returnsMany
+                listOf(java.util.Optional.of(persistedMovie), java.util.Optional.of(persistedMovie.copy(tmdbId = "345")))
             every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             every { movieWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
-            every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
-            every { externalIdentifierRepository.save(any()) } returns mockk()
             coEvery { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) } returns Unit
 
             val result = service.processScrobble(payload)
@@ -83,23 +83,11 @@ class PlexMovieWatchServiceTest {
             assertEquals(Instant.ofEpochSecond(1772082419), result.watchedAt)
             assertEquals("eyes-wide-shut", savedMovie.captured.slug)
 
-            verify(exactly = 1) { movieRepository.save(any()) }
+            verify(exactly = 3) { movieRepository.save(any()) }
             verify(exactly = 1) { movieWatchCrudRepository.insertIgnore(42, MovieWatchSource.PLEX.name, Instant.ofEpochSecond(1772082419)) }
             coVerify(exactly = 1) { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) }
-            verify(exactly = 1) {
-                externalIdentifierRepository.save(
-                    match {
-                        it.entityType == EntityType.MOVIE &&
-                            it.provider == Provider.TMDB &&
-                            it.externalId == "345"
-                    },
-                )
-            }
-            verify(exactly = 1) {
-                externalIdentifierRepository.save(
-                    match { it.entityType == EntityType.MOVIE && it.provider == Provider.IMDB && it.externalId == "tt0120663" },
-                )
-            }
+            verify(exactly = 1) { movieRepository.save(match { it.tmdbId == "345" && it.imdbId == null }) }
+            verify(exactly = 1) { movieRepository.save(match { it.imdbId == "tt0120663" }) }
         }
 
     @Test
@@ -133,11 +121,14 @@ class PlexMovieWatchServiceTest {
 
             every { movieRepository.findByFingerprint(any()) } returns null
             every { movieRepository.findByMovieTitleAndYear(any(), any()) } returns null
-            every { movieRepository.save(any()) } returns persistedMovie
+            every { movieRepository.save(any()) } answers {
+                val candidate = firstArg<Movie>()
+                if (candidate.id == 0L) persistedMovie else candidate
+            }
+            every { movieRepository.findById(7) } returnsMany
+                listOf(java.util.Optional.of(persistedMovie), java.util.Optional.of(persistedMovie.copy(tmdbId = "345")))
             every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             every { movieWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
-            every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
-            every { externalIdentifierRepository.save(any()) } returns mockk()
             coEvery { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) } returns Unit
 
             val before = Instant.now()
@@ -167,6 +158,8 @@ class PlexMovieWatchServiceTest {
                     year = 1992,
                     description = "canon",
                     slug = "home-alone-2-lost-in-new-york",
+                    tmdbId = "345",
+                    imdbId = "tt0120663",
                     fingerprint = "fp-existing",
                 )
 
@@ -174,8 +167,9 @@ class PlexMovieWatchServiceTest {
             every { movieRepository.findByMovieTitleAndYear("Home Alone 2 Lost in New York", 1992) } returns existingMovie
             every { movieTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             every { movieWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
-            every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
-            every { externalIdentifierRepository.save(any()) } returns mockk()
+            every { movieRepository.findById(99) } returns java.util.Optional.of(existingMovie)
+            every { movieRepository.findByTmdbId("345") } returns existingMovie
+            every { movieRepository.findByImdbId("tt0120663") } returns existingMovie
             coEvery { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) } returns Unit
 
             val result = service.processScrobble(payload)

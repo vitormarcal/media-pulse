@@ -7,6 +7,10 @@ import org.springframework.data.repository.CrudRepository
 interface MovieRepository : CrudRepository<Movie, Long> {
     fun findByFingerprint(fingerprint: String): Movie?
 
+    fun findByTmdbId(tmdbId: String): Movie?
+
+    fun findByImdbId(imdbId: String): Movie?
+
     @Query(
         nativeQuery = true,
         value = """

@@ -3,12 +3,9 @@ package dev.marcal.mediapulse.server.service.plex.import
 import dev.marcal.mediapulse.server.integration.plex.PlexApiClient
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexGuid
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieTitleSource
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTitleCrudRepository
 import dev.marcal.mediapulse.server.service.plex.PlexMovieArtworkService
@@ -23,7 +20,6 @@ class PlexMovieImportService(
     private val plexApiClient: PlexApiClient,
     private val movieRepository: MovieRepository,
     private val movieTitleCrudRepository: MovieTitleCrudRepository,
-    private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val plexMovieArtworkService: PlexMovieArtworkService,
 ) {
     companion object {
@@ -213,15 +209,48 @@ class PlexMovieImportService(
         provider: Provider,
         externalId: String,
     ) {
-        if (externalIdentifierRepository.findByProviderAndExternalId(provider, externalId) != null) return
+        val movie = movieRepository.findById(movieId).orElse(null) ?: return
+        val currentExternalId =
+            when (provider) {
+                Provider.TMDB -> movie.tmdbId
+                Provider.IMDB -> movie.imdbId
+                else -> return
+            }
+        if (currentExternalId == externalId) return
+        if (currentExternalId != null) {
+            logger.warn(
+                "Ignoring conflicting Plex movie identifier. movieId={}, provider={}, currentExternalId={}, incomingExternalId={}",
+                movieId,
+                provider,
+                currentExternalId,
+                externalId,
+            )
+            return
+        }
 
-        externalIdentifierRepository.save(
-            ExternalIdentifier(
-                entityType = EntityType.MOVIE,
-                entityId = movieId,
-                provider = provider,
-                externalId = externalId,
-            ),
+        val linkedMovie =
+            when (provider) {
+                Provider.TMDB -> movieRepository.findByTmdbId(externalId)
+                Provider.IMDB -> movieRepository.findByImdbId(externalId)
+                else -> null
+            }
+        if (linkedMovie != null) {
+            logger.warn(
+                "Ignoring Plex movie identifier linked to another movie. movieId={}, linkedMovieId={}, provider={}, externalId={}",
+                movieId,
+                linkedMovie.id,
+                provider,
+                externalId,
+            )
+            return
+        }
+
+        movieRepository.save(
+            when (provider) {
+                Provider.TMDB -> movie.copy(tmdbId = externalId, updatedAt = Instant.now())
+                Provider.IMDB -> movie.copy(imdbId = externalId, updatedAt = Instant.now())
+                else -> movie
+            },
         )
     }
 }

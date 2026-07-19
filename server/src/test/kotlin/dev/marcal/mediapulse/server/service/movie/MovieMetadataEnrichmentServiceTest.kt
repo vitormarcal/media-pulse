@@ -7,12 +7,9 @@ import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentField
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentImageSelectionRequest
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentPreviewRequest
 import dev.marcal.mediapulse.server.api.movies.MovieExternalIdDto
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import io.mockk.every
 import io.mockk.just
@@ -27,7 +24,6 @@ import kotlin.test.assertTrue
 class MovieMetadataEnrichmentServiceTest {
     private val movieQueryRepository = mockk<MovieQueryRepository>()
     private val movieRepository = mockk<MovieRepository>()
-    private val externalIdentifierRepository = mockk<ExternalIdentifierRepository>()
     private val manualMovieCatalogService = mockk<ManualMovieCatalogService>()
     private val movieTermsService = mockk<MovieTermsService>(relaxed = true)
     private val movieCreditsService = mockk<MovieCreditsService>(relaxed = true)
@@ -37,7 +33,6 @@ class MovieMetadataEnrichmentServiceTest {
         MovieMetadataEnrichmentService(
             movieQueryRepository = movieQueryRepository,
             movieRepository = movieRepository,
-            externalIdentifierRepository = externalIdentifierRepository,
             manualMovieCatalogService = manualMovieCatalogService,
             movieTermsService = movieTermsService,
             movieCreditsService = movieCreditsService,
@@ -108,7 +103,17 @@ class MovieMetadataEnrichmentServiceTest {
             Movie(id = 9, originalTitle = "Dune", year = null, description = null, slug = "dune", coverUrl = null, fingerprint = "fp")
 
         every { movieRepository.findById(9) } returnsMany
-            listOf(Optional.of(movie), Optional.of(movie.copy(year = 2021, description = "Paul Atreides accepts his destiny.")))
+            listOf(
+                Optional.of(movie),
+                Optional.of(
+                    movie.copy(
+                        year = 2021,
+                        description = "Paul Atreides accepts his destiny.",
+                        tmdbId = "438631",
+                        imdbId = "tt1160419",
+                    ),
+                ),
+            )
         every { movieRepository.save(any()) } answers { firstArg() }
         every { movieQueryRepository.getMovieDetails(9) } returns
             MovieDetailsResponse(
@@ -147,12 +152,6 @@ class MovieMetadataEnrichmentServiceTest {
             )
         } returns ManualMovieCatalogService.TmdbImageAssignmentResult(insertedCount = 1, primaryImageUrl = "/covers/tmdb/dune.jpg")
         every { manualMovieCatalogService.assignTmdbCollection(any(), any()) } answers { firstArg() }
-        every { externalIdentifierRepository.findByEntityTypeAndEntityId(EntityType.MOVIE, 9) } returns
-            listOf(
-                ExternalIdentifier(entityType = EntityType.MOVIE, entityId = 9, provider = Provider.IMDB, externalId = "tt1160419"),
-                ExternalIdentifier(entityType = EntityType.MOVIE, entityId = 9, provider = Provider.TMDB, externalId = "438631"),
-            )
-
         val response =
             service.apply(
                 9,

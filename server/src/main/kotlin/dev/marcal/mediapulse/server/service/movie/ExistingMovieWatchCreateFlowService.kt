@@ -2,9 +2,7 @@ package dev.marcal.mediapulse.server.service.movie
 
 import dev.marcal.mediapulse.server.api.movies.ManualMovieExternalIdView
 import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateResponse
-import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.movie.MovieWatchSource
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -16,7 +14,6 @@ import java.time.Instant
 class ExistingMovieWatchCreateFlowService(
     private val movieRepository: MovieRepository,
     private val manualMovieWatchRegistrationService: ManualMovieWatchRegistrationService,
-    private val externalIdentifierRepository: ExternalIdentifierRepository,
 ) {
     @Transactional
     fun execute(
@@ -35,10 +32,10 @@ class ExistingMovieWatchCreateFlowService(
             )
 
         val externalIds =
-            externalIdentifierRepository
-                .findByEntityTypeAndEntityId(EntityType.MOVIE, movieId)
-                .sortedWith(compareBy({ it.provider.name }, { it.externalId }))
-                .map { ManualMovieExternalIdView(provider = it.provider.name, externalId = it.externalId) }
+            listOfNotNull(
+                movie.imdbId?.let { ManualMovieExternalIdView(provider = "IMDB", externalId = it) },
+                movie.tmdbId?.let { ManualMovieExternalIdView(provider = "TMDB", externalId = it) },
+            )
 
         return ManualMovieWatchCreateResponse(
             movieId = movie.id,

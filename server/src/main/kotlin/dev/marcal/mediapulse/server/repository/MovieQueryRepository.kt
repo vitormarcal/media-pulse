@@ -257,7 +257,9 @@ class MovieQueryRepository(
                       mc.tmdb_id AS collection_tmdb_id,
                       mc.name AS collection_name,
                       mc.poster_url AS collection_poster_url,
-                      mc.backdrop_url AS collection_backdrop_url
+                      mc.backdrop_url AS collection_backdrop_url,
+                      m.tmdb_id,
+                      m.imdb_id
                     FROM movies m
                     LEFT JOIN movie_collections mc ON mc.id = m.collection_id
                     WHERE m.id = :movieId
@@ -309,24 +311,10 @@ class MovieQueryRepository(
                 }
 
         val externalIds =
-            entityManager
-                .createNativeQuery(
-                    """
-                    SELECT ei.provider, ei.external_id
-                    FROM external_identifiers ei
-                    WHERE ei.entity_type = 'MOVIE'
-                      AND ei.entity_id = :movieId
-                    ORDER BY ei.provider, ei.external_id
-                    """.trimIndent(),
-                ).setParameter("movieId", movieId)
-                .resultList
-                .map { row ->
-                    val fields = row as Array<*>
-                    MovieExternalIdDto(
-                        provider = fields[0] as String,
-                        externalId = fields[1] as String,
-                    )
-                }
+            listOfNotNull(
+                (base[13] as String?)?.let { MovieExternalIdDto(provider = "IMDB", externalId = it) },
+                (base[12] as String?)?.let { MovieExternalIdDto(provider = "TMDB", externalId = it) },
+            )
 
         val lists = getMovieLists(movieId)
         val companies = getMovieCompanies(movieId)

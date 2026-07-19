@@ -50,7 +50,7 @@ Estados possíveis:
 |---:|---|---|---|---|---|
 | 1 | Livros e edições | Baixo | CONCLUÍDO | `book_editions.isbn_10` e `book_editions.isbn_13` | As colunas contêm os dados canônicos. Registros válidos e órfãos do modelo genérico foram removidos pela migration `V33`. |
 | 2 | Jogos | Baixo | CONCLUÍDO | `games.igdb_id` e `games.steamgriddb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V34`. |
-| 3 | Filmes | Moderado | NÃO INICIADO | `movies.tmdb_id` e `movies.imdb_id` | Atualizar catálogo manual, importação Plex, enriquecimentos e consultas. |
+| 3 | Filmes | Moderado | CONCLUÍDO | `movies.tmdb_id` e `movies.imdb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V35`. |
 | 4 | Séries | Moderado | NÃO INICIADO | `tv_shows.tmdb_id`, `tv_shows.tvdb_id` e `tv_shows.imdb_id` | Deve ser concluída antes da etapa de episódios. |
 | 5 | Episódios | Moderado/alto | NÃO INICIADO | `tv_episodes.tmdb_id`, `tv_episodes.tvdb_id` e `tv_episodes.imdb_id` | Volume maior e impacto direto na ingestão e no histórico Plex. |
 | 6 | Artistas | Moderado | NÃO INICIADO | `artists.spotify_id` e `artists.musicbrainz_artist_id` | IDs MusicBrainz legados sem tipo devem ser auditados como candidatos a `ARTIST`. |
@@ -167,3 +167,33 @@ Ao avançar uma etapa, atualizar sua linha na tabela de status e adicionar uma e
 - adicionados testes para deduplicação por IGDB, persistência dos dois providers e exposição dos IDs na resposta do catálogo;
 - validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: build concluído com sucesso;
 - etapa marcada como `CONCLUÍDO`: o domínio de jogos não lê nem grava `external_identifiers`.
+
+### 2026-07-19 — Auditoria de filmes
+
+- etapa movida para `EM AUDITORIA`;
+- existem 335 filmes e 671 vínculos `MOVIE` em `external_identifiers`: 337 registros TMDb e 334 registros IMDb;
+- 333 filmes possuem um vínculo TMDb e um IMDb, um filme possui somente TMDb e um caso possui cardinalidade TMDb inesperada;
+- não foram encontrados IDs externos repetidos entre filmes, valores nulos, vazios ou com espaços, IDs IMDb em formato inválido, providers inesperados ou `external_entity_type` preenchido;
+- o filme `147` possuía `TMDB / 1096648` e `IMDB / tt27121876` corretos, além de uma duplicata mal classificada `TMDB / tt27121876`; a duplicata inválida foi removida manualmente, sem perda de informação;
+- existia uma referência órfã `TMDB / 1401184` para o antigo filme `323`; como não havia entidade local ou outro vínculo correspondente, ela foi removida manualmente;
+- depois de desconsiderar a duplicata mal classificada e a referência órfã, cada filme possui no máximo um ID de cada provider; `movies.tmdb_id` e `movies.imdb_id` são destinos escalares seguros;
+- o catálogo manual deduplica por TMDb ou IMDb e grava os dois providers na tabela genérica;
+- a importação da biblioteca Plex e o processamento de scrobbles Plex gravam GUIDs TMDb e IMDb na tabela genérica;
+- o enriquecimento de filmes lê e grava os vínculos, enquanto detalhes, termos, créditos, empresas e coleções usam especialmente o vínculo TMDb;
+- os contratos HTTP expõem os identificadores como uma lista e devem ser preservados durante a migração;
+- nenhuma migration ou alteração de comportamento foi realizada nesta auditoria.
+
+### 2026-07-19 — Conclusão de filmes
+
+- criada a migration `V35__migrate_movie_external_identifiers.sql`;
+- adicionadas as colunas anuláveis e únicas `movies.tmdb_id` e `movies.imdb_id`;
+- a duplicata mal classificada `TMDB / tt27121876` do filme `147` e a referência órfã `TMDB / 1401184` para o antigo filme `323` foram removidas manualmente antes da migration;
+- a migration rejeita novos dados inválidos, cardinalidade inesperada e referências órfãs, copia os vínculos válidos e confere a equivalência antes de remover a origem;
+- os registros `MOVIE` são removidos de `external_identifiers` somente depois da cópia validada;
+- `MOVIE` foi removido da constraint de tipos de `external_identifiers`, mas permanece no enum `EntityType` por ser usado em avaliações, comentários e outros modelos de domínio;
+- `TMDB` e `IMDB` permanecem na constraint de providers e no enum `Provider`, pois séries e episódios ainda dependem deles;
+- catálogo manual, importação e scrobbles Plex, enriquecimento, detalhes, termos, créditos, empresas e coleções passaram a usar as colunas de `movies`;
+- os contratos HTTP que expõem identificadores como lista foram preservados;
+- documentação da API de filmes e da ingestão Plex foi alinhada ao novo modelo;
+- validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: build concluído com sucesso;
+- etapa marcada como `CONCLUÍDO`: o domínio de filmes não lê nem grava `external_identifiers`.

@@ -10,10 +10,8 @@ import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentImageCandidatePrev
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentImagePreview
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentPreviewRequest
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentPreviewResponse
-import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -25,7 +23,6 @@ import java.time.Instant
 class MovieMetadataEnrichmentService(
     private val movieQueryRepository: MovieQueryRepository,
     private val movieRepository: MovieRepository,
-    private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val manualMovieCatalogService: ManualMovieCatalogService,
     private val movieTermsService: MovieTermsService,
     private val movieCreditsService: MovieCreditsService,
@@ -204,10 +201,10 @@ class MovieMetadataEnrichmentService(
         movieCreditsService.syncFromTmdbIfLinked(movieId)
         movieCompaniesService.syncFromTmdbIfLinked(movieId)
         val externalIds =
-            externalIdentifierRepository
-                .findByEntityTypeAndEntityId(EntityType.MOVIE, movieId)
-                .sortedWith(compareBy({ it.provider.name }, { it.externalId }))
-                .map { ManualMovieExternalIdView(provider = it.provider.name, externalId = it.externalId) }
+            listOfNotNull(
+                refreshedMovie.imdbId?.let { ManualMovieExternalIdView(provider = "IMDB", externalId = it) },
+                refreshedMovie.tmdbId?.let { ManualMovieExternalIdView(provider = "TMDB", externalId = it) },
+            )
 
         return MovieEnrichmentApplyResponse(
             movieId = movieId,
@@ -224,9 +221,7 @@ class MovieMetadataEnrichmentService(
         requestTmdbId: String?,
     ): String =
         requestTmdbId?.trim()?.ifBlank { null }
-            ?: externalIdentifierRepository
-                .findFirstByEntityTypeAndProviderAndEntityId(EntityType.MOVIE, Provider.TMDB, movieId)
-                ?.externalId
+            ?: movieRepository.findById(movieId).orElse(null)?.tmdbId
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "tmdbId é obrigatório quando o filme ainda não tem vínculo TMDb")
 
     private fun hasExternalId(
