@@ -280,6 +280,8 @@ class PlexMusicImportServiceTest {
 
             // Mock canonical service with MBID verification
             every { canonical.ensureArtist(name = "Artist", musicbrainzId = "artist-mbid-123", spotifyId = null) } returns artist
+            every { canonical.findAlbumByMusicBrainzReleaseId("album-mbid-456") } returnsMany
+                listOf(null, album.copy(musicbrainzReleaseGroupId = "release-group-456"))
             coEvery { musicBrainzApiClient.resolveReleaseGroupFromRelease("album-mbid-456") } returns "release-group-456"
             every {
                 canonical.ensureAlbum(
@@ -343,32 +345,20 @@ class PlexMusicImportServiceTest {
                 )
             }
 
-            coEvery { musicBrainzApiClient.resolveReleaseGroupFromRelease("album-mbid-456") } returns null
-            every {
-                canonical.ensureAlbum(
-                    artist = artist,
-                    title = "Album",
-                    year = 2020,
-                    coverUrl = null,
-                    musicbrainzId = null,
-                    spotifyId = null,
-                    musicbrainzReleaseGroupId = null,
-                )
-            } returns album
-
             service.importAllMusicLibrary(sectionKey = sectionKey, pageSize = 200)
 
-            coVerify(exactly = 1) {
+            coVerify(exactly = 2) {
                 canonical.ensureAlbum(
                     artist = artist,
                     title = "Album",
                     year = 2020,
                     coverUrl = null,
-                    musicbrainzId = null,
+                    musicbrainzId = "album-mbid-456",
                     spotifyId = null,
-                    musicbrainzReleaseGroupId = null,
+                    musicbrainzReleaseGroupId = "release-group-456",
                 )
             }
+            coVerify(exactly = 1) { musicBrainzApiClient.resolveReleaseGroupFromRelease("album-mbid-456") }
         }
 
     @Test

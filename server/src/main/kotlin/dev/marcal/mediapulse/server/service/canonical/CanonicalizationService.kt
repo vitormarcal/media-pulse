@@ -32,6 +32,10 @@ class CanonicalizationService(
     private val albumSpotifyIds: AlbumSpotifyIdRepository,
     private val albumMusicBrainzReleaseIds: AlbumMusicBrainzReleaseIdRepository,
 ) {
+    @Transactional(readOnly = true)
+    fun findAlbumByMusicBrainzReleaseId(releaseId: String): Album? =
+        albumMusicBrainzReleaseIds.findByReleaseId(releaseId)?.let { albumRepo.findById(it.albumId).orElse(null) }
+
     @Transactional
     fun ensureArtist(
         name: String,

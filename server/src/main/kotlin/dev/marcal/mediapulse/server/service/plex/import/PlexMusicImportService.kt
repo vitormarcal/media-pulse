@@ -110,18 +110,27 @@ class PlexMusicImportService(
                 stats.albumsSeen++
 
                 val mbidAlbum = PlexGuidUtil.firstValue(al.guids, "mbid")
+                val albumByKnownRelease = mbidAlbum?.let(canonical::findAlbumByMusicBrainzReleaseId)
                 val releaseGroupMbid =
-                    mbidAlbum?.let { releaseId ->
-                        try {
-                            musicBrainzApiClient.resolveReleaseGroupFromRelease(releaseId)
-                        } catch (exception: Exception) {
-                            logger.warn(
-                                "MusicBrainz release group resolution failed; release alias will not be linked. releaseId={}",
-                                releaseId,
-                                exception,
-                            )
-                            null
+                    if (albumByKnownRelease != null) {
+                        albumByKnownRelease.musicbrainzReleaseGroupId
+                    } else {
+                        mbidAlbum?.let { releaseId ->
+                            try {
+                                musicBrainzApiClient.resolveReleaseGroupFromRelease(releaseId)
+                            } catch (exception: Exception) {
+                                logger.warn(
+                                    "MusicBrainz release group resolution failed; release alias will not be linked. releaseId={}",
+                                    releaseId,
+                                    exception,
+                                )
+                                null
+                            }
                         }
+                    }
+                val validatedReleaseId =
+                    mbidAlbum?.takeIf {
+                        albumByKnownRelease != null || releaseGroupMbid != null
                     }
 
                 val album =
@@ -130,7 +139,7 @@ class PlexMusicImportService(
                         title = al.title,
                         year = al.year,
                         coverUrl = null,
-                        musicbrainzId = mbidAlbum?.takeIf { releaseGroupMbid != null },
+                        musicbrainzId = validatedReleaseId,
                         spotifyId = null,
                         musicbrainzReleaseGroupId = releaseGroupMbid,
                     )

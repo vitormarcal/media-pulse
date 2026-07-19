@@ -348,7 +348,7 @@ Ao avançar uma etapa, atualizar sua linha na tabela de status e adicionar uma e
 - 670 IDs Spotify são copiados para `album_spotify_ids`, 85 releases MusicBrainz tipados ou legados para `album_musicbrainz_release_ids` e 35 release groups para a coluna canônica;
 - os registros `ALBUM` são removidos de `external_identifiers` somente depois da cópia validada; a tabela genérica permanece para a futura etapa de faixas;
 - a canonicalização passou a deduplicar álbuns pelos aliases específicos e continua usando artista, título, ano e fingerprint como fallbacks;
-- a importação da biblioteca Plex resolve o release group antes da canonicalização e somente associa o release como alias técnico quando essa validação tem sucesso; divergências com um release group já associado são rejeitadas antes da gravação do alias, e o scrobble Plex continua sem MBID de álbum;
+- a importação da biblioteca Plex resolve o release group antes da canonicalização e somente associa um release novo como alias técnico quando essa validação tem sucesso; releases já associados reutilizam localmente o álbum e seu release group, sem repetir a consulta remota a cada inicialização; divergências com um release group já associado são rejeitadas antes da gravação do alias, e o scrobble Plex continua sem MBID de álbum;
 - aplicação e importação de discografia MusicBrainz passaram a ler e gravar diretamente `albums.musicbrainz_release_group_id`;
 - o enriquecimento de gêneros passou a consultar diretamente o release group canônico quando disponível e a usar um release técnico somente como fallback;
 - a página do álbum continua expondo somente o release group, e o backfill Spotify passou a ler `album_spotify_ids` preservando o suporte a múltiplos aliases;
