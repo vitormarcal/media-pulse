@@ -1,8 +1,6 @@
 package dev.marcal.mediapulse.server.service.plex
 
 import dev.marcal.mediapulse.server.controller.webhook.dto.PlexWebhookPayload
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.plex.PlexEventType
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
@@ -10,12 +8,12 @@ import dev.marcal.mediapulse.server.model.tv.TvEpisodeWatch
 import dev.marcal.mediapulse.server.model.tv.TvEpisodeWatchSource
 import dev.marcal.mediapulse.server.model.tv.TvShow
 import dev.marcal.mediapulse.server.model.tv.TvShowTitleSource
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeWatchCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowTitleCrudRepository
 import dev.marcal.mediapulse.server.util.FingerprintUtil
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -26,8 +24,11 @@ class PlexEpisodeWatchService(
     private val tvShowTitleCrudRepository: TvShowTitleCrudRepository,
     private val tvEpisodeRepository: TvEpisodeRepository,
     private val tvEpisodeWatchCrudRepository: TvEpisodeWatchCrudRepository,
-    private val externalIdentifierRepository: ExternalIdentifierRepository,
 ) {
+    companion object {
+        private val logger = LoggerFactory.getLogger(this::class.java)
+    }
+
     @Transactional
     suspend fun processScrobble(payload: PlexWebhookPayload): TvEpisodeWatch? {
         val meta = payload.metadata
@@ -83,8 +84,9 @@ class PlexEpisodeWatchService(
             )
 
         val episodeExternalIds = extractEpisodeExternalIds(meta.guidList)
+        val resolvableEpisodeExternalIds = unambiguousExternalIds(episodeExternalIds)
         val existingEpisode =
-            findEpisodeByExternalIds(episodeExternalIds, show.id)
+            findEpisodeByExternalIds(resolvableEpisodeExternalIds, show.id)
                 ?: tvEpisodeRepository.findByFingerprint(episodeFingerprint)
                 ?: tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(show.id, meta.parentIndex, meta.index)
 
@@ -107,7 +109,7 @@ class PlexEpisodeWatchService(
                 mergeEpisode(existingEpisode, meta, episodeTitle, episodeFingerprint, seasonTitle)
             }
 
-        persistEpisodeExternalIds(episode.id, episodeExternalIds)
+        persistEpisodeExternalIds(episode, episodeExternalIds)
 
         val watchedAt = meta.lastViewedAt ?: Instant.now()
         tvEpisodeWatchCrudRepository.insertIgnore(
@@ -128,13 +130,7 @@ class PlexEpisodeWatchService(
         showId: Long,
     ): TvEpisode? {
         externalIds.forEach { (provider, externalId) ->
-            val identifier =
-                externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
-                    entityType = EntityType.EPISODE,
-                    provider = provider,
-                    externalId = externalId,
-                ) ?: return@forEach
-            val episode = tvEpisodeRepository.findById(identifier.entityId).orElse(null) ?: return@forEach
+            val episode = findEpisodeByExternalId(provider, externalId) ?: return@forEach
             if (episode.showId == showId) return episode
         }
         return null
@@ -186,18 +182,59 @@ class PlexEpisodeWatchService(
     }
 
     private fun persistEpisodeExternalIds(
-        episodeId: Long,
+        episode: TvEpisode,
         externalIds: List<Pair<Provider, String>>,
     ) {
-        externalIds.forEach { (provider, externalId) ->
-            safeLink(
-                entityType = EntityType.EPISODE,
-                entityId = episodeId,
-                provider = provider,
-                externalId = externalId,
-            )
+        var updatedEpisode = episode
+        externalIds.groupBy({ it.first }, { it.second }).forEach { (provider, externalIdsForProvider) ->
+            if (externalIdsForProvider.size > 1) {
+                logger.warn(
+                    "Ignoring ambiguous Plex episode identifiers. episodeId={}, showId={}, provider={}, candidates={}",
+                    episode.id,
+                    episode.showId,
+                    provider,
+                    externalIdsForProvider,
+                )
+                return@forEach
+            }
+            val externalId = externalIdsForProvider.single()
+            val currentExternalId = updatedEpisode.externalId(provider)
+            if (currentExternalId == externalId) return@forEach
+            if (currentExternalId != null) {
+                logger.warn(
+                    "Ignoring conflicting Plex episode identifier. episodeId={}, showId={}, provider={}, currentExternalId={}, incomingExternalId={}",
+                    episode.id,
+                    episode.showId,
+                    provider,
+                    currentExternalId,
+                    externalId,
+                )
+                return@forEach
+            }
+            val linkedEpisode = findEpisodeByExternalId(provider, externalId)
+            if (linkedEpisode != null) {
+                if (linkedEpisode.id != episode.id) {
+                    logger.warn(
+                        "Ignoring Plex episode identifier linked to another episode. episodeId={}, showId={}, linkedEpisodeId={}, provider={}, incomingExternalId={}",
+                        episode.id,
+                        episode.showId,
+                        linkedEpisode.id,
+                        provider,
+                        externalId,
+                    )
+                }
+                return@forEach
+            }
+            updatedEpisode = updatedEpisode.withExternalId(provider, externalId)
         }
+        if (updatedEpisode != episode) tvEpisodeRepository.save(updatedEpisode)
     }
+
+    private fun unambiguousExternalIds(externalIds: List<Pair<Provider, String>>): List<Pair<Provider, String>> =
+        externalIds
+            .groupBy({ it.first }, { it.second })
+            .filterValues { it.size == 1 }
+            .map { (provider, ids) -> provider to ids.single() }
 
     private fun extractEpisodeExternalIds(guidList: List<PlexWebhookPayload.PlexMetadata.PlexGuidMetadata>): List<Pair<Provider, String>> =
         guidList
@@ -213,24 +250,35 @@ class PlexEpisodeWatchService(
             .filter { (_, externalId) -> externalId.isNotBlank() }
             .distinct()
 
-    private fun safeLink(
-        entityType: EntityType,
-        entityId: Long,
+    private fun findEpisodeByExternalId(
         provider: Provider,
-        externalId: String?,
-    ) {
-        val cleanId = externalId?.trim()?.ifBlank { null } ?: return
-        if (externalIdentifierRepository.findByProviderAndExternalId(provider, cleanId) != null) return
+        externalId: String,
+    ): TvEpisode? =
+        when (provider) {
+            Provider.TMDB -> tvEpisodeRepository.findByTmdbId(externalId)
+            Provider.TVDB -> tvEpisodeRepository.findByTvdbId(externalId)
+            Provider.IMDB -> tvEpisodeRepository.findByImdbId(externalId)
+            else -> null
+        }
 
-        externalIdentifierRepository.save(
-            ExternalIdentifier(
-                entityType = entityType,
-                entityId = entityId,
-                provider = provider,
-                externalId = cleanId,
-            ),
-        )
-    }
+    private fun TvEpisode.externalId(provider: Provider): String? =
+        when (provider) {
+            Provider.TMDB -> tmdbId
+            Provider.TVDB -> tvdbId
+            Provider.IMDB -> imdbId
+            else -> null
+        }
+
+    private fun TvEpisode.withExternalId(
+        provider: Provider,
+        externalId: String,
+    ): TvEpisode =
+        when (provider) {
+            Provider.TMDB -> copy(tmdbId = externalId, updatedAt = Instant.now())
+            Provider.TVDB -> copy(tvdbId = externalId, updatedAt = Instant.now())
+            Provider.IMDB -> copy(imdbId = externalId, updatedAt = Instant.now())
+            else -> this
+        }
 
     private fun resolveSlug(slug: String?): String? = slug?.trim()?.ifBlank { null }
 }

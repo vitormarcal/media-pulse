@@ -32,6 +32,12 @@ data class TvEpisode(
     val originallyAvailableAt: LocalDate? = null,
     @Column(nullable = false, unique = true)
     val fingerprint: String,
+    @Column(name = "tmdb_id", unique = true)
+    val tmdbId: String? = null,
+    @Column(name = "tvdb_id", unique = true)
+    val tvdbId: String? = null,
+    @Column(name = "imdb_id", unique = true)
+    val imdbId: String? = null,
     @Column(name = "created_at")
     val createdAt: Instant = Instant.now(),
     @Column(name = "updated_at")

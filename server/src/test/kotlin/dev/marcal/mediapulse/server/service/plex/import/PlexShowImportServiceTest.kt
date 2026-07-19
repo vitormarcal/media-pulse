@@ -5,8 +5,6 @@ import dev.marcal.mediapulse.server.integration.plex.dto.PlexEpisode
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexGuid
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexShow
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvShow
@@ -46,6 +44,9 @@ class PlexShowImportServiceTest {
         tvShowTitleCrudRepository = mockk(relaxed = true)
         tvEpisodeRepository = mockk(relaxed = true)
         externalIdentifierRepository = mockk(relaxed = true)
+        every { tvEpisodeRepository.findByTmdbId(any()) } returns null
+        every { tvEpisodeRepository.findByTvdbId(any()) } returns null
+        every { tvEpisodeRepository.findByImdbId(any()) } returns null
         plexShowArtworkService = mockk(relaxed = true)
 
         service =
@@ -54,7 +55,6 @@ class PlexShowImportServiceTest {
                 tvShowRepository = tvShowRepository,
                 tvShowTitleCrudRepository = tvShowTitleCrudRepository,
                 tvEpisodeRepository = tvEpisodeRepository,
-                externalIdentifierRepository = externalIdentifierRepository,
                 plexShowArtworkService = plexShowArtworkService,
             )
     }
@@ -163,15 +163,8 @@ class PlexShowImportServiceTest {
                     "/library/metadata/200/thumb/1",
                 )
             }
-            verify(exactly = 1) { tvEpisodeRepository.save(match { it.showId == 10L && it.episodeNumber == 1 }) }
-            verify(exactly = 2) {
-                externalIdentifierRepository.save(
-                    match {
-                        it.entityType == EntityType.EPISODE &&
-                            (it.provider == Provider.TVDB || it.provider == Provider.IMDB)
-                    },
-                )
-            }
+            verify(exactly = 1) { tvEpisodeRepository.save(match { it.id == 0L && it.showId == 10L && it.episodeNumber == 1 }) }
+            verify(exactly = 1) { tvEpisodeRepository.save(match { it.id == 20L && it.tvdbId != null && it.imdbId != null }) }
         }
 
     @Test
@@ -222,20 +215,14 @@ class PlexShowImportServiceTest {
                 )
 
             every { tvShowRepository.findByTvdbId("371980") } returns existingShow
-            every {
-                externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
-                    EntityType.EPISODE,
-                    Provider.TVDB,
-                    "8956111",
-                )
-            } returns ExternalIdentifier(entityType = EntityType.EPISODE, entityId = 20, provider = Provider.TVDB, externalId = "8956111")
+            every { tvEpisodeRepository.findByTvdbId("8956111") } returns existingEpisode.copy(tvdbId = "8956111")
             every { tvShowRepository.findById(10) } returns java.util.Optional.of(existingShow)
             every { tvEpisodeRepository.findById(20) } returns java.util.Optional.of(existingEpisode)
             every { externalIdentifierRepository.findByProviderAndExternalId(Provider.TVDB, "8956111") } returns mockk()
             every { tvShowRepository.findByFingerprint(any()) } returns null
             every { tvEpisodeRepository.findByFingerprint(any()) } returns existingEpisode
             every { tvShowRepository.save(any()) } returns existingShow.copy(description = "updated-show", year = 2022, slug = "severance")
-            every { tvEpisodeRepository.save(any()) } returns existingEpisode.copy(summary = "updated-episode")
+            every { tvEpisodeRepository.save(any()) } answers { firstArg() }
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
 
             val persistedShow = service.upsertShow(show)
@@ -245,6 +232,7 @@ class PlexShowImportServiceTest {
             assertEquals(2022, persistedShow.year)
             assertEquals("severance", persistedShow.slug)
             assertEquals("updated-episode", persistedEpisode.summary)
+            assertEquals("8956111", persistedEpisode.tvdbId)
 
             verify(exactly = 1) {
                 tvShowRepository.save(
@@ -289,6 +277,70 @@ class PlexShowImportServiceTest {
         assertEquals(20, result.id)
         verify(exactly = 0) { externalIdentifierRepository.findByProviderAndExternalId(Provider.PLEX, any()) }
         verify(exactly = 0) { externalIdentifierRepository.save(any()) }
+        verify(exactly = 0) { tvEpisodeRepository.save(any()) }
+    }
+
+    @Test
+    fun `should preserve current episode id when plex sends a conflicting provider id`() {
+        val show = TvShow(id = 10, originalTitle = "Severance", year = 2022, fingerprint = "show-fp")
+        val existingEpisode =
+            TvEpisode(
+                id = 20,
+                showId = 10,
+                title = "Good News About Hell",
+                seasonNumber = 1,
+                episodeNumber = 1,
+                fingerprint = "episode-fp",
+                tvdbId = "8956111",
+            )
+        val plexEpisode =
+            PlexEpisode(
+                ratingKey = "ep-1",
+                title = "Good News About Hell",
+                guid = "plex://episode/ep-1",
+                parentIndex = 1,
+                index = 1,
+                guids = listOf(PlexGuid("tvdb://9999999")),
+            )
+
+        every { tvEpisodeRepository.findByFingerprint(any()) } returns existingEpisode
+
+        val result = service.upsertEpisode(show, plexEpisode)
+
+        assertEquals("8956111", result.tvdbId)
+        verify(exactly = 0) { tvEpisodeRepository.save(any()) }
+    }
+
+    @Test
+    fun `should ignore ambiguous ids from the same provider`() {
+        val show = TvShow(id = 10, originalTitle = "Severance", year = 2022, fingerprint = "show-fp")
+        val existingEpisode =
+            TvEpisode(
+                id = 20,
+                showId = 10,
+                title = "Good News About Hell",
+                seasonNumber = 1,
+                episodeNumber = 1,
+                fingerprint = "episode-fp",
+            )
+        val plexEpisode =
+            PlexEpisode(
+                ratingKey = "ep-1",
+                title = "Good News About Hell",
+                guid = "plex://episode/ep-1",
+                parentIndex = 1,
+                index = 1,
+                guids = listOf(PlexGuid("tvdb://111"), PlexGuid("tvdb://222")),
+            )
+
+        every { tvEpisodeRepository.findByFingerprint(any()) } returns existingEpisode
+
+        val result = service.upsertEpisode(show, plexEpisode)
+
+        assertEquals(20, result.id)
+        assertEquals(null, result.tvdbId)
+        verify(exactly = 0) { tvEpisodeRepository.findByTvdbId("111") }
+        verify(exactly = 0) { tvEpisodeRepository.findByTvdbId("222") }
         verify(exactly = 0) { tvEpisodeRepository.save(any()) }
     }
 }

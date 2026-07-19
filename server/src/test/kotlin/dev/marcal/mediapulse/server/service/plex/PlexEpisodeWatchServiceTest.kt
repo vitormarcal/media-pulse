@@ -1,8 +1,6 @@
 package dev.marcal.mediapulse.server.service.plex
 
 import dev.marcal.mediapulse.server.controller.webhook.dto.PlexWebhookPayload
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvEpisodeWatchSource
 import dev.marcal.mediapulse.server.model.tv.TvShow
@@ -41,6 +39,9 @@ class PlexEpisodeWatchServiceTest {
         tvEpisodeRepository = mockk(relaxed = true)
         tvEpisodeWatchCrudRepository = mockk(relaxed = true)
         externalIdentifierRepository = mockk(relaxed = true)
+        every { tvEpisodeRepository.findByTmdbId(any()) } returns null
+        every { tvEpisodeRepository.findByTvdbId(any()) } returns null
+        every { tvEpisodeRepository.findByImdbId(any()) } returns null
 
         service =
             PlexEpisodeWatchService(
@@ -48,7 +49,6 @@ class PlexEpisodeWatchServiceTest {
                 tvShowTitleCrudRepository = tvShowTitleCrudRepository,
                 tvEpisodeRepository = tvEpisodeRepository,
                 tvEpisodeWatchCrudRepository = tvEpisodeWatchCrudRepository,
-                externalIdentifierRepository = externalIdentifierRepository,
             )
     }
 
@@ -104,22 +104,11 @@ class PlexEpisodeWatchServiceTest {
             assertEquals(LocalDate.parse("2009-05-11"), savedEpisode.captured.originallyAvailableAt)
 
             verify(exactly = 1) { tvShowRepository.save(any()) }
-            verify(exactly = 1) { tvEpisodeRepository.save(any()) }
+            verify(exactly = 2) { tvEpisodeRepository.save(any()) }
             verify(exactly = 1) {
                 tvEpisodeWatchCrudRepository.insertIgnore(3963, TvEpisodeWatchSource.PLEX.name, Instant.ofEpochSecond(1775146349))
             }
-            verify(exactly = 1) {
-                externalIdentifierRepository.save(
-                    match {
-                        it.entityType == EntityType.EPISODE &&
-                            it.provider == Provider.TVDB &&
-                            it.externalId == "588991"
-                    },
-                )
-            }
-            verify(exactly = 0) {
-                externalIdentifierRepository.save(match { it.provider == Provider.PLEX })
-            }
+            verify(exactly = 1) { tvEpisodeRepository.save(match { it.id == 3963L && it.tvdbId == "588991" }) }
         }
 
     @Test
@@ -159,7 +148,12 @@ class PlexEpisodeWatchServiceTest {
             assertNotNull(result)
             assertEquals(20, result.episodeId)
             verify(exactly = 1) { tvShowRepository.save(match { it.id == 10L && it.slug == "the-big-bang-theory" && it.year == 2009 }) }
-            verify(exactly = 1) { tvEpisodeRepository.save(any()) }
+            verify(exactly = 2) { tvEpisodeRepository.save(any()) }
+            verify(exactly = 1) {
+                tvEpisodeRepository.save(
+                    match { it.id == 20L && it.tmdbId == "64673" && it.tvdbId == "588991" && it.imdbId == "tt1426233" },
+                )
+            }
             verify(exactly = 1) { tvShowRepository.findByFingerprint(any()) }
             verify(exactly = 1) { tvEpisodeRepository.findByFingerprint(any()) }
         }

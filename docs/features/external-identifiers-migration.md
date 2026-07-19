@@ -52,7 +52,7 @@ Estados possíveis:
 | 2 | Jogos | Baixo | CONCLUÍDO | `games.igdb_id` e `games.steamgriddb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V34`. |
 | 3 | Filmes | Moderado | CONCLUÍDO | `movies.tmdb_id` e `movies.imdb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V35`. |
 | 4 | Séries | Moderado | CONCLUÍDO | `tv_shows.tmdb_id`, `tv_shows.tvdb_id` e `tv_shows.imdb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V36`. |
-| 5 | Episódios | Moderado/alto | NÃO INICIADO | `tv_episodes.tmdb_id`, `tv_episodes.tvdb_id` e `tv_episodes.imdb_id` | Volume maior e impacto direto na ingestão e no histórico Plex. |
+| 5 | Episódios | Moderado/alto | CONCLUÍDO | `tv_episodes.tmdb_id`, `tv_episodes.tvdb_id` e `tv_episodes.imdb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V37`. |
 | 6 | Artistas | Moderado | NÃO INICIADO | `artists.spotify_id` e `artists.musicbrainz_artist_id` | IDs MusicBrainz legados sem tipo devem ser auditados como candidatos a `ARTIST`. |
 | 7 | Álbuns | Alto | NÃO INICIADO | Colunas para Spotify e MusicBrainz ou tabela específica, conforme cardinalidade | Separar `RELEASE_GROUP` de `RELEASE`; confirmar se um álbum possui vários releases. |
 | 8 | Faixas | Alto | NÃO INICIADO | `track_spotify_ids` e `track_musicbrainz_recording_ids` | Relações `0..N` confirmadas; uma coluna escalar causaria perda de dados. |
@@ -228,3 +228,40 @@ Ao avançar uma etapa, atualizar sua linha na tabela de status e adicionar uma e
 - documentação da ingestão Plex foi alinhada ao novo modelo;
 - validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: build concluído com sucesso;
 - etapa marcada como `CONCLUÍDO`: o domínio de séries não lê nem grava `external_identifiers`.
+
+### 2026-07-19 — Início da auditoria de episódios
+
+- etapa movida para `EM AUDITORIA`;
+- o schema atual de `tv_episodes` ainda não possui colunas próprias para TMDb, TVDB ou IMDb;
+- a importação da biblioteca Plex procura episódios por vínculos genéricos, persiste GUIDs TMDb, TVDB e IMDb e usa esses vínculos antes do fingerprint e da posição na temporada para deduplicação;
+- o processamento de scrobbles Plex repete a procura e a gravação dos três providers antes de persistir o watch;
+- a importação manual de temporadas via TMDb grava o identificador TMDb de cada episódio na tabela genérica;
+- não foram encontradas leituras de identificadores de episódio nos detalhes de série ou temporada; nesses fluxos, `EPISODE` também é usado como tipo de avaliações e não poderá ser removido do enum `EntityType` nesta etapa;
+- os testes existentes de importação e scrobble Plex cobrem parte dos fluxos afetados e deverão ser revisados após a auditoria dos dados;
+- as consultas de auditoria da base foram preparadas para validar volume, cobertura, cardinalidade, duplicidades, referências órfãs, formatos e combinações inesperadas;
+- nenhuma migration ou alteração de comportamento foi realizada; a cardinalidade e a segurança das três colunas escalares ainda dependem do resultado da auditoria da base.
+
+### 2026-07-19 — Conclusão da auditoria de episódios
+
+- existem 2.134 episódios e 4.963 vínculos `EPISODE` em `external_identifiers`: 1.995 registros TMDb, 1.607 TVDB e 1.361 IMDb;
+- 1.998 episódios possuem ao menos um identificador e 136 não possuem nenhum; os episódios sem identificadores devem permanecer com as três futuras colunas nulas;
+- 1.359 episódios possuem os três providers, 245 possuem TMDb e TVDB, 389 possuem somente TMDb, três possuem somente TVDB e dois possuem TMDb e IMDb;
+- cada episódio possui no máximo um identificador de cada provider e cada identificador externo é distinto dentro de seu provider;
+- não foram encontradas referências órfãs, conflitos com entidades de outros domínios, providers inesperados, `external_entity_type` preenchido, valores nulos, vazios, com espaços ou em formato inválido;
+- as contagens por provider, por combinação e por cobertura são equivalentes e não indicam vínculos fora das combinações esperadas;
+- a cardinalidade `0..1` foi confirmada para os três providers, portanto `tv_episodes.tmdb_id`, `tv_episodes.tvdb_id` e `tv_episodes.imdb_id` são destinos escalares seguros;
+- a auditoria de dados foi concluída antes do início da migration; nenhuma alteração de schema ou comportamento foi realizada.
+
+### 2026-07-19 — Conclusão de episódios
+
+- criada a migration `V37__migrate_episode_external_identifiers.sql`;
+- adicionadas as colunas anuláveis e únicas `tv_episodes.tmdb_id`, `tv_episodes.tvdb_id` e `tv_episodes.imdb_id`;
+- a migration rejeita dados inválidos, cardinalidade inesperada e referências órfãs, copia os vínculos válidos e confere a equivalência antes de remover a origem;
+- os 4.963 vínculos `EPISODE` auditados são removidos de `external_identifiers` somente depois da cópia validada;
+- `EPISODE` foi removido da constraint de tipos de `external_identifiers`, mas permanece no enum `EntityType` por ser usado em avaliações e outros modelos de domínio;
+- `TMDB`, `TVDB` e `IMDB` foram removidos da constraint de providers de `external_identifiers`, mas permanecem no enum `Provider` por serem usados nas integrações e nos modelos específicos;
+- importação da biblioteca Plex, processamento de scrobbles e importação manual de temporadas via TMDb passaram a procurar e gravar identificadores diretamente em `tv_episodes`;
+- a prioridade de deduplicação por identificador externo, fingerprint e posição na temporada foi preservada, assim como a persistência de watches;
+- documentação da ingestão Plex foi alinhada ao novo modelo;
+- validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: build concluído com sucesso;
+- etapa marcada como `CONCLUÍDO`: o domínio de episódios não lê nem grava `external_identifiers`.

@@ -4,13 +4,10 @@ import dev.marcal.mediapulse.server.api.shows.ManualShowWatchCreateRequest
 import dev.marcal.mediapulse.server.config.TmdbProperties
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbImageClient
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvShow
 import dev.marcal.mediapulse.server.model.tv.TvShowTitleSource
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
@@ -31,7 +28,6 @@ class ManualShowCatalogService(
     private val tvShowTitleCrudRepository: TvShowTitleCrudRepository,
     private val tvEpisodeRepository: TvEpisodeRepository,
     private val tvShowImageCrudRepository: TvShowImageCrudRepository,
-    private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val tmdbApiClient: TmdbApiClient,
     private val tmdbImageClient: TmdbImageClient,
     private val imageStorageService: ImageStorageService,
@@ -316,7 +312,7 @@ class ManualShowCatalogService(
                             )
                         }
 
-                    tmdbEpisode.tmdbId?.let { safeLink(EntityType.EPISODE, episode.id, Provider.TMDB, it) }
+                    tmdbEpisode.tmdbId?.let { linkEpisodeTmdbId(episode, it) }
                     episodesImported += 1
                     seasonChanged = true
                 }
@@ -378,32 +374,19 @@ class ManualShowCatalogService(
         return if (updated != show) tvShowRepository.save(updated) else show
     }
 
-    private fun safeLink(
-        entityType: EntityType,
-        entityId: Long,
-        provider: Provider,
-        externalId: String,
+    private fun linkEpisodeTmdbId(
+        episode: TvEpisode,
+        tmdbId: String,
     ) {
-        val existing = externalIdentifierRepository.findByProviderAndExternalId(provider, externalId)
-        if (existing != null) {
-            if (existing.entityType == entityType && existing.entityId == entityId) {
-                return
-            }
-
-            throw ResponseStatusException(
-                HttpStatus.CONFLICT,
-                "${provider.name} $externalId já está vinculado a outra entidade",
-            )
+        if (episode.tmdbId == tmdbId) return
+        if (episode.tmdbId != null) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "TMDB ${episode.tmdbId} já está vinculado ao episódio ${episode.id}")
         }
-
-        externalIdentifierRepository.save(
-            ExternalIdentifier(
-                entityType = entityType,
-                entityId = entityId,
-                provider = provider,
-                externalId = externalId,
-            ),
-        )
+        val linkedElsewhere = tvEpisodeRepository.findByTmdbId(tmdbId)
+        if (linkedElsewhere != null && linkedElsewhere.id != episode.id) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "TMDB $tmdbId já está vinculado a outro episódio")
+        }
+        tvEpisodeRepository.save(episode.copy(tmdbId = tmdbId, updatedAt = Instant.now()))
     }
 
     private fun fillMissingShowMetadata(

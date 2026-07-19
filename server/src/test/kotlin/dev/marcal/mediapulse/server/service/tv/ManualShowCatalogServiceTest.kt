@@ -47,6 +47,7 @@ class ManualShowCatalogServiceTest {
         tvEpisodeRepository = mockk(relaxed = true)
         tvShowImageCrudRepository = mockk(relaxed = true)
         externalIdentifierRepository = mockk(relaxed = true)
+        every { tvEpisodeRepository.findByTmdbId(any()) } returns null
         tmdbApiClient = mockk(relaxed = true)
         tmdbImageClient = mockk(relaxed = true)
         imageStorageService = mockk(relaxed = true)
@@ -62,7 +63,6 @@ class ManualShowCatalogServiceTest {
                 tvShowTitleCrudRepository = tvShowTitleCrudRepository,
                 tvEpisodeRepository = tvEpisodeRepository,
                 tvShowImageCrudRepository = tvShowImageCrudRepository,
-                externalIdentifierRepository = externalIdentifierRepository,
                 tmdbApiClient = tmdbApiClient,
                 tmdbImageClient = tmdbImageClient,
                 imageStorageService = imageStorageService,

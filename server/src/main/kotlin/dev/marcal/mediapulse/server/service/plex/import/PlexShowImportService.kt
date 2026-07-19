@@ -5,13 +5,10 @@ import dev.marcal.mediapulse.server.integration.plex.dto.PlexEpisode
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexGuid
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexShow
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvShow
 import dev.marcal.mediapulse.server.model.tv.TvShowTitleSource
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowTitleCrudRepository
@@ -28,7 +25,6 @@ class PlexShowImportService(
     private val tvShowRepository: TvShowRepository,
     private val tvShowTitleCrudRepository: TvShowTitleCrudRepository,
     private val tvEpisodeRepository: TvEpisodeRepository,
-    private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val plexShowArtworkService: PlexShowArtworkService,
 ) {
     companion object {
@@ -219,8 +215,9 @@ class PlexShowImportService(
             )
 
         val episodeExternalIds = extractEpisodeExternalIds(episode.guids.orEmpty())
+        val resolvableEpisodeExternalIds = unambiguousExternalIds(episodeExternalIds)
         val existingEpisode =
-            findEpisodeByExternalIds(episodeExternalIds, show.id)
+            findEpisodeByExternalIds(resolvableEpisodeExternalIds, show.id)
                 ?: tvEpisodeRepository.findByFingerprint(fingerprint)
                 ?: tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(show.id, episode.parentIndex, episode.index)
 
@@ -244,9 +241,7 @@ class PlexShowImportService(
                 if (merged != existingEpisode) tvEpisodeRepository.save(merged) else existingEpisode
             }
 
-        persistEpisodeExternalIds(persistedEpisode.id, episodeExternalIds)
-
-        return persistedEpisode
+        return persistEpisodeExternalIds(persistedEpisode, episodeExternalIds)
     }
 
     private fun mergeShow(
@@ -331,13 +326,7 @@ class PlexShowImportService(
         showId: Long,
     ): TvEpisode? {
         externalIds.forEach { (provider, externalId) ->
-            val identifier =
-                externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
-                    entityType = EntityType.EPISODE,
-                    provider = provider,
-                    externalId = externalId,
-                ) ?: return@forEach
-            val episode = tvEpisodeRepository.findById(identifier.entityId).orElse(null) ?: return@forEach
+            val episode = findEpisodeByExternalId(provider, externalId) ?: return@forEach
             if (episode.showId == showId) return episode
         }
         return null
@@ -400,18 +389,59 @@ class PlexShowImportService(
     }
 
     private fun persistEpisodeExternalIds(
-        episodeId: Long,
+        episode: TvEpisode,
         externalIds: List<Pair<Provider, String>>,
-    ) {
-        externalIds.forEach { (provider, externalId) ->
-            safeLink(
-                entityType = EntityType.EPISODE,
-                entityId = episodeId,
-                provider = provider,
-                externalId = externalId,
-            )
+    ): TvEpisode {
+        var updatedEpisode = episode
+        externalIds.groupBy({ it.first }, { it.second }).forEach { (provider, externalIdsForProvider) ->
+            if (externalIdsForProvider.size > 1) {
+                logger.warn(
+                    "Ignoring ambiguous Plex episode identifiers. episodeId={}, showId={}, provider={}, candidates={}",
+                    episode.id,
+                    episode.showId,
+                    provider,
+                    externalIdsForProvider,
+                )
+                return@forEach
+            }
+            val externalId = externalIdsForProvider.single()
+            val currentExternalId = updatedEpisode.externalId(provider)
+            if (currentExternalId == externalId) return@forEach
+            if (currentExternalId != null) {
+                logger.warn(
+                    "Ignoring conflicting Plex episode identifier. episodeId={}, showId={}, provider={}, currentExternalId={}, incomingExternalId={}",
+                    episode.id,
+                    episode.showId,
+                    provider,
+                    currentExternalId,
+                    externalId,
+                )
+                return@forEach
+            }
+            val linkedEpisode = findEpisodeByExternalId(provider, externalId)
+            if (linkedEpisode != null) {
+                if (linkedEpisode.id != episode.id) {
+                    logger.warn(
+                        "Ignoring Plex episode identifier linked to another episode. episodeId={}, showId={}, linkedEpisodeId={}, provider={}, incomingExternalId={}",
+                        episode.id,
+                        episode.showId,
+                        linkedEpisode.id,
+                        provider,
+                        externalId,
+                    )
+                }
+                return@forEach
+            }
+            updatedEpisode = updatedEpisode.withExternalId(provider, externalId)
         }
+        return if (updatedEpisode != episode) tvEpisodeRepository.save(updatedEpisode) else episode
     }
+
+    private fun unambiguousExternalIds(externalIds: List<Pair<Provider, String>>): List<Pair<Provider, String>> =
+        externalIds
+            .groupBy({ it.first }, { it.second })
+            .filterValues { it.size == 1 }
+            .map { (provider, ids) -> provider to ids.single() }
 
     private fun extractEpisodeExternalIds(guids: List<PlexGuid>): List<Pair<Provider, String>> =
         guids
@@ -427,24 +457,35 @@ class PlexShowImportService(
             .filter { (_, externalId) -> externalId.isNotBlank() }
             .distinct()
 
-    private fun safeLink(
-        entityType: EntityType,
-        entityId: Long,
+    private fun findEpisodeByExternalId(
         provider: Provider,
-        externalId: String?,
-    ) {
-        val cleanId = externalId?.trim()?.ifBlank { null } ?: return
-        if (externalIdentifierRepository.findByProviderAndExternalId(provider, cleanId) != null) return
+        externalId: String,
+    ): TvEpisode? =
+        when (provider) {
+            Provider.TMDB -> tvEpisodeRepository.findByTmdbId(externalId)
+            Provider.TVDB -> tvEpisodeRepository.findByTvdbId(externalId)
+            Provider.IMDB -> tvEpisodeRepository.findByImdbId(externalId)
+            else -> null
+        }
 
-        externalIdentifierRepository.save(
-            ExternalIdentifier(
-                entityType = entityType,
-                entityId = entityId,
-                provider = provider,
-                externalId = cleanId,
-            ),
-        )
-    }
+    private fun TvEpisode.externalId(provider: Provider): String? =
+        when (provider) {
+            Provider.TMDB -> tmdbId
+            Provider.TVDB -> tvdbId
+            Provider.IMDB -> imdbId
+            else -> null
+        }
+
+    private fun TvEpisode.withExternalId(
+        provider: Provider,
+        externalId: String,
+    ): TvEpisode =
+        when (provider) {
+            Provider.TMDB -> copy(tmdbId = externalId, updatedAt = Instant.now())
+            Provider.TVDB -> copy(tvdbId = externalId, updatedAt = Instant.now())
+            Provider.IMDB -> copy(imdbId = externalId, updatedAt = Instant.now())
+            else -> this
+        }
 
     private fun extractShowExternalIds(guids: List<PlexGuid>): List<Pair<Provider, String>> =
         guids
