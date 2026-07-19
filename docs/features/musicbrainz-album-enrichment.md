@@ -2,7 +2,7 @@
 
 ## Status
 
-Primeiro corte implementado. O segundo corte também permite criar um artista a partir do MusicBrainz e importar release groups selecionados de sua discografia.
+Primeiro corte implementado. O segundo corte também permite criar um artista a partir do MusicBrainz e importar release groups selecionados de sua discografia. A persistência descrita originalmente nesta spec foi posteriormente substituída pelas estruturas específicas documentadas em `external-identifiers-migration.md`.
 
 Esta spec registra a decisão de começar pelo enriquecimento assistido de um álbum já existente. A criação manual de artistas e a importação de discografias ficam para incrementos posteriores.
 
@@ -10,7 +10,7 @@ Esta spec registra a decisão de começar pelo enriquecimento assistido de um á
 
 As páginas de álbum e artista não oferecem uma forma de reconciliar seus dados com o MusicBrainz. O enriquecimento existente é operacional, limitado a gêneros e pressupõe que o identificador MusicBrainz armazenado para um álbum seja um `release`.
 
-A tabela `external_identifiers` registra apenas `provider = MUSICBRAINZ` e o UUID. Ela não informa qual entidade do MusicBrainz o UUID representa. Isso torna ambíguos IDs de artista, release group, release e recording e dificulta evoluções como importar discografias ou atualizar tracklists.
+No desenho original, a tabela `external_identifiers` registrava apenas `provider = MUSICBRAINZ` e o UUID. Ela não informava qual entidade do MusicBrainz o UUID representava, tornando ambíguos IDs de artista, release group, release e recording. Essa limitação motivou a tipagem intermediária e, posteriormente, a migração para colunas e tabelas específicas por domínio.
 
 No modelo do MusicBrainz:
 
@@ -55,9 +55,9 @@ Na página do artista, o primeiro incremento deve apenas permitir estabelecer ou
 2. Permitir vincular, revisar ou trocar a correspondência do artista.
 3. Não buscar nem inserir a discografia neste incremento.
 
-### Persistência
+### Persistência histórica
 
-Uma migration será necessária na implementação para registrar o tipo da entidade externa em `external_identifiers`, por exemplo:
+O primeiro desenho registrou o tipo da entidade externa em `external_identifiers`, por exemplo:
 
 ```text
 provider: MUSICBRAINZ
@@ -72,7 +72,7 @@ ALBUM  MUSICBRAINZ  RELEASE_GROUP  <MBID do disco canônico>
 ALBUM  MUSICBRAINZ  RELEASE        <MBID de uma edição conhecida>
 ```
 
-O desenho final da migration deve preservar os identificadores já armazenados e garantir que o mesmo vínculo tipado não seja duplicado. Não criar providers artificiais como `MUSICBRAINZ_RELEASE`.
+Esse desenho foi posteriormente substituído por `artists.musicbrainz_artist_id`, `albums.musicbrainz_release_group_id`, `album_musicbrainz_release_ids` e `track_musicbrainz_recording_ids`. A tabela genérica foi removida pela migration `V40`.
 
 ## API/UI
 

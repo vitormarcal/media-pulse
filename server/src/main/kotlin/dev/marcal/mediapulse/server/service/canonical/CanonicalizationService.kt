@@ -1,20 +1,20 @@
 package dev.marcal.mediapulse.server.service.canonical
 
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.music.Album
 import dev.marcal.mediapulse.server.model.music.AlbumMusicBrainzReleaseId
 import dev.marcal.mediapulse.server.model.music.AlbumSpotifyId
 import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.model.music.Track
+import dev.marcal.mediapulse.server.model.music.TrackMusicBrainzRecordingId
+import dev.marcal.mediapulse.server.model.music.TrackSpotifyId
 import dev.marcal.mediapulse.server.repository.crud.AlbumMusicBrainzReleaseIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumSpotifyIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumTrackCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.ArtistRepository
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
+import dev.marcal.mediapulse.server.repository.crud.TrackMusicBrainzRecordingIdRepository
 import dev.marcal.mediapulse.server.repository.crud.TrackRepository
+import dev.marcal.mediapulse.server.repository.crud.TrackSpotifyIdRepository
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.TitleKeyUtil
 import org.springframework.dao.DataIntegrityViolationException
@@ -27,10 +27,11 @@ class CanonicalizationService(
     private val artistRepo: ArtistRepository,
     private val albumRepo: AlbumRepository,
     private val trackRepo: TrackRepository,
-    private val extRepo: ExternalIdentifierRepository,
     private val albumTrackRepo: AlbumTrackCrudRepository,
     private val albumSpotifyIds: AlbumSpotifyIdRepository,
     private val albumMusicBrainzReleaseIds: AlbumMusicBrainzReleaseIdRepository,
+    private val trackSpotifyIds: TrackSpotifyIdRepository,
+    private val trackMusicBrainzRecordingIds: TrackMusicBrainzRecordingIdRepository,
 ) {
     @Transactional(readOnly = true)
     fun findAlbumByMusicBrainzReleaseId(releaseId: String): Album? =
@@ -190,14 +191,11 @@ class CanonicalizationService(
         musicbrainzId: String? = null,
         spotifyId: String? = null,
     ): Track {
-        fun findByExternal(
-            provider: Provider,
-            externalId: String,
-        ): Track? {
-            val ext = extRepo.findByProviderAndExternalId(provider, externalId) ?: return null
-            if (ext.entityType != EntityType.TRACK) return null
-            return trackRepo.findById(ext.entityId).orElse(null)
-        }
+        fun findBySpotifyId(externalId: String): Track? =
+            trackSpotifyIds.findBySpotifyId(externalId)?.let { trackRepo.findById(it.trackId).orElse(null) }
+
+        fun findByMusicBrainzRecordingId(externalId: String): Track? =
+            trackMusicBrainzRecordingIds.findByRecordingId(externalId)?.let { trackRepo.findById(it.trackId).orElse(null) }
 
         fun isDurationClose(
             left: Int?,
@@ -234,8 +232,8 @@ class CanonicalizationService(
         fun trackFingerprint() = FingerprintUtil.trackFp(title = title, artistId = artist.id, durationMs = durationMs)
 
         val found =
-            musicbrainzId?.let { findByExternal(Provider.MUSICBRAINZ, it) }
-                ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
+            musicbrainzId?.let(::findByMusicBrainzRecordingId)
+                ?: spotifyId?.let(::findBySpotifyId)
                 ?: findByAlbumPosition()
                 ?: findByAlbumTitle()
                 ?: trackRepo.findByFingerprint(trackFingerprint())
@@ -252,8 +250,8 @@ class CanonicalizationService(
                 )
             }
 
-        musicbrainzId?.let { safeLink(EntityType.TRACK, track.id, Provider.MUSICBRAINZ, it) }
-        spotifyId?.let { safeLink(EntityType.TRACK, track.id, Provider.SPOTIFY, it) }
+        musicbrainzId?.let { linkTrackMusicBrainzRecordingId(track.id, it) }
+        spotifyId?.let { linkTrackSpotifyId(track.id, it) }
 
         return track
     }
@@ -299,24 +297,6 @@ class CanonicalizationService(
         return album
     }
 
-    private fun safeLink(
-        type: EntityType,
-        id: Long,
-        provider: Provider,
-        externalId: String,
-    ) {
-        if (extRepo.findByProviderAndExternalId(provider, externalId) == null) {
-            extRepo.save(
-                ExternalIdentifier(
-                    entityType = type,
-                    entityId = id,
-                    provider = provider,
-                    externalId = externalId,
-                ),
-            )
-        }
-    }
-
     private fun linkAlbumSpotifyId(
         albumId: Long,
         spotifyId: String,
@@ -335,6 +315,30 @@ class CanonicalizationService(
             albumMusicBrainzReleaseIds.save(AlbumMusicBrainzReleaseId(albumId = albumId, releaseId = releaseId))
         } else if (existing.albumId != albumId) {
             throw DataIntegrityViolationException("MusicBrainz release alias is linked to another album")
+        }
+    }
+
+    private fun linkTrackSpotifyId(
+        trackId: Long,
+        spotifyId: String,
+    ) {
+        val existing = trackSpotifyIds.findBySpotifyId(spotifyId)
+        if (existing == null) {
+            trackSpotifyIds.save(TrackSpotifyId(trackId = trackId, spotifyId = spotifyId))
+        } else if (existing.trackId != trackId) {
+            throw DataIntegrityViolationException("Spotify track alias is linked to another track")
+        }
+    }
+
+    private fun linkTrackMusicBrainzRecordingId(
+        trackId: Long,
+        recordingId: String,
+    ) {
+        val existing = trackMusicBrainzRecordingIds.findByRecordingId(recordingId)
+        if (existing == null) {
+            trackMusicBrainzRecordingIds.save(TrackMusicBrainzRecordingId(trackId = trackId, recordingId = recordingId))
+        } else if (existing.trackId != trackId) {
+            throw DataIntegrityViolationException("MusicBrainz recording alias is linked to another track")
         }
     }
 }

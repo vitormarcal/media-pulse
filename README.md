@@ -62,6 +62,8 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `V36__migrate_show_external_identifiers.sql`
 - `V37__migrate_episode_external_identifiers.sql`
 - `V38__migrate_artist_external_identifiers.sql`
+- `V39__migrate_album_external_identifiers.sql`
+- `V40__migrate_track_external_identifiers.sql`
 
 ## Configuração
 

@@ -8,7 +8,6 @@ import dev.marcal.mediapulse.server.model.image.ImageContent
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvShow
 import dev.marcal.mediapulse.server.model.tv.TvShowTitleSource
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
@@ -34,7 +33,6 @@ class ManualShowCatalogServiceTest {
     private lateinit var tvShowTitleCrudRepository: TvShowTitleCrudRepository
     private lateinit var tvEpisodeRepository: TvEpisodeRepository
     private lateinit var tvShowImageCrudRepository: TvShowImageCrudRepository
-    private lateinit var externalIdentifierRepository: ExternalIdentifierRepository
     private lateinit var tmdbApiClient: TmdbApiClient
     private lateinit var tmdbImageClient: TmdbImageClient
     private lateinit var imageStorageService: ImageStorageService
@@ -46,7 +44,6 @@ class ManualShowCatalogServiceTest {
         tvShowTitleCrudRepository = mockk(relaxed = true)
         tvEpisodeRepository = mockk(relaxed = true)
         tvShowImageCrudRepository = mockk(relaxed = true)
-        externalIdentifierRepository = mockk(relaxed = true)
         every { tvEpisodeRepository.findByTmdbId(any()) } returns null
         tmdbApiClient = mockk(relaxed = true)
         tmdbImageClient = mockk(relaxed = true)
@@ -91,8 +88,6 @@ class ManualShowCatalogServiceTest {
                 seasonNumber = 1,
                 episodeNumber = 1,
             )
-
-        every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
         every { tvShowRepository.findByFingerprint(any()) } returnsMany listOf(null, show)
         every { tvShowRepository.save(match { it.originalTitle == "Severance" && it.year == 2022 }) } returns show
         every { tvShowRepository.findById(11) } returns Optional.of(show)
@@ -172,8 +167,6 @@ class ManualShowCatalogServiceTest {
                 episodeNumber = 1,
                 fingerprint = "ep-fp",
             )
-
-        every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
         every { tvShowRepository.findByFingerprint(any()) } returns show
         every { tvShowRepository.findById(51) } returns
             Optional.of(show.copy(coverUrl = "/covers/tmdb/tv-shows/51/51_severance_poster.jpg"))
@@ -202,8 +195,6 @@ class ManualShowCatalogServiceTest {
         every { tvShowImageCrudRepository.insertIgnore(any(), any(), any()) } just runs
         every { tvShowRepository.save(match { it.id == 51L && it.coverUrl == "/covers/tmdb/tv-shows/51/51_severance_poster.jpg" }) } returns
             show.copy(coverUrl = "/covers/tmdb/tv-shows/51/51_severance_poster.jpg")
-        every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
-        every { externalIdentifierRepository.save(any()) } returns mockk()
 
         val result =
             service.resolveOrCreate(
@@ -241,8 +232,6 @@ class ManualShowCatalogServiceTest {
                 coverUrl = null,
                 fingerprint = "fp",
             )
-
-        every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
         every { tmdbApiClient.fetchShowDetails("95396") } returns
             TmdbApiClient.TmdbShowDetails(
                 title = "Severance",
@@ -259,8 +248,6 @@ class ManualShowCatalogServiceTest {
         every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
         every { tvEpisodeRepository.findByFingerprint(any()) } returns null
         every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(any(), any(), any()) } returns null
-        every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
-        every { externalIdentifierRepository.save(any()) } returns mockk()
 
         service.resolveOrCreate(
             ManualShowWatchCreateRequest(

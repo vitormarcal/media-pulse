@@ -4,7 +4,6 @@ import dev.marcal.mediapulse.server.controller.webhook.dto.PlexWebhookPayload
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvEpisodeWatchSource
 import dev.marcal.mediapulse.server.model.tv.TvShow
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeWatchCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
@@ -29,7 +28,6 @@ class PlexEpisodeWatchServiceTest {
     private lateinit var tvShowTitleCrudRepository: TvShowTitleCrudRepository
     private lateinit var tvEpisodeRepository: TvEpisodeRepository
     private lateinit var tvEpisodeWatchCrudRepository: TvEpisodeWatchCrudRepository
-    private lateinit var externalIdentifierRepository: ExternalIdentifierRepository
     private lateinit var service: PlexEpisodeWatchService
 
     @BeforeEach
@@ -38,7 +36,6 @@ class PlexEpisodeWatchServiceTest {
         tvShowTitleCrudRepository = mockk(relaxed = true)
         tvEpisodeRepository = mockk(relaxed = true)
         tvEpisodeWatchCrudRepository = mockk(relaxed = true)
-        externalIdentifierRepository = mockk(relaxed = true)
         every { tvEpisodeRepository.findByTmdbId(any()) } returns null
         every { tvEpisodeRepository.findByTvdbId(any()) } returns null
         every { tvEpisodeRepository.findByImdbId(any()) } returns null
@@ -84,11 +81,8 @@ class PlexEpisodeWatchServiceTest {
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             every { tvEpisodeRepository.findByFingerprint(any()) } returns null
             every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(any(), any(), any()) } returns null
-            every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
             every { tvEpisodeRepository.save(capture(savedEpisode)) } returns persistedEpisode
             every { tvEpisodeWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
-            every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
-            every { externalIdentifierRepository.save(any()) } answers { firstArg() }
 
             val result = service.processScrobble(payload)
 
@@ -134,12 +128,9 @@ class PlexEpisodeWatchServiceTest {
                 )
 
             every { tvShowRepository.findByFingerprint(any()) } returns existingShow
-            every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
             every { tvEpisodeRepository.findByFingerprint(any()) } returns existingEpisode
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             every { tvEpisodeWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
-            every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns mockk()
-            every { externalIdentifierRepository.save(any()) } answers { firstArg() }
             every { tvShowRepository.save(any()) } answers { firstArg() }
             every { tvEpisodeRepository.save(any()) } answers { firstArg() }
 
@@ -208,11 +199,8 @@ class PlexEpisodeWatchServiceTest {
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             every { tvEpisodeRepository.findByFingerprint(any()) } returns null
             every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(any(), any(), any()) } returns null
-            every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
             every { tvEpisodeRepository.save(any()) } returns persistedEpisode
             every { tvEpisodeWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
-            every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
-            every { externalIdentifierRepository.save(any()) } answers { firstArg() }
 
             service.processScrobble(payload)
 
@@ -249,14 +237,11 @@ class PlexEpisodeWatchServiceTest {
 
             every { tvShowRepository.findByFingerprint(any()) } returns null
             every { tvShowRepository.save(any()) } returns newShow
-            every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
             every { tvEpisodeRepository.findByFingerprint(any()) } returns null
             every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(18, 2, 23) } returns null
             every { tvEpisodeRepository.save(any()) } returns persistedEpisode
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             every { tvEpisodeWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
-            every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
-            every { externalIdentifierRepository.save(any()) } answers { firstArg() }
             service.processScrobble(payload)
 
             verify(exactly = 1) { tvShowRepository.save(match { it.id == 0L && it.year == 2026 }) }

@@ -5,10 +5,8 @@ import dev.marcal.mediapulse.server.integration.plex.dto.PlexEpisode
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexGuid
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexLibrarySection
 import dev.marcal.mediapulse.server.integration.plex.dto.PlexShow
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvShow
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowTitleCrudRepository
@@ -32,7 +30,6 @@ class PlexShowImportServiceTest {
     private lateinit var tvShowRepository: TvShowRepository
     private lateinit var tvShowTitleCrudRepository: TvShowTitleCrudRepository
     private lateinit var tvEpisodeRepository: TvEpisodeRepository
-    private lateinit var externalIdentifierRepository: ExternalIdentifierRepository
     private lateinit var plexShowArtworkService: PlexShowArtworkService
     private lateinit var service: PlexShowImportService
 
@@ -43,7 +40,6 @@ class PlexShowImportServiceTest {
         tvShowRepository = mockk(relaxed = true)
         tvShowTitleCrudRepository = mockk(relaxed = true)
         tvEpisodeRepository = mockk(relaxed = true)
-        externalIdentifierRepository = mockk(relaxed = true)
         every { tvEpisodeRepository.findByTmdbId(any()) } returns null
         every { tvEpisodeRepository.findByTvdbId(any()) } returns null
         every { tvEpisodeRepository.findByImdbId(any()) } returns null
@@ -91,11 +87,6 @@ class PlexShowImportServiceTest {
             coEvery { plexApiClient.listShowSections() } returns listOf(section)
             coEvery { plexApiClient.listShowsPaged("2", 0, 200) } returns (listOf(show) to 1)
             coEvery { plexApiClient.listEpisodesByShowPaged("2", "show-1", 0, 200) } returns (listOf(episode) to 1)
-
-            every {
-                externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any())
-            } returns null
-            every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
             every { tvShowRepository.findByTmdbId(any()) } returns null
             every { tvShowRepository.findByTvdbId(any()) } returns null
             every { tvShowRepository.findByImdbId(any()) } returns null
@@ -141,7 +132,6 @@ class PlexShowImportServiceTest {
                     originallyAvailableAt = LocalDate.parse("2022-02-18"),
                     fingerprint = "ep-fp",
                 )
-            every { externalIdentifierRepository.save(any()) } returns mockk()
 
             val stats = service.importAllShows(pageSize = 200)
 
@@ -218,7 +208,6 @@ class PlexShowImportServiceTest {
             every { tvEpisodeRepository.findByTvdbId("8956111") } returns existingEpisode.copy(tvdbId = "8956111")
             every { tvShowRepository.findById(10) } returns java.util.Optional.of(existingShow)
             every { tvEpisodeRepository.findById(20) } returns java.util.Optional.of(existingEpisode)
-            every { externalIdentifierRepository.findByProviderAndExternalId(Provider.TVDB, "8956111") } returns mockk()
             every { tvShowRepository.findByFingerprint(any()) } returns null
             every { tvEpisodeRepository.findByFingerprint(any()) } returns existingEpisode
             every { tvShowRepository.save(any()) } returns existingShow.copy(description = "updated-show", year = 2022, slug = "severance")
@@ -244,8 +233,6 @@ class PlexShowImportServiceTest {
                 )
             }
             verify(exactly = 1) { tvEpisodeRepository.save(match { it.summary == "updated-episode" }) }
-            verify(exactly = 0) { externalIdentifierRepository.save(any()) }
-            verify(exactly = 0) { externalIdentifierRepository.findByProviderAndExternalId(Provider.PLEX, any()) }
         }
 
     @Test
@@ -275,8 +262,6 @@ class PlexShowImportServiceTest {
         val result = service.upsertEpisode(show, rebuiltPlexEpisode)
 
         assertEquals(20, result.id)
-        verify(exactly = 0) { externalIdentifierRepository.findByProviderAndExternalId(Provider.PLEX, any()) }
-        verify(exactly = 0) { externalIdentifierRepository.save(any()) }
         verify(exactly = 0) { tvEpisodeRepository.save(any()) }
     }
 

@@ -102,16 +102,31 @@ class MusicDuplicateReviewRepository(
                 at.track_number,
                 COUNT(tp.id) AS playback_count,
                 MAX(tp.played_at) AS last_played,
-                COALESCE(bool_or(ei.provider = 'MUSICBRAINZ'), false) AS has_musicbrainz,
-                COALESCE(bool_or(ei.provider = 'SPOTIFY'), false) AS has_spotify,
-                COALESCE(string_agg(DISTINCT ei.provider || ':' || ei.external_id, '|' ORDER BY ei.provider || ':' || ei.external_id), '') AS external_ids
+                ti.has_musicbrainz,
+                ti.has_spotify,
+                ti.external_ids
               FROM album_tracks at
               JOIN tracks t ON t.id = at.track_id
               JOIN albums al ON al.id = at.album_id
               JOIN artists ar ON ar.id = al.artist_id
-              LEFT JOIN external_identifiers ei
-                ON ei.entity_type = 'TRACK'
-               AND ei.entity_id = t.id
+              LEFT JOIN LATERAL (
+                SELECT
+                  COALESCE(bool_or(identifier.provider = 'MUSICBRAINZ'), false) AS has_musicbrainz,
+                  COALESCE(bool_or(identifier.provider = 'SPOTIFY'), false) AS has_spotify,
+                  COALESCE(
+                    string_agg(identifier.provider || ':' || identifier.external_id, '|' ORDER BY identifier.provider || ':' || identifier.external_id),
+                    ''
+                  ) AS external_ids
+                FROM (
+                  SELECT 'MUSICBRAINZ' AS provider, recording_id AS external_id
+                  FROM track_musicbrainz_recording_ids
+                  WHERE track_id = t.id
+                  UNION ALL
+                  SELECT 'SPOTIFY' AS provider, spotify_id AS external_id
+                  FROM track_spotify_ids
+                  WHERE track_id = t.id
+                ) identifier
+              ) ti ON TRUE
               LEFT JOIN track_playbacks tp
                 ON tp.track_id = t.id
                AND tp.album_id = al.id
@@ -129,7 +144,10 @@ class MusicDuplicateReviewRepository(
                 t.title,
                 t.duration_ms,
                 at.disc_number,
-                at.track_number
+                at.track_number,
+                ti.has_musicbrainz,
+                ti.has_spotify,
+                ti.external_ids
             ),
             candidate_groups AS (
               SELECT
@@ -261,16 +279,31 @@ class MusicDuplicateReviewRepository(
               at.track_number,
               COUNT(tp.id) AS playback_count,
               MAX(tp.played_at) AS last_played,
-              COALESCE(bool_or(ei.provider = 'MUSICBRAINZ'), false) AS has_musicbrainz,
-              COALESCE(bool_or(ei.provider = 'SPOTIFY'), false) AS has_spotify,
-              COALESCE(string_agg(DISTINCT ei.provider || ':' || ei.external_id, '|' ORDER BY ei.provider || ':' || ei.external_id), '') AS external_ids
+              ti.has_musicbrainz,
+              ti.has_spotify,
+              ti.external_ids
             FROM album_tracks at
             JOIN tracks t ON t.id = at.track_id
             JOIN albums al ON al.id = at.album_id
             JOIN artists ar ON ar.id = al.artist_id
-            LEFT JOIN external_identifiers ei
-              ON ei.entity_type = 'TRACK'
-             AND ei.entity_id = t.id
+            LEFT JOIN LATERAL (
+              SELECT
+                COALESCE(bool_or(identifier.provider = 'MUSICBRAINZ'), false) AS has_musicbrainz,
+                COALESCE(bool_or(identifier.provider = 'SPOTIFY'), false) AS has_spotify,
+                COALESCE(
+                  string_agg(identifier.provider || ':' || identifier.external_id, '|' ORDER BY identifier.provider || ':' || identifier.external_id),
+                  ''
+                ) AS external_ids
+              FROM (
+                SELECT 'MUSICBRAINZ' AS provider, recording_id AS external_id
+                FROM track_musicbrainz_recording_ids
+                WHERE track_id = t.id
+                UNION ALL
+                SELECT 'SPOTIFY' AS provider, spotify_id AS external_id
+                FROM track_spotify_ids
+                WHERE track_id = t.id
+              ) identifier
+            ) ti ON TRUE
             LEFT JOIN track_playbacks tp
               ON tp.track_id = t.id
              AND tp.album_id = al.id
@@ -291,7 +324,10 @@ class MusicDuplicateReviewRepository(
               t.title,
               t.duration_ms,
               at.disc_number,
-              at.track_number
+              at.track_number,
+              ti.has_musicbrainz,
+              ti.has_spotify,
+              ti.external_ids
             ORDER BY has_musicbrainz DESC, playback_count DESC, track_number ASC NULLS LAST, track_id ASC
             """.trimIndent()
 
@@ -415,16 +451,27 @@ class MusicDuplicateReviewRepository(
                 params,
             )
 
-        val linkedExternalIdentifiers =
+        val linkedMusicBrainzIdentifiers =
             jdbc.update(
                 """
-                UPDATE external_identifiers
-                SET entity_id = :targetTrackId
-                WHERE entity_type = 'TRACK'
-                  AND entity_id IN (:sourceTrackIds)
+                UPDATE track_musicbrainz_recording_ids
+                SET track_id = :targetTrackId
+                WHERE track_id IN (:sourceTrackIds)
                 """.trimIndent(),
                 params,
             )
+
+        val linkedSpotifyIdentifiers =
+            jdbc.update(
+                """
+                UPDATE track_spotify_ids
+                SET track_id = :targetTrackId
+                WHERE track_id IN (:sourceTrackIds)
+                """.trimIndent(),
+                params,
+            )
+
+        val linkedExternalIdentifiers = linkedMusicBrainzIdentifiers + linkedSpotifyIdentifiers
 
         val chosenAlbumLinks =
             jdbc.query(

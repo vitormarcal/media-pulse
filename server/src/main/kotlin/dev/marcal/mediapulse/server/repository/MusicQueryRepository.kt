@@ -47,7 +47,6 @@ import dev.marcal.mediapulse.server.api.music.TrackPlayRow
 import dev.marcal.mediapulse.server.api.music.TrendingGenreResponse
 import dev.marcal.mediapulse.server.api.music.UnderplayedGenreResponse
 import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalEntityType
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import jakarta.persistence.EntityManager
 import org.springframework.http.HttpStatus
@@ -1083,7 +1082,7 @@ class MusicQueryRepository(
             comments = comments,
             musicBrainz =
                 albumRepository.findById(albumId).orElseThrow().musicbrainzReleaseGroupId?.let {
-                    MusicBrainzLinkDto(it, ExternalEntityType.RELEASE_GROUP.name)
+                    MusicBrainzLinkDto(it, "RELEASE_GROUP")
                 },
         )
     }
@@ -1398,7 +1397,7 @@ class MusicQueryRepository(
             playsByDay = days,
             musicBrainz =
                 (summaryRow[8] as String?)?.let {
-                    MusicBrainzLinkDto(it, ExternalEntityType.ARTIST.name)
+                    MusicBrainzLinkDto(it, "ARTIST")
                 },
         )
     }

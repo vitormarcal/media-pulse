@@ -55,8 +55,8 @@ Estados possíveis:
 | 5 | Episódios | Moderado/alto | CONCLUÍDO | `tv_episodes.tmdb_id`, `tv_episodes.tvdb_id` e `tv_episodes.imdb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V37`. |
 | 6 | Artistas | Moderado | CONCLUÍDO | `artists.spotify_id` e `artists.musicbrainz_artist_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V38`. |
 | 7 | Álbuns | Alto | CONCLUÍDO | `albums.musicbrainz_release_group_id`, `album_spotify_ids` e `album_musicbrainz_release_ids` | Release group é a identidade canônica; Spotify e releases são aliases técnicos. Vínculos genéricos são removidos pela migration `V39`. |
-| 8 | Faixas | Alto | NÃO INICIADO | `track_spotify_ids` e `track_musicbrainz_recording_ids` | Relações `0..N` confirmadas; uma coluna escalar causaria perda de dados. |
-| 9 | Limpeza compartilhada | Alto | NÃO INICIADO | Remoção de `external_identifiers` e do modelo genérico | Somente depois de todas as etapas anteriores estarem concluídas. |
+| 8 | Faixas | Alto | CONCLUÍDO | `track_spotify_ids` e `track_musicbrainz_recording_ids` | Relações `0..N` preservadas pela migration `V40`; MusicBrainz legado foi tratado como `RECORDING`. |
+| 9 | Limpeza compartilhada | Alto | CONCLUÍDO | Remoção de `external_identifiers` e do modelo genérico | A migration `V40` remove a tabela após validar e copiar os últimos vínculos. |
 
 ## Mapeamento planejado
 
@@ -355,3 +355,22 @@ Ao avançar uma etapa, atualizar sua linha na tabela de status e adicionar uma e
 - testes de canonicalização, resolução de release group, enriquecimento de gêneros, importação Plex e consultas foram adaptados ao novo modelo; a cobertura anterior de página, idempotência, artista, discografia, estados vazios e falhas temporárias MusicBrainz foi preservada;
 - validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: 268 testes concluídos e build bem-sucedido;
 - etapa marcada como `CONCLUÍDO`: o domínio de álbuns não lê nem grava `external_identifiers`.
+
+### 2026-07-19 — Auditoria e conclusão de faixas
+
+- existem 21.122 faixas e 23.011 vínculos `TRACK`: 21.925 Spotify e 1.086 MusicBrainz legados sem tipo, distribuídos entre 21.087 faixas;
+- 35 faixas não possuem identificadores externos e permanecem válidas sem aliases;
+- 1.347 faixas possuem múltiplos IDs Spotify, com máximo de dez, e 27 possuem múltiplos IDs MusicBrainz, com máximo de quatro;
+- não foram encontrados vínculos órfãos, IDs repetidos entre faixas, combinações inesperadas, valores vazios, espaços externos ou formatos inválidos;
+- as faixas com múltiplos MusicBrainz ocupam uma única posição de um único álbum, sem evidência de colapso de posições; os múltiplos Spotify representam presença em álbuns, singles, coletâneas e edições diferentes;
+- todos os 1.374 casos com múltiplos aliases possuem histórico de reprodução, confirmando que nenhum vínculo deve ser descartado;
+- os 1.086 MusicBrainz legados foram classificados como `RECORDING` pelo contexto de ingestão de faixas, sem consultas remotas;
+- o modelo existente foi preservado: `tracks` representa a gravação canônica local e `album_tracks` registra sua presença em um álbum; uma revisão dessa identidade ficou explicitamente fora do escopo;
+- criada a migration `V40__migrate_track_external_identifiers.sql`, com validações de domínio, formatos e referências antes da cópia;
+- criadas `track_spotify_ids` e `track_musicbrainz_recording_ids` com chaves estrangeiras reais, unicidade global do alias e cardinalidade `0..N`;
+- a canonicalização passou a procurar e gravar aliases específicos, mantendo a prioridade MusicBrainz, Spotify, posição no álbum, título no álbum e fingerprint;
+- a revisão de duplicatas passou a ler os dois destinos e a transferir todos os aliases ao consolidar faixas, preservando o contrato HTTP existente;
+- após conferir as contagens copiadas, a migration remove `external_identifiers`; `ExternalIdentifier`, seu repository e `ExternalEntityType` também foram removidos;
+- `Provider` e `EntityType` permanecem porque continuam sendo utilizados por integrações, histórico, avaliações e outros domínios;
+- validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: 269 testes concluídos e build bem-sucedido;
+- as etapas de faixas e limpeza compartilhada foram marcadas como `CONCLUÍDO`.
