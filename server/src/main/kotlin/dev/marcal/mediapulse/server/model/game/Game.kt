@@ -22,6 +22,10 @@ data class Game(
     val description: String? = null,
     @Column(name = "cover_url")
     val coverUrl: String? = null,
+    @Column(name = "igdb_id", unique = true)
+    val igdbId: String? = null,
+    @Column(name = "steamgriddb_id", unique = true)
+    val steamGridDbId: String? = null,
     val slug: String? = null,
     @Column(nullable = false, unique = true)
     val fingerprint: String,

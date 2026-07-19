@@ -7,6 +7,4 @@ enum class Provider {
     TMDB,
     IMDB,
     TVDB,
-    IGDB,
-    STEAMGRIDDB,
 }

@@ -7,8 +7,6 @@ import dev.marcal.mediapulse.server.api.games.ManualGameCatalogCreateResponse
 import dev.marcal.mediapulse.server.api.games.ManualGameExternalIdView
 import dev.marcal.mediapulse.server.integration.igdb.IgdbApiClient
 import dev.marcal.mediapulse.server.integration.igdb.IgdbGameResponse
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -17,7 +15,6 @@ import java.time.ZoneOffset
 @Service
 class ManualGameCatalogCreateFlowService(
     private val manualGameCatalogService: ManualGameCatalogService,
-    private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val igdbApiClient: IgdbApiClient,
 ) {
     fun suggest(query: String): GameCatalogSuggestionsResponse =
@@ -49,10 +46,10 @@ class ManualGameCatalogCreateFlowService(
             )
 
         val externalIds =
-            externalIdentifierRepository
-                .findByEntityTypeAndEntityId(EntityType.GAME, catalogResult.game.id)
-                .sortedWith(compareBy({ it.provider.name }, { it.externalId }))
-                .map { ManualGameExternalIdView(provider = it.provider.name, externalId = it.externalId) }
+            listOfNotNull(
+                catalogResult.game.igdbId?.let { ManualGameExternalIdView(provider = "IGDB", externalId = it) },
+                catalogResult.game.steamGridDbId?.let { ManualGameExternalIdView(provider = "STEAMGRIDDB", externalId = it) },
+            )
 
         return ManualGameCatalogCreateResponse(
             gameId = catalogResult.game.id,

@@ -192,7 +192,7 @@ class GameQueryRepository(
             entityManager
                 .createNativeQuery(
                     """
-                    SELECT id, title, original_title, slug, year, description, cover_url
+                    SELECT id, title, original_title, slug, year, description, cover_url, igdb_id, steamgriddb_id
                     FROM games
                     WHERE id = :gameId
                     """.trimIndent(),
@@ -237,21 +237,10 @@ class GameQueryRepository(
                 .map { row -> toGameSessionDto(row as Array<*>) }
 
         val externalIds =
-            entityManager
-                .createNativeQuery(
-                    """
-                    SELECT provider, external_id
-                    FROM external_identifiers
-                    WHERE entity_type = 'GAME'
-                      AND entity_id = :gameId
-                    ORDER BY provider, external_id
-                    """.trimIndent(),
-                ).setParameter("gameId", gameId)
-                .resultList
-                .map { row ->
-                    val fields = row as Array<*>
-                    GameExternalIdDto(provider = fields[0] as String, externalId = fields[1] as String)
-                }
+            listOfNotNull(
+                (base[7] as String?)?.let { GameExternalIdDto(provider = "IGDB", externalId = it) },
+                (base[8] as String?)?.let { GameExternalIdDto(provider = "STEAMGRIDDB", externalId = it) },
+            )
 
         return GameDetailsResponse(
             gameId = (base[0] as Number).toLong(),

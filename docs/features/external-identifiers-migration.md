@@ -49,7 +49,7 @@ Estados possíveis:
 | Ordem | Etapa | Risco | Status | Destino pretendido | Observações |
 |---:|---|---|---|---|---|
 | 1 | Livros e edições | Baixo | CONCLUÍDO | `book_editions.isbn_10` e `book_editions.isbn_13` | As colunas contêm os dados canônicos. Registros válidos e órfãos do modelo genérico foram removidos pela migration `V33`. |
-| 2 | Jogos | Baixo | NÃO INICIADO | `games.igdb_id` e `games.steamgriddb_id` | Auditoria inicial encontrou 21 IDs de cada provider. |
+| 2 | Jogos | Baixo | CONCLUÍDO | `games.igdb_id` e `games.steamgriddb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V34`. |
 | 3 | Filmes | Moderado | NÃO INICIADO | `movies.tmdb_id` e `movies.imdb_id` | Atualizar catálogo manual, importação Plex, enriquecimentos e consultas. |
 | 4 | Séries | Moderado | NÃO INICIADO | `tv_shows.tmdb_id`, `tv_shows.tvdb_id` e `tv_shows.imdb_id` | Deve ser concluída antes da etapa de episódios. |
 | 5 | Episódios | Moderado/alto | NÃO INICIADO | `tv_episodes.tmdb_id`, `tv_episodes.tvdb_id` e `tv_episodes.imdb_id` | Volume maior e impacto direto na ingestão e no histórico Plex. |
@@ -138,3 +138,32 @@ Ao avançar uma etapa, atualizar sua linha na tabela de status e adicionar uma e
 - testes de persistência de edição passaram a verificar explicitamente a inserção e atualização das duas colunas de ISBN;
 - validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: build concluído com sucesso;
 - etapa marcada como `CONCLUÍDO`: o domínio de livros não lê nem grava `external_identifiers`.
+
+### 2026-07-19 — Início da auditoria de jogos
+
+- etapa movida para `EM AUDITORIA`;
+- o schema atual de `games` ainda não possui colunas próprias para IGDB ou SteamGridDB;
+- `ManualGameCatalogService` procura jogos existentes pelo ID do IGDB e grava vínculos de IGDB e SteamGridDB em `external_identifiers`;
+- `ManualGameCatalogCreateFlowService` lê os vínculos genéricos para compor a resposta da criação manual;
+- `GameQueryRepository` lê os vínculos genéricos para compor os detalhes do jogo;
+- não foram encontrados outros fluxos de jogos que leiam ou gravem identificadores externos;
+- não foram encontrados testes específicos do domínio de jogos; a futura migração deverá cobrir deduplicação por IGDB, persistência dos dois providers e exposição dos IDs nas respostas;
+- existem 21 jogos no catálogo; todos possuem exatamente um identificador IGDB e um identificador SteamGridDB;
+- os 21 IDs de cada provider são distintos e referenciam jogos existentes;
+- não foram encontradas duplicidades por jogo e provider, IDs repetidos, referências órfãs, valores vazios, valores não numéricos, providers inesperados ou `external_entity_type` preenchido;
+- a cardinalidade `0..1` foi confirmada para ambos os providers, portanto `games.igdb_id` e `games.steamgriddb_id` são destinos escalares seguros;
+- a auditoria de dados foi concluída antes do início da migration.
+
+### 2026-07-19 — Conclusão de jogos
+
+- criada a migration `V34__migrate_game_external_identifiers.sql`;
+- adicionadas as colunas anuláveis e únicas `games.igdb_id` e `games.steamgriddb_id`;
+- a migration valida dados inválidos, cardinalidade e referências órfãs, copia os identificadores e confere a equivalência antes de remover a origem;
+- os registros `GAME` são removidos de `external_identifiers` somente depois da cópia validada;
+- `GAME` e o `BOOK` residual foram removidos da constraint de tipos de `external_identifiers`; ambos permanecem no enum `EntityType` por serem usados fora do modelo genérico;
+- `IGDB` e `STEAMGRIDDB` foram removidos da constraint de providers e do enum `Provider`, pois não possuem outros usos no modelo genérico;
+- `ManualGameCatalogService` passou a buscar e gravar os identificadores diretamente em `games`;
+- `ManualGameCatalogCreateFlowService` e `GameQueryRepository` passaram a expor os identificadores a partir das novas colunas, preservando os contratos HTTP;
+- adicionados testes para deduplicação por IGDB, persistência dos dois providers e exposição dos IDs na resposta do catálogo;
+- validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: build concluído com sucesso;
+- etapa marcada como `CONCLUÍDO`: o domínio de jogos não lê nem grava `external_identifiers`.

@@ -3,11 +3,7 @@ package dev.marcal.mediapulse.server.service.game
 import dev.marcal.mediapulse.server.integration.igdb.IgdbApiClient
 import dev.marcal.mediapulse.server.integration.igdb.IgdbGameResponse
 import dev.marcal.mediapulse.server.integration.steamgriddb.SteamGridDbApiClient
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.game.Game
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.GameImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.GameRepository
 import dev.marcal.mediapulse.server.service.image.ImageStorageService
@@ -24,7 +20,6 @@ import java.time.ZoneOffset
 class ManualGameCatalogService(
     private val gameRepository: GameRepository,
     private val gameImageCrudRepository: GameImageCrudRepository,
-    private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val igdbApiClient: IgdbApiClient,
     private val steamGridDbApiClient: SteamGridDbApiClient,
     private val imageStorageService: ImageStorageService,
@@ -50,7 +45,7 @@ class ManualGameCatalogService(
         val resolvedDescription = igdbSnapshot?.summary ?: igdbSnapshot?.storyline
         val slug = resolveSlug(resolvedTitle)
 
-        val existingByIgdb = normalizedIgdbId?.let { findGameByExternalId(Provider.IGDB, it) }
+        val existingByIgdb = normalizedIgdbId?.let(gameRepository::findByIgdbId)
         val fingerprint = FingerprintUtil.gameFp(resolvedTitle, resolvedYear)
         val existingByFingerprint = if (existingByIgdb == null) gameRepository.findByFingerprint(fingerprint) else null
         val existingGame = existingByIgdb ?: existingByFingerprint
@@ -64,16 +59,17 @@ class ManualGameCatalogService(
                         originalTitle = resolvedTitle,
                         year = resolvedYear,
                         description = resolvedDescription,
+                        igdbId = normalizedIgdbId,
                         slug = slug,
                         fingerprint = fingerprint,
                     ),
                 )
 
         val gameAfterMetadata = fillMissingMetadata(game, resolvedTitle, resolvedYear, resolvedDescription, slug)
-        normalizedIgdbId?.let { safeLink(gameAfterMetadata.id, Provider.IGDB, it) }
+        val gameAfterIgdb = normalizedIgdbId?.let { linkIgdbId(gameAfterMetadata, it) } ?: gameAfterMetadata
 
-        val coverAssigned = maybeAssignImages(gameAfterMetadata, resolvedTitle, igdbSnapshot)
-        val refreshed = gameRepository.findById(gameAfterMetadata.id).orElse(gameAfterMetadata)
+        val coverAssigned = maybeAssignImages(gameAfterIgdb, resolvedTitle, igdbSnapshot)
+        val refreshed = gameRepository.findById(gameAfterIgdb.id).orElse(gameAfterIgdb)
         return GameCatalogResult(game = refreshed, created = created, coverAssigned = coverAssigned)
     }
 
@@ -88,7 +84,7 @@ class ManualGameCatalogService(
 
         val steamGame = steamGridDbApiClient.searchGames(title).firstOrNull()
         if (steamGame != null) {
-            safeLink(game.id, Provider.STEAMGRIDDB, steamGame.id.toString())
+            linkSteamGridDbId(game, steamGame.id.toString())
             steamGridDbApiClient
                 .fetchGrids(steamGame.id)
                 .take(3)
@@ -122,39 +118,28 @@ class ManualGameCatalogService(
         return true
     }
 
-    private fun findGameByExternalId(
-        provider: Provider,
-        externalId: String,
-    ): Game? {
-        val externalIdentifier =
-            externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
-                entityType = EntityType.GAME,
-                provider = provider,
-                externalId = externalId,
-            ) ?: return null
-
-        return gameRepository.findById(externalIdentifier.entityId).orElse(null)
+    private fun linkIgdbId(
+        game: Game,
+        igdbId: String,
+    ): Game {
+        if (game.igdbId == igdbId) return game
+        val existing = gameRepository.findByIgdbId(igdbId)
+        if (existing != null && existing.id != game.id) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "IGDB $igdbId já está vinculado a outro jogo")
+        }
+        return gameRepository.save(game.copy(igdbId = igdbId, updatedAt = Instant.now()))
     }
 
-    private fun safeLink(
-        gameId: Long,
-        provider: Provider,
-        externalId: String,
-    ) {
-        val existing = externalIdentifierRepository.findByProviderAndExternalId(provider, externalId)
-        if (existing != null) {
-            if (existing.entityType == EntityType.GAME && existing.entityId == gameId) return
-            throw ResponseStatusException(HttpStatus.CONFLICT, "${provider.name} $externalId já está vinculado a outra entidade")
+    private fun linkSteamGridDbId(
+        game: Game,
+        steamGridDbId: String,
+    ): Game {
+        if (game.steamGridDbId == steamGridDbId) return game
+        val existing = gameRepository.findBySteamGridDbId(steamGridDbId)
+        if (existing != null && existing.id != game.id) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "STEAMGRIDDB $steamGridDbId já está vinculado a outro jogo")
         }
-
-        externalIdentifierRepository.save(
-            ExternalIdentifier(
-                entityType = EntityType.GAME,
-                entityId = gameId,
-                provider = provider,
-                externalId = externalId,
-            ),
-        )
+        return gameRepository.save(game.copy(steamGridDbId = steamGridDbId, updatedAt = Instant.now()))
     }
 
     private fun fillMissingMetadata(

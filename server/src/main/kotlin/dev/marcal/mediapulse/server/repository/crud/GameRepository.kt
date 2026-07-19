@@ -9,6 +9,10 @@ interface GameRepository : CrudRepository<Game, Long> {
 
     fun findBySlug(slug: String): Game?
 
+    fun findByIgdbId(igdbId: String): Game?
+
+    fun findBySteamGridDbId(steamGridDbId: String): Game?
+
     @Query(
         nativeQuery = true,
         value = """
