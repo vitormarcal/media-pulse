@@ -1,7 +1,5 @@
 package dev.marcal.mediapulse.server.repository.hardcover
 
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.util.BookSlugUtil
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
@@ -300,27 +298,6 @@ class HardcoverNativeRepository {
                 """.trimIndent(),
             ).setParameter("source", source)
             .setParameter("sourceContainerId", sourceContainerId)
-            .executeUpdate()
-    }
-
-    @Transactional
-    fun insertExternalIdentifier(
-        entityType: EntityType,
-        entityId: Long,
-        provider: Provider,
-        externalId: String,
-    ) {
-        em
-            .createNativeQuery(
-                """
-                INSERT INTO external_identifiers(entity_type, entity_id, provider, external_id)
-                VALUES (:entityType, :entityId, :provider, :externalId)
-                ON CONFLICT (provider, external_id) DO NOTHING
-                """.trimIndent(),
-            ).setParameter("entityType", entityType.name)
-            .setParameter("entityId", entityId)
-            .setParameter("provider", provider.name)
-            .setParameter("externalId", externalId)
             .executeUpdate()
     }
 

@@ -118,11 +118,17 @@ class HardcoverNativeRepositoryTest {
         val insertSql = sqls.firstOrNull { it.contains("INSERT INTO book_editions") }
         assertNotNull(insertSql)
         assertTrue(insertSql.contains("edition_information"))
+        assertTrue(insertSql.contains("isbn_10"))
+        assertTrue(insertSql.contains("isbn_13"))
 
         val updateSql = sqls.firstOrNull { it.contains("UPDATE book_editions") }
         assertNotNull(updateSql)
         assertTrue(updateSql.contains("edition_information = COALESCE(:editionInformation, edition_information)"))
+        assertTrue(updateSql.contains("isbn_10 = COALESCE(:isbn10, isbn_10)"))
+        assertTrue(updateSql.contains("isbn_13 = COALESCE(:isbn13, isbn_13)"))
 
         verify(atLeast = 1) { query.setParameter("editionInformation", "Extended edition with author notes") }
+        verify(atLeast = 1) { query.setParameter("isbn10", "1234567890") }
+        verify(atLeast = 1) { query.setParameter("isbn13", "9781234567890") }
     }
 }

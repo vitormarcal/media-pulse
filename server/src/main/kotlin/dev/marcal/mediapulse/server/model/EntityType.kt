@@ -5,7 +5,6 @@ enum class EntityType {
     ALBUM,
     TRACK,
     BOOK,
-    BOOK_EDITION,
     MOVIE,
     SHOW,
     EPISODE,

@@ -2,8 +2,6 @@ package dev.marcal.mediapulse.server.service.hardcover
 
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverContribution
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverUserBook
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.book.BookReadSource
 import dev.marcal.mediapulse.server.model.book.BookReadStatus
 import dev.marcal.mediapulse.server.repository.hardcover.HardcoverNativeRepository
@@ -164,25 +162,6 @@ class HardcoverUserBookProcessor(
                     fingerprint = it,
                 )
             }
-        if (editionId != null) {
-            FingerprintUtil.normalizeIsbn(edition?.isbn13)?.let { isbn ->
-                nativeRepo.insertExternalIdentifier(
-                    entityType = EntityType.BOOK_EDITION,
-                    entityId = editionId,
-                    provider = Provider.ISBN_13,
-                    externalId = isbn,
-                )
-            }
-            FingerprintUtil.normalizeIsbn(edition?.isbn10)?.let { isbn ->
-                nativeRepo.insertExternalIdentifier(
-                    entityType = EntityType.BOOK_EDITION,
-                    entityId = editionId,
-                    provider = Provider.ISBN_10,
-                    externalId = isbn,
-                )
-            }
-        }
-
         val status = HardcoverStatusMapper.mapSlug(item.userBookStatus?.slug)
 
         if (reads.isEmpty()) {

@@ -4,8 +4,6 @@ enum class Provider {
     PLEX,
     SPOTIFY,
     MUSICBRAINZ,
-    ISBN_10,
-    ISBN_13,
     TMDB,
     IMDB,
     TVDB,

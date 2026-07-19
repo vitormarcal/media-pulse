@@ -48,7 +48,7 @@ Estados possíveis:
 
 | Ordem | Etapa | Risco | Status | Destino pretendido | Observações |
 |---:|---|---|---|---|---|
-| 1 | Livros e edições | Baixo | NÃO INICIADO | `book_editions.isbn_10` e `book_editions.isbn_13` | As colunas já existem. Há referências órfãs em `external_identifiers`, que não devem ser copiadas. |
+| 1 | Livros e edições | Baixo | CONCLUÍDO | `book_editions.isbn_10` e `book_editions.isbn_13` | As colunas contêm os dados canônicos. Registros válidos e órfãos do modelo genérico foram removidos pela migration `V33`. |
 | 2 | Jogos | Baixo | NÃO INICIADO | `games.igdb_id` e `games.steamgriddb_id` | Auditoria inicial encontrou 21 IDs de cada provider. |
 | 3 | Filmes | Moderado | NÃO INICIADO | `movies.tmdb_id` e `movies.imdb_id` | Atualizar catálogo manual, importação Plex, enriquecimentos e consultas. |
 | 4 | Séries | Moderado | NÃO INICIADO | `tv_shows.tmdb_id`, `tv_shows.tvdb_id` e `tv_shows.imdb_id` | Deve ser concluída antes da etapa de episódios. |
@@ -111,3 +111,30 @@ Ao avançar uma etapa, atualizar sua linha na tabela de status e adicionar uma e
 - referências órfãs de `BOOK_EDITION` identificadas;
 - multiplicidade de IDs Spotify e MusicBrainz por faixa confirmada;
 - nenhuma migração de dados ou alteração de comportamento iniciada.
+
+### 2026-07-19 — Auditoria de livros e edições
+
+- etapa movida para `EM AUDITORIA`;
+- encontrados 148 identificadores `ISBN_10` e 148 identificadores `ISBN_13` em `external_identifiers`;
+- somente 7 identificadores de cada provider apontam para edições existentes; todos coincidem, após normalização, com `book_editions.isbn_10` ou `book_editions.isbn_13`;
+- os outros 141 identificadores de cada provider são órfãos;
+- 140 órfãos de cada provider correspondem pelo ISBN a 140 edições atuais, indicando resíduos de edições recriadas;
+- um par órfão, da antiga edição `277` (`ISBN_10` `4199802185` e `ISBN_13` `9784199802188`), não corresponde a nenhuma edição atual e não deve ser copiado;
+- não foram encontrados mais de um identificador do mesmo provider por edição, conflitos entre vínculos válidos e colunas, nem ISBNs repetidos entre edições atuais;
+- 140 edições atuais possuem cada ISBN na coluna específica sem vínculo genérico equivalente, pois a restrição única `(provider, external_id)` ainda está ocupada pelos registros órfãos;
+- no código, consultas do domínio de livros já leem os ISBNs diretamente de `book_editions`;
+- a ingestão Hardcover grava os ISBNs nas colunas e também tenta gravá-los em `external_identifiers` com `ON CONFLICT DO NOTHING`, mascarando o conflito com registros órfãos;
+- nenhuma migration ou alteração de comportamento foi realizada nesta auditoria.
+
+### 2026-07-19 — Conclusão de livros e edições
+
+- criada a migration `V33__remove_book_external_identifiers.sql`;
+- a migration remove todos os registros com `entity_type = 'BOOK_EDITION'`, incluindo 14 vínculos válidos e 282 referências órfãs encontrados na auditoria;
+- o par órfão da antiga edição `277` não foi copiado porque não possui edição atual correspondente;
+- `ISBN_10` e `ISBN_13` foram removidos da constraint de providers de `external_identifiers` e do enum `Provider`;
+- `BOOK_EDITION` foi removido da constraint de tipos de `external_identifiers` e do enum `EntityType`;
+- a ingestão Hardcover deixou de gravar na tabela genérica e continua persistindo ISBNs diretamente em `book_editions.isbn_10` e `book_editions.isbn_13`;
+- removido de `HardcoverNativeRepository` o método de gravação de identificadores genéricos, que era exclusivo desse fluxo;
+- testes de persistência de edição passaram a verificar explicitamente a inserção e atualização das duas colunas de ISBN;
+- validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: build concluído com sucesso;
+- etapa marcada como `CONCLUÍDO`: o domínio de livros não lê nem grava `external_identifiers`.
