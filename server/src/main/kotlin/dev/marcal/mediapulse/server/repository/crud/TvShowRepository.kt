@@ -9,6 +9,12 @@ interface TvShowRepository : CrudRepository<TvShow, Long> {
 
     fun findBySlug(slug: String): TvShow?
 
+    fun findByTmdbId(tmdbId: String): TvShow?
+
+    fun findByTvdbId(tvdbId: String): TvShow?
+
+    fun findByImdbId(imdbId: String): TvShow?
+
     @Query(
         nativeQuery = true,
         value = """

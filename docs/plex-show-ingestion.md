@@ -21,7 +21,8 @@ Plex payload -> Media Pulse domain:
 - `Metadata.parentIndex` -> `tv_episodes.season_number`
 - `Metadata.index` -> `tv_episodes.episode_number`
 - `Metadata.lastViewedAt` -> `tv_episode_watches.watched_at`
-- `Metadata.Guid` with `tmdb://` and `tvdb://` -> `external_identifiers`
+- GUIDs de série `tmdb://`, `tvdb://` e `imdb://` -> `tv_shows.tmdb_id`, `tv_shows.tvdb_id` e `tv_shows.imdb_id`
+- GUIDs de episódio `tmdb://`, `tvdb://` e `imdb://` -> `external_identifiers` enquanto a etapa de episódios não for migrada
 - `Image[]` + `thumb` do show -> baixados do Plex e armazenados localmente
 
 ## Canonical identity
@@ -35,7 +36,8 @@ Show identity prefers canonical third-party ids when available.
 - Plex `ratingKey` and `plex://...` GUIDs are never persisted or used for reconciliation.
 - `ratingKey` is used only in memory while navigating the current Plex API import.
 - Plex episode scrobbles bootstrap the show by fingerprint when needed; they do not resolve the show by Plex GUID, slug, or title-only matching.
-- Third-party IDs (TMDB/TVDB/IMDB) are stored as external identifiers when available.
+- Show third-party IDs (TMDB/TVDB/IMDB) are stored directly in `tv_shows` when available.
+- Episode third-party IDs remain in `external_identifiers` until the episode migration is complete.
 - Episode resolution prefers third-party IDs and falls back to the fingerprint based on show, season, episode number, and title.
 
 ## Tables
@@ -46,7 +48,7 @@ Show identity prefers canonical third-party ids when available.
 - `tv_episodes`
 - `tv_episode_watches`
 
-Migrations: `V11__create_tv_schema.sql`, `V12__add_tv_show_images.sql`, `V13__add_tv_episode_season_title.sql`, `V32__remove_plex_external_identifiers.sql`.
+Migrations: `V11__create_tv_schema.sql`, `V12__add_tv_show_images.sql`, `V13__add_tv_episode_season_title.sql`, `V32__remove_plex_external_identifiers.sql`, `V36__migrate_show_external_identifiers.sql`.
 
 ## Show images
 
@@ -62,7 +64,7 @@ Migrations: `V11__create_tv_schema.sql`, `V12__add_tv_show_images.sql`, `V13__ad
 Show library import runs in the startup pipeline when enabled.
 
 - It imports from Plex `show` sections using paginated reads.
-- It persists canonical shows, episodes, localized titles, and TMDB/TVDB/IMDB external ids when available.
+- It persists canonical shows, episodes, localized titles, show IDs in `tv_shows`, and episode IDs in `external_identifiers` when available.
 - Show reconciliation during import prefers TMDB/TVDB identifiers over fingerprint fallback.
 - It does not create rows in `tv_episode_watches`.
 
@@ -72,8 +74,8 @@ Show library import runs in the startup pipeline when enabled.
 
 Resolution order:
 
-1. `tmdbId` -> existing `SHOW` by external identifier.
-2. `tvdbId` -> existing `SHOW` by external identifier.
+1. `tmdbId` -> existing show by `tv_shows.tmdb_id`.
+2. `tvdbId` -> existing show by `tv_shows.tvdb_id`.
 3. Show fingerprint by `showTitle + year`.
 4. Episode by fingerprint or `(show_id, season_number, episode_number)`.
 

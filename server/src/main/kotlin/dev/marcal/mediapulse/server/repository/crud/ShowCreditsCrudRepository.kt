@@ -16,13 +16,10 @@ class ShowCreditsCrudRepository(
         entityManager
             .createNativeQuery(
                 """
-                SELECT s.id, ei.external_id
+                SELECT s.id, s.tmdb_id
                 FROM tv_shows s
-                JOIN external_identifiers ei
-                  ON ei.entity_type = 'SHOW'
-                 AND ei.entity_id = s.id
-                 AND ei.provider = 'TMDB'
                 WHERE s.credits_synced_at IS NULL
+                  AND s.tmdb_id IS NOT NULL
                 ORDER BY s.id ASC
                 LIMIT :limit
                 """.trimIndent(),
@@ -43,11 +40,8 @@ class ShowCreditsCrudRepository(
                     """
                     SELECT COUNT(*)
                     FROM tv_shows s
-                    JOIN external_identifiers ei
-                      ON ei.entity_type = 'SHOW'
-                     AND ei.entity_id = s.id
-                     AND ei.provider = 'TMDB'
                     WHERE s.credits_synced_at IS NULL
+                      AND s.tmdb_id IS NOT NULL
                     """.trimIndent(),
                 ).singleResult as Number
         ).toInt()
@@ -77,12 +71,9 @@ class ShowCreditsCrudRepository(
         return entityManager
             .createNativeQuery(
                 """
-                SELECT ei.external_id, s.id, s.slug
-                FROM external_identifiers ei
-                JOIN tv_shows s ON s.id = ei.entity_id
-                WHERE ei.entity_type = 'SHOW'
-                  AND ei.provider = 'TMDB'
-                  AND ei.external_id IN (:tmdbIds)
+                SELECT s.tmdb_id, s.id, s.slug
+                FROM tv_shows s
+                WHERE s.tmdb_id IN (:tmdbIds)
                 """.trimIndent(),
             ).setParameter("tmdbIds", normalizedIds)
             .resultList

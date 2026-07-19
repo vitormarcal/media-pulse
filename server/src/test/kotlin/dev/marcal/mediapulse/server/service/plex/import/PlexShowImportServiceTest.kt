@@ -96,11 +96,11 @@ class PlexShowImportServiceTest {
                 externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any())
             } returns null
             every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
+            every { tvShowRepository.findByTmdbId(any()) } returns null
+            every { tvShowRepository.findByTvdbId(any()) } returns null
+            every { tvShowRepository.findByImdbId(any()) } returns null
             every { tvShowRepository.findByFingerprint(any()) } returns null
-            every { tvShowRepository.findById(any()) } returns java.util.Optional.empty()
-            every {
-                tvShowRepository.save(match { it.originalTitle == "Severance" && it.slug == "severance" && it.year == 2022 })
-            } returns
+            val savedShow =
                 TvShow(
                     id = 10,
                     originalTitle = "Severance",
@@ -109,6 +109,11 @@ class PlexShowImportServiceTest {
                     slug = "severance",
                     fingerprint = "show-fp",
                 )
+            every { tvShowRepository.findById(10) } answers { java.util.Optional.of(savedShow) }
+            every { tvShowRepository.save(any()) } answers {
+                val candidate = firstArg<TvShow>()
+                if (candidate.id == 0L) candidate.copy(id = 10) else candidate
+            }
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             coEvery { plexShowArtworkService.ensureShowImagesFromPlex(any(), any(), any()) } returns Unit
 
@@ -148,7 +153,9 @@ class PlexShowImportServiceTest {
             coVerify(exactly = 1) { plexApiClient.listShowSections() }
             coVerify(exactly = 1) { plexApiClient.listShowsPaged("2", 0, 200) }
             coVerify(exactly = 1) { plexApiClient.listEpisodesByShowPaged("2", "show-1", 0, 200) }
-            verify(exactly = 1) { tvShowRepository.save(match { it.slug == "severance" && it.year == 2022 }) }
+            verify(exactly = 1) { tvShowRepository.save(match { it.slug == "severance" && it.year == 2022 && it.id == 0L }) }
+            verify(exactly = 1) { tvShowRepository.save(match { it.id == 10L && it.tmdbId == "95396" }) }
+            verify(exactly = 1) { tvShowRepository.save(match { it.id == 10L && it.tvdbId == "371980" }) }
             coVerify(exactly = 1) {
                 plexShowArtworkService.ensureShowImagesFromPlex(
                     match { it.id == 10L },
@@ -157,17 +164,11 @@ class PlexShowImportServiceTest {
                 )
             }
             verify(exactly = 1) { tvEpisodeRepository.save(match { it.showId == 10L && it.episodeNumber == 1 }) }
-            verify(exactly = 4) {
+            verify(exactly = 2) {
                 externalIdentifierRepository.save(
                     match {
-                        (
-                            it.entityType == EntityType.SHOW &&
-                                (it.provider == Provider.TVDB || it.provider == Provider.TMDB)
-                        ) ||
-                            (
-                                it.entityType == EntityType.EPISODE &&
-                                    (it.provider == Provider.TVDB || it.provider == Provider.IMDB)
-                            )
+                        it.entityType == EntityType.EPISODE &&
+                            (it.provider == Provider.TVDB || it.provider == Provider.IMDB)
                     },
                 )
             }
@@ -199,7 +200,15 @@ class PlexShowImportServiceTest {
                 )
 
             val existingShow =
-                TvShow(id = 10, originalTitle = "Severance", description = null, year = null, slug = null, fingerprint = "show-fp")
+                TvShow(
+                    id = 10,
+                    originalTitle = "Severance",
+                    description = null,
+                    year = null,
+                    slug = null,
+                    tvdbId = "371980",
+                    fingerprint = "show-fp",
+                )
             val existingEpisode =
                 TvEpisode(
                     id = 20,
@@ -212,9 +221,7 @@ class PlexShowImportServiceTest {
                     fingerprint = "ep-fp",
                 )
 
-            every {
-                externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(EntityType.SHOW, Provider.TVDB, "371980")
-            } returns ExternalIdentifier(entityType = EntityType.SHOW, entityId = 10, provider = Provider.TVDB, externalId = "371980")
+            every { tvShowRepository.findByTvdbId("371980") } returns existingShow
             every {
                 externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
                     EntityType.EPISODE,
@@ -224,7 +231,6 @@ class PlexShowImportServiceTest {
             } returns ExternalIdentifier(entityType = EntityType.EPISODE, entityId = 20, provider = Provider.TVDB, externalId = "8956111")
             every { tvShowRepository.findById(10) } returns java.util.Optional.of(existingShow)
             every { tvEpisodeRepository.findById(20) } returns java.util.Optional.of(existingEpisode)
-            every { externalIdentifierRepository.findByProviderAndExternalId(Provider.TVDB, "371980") } returns mockk()
             every { externalIdentifierRepository.findByProviderAndExternalId(Provider.TVDB, "8956111") } returns mockk()
             every { tvShowRepository.findByFingerprint(any()) } returns null
             every { tvEpisodeRepository.findByFingerprint(any()) } returns existingEpisode

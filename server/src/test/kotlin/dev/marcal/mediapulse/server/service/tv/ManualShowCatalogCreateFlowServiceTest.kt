@@ -2,11 +2,7 @@ package dev.marcal.mediapulse.server.service.tv
 
 import dev.marcal.mediapulse.server.api.shows.ManualShowCatalogCreateRequest
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.tv.TvShow
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -16,14 +12,12 @@ import kotlin.test.assertTrue
 
 class ManualShowCatalogCreateFlowServiceTest {
     private val manualShowCatalogService = mockk<ManualShowCatalogService>()
-    private val externalIdentifierRepository = mockk<ExternalIdentifierRepository>()
     private val tmdbApiClient = mockk<TmdbApiClient>()
     private val showCreditsService = mockk<ShowCreditsService>(relaxed = true)
 
     private val service =
         ManualShowCatalogCreateFlowService(
             manualShowCatalogService = manualShowCatalogService,
-            externalIdentifierRepository = externalIdentifierRepository,
             tmdbApiClient = tmdbApiClient,
             showCreditsService = showCreditsService,
         )
@@ -38,6 +32,7 @@ class ManualShowCatalogCreateFlowServiceTest {
                 year = 2022,
                 slug = "severance",
                 coverUrl = "/img.jpg",
+                tmdbId = "95396",
                 fingerprint = "fp",
             )
 
@@ -59,9 +54,6 @@ class ManualShowCatalogCreateFlowServiceTest {
                 seasonsImported = 0,
                 episodesImported = 0,
             )
-        every { externalIdentifierRepository.findByEntityTypeAndEntityId(EntityType.SHOW, 42) } returns
-            listOf(ExternalIdentifier(entityType = EntityType.SHOW, entityId = 42, provider = Provider.TMDB, externalId = "95396"))
-
         val response = service.execute(request)
 
         assertEquals(42, response.showId)

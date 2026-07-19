@@ -1,12 +1,8 @@
 package dev.marcal.mediapulse.server.service.tv
 
 import dev.marcal.mediapulse.server.api.shows.ManualShowWatchCreateRequest
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvShow
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
@@ -17,13 +13,11 @@ import kotlin.test.assertFalse
 class ManualShowWatchCreateFlowServiceTest {
     private val manualShowCatalogService = mockk<ManualShowCatalogService>()
     private val manualShowWatchRegistrationService = mockk<ManualShowWatchRegistrationService>()
-    private val externalIdentifierRepository = mockk<ExternalIdentifierRepository>()
 
     private val service =
         ManualShowWatchCreateFlowService(
             manualShowCatalogService = manualShowCatalogService,
             manualShowWatchRegistrationService = manualShowWatchRegistrationService,
-            externalIdentifierRepository = externalIdentifierRepository,
         )
 
     @Test
@@ -39,7 +33,15 @@ class ManualShowWatchCreateFlowServiceTest {
                 episodeNumber = 1,
             )
 
-        val show = TvShow(id = 42, originalTitle = "Severance", year = 2022, coverUrl = "/img.jpg", fingerprint = "fp")
+        val show =
+            TvShow(
+                id = 42,
+                originalTitle = "Severance",
+                year = 2022,
+                coverUrl = "/img.jpg",
+                tmdbId = "95396",
+                fingerprint = "fp",
+            )
         val episode =
             TvEpisode(id = 99, showId = 42, title = "Good News About Hell", seasonNumber = 1, episodeNumber = 1, fingerprint = "ep-fp")
 
@@ -52,11 +54,6 @@ class ManualShowWatchCreateFlowServiceTest {
                 coverAssigned = false,
             )
         every { manualShowWatchRegistrationService.register(99, request.watchedAt) } returns false
-        every { externalIdentifierRepository.findByEntityTypeAndEntityId(EntityType.SHOW, 42) } returns
-            listOf(
-                ExternalIdentifier(entityType = EntityType.SHOW, entityId = 42, provider = Provider.TMDB, externalId = "95396"),
-            )
-
         val response = service.execute(request)
 
         assertEquals(42, response.showId)

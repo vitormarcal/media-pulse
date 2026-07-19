@@ -31,4 +31,10 @@ data class TvShow(
     val updatedAt: Instant? = null,
     @Column(name = "credits_synced_at")
     val creditsSyncedAt: Instant? = null,
+    @Column(name = "tmdb_id", unique = true)
+    val tmdbId: String? = null,
+    @Column(name = "tvdb_id", unique = true)
+    val tvdbId: String? = null,
+    @Column(name = "imdb_id", unique = true)
+    val imdbId: String? = null,
 )

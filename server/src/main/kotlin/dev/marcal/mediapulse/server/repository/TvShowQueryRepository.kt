@@ -373,7 +373,10 @@ class TvShowQueryRepository(
                       s.slug,
                       s.year,
                       s.description,
-                      s.cover_url
+                      s.cover_url,
+                      s.tmdb_id,
+                      s.tvdb_id,
+                      s.imdb_id
                     FROM tv_shows s
                     WHERE s.id = :showId
                     """.trimIndent(),
@@ -470,24 +473,11 @@ class TvShowQueryRepository(
                 }
 
         val externalIds =
-            entityManager
-                .createNativeQuery(
-                    """
-                    SELECT ei.provider, ei.external_id
-                    FROM external_identifiers ei
-                    WHERE ei.entity_type = 'SHOW'
-                      AND ei.entity_id = :showId
-                    ORDER BY ei.provider, ei.external_id
-                    """.trimIndent(),
-                ).setParameter("showId", showId)
-                .resultList
-                .map { row ->
-                    val fields = row as Array<*>
-                    ShowExternalIdDto(
-                        provider = fields[0] as String,
-                        externalId = fields[1] as String,
-                    )
-                }
+            listOfNotNull(
+                (base[9] as String?)?.let { ShowExternalIdDto(provider = "IMDB", externalId = it) },
+                (base[7] as String?)?.let { ShowExternalIdDto(provider = "TMDB", externalId = it) },
+                (base[8] as String?)?.let { ShowExternalIdDto(provider = "TVDB", externalId = it) },
+            )
 
         val people = getShowPeople(showId)
         val comments = mediaCommentQueryRepository.findByEntity(EntityType.SHOW, showId)
@@ -578,15 +568,7 @@ class TvShowQueryRepository(
                       s.original_title,
                       s.year,
                       s.cover_url,
-                      (
-                        SELECT ei.external_id
-                        FROM external_identifiers ei
-                        WHERE ei.entity_type = 'SHOW'
-                          AND ei.provider = 'TMDB'
-                          AND ei.entity_id = s.id
-                        ORDER BY ei.id ASC
-                        LIMIT 1
-                      ) AS tmdb_id
+                      s.tmdb_id
                     FROM tv_shows s
                     WHERE s.slug = :slug
                     LIMIT 1

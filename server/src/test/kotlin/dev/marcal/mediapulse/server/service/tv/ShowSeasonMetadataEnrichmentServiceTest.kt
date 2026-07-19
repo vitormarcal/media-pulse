@@ -5,12 +5,8 @@ import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentApplyRequest
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentField
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentPreviewRequest
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvShow
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import io.mockk.every
@@ -25,14 +21,12 @@ import kotlin.test.assertTrue
 class ShowSeasonMetadataEnrichmentServiceTest {
     private val tvShowRepository = mockk<TvShowRepository>()
     private val tvEpisodeRepository = mockk<TvEpisodeRepository>()
-    private val externalIdentifierRepository = mockk<ExternalIdentifierRepository>()
     private val tmdbApiClient = mockk<TmdbApiClient>()
 
     private val service =
         ShowSeasonMetadataEnrichmentService(
             tvShowRepository = tvShowRepository,
             tvEpisodeRepository = tvEpisodeRepository,
-            externalIdentifierRepository = externalIdentifierRepository,
             tmdbApiClient = tmdbApiClient,
         )
 
@@ -44,9 +38,6 @@ class ShowSeasonMetadataEnrichmentServiceTest {
                 episode(id = 100, title = "Episode 1", episodeNumber = 1),
                 episode(id = 101, title = "Episode 2", episodeNumber = 2, summary = "Already described."),
             )
-        every {
-            externalIdentifierRepository.findFirstByEntityTypeAndProviderAndEntityId(EntityType.SHOW, Provider.TMDB, 50)
-        } returns ExternalIdentifier(entityType = EntityType.SHOW, entityId = 50, provider = Provider.TMDB, externalId = "209867")
         every { tmdbApiClient.fetchShowSeasonDetails("209867", 1) } returns tmdbSeason()
 
         val response = service.preview(50, 1, ShowSeasonEnrichmentPreviewRequest())
@@ -65,13 +56,11 @@ class ShowSeasonMetadataEnrichmentServiceTest {
         val describedEpisode = episode(id = 101, title = "The Existing Title", episodeNumber = 2, summary = "Already described.")
 
         every { tvShowRepository.existsById(50) } returns true
+        every { tvShowRepository.findById(50) } returns Optional.of(show(tmdbId = null))
+        every { tvShowRepository.findByTmdbId("209867") } returns null
+        every { tvShowRepository.save(any()) } answers { firstArg() }
         every { tvEpisodeRepository.findByShowIdAndSeasonNumberOrderByEpisodeNumberAscIdAsc(50, 1) } returns
             listOf(genericEpisode, describedEpisode)
-        every {
-            externalIdentifierRepository.findFirstByEntityTypeAndProviderAndEntityId(EntityType.SHOW, Provider.TMDB, 50)
-        } returns null
-        every { externalIdentifierRepository.findByProviderAndExternalId(Provider.TMDB, "209867") } returns null
-        every { externalIdentifierRepository.save(any()) } answers { firstArg() }
         every { tvEpisodeRepository.save(any()) } answers { firstArg() }
         every { tmdbApiClient.fetchShowSeasonDetails("209867", 1) } returns tmdbSeason()
 
@@ -108,23 +97,15 @@ class ShowSeasonMetadataEnrichmentServiceTest {
                 },
             )
         }
-        verify {
-            externalIdentifierRepository.save(
-                match {
-                    it.entityType == EntityType.SHOW &&
-                        it.entityId == 50L &&
-                        it.provider == Provider.TMDB &&
-                        it.externalId == "209867"
-                },
-            )
-        }
+        verify { tvShowRepository.save(match { it.id == 50L && it.tmdbId == "209867" }) }
     }
 
-    private fun show() =
+    private fun show(tmdbId: String? = "209867") =
         TvShow(
             id = 50,
             originalTitle = "Frieren e a Jornada para o Além",
             year = 2023,
+            tmdbId = tmdbId,
             fingerprint = "show-fp",
         )
 

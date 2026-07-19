@@ -318,15 +318,13 @@ class PlexShowImportService(
     private fun findShowByExternalId(
         provider: Provider,
         externalId: String,
-    ): TvShow? {
-        val identifier =
-            externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
-                entityType = EntityType.SHOW,
-                provider = provider,
-                externalId = externalId,
-            ) ?: return null
-        return tvShowRepository.findById(identifier.entityId).orElse(null)
-    }
+    ): TvShow? =
+        when (provider) {
+            Provider.TMDB -> tvShowRepository.findByTmdbId(externalId)
+            Provider.TVDB -> tvShowRepository.findByTvdbId(externalId)
+            Provider.IMDB -> tvShowRepository.findByImdbId(externalId)
+            else -> null
+        }
 
     private fun findEpisodeByExternalIds(
         externalIds: List<Pair<Provider, String>>,
@@ -350,13 +348,55 @@ class PlexShowImportService(
         externalIds: List<Pair<Provider, String>>,
     ) {
         externalIds.forEach { (provider, externalId) ->
-            safeLink(
-                entityType = EntityType.SHOW,
-                entityId = showId,
-                provider = provider,
-                externalId = externalId,
-            )
+            linkShowExternalId(showId, provider, externalId)
         }
+    }
+
+    private fun linkShowExternalId(
+        showId: Long,
+        provider: Provider,
+        externalId: String,
+    ) {
+        val show = tvShowRepository.findById(showId).orElse(null) ?: return
+        val currentExternalId =
+            when (provider) {
+                Provider.TMDB -> show.tmdbId
+                Provider.TVDB -> show.tvdbId
+                Provider.IMDB -> show.imdbId
+                else -> return
+            }
+        if (currentExternalId == externalId) return
+        if (currentExternalId != null) {
+            logger.warn(
+                "Ignoring conflicting Plex show identifier. showId={}, provider={}, currentExternalId={}, incomingExternalId={}",
+                showId,
+                provider,
+                currentExternalId,
+                externalId,
+            )
+            return
+        }
+
+        val linkedShow = findShowByExternalId(provider, externalId)
+        if (linkedShow != null) {
+            logger.warn(
+                "Ignoring Plex show identifier linked to another show. showId={}, linkedShowId={}, provider={}, externalId={}",
+                showId,
+                linkedShow.id,
+                provider,
+                externalId,
+            )
+            return
+        }
+
+        tvShowRepository.save(
+            when (provider) {
+                Provider.TMDB -> show.copy(tmdbId = externalId, updatedAt = Instant.now())
+                Provider.TVDB -> show.copy(tvdbId = externalId, updatedAt = Instant.now())
+                Provider.IMDB -> show.copy(imdbId = externalId, updatedAt = Instant.now())
+                else -> show
+            },
+        )
     }
 
     private fun persistEpisodeExternalIds(

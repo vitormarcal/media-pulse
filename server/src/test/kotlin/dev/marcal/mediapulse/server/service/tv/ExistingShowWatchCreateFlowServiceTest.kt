@@ -1,12 +1,8 @@
 package dev.marcal.mediapulse.server.service.tv
 
 import dev.marcal.mediapulse.server.api.shows.ExistingShowWatchCreateRequest
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvShow
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import io.mockk.every
@@ -23,14 +19,12 @@ class ExistingShowWatchCreateFlowServiceTest {
     private val tvShowRepository = mockk<TvShowRepository>()
     private val tvEpisodeRepository = mockk<TvEpisodeRepository>()
     private val manualShowWatchRegistrationService = mockk<ManualShowWatchRegistrationService>()
-    private val externalIdentifierRepository = mockk<ExternalIdentifierRepository>()
 
     private val service =
         ExistingShowWatchCreateFlowService(
             tvShowRepository = tvShowRepository,
             tvEpisodeRepository = tvEpisodeRepository,
             manualShowWatchRegistrationService = manualShowWatchRegistrationService,
-            externalIdentifierRepository = externalIdentifierRepository,
         )
 
     @Test
@@ -42,6 +36,7 @@ class ExistingShowWatchCreateFlowServiceTest {
                 originalTitle = "葬送のフリーレン",
                 year = 2023,
                 coverUrl = "/covers/plex/tv-shows/17/poster.jpg",
+                tmdbId = "209867",
                 fingerprint = "show-fp",
             )
         val episode =
@@ -75,9 +70,6 @@ class ExistingShowWatchCreateFlowServiceTest {
             )
         } returns episode
         every { manualShowWatchRegistrationService.register(1359, watchedAt) } returns true
-        every { externalIdentifierRepository.findByEntityTypeAndEntityId(EntityType.SHOW, 17) } returns
-            listOf(ExternalIdentifier(entityType = EntityType.SHOW, entityId = 17, provider = Provider.TMDB, externalId = "209867"))
-
         val response = service.execute(17, request)
 
         assertEquals(17, response.showId)
@@ -115,8 +107,6 @@ class ExistingShowWatchCreateFlowServiceTest {
         every { tvEpisodeRepository.findByFingerprint(any()) } returns null
         every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(17, 1, 1) } returns episode
         every { manualShowWatchRegistrationService.register(1359, watchedAt) } returns false
-        every { externalIdentifierRepository.findByEntityTypeAndEntityId(EntityType.SHOW, 17) } returns emptyList()
-
         val response = service.execute(17, request)
 
         assertEquals("A Jornada Começa", response.episodeTitle)

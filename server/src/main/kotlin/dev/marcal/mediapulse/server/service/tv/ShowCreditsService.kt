@@ -3,13 +3,10 @@ package dev.marcal.mediapulse.server.service.tv
 import dev.marcal.mediapulse.server.api.shows.ShowCreditsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.shows.ShowCreditsSyncResponse
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.movie.MovieCreditType
 import dev.marcal.mediapulse.server.model.person.Person
 import dev.marcal.mediapulse.server.model.tv.TvShow
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.PersonRepository
 import dev.marcal.mediapulse.server.repository.crud.ShowCreditAssignmentRepository
 import dev.marcal.mediapulse.server.repository.crud.ShowCreditsCrudRepository
@@ -26,7 +23,6 @@ import java.time.Instant
 @Service
 class ShowCreditsService(
     private val tvShowRepository: TvShowRepository,
-    private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val personRepository: PersonRepository,
     private val showCreditAssignmentRepository: ShowCreditAssignmentRepository,
     private val showCreditsCrudRepository: ShowCreditsCrudRepository,
@@ -56,11 +52,7 @@ class ShowCreditsService(
     @Transactional
     fun syncFromTmdbIfLinked(showId: Long) {
         val hasTmdbLink =
-            externalIdentifierRepository.findFirstByEntityTypeAndProviderAndEntityId(
-                entityType = EntityType.SHOW,
-                provider = Provider.TMDB,
-                entityId = showId,
-            ) != null
+            tvShowRepository.findById(showId).orElse(null)?.tmdbId != null
 
         if (hasTmdbLink) {
             syncFromTmdbInternal(showId)
@@ -187,12 +179,7 @@ class ShowCreditsService(
         }
 
     private fun requireTmdbId(showId: Long): String =
-        externalIdentifierRepository
-            .findFirstByEntityTypeAndProviderAndEntityId(
-                entityType = EntityType.SHOW,
-                provider = Provider.TMDB,
-                entityId = showId,
-            )?.externalId
+        tvShowRepository.findById(showId).orElse(null)?.tmdbId
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Série sem vínculo TMDb")
 
     private fun upsertPerson(

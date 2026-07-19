@@ -247,10 +247,11 @@ class ManualShowCatalogService(
                 )
             }
 
-        tmdbId?.let { safeLink(EntityType.SHOW, showAfterMetadata.id, Provider.TMDB, it) }
-        tvdbId?.let { safeLink(EntityType.SHOW, showAfterMetadata.id, Provider.TVDB, it) }
+        var showWithExternalIds = showAfterMetadata
+        tmdbId?.let { showWithExternalIds = linkShowExternalId(showWithExternalIds, Provider.TMDB, it) }
+        tvdbId?.let { showWithExternalIds = linkShowExternalId(showWithExternalIds, Provider.TVDB, it) }
 
-        return ShowUpsertResult(show = showAfterMetadata, createdShow = createdShow)
+        return ShowUpsertResult(show = showWithExternalIds, createdShow = createdShow)
     }
 
     private fun importTmdbEpisodes(
@@ -331,15 +332,50 @@ class ManualShowCatalogService(
     private fun findShowByExternalId(
         provider: Provider,
         externalId: String,
-    ): TvShow? {
-        val externalIdentifier =
-            externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
-                entityType = EntityType.SHOW,
-                provider = provider,
-                externalId = externalId,
-            ) ?: return null
+    ): TvShow? =
+        when (provider) {
+            Provider.TMDB -> tvShowRepository.findByTmdbId(externalId)
+            Provider.TVDB -> tvShowRepository.findByTvdbId(externalId)
+            Provider.IMDB -> tvShowRepository.findByImdbId(externalId)
+            else -> null
+        }
 
-        return tvShowRepository.findById(externalIdentifier.entityId).orElse(null)
+    private fun linkShowExternalId(
+        show: TvShow,
+        provider: Provider,
+        externalId: String,
+    ): TvShow {
+        val currentExternalId =
+            when (provider) {
+                Provider.TMDB -> show.tmdbId
+                Provider.TVDB -> show.tvdbId
+                Provider.IMDB -> show.imdbId
+                else -> return show
+            }
+        if (currentExternalId == externalId) return show
+        if (currentExternalId != null) {
+            throw ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "${provider.name} $currentExternalId já está vinculado à série ${show.id}",
+            )
+        }
+
+        val linkedElsewhere = findShowByExternalId(provider, externalId)
+        if (linkedElsewhere != null && linkedElsewhere.id != show.id) {
+            throw ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "${provider.name} $externalId já está vinculado a outra entidade",
+            )
+        }
+
+        val updated =
+            when (provider) {
+                Provider.TMDB -> show.copy(tmdbId = externalId, updatedAt = Instant.now())
+                Provider.TVDB -> show.copy(tvdbId = externalId, updatedAt = Instant.now())
+                Provider.IMDB -> show.copy(imdbId = externalId, updatedAt = Instant.now())
+                else -> return show
+            }
+        return if (updated != show) tvShowRepository.save(updated) else show
     }
 
     private fun safeLink(

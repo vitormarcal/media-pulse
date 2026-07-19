@@ -4,9 +4,6 @@ import dev.marcal.mediapulse.server.api.shows.ManualShowWatchCreateRequest
 import dev.marcal.mediapulse.server.config.TmdbProperties
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbImageClient
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.image.ImageContent
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvShow
@@ -55,6 +52,9 @@ class ManualShowCatalogServiceTest {
         imageStorageService = mockk(relaxed = true)
         every { tvShowRepository.save(any()) } answers { firstArg() as TvShow }
         every { tvEpisodeRepository.save(any()) } answers { firstArg() as TvEpisode }
+        every { tvShowRepository.findByTmdbId(any()) } returns null
+        every { tvShowRepository.findByTvdbId(any()) } returns null
+        every { tvShowRepository.findByImdbId(any()) } returns null
 
         service =
             ManualShowCatalogService(
@@ -133,20 +133,16 @@ class ManualShowCatalogServiceTest {
 
     @Test
     fun `prioriza match por tmdbId antes do fingerprint`() {
-        val existingShow = TvShow(id = 77, originalTitle = "Severance", year = 2022, fingerprint = "fp-old")
+        val existingShow =
+            TvShow(id = 77, originalTitle = "Severance", year = 2022, tmdbId = "95396", fingerprint = "fp-old")
 
-        every {
-            externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(EntityType.SHOW, Provider.TMDB, "95396")
-        } returns ExternalIdentifier(entityType = EntityType.SHOW, entityId = 77, provider = Provider.TMDB, externalId = "95396")
+        every { tvShowRepository.findByTmdbId("95396") } returns existingShow
         every { tmdbApiClient.fetchShowDetails("95396") } returns null
         every { tvShowRepository.findById(any()) } returns Optional.of(existingShow)
         every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
         every { tvEpisodeRepository.findByFingerprint(any()) } returns null
         every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(any(), any(), any()) } returns null
         every { tvShowImageCrudRepository.existsByShowIdAndIsPrimaryTrue(77) } returns true
-        every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns
-            ExternalIdentifier(entityType = EntityType.SHOW, entityId = 77, provider = Provider.TMDB, externalId = "95396")
-
         val result =
             service.resolveOrCreate(
                 ManualShowWatchCreateRequest(
@@ -284,9 +280,11 @@ class ManualShowCatalogServiceTest {
                     it.originalTitle == "Severance" &&
                         it.year == 2022 &&
                         it.description == "Mark leads a team." &&
-                        it.slug == "severance"
+                        it.slug == "severance" &&
+                        it.tmdbId == null
                 },
             )
         }
+        verify(exactly = 1) { tvShowRepository.save(match { it.id == 90L && it.tmdbId == "95396" }) }
     }
 }

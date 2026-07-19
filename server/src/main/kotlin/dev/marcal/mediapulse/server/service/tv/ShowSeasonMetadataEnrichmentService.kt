@@ -9,11 +9,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentPreviewRequest
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentPreviewResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEpisodeEnrichmentPreview
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.ExternalIdentifier
-import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.tv.TvEpisode
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import org.springframework.http.HttpStatus
@@ -27,7 +23,6 @@ import java.time.LocalDate
 class ShowSeasonMetadataEnrichmentService(
     private val tvShowRepository: TvShowRepository,
     private val tvEpisodeRepository: TvEpisodeRepository,
-    private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val tmdbApiClient: TmdbApiClient,
 ) {
     @Transactional(readOnly = true)
@@ -252,29 +247,16 @@ class ShowSeasonMetadataEnrichmentService(
         requestTmdbId: String?,
     ): String =
         requestTmdbId?.trim()?.ifBlank { null }
-            ?: externalIdentifierRepository
-                .findFirstByEntityTypeAndProviderAndEntityId(EntityType.SHOW, Provider.TMDB, showId)
-                ?.externalId
+            ?: tvShowRepository.findById(showId).orElse(null)?.tmdbId
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "tmdbId é obrigatório quando a série ainda não tem vínculo TMDb")
 
     private fun linkTmdbShowIdIfNeeded(
         showId: Long,
         tmdbId: String,
     ) {
-        val current = externalIdentifierRepository.findFirstByEntityTypeAndProviderAndEntityId(EntityType.SHOW, Provider.TMDB, showId)
-        if (current != null) return
-
-        val linkedElsewhere = externalIdentifierRepository.findByProviderAndExternalId(Provider.TMDB, tmdbId)
-        if (linkedElsewhere != null) return
-
-        externalIdentifierRepository.save(
-            ExternalIdentifier(
-                entityType = EntityType.SHOW,
-                entityId = showId,
-                provider = Provider.TMDB,
-                externalId = tmdbId,
-            ),
-        )
+        val show = tvShowRepository.findById(showId).orElse(null) ?: return
+        if (show.tmdbId != null || tvShowRepository.findByTmdbId(tmdbId) != null) return
+        tvShowRepository.save(show.copy(tmdbId = tmdbId, updatedAt = Instant.now()))
     }
 
     private fun shouldApplyEpisodeField(

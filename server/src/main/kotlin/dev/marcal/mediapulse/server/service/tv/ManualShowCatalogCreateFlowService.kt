@@ -6,15 +6,12 @@ import dev.marcal.mediapulse.server.api.shows.ManualShowExternalIdView
 import dev.marcal.mediapulse.server.api.shows.ShowCatalogSuggestionDto
 import dev.marcal.mediapulse.server.api.shows.ShowCatalogSuggestionsResponse
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
-import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.repository.crud.ExternalIdentifierRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class ManualShowCatalogCreateFlowService(
     private val manualShowCatalogService: ManualShowCatalogService,
-    private val externalIdentifierRepository: ExternalIdentifierRepository,
     private val tmdbApiClient: TmdbApiClient,
     private val showCreditsService: ShowCreditsService,
 ) {
@@ -52,10 +49,11 @@ class ManualShowCatalogCreateFlowService(
         showCreditsService.syncFromTmdbIfLinked(catalogResult.show.id)
 
         val externalIds =
-            externalIdentifierRepository
-                .findByEntityTypeAndEntityId(EntityType.SHOW, catalogResult.show.id)
-                .sortedWith(compareBy({ it.provider.name }, { it.externalId }))
-                .map { ManualShowExternalIdView(provider = it.provider.name, externalId = it.externalId) }
+            listOfNotNull(
+                catalogResult.show.imdbId?.let { ManualShowExternalIdView(provider = "IMDB", externalId = it) },
+                catalogResult.show.tmdbId?.let { ManualShowExternalIdView(provider = "TMDB", externalId = it) },
+                catalogResult.show.tvdbId?.let { ManualShowExternalIdView(provider = "TVDB", externalId = it) },
+            )
 
         return ManualShowCatalogCreateResponse(
             showId = catalogResult.show.id,
