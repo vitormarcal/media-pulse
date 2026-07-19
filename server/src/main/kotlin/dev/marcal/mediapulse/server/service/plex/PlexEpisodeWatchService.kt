@@ -40,19 +40,18 @@ class PlexEpisodeWatchService(
         val showDescription = null
         val showYear = meta.parentYear ?: meta.year
         val showSlug = resolveSlug(meta.grandparentSlug)
-        val showPlexGuid = meta.grandparentGuid?.trim()?.ifBlank { null }
         val seasonTitle = meta.parentTitle?.trim()?.ifBlank { null }
+        val showFingerprint = FingerprintUtil.tvShowFp(originalTitle = showOriginalTitle, year = showYear)
 
         val show =
-            showSlug?.let { tvShowRepository.findBySlug(it) }
-                ?: findExistingShowByKnownTitles(listOf(showOriginalTitle))
+            tvShowRepository.findByFingerprint(showFingerprint)
                 ?: tvShowRepository.save(
                     TvShow(
                         originalTitle = showOriginalTitle,
                         description = showDescription,
                         year = showYear,
                         slug = showSlug,
-                        fingerprint = FingerprintUtil.tvShowFp(originalTitle = showOriginalTitle, year = null),
+                        fingerprint = showFingerprint,
                     ),
                 )
 
@@ -74,13 +73,6 @@ class PlexEpisodeWatchService(
             isPrimary = true,
         )
 
-        safeLink(
-            entityType = EntityType.SHOW,
-            entityId = show.id,
-            provider = Provider.PLEX,
-            externalId = showPlexGuid,
-        )
-
         val episodeTitle = meta.title.trim()
         val episodeFingerprint =
             FingerprintUtil.tvEpisodeFp(
@@ -90,8 +82,10 @@ class PlexEpisodeWatchService(
                 title = episodeTitle,
             )
 
+        val episodeExternalIds = extractEpisodeExternalIds(meta.guidList)
         val existingEpisode =
-            tvEpisodeRepository.findByFingerprint(episodeFingerprint)
+            findEpisodeByExternalIds(episodeExternalIds, show.id)
+                ?: tvEpisodeRepository.findByFingerprint(episodeFingerprint)
                 ?: tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(show.id, meta.parentIndex, meta.index)
 
         val episode =
@@ -113,13 +107,7 @@ class PlexEpisodeWatchService(
                 mergeEpisode(existingEpisode, meta, episodeTitle, episodeFingerprint, seasonTitle)
             }
 
-        safeLink(
-            entityType = EntityType.EPISODE,
-            entityId = episode.id,
-            provider = Provider.PLEX,
-            externalId = meta.guid,
-        )
-        persistEpisodeExternalIds(episode.id, meta.guidList)
+        persistEpisodeExternalIds(episode.id, episodeExternalIds)
 
         val watchedAt = meta.lastViewedAt ?: Instant.now()
         tvEpisodeWatchCrudRepository.insertIgnore(
@@ -135,18 +123,20 @@ class PlexEpisodeWatchService(
         )
     }
 
-    private fun findExistingShowByKnownTitles(candidates: List<String>): TvShow? {
-        val uniqueCandidates =
-            candidates
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .distinctBy { it.lowercase() }
-
-        for (candidate in uniqueCandidates) {
-            val byTitle = tvShowRepository.findByShowTitle(candidate)
-            if (byTitle != null) return byTitle
+    private fun findEpisodeByExternalIds(
+        externalIds: List<Pair<Provider, String>>,
+        showId: Long,
+    ): TvEpisode? {
+        externalIds.forEach { (provider, externalId) ->
+            val identifier =
+                externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
+                    entityType = EntityType.EPISODE,
+                    provider = provider,
+                    externalId = externalId,
+                ) ?: return@forEach
+            val episode = tvEpisodeRepository.findById(identifier.entityId).orElse(null) ?: return@forEach
+            if (episode.showId == showId) return episode
         }
-
         return null
     }
 
@@ -197,30 +187,31 @@ class PlexEpisodeWatchService(
 
     private fun persistEpisodeExternalIds(
         episodeId: Long,
-        guidList: List<PlexWebhookPayload.PlexMetadata.PlexGuidMetadata>,
+        externalIds: List<Pair<Provider, String>>,
     ) {
+        externalIds.forEach { (provider, externalId) ->
+            safeLink(
+                entityType = EntityType.EPISODE,
+                entityId = episodeId,
+                provider = provider,
+                externalId = externalId,
+            )
+        }
+    }
+
+    private fun extractEpisodeExternalIds(guidList: List<PlexWebhookPayload.PlexMetadata.PlexGuidMetadata>): List<Pair<Provider, String>> =
         guidList
-            .asSequence()
             .mapNotNull { guid ->
                 val raw = guid.id?.trim()?.ifBlank { null } ?: return@mapNotNull null
                 when {
                     raw.startsWith("tmdb://", ignoreCase = true) -> Provider.TMDB to raw.substringAfter("tmdb://")
-                    raw.startsWith("imdb://", ignoreCase = true) -> Provider.IMDB to raw.substringAfter("imdb://")
                     raw.startsWith("tvdb://", ignoreCase = true) -> Provider.TVDB to raw.substringAfter("tvdb://")
+                    raw.startsWith("imdb://", ignoreCase = true) -> Provider.IMDB to raw.substringAfter("imdb://")
                     else -> null
                 }
             }.map { (provider, externalId) -> provider to externalId.trim() }
             .filter { (_, externalId) -> externalId.isNotBlank() }
             .distinct()
-            .forEach { (provider, externalId) ->
-                safeLink(
-                    entityType = EntityType.EPISODE,
-                    entityId = episodeId,
-                    provider = provider,
-                    externalId = externalId,
-                )
-            }
-    }
 
     private fun safeLink(
         entityType: EntityType,

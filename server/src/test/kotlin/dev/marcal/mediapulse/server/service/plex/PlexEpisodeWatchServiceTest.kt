@@ -79,12 +79,12 @@ class PlexEpisodeWatchServiceTest {
                     fingerprint = "episode-fp",
                 )
 
-            every { tvShowRepository.findBySlug("the-big-bang-theory") } returns null
-            every { tvShowRepository.findByShowTitle("Big Bang: A Teoria") } returns null
+            every { tvShowRepository.findByFingerprint(any()) } returns null
             every { tvShowRepository.save(capture(savedShow)) } returns persistedShow
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             every { tvEpisodeRepository.findByFingerprint(any()) } returns null
             every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(any(), any(), any()) } returns null
+            every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
             every { tvEpisodeRepository.save(capture(savedEpisode)) } returns persistedEpisode
             every { tvEpisodeWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
             every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
@@ -111,20 +111,14 @@ class PlexEpisodeWatchServiceTest {
             verify(exactly = 1) {
                 externalIdentifierRepository.save(
                     match {
-                        it.entityType == EntityType.SHOW &&
-                            it.provider == Provider.PLEX &&
-                            it.externalId == "plex://show/5d9c086c02391c001f5891b3"
-                    },
-                )
-            }
-            verify(exactly = 1) {
-                externalIdentifierRepository.save(
-                    match {
                         it.entityType == EntityType.EPISODE &&
                             it.provider == Provider.TVDB &&
                             it.externalId == "588991"
                     },
                 )
+            }
+            verify(exactly = 0) {
+                externalIdentifierRepository.save(match { it.provider == Provider.PLEX })
             }
         }
 
@@ -150,12 +144,12 @@ class PlexEpisodeWatchServiceTest {
                     fingerprint = "episode-fp",
                 )
 
-            every { tvShowRepository.findBySlug("the-big-bang-theory") } returns existingShow
+            every { tvShowRepository.findByFingerprint(any()) } returns existingShow
+            every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
             every { tvEpisodeRepository.findByFingerprint(any()) } returns existingEpisode
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             every { tvEpisodeWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
-            every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returnsMany
-                listOf(mockk(), mockk(), null, null, null)
+            every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns mockk()
             every { externalIdentifierRepository.save(any()) } answers { firstArg() }
             every { tvShowRepository.save(any()) } answers { firstArg() }
             every { tvEpisodeRepository.save(any()) } answers { firstArg() }
@@ -166,8 +160,7 @@ class PlexEpisodeWatchServiceTest {
             assertEquals(20, result.episodeId)
             verify(exactly = 1) { tvShowRepository.save(match { it.id == 10L && it.slug == "the-big-bang-theory" && it.year == 2009 }) }
             verify(exactly = 1) { tvEpisodeRepository.save(any()) }
-            verify(exactly = 1) { tvShowRepository.findBySlug("the-big-bang-theory") }
-            verify(exactly = 0) { tvShowRepository.findByShowTitle(any()) }
+            verify(exactly = 1) { tvShowRepository.findByFingerprint(any()) }
             verify(exactly = 1) { tvEpisodeRepository.findByFingerprint(any()) }
         }
 
@@ -216,12 +209,12 @@ class PlexEpisodeWatchServiceTest {
                     fingerprint = "episode-fp",
                 )
 
-            every { tvShowRepository.findBySlug("classroom-of-the-elite") } returns null
-            every { tvShowRepository.findByShowTitle("Classroom of the Elite") } returns null
+            every { tvShowRepository.findByFingerprint(any()) } returns null
             every { tvShowRepository.save(capture(savedShow)) } returns persistedShow
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             every { tvEpisodeRepository.findByFingerprint(any()) } returns null
             every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(any(), any(), any()) } returns null
+            every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
             every { tvEpisodeRepository.save(any()) } returns persistedEpisode
             every { tvEpisodeWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
             every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
@@ -233,7 +226,7 @@ class PlexEpisodeWatchServiceTest {
         }
 
     @Test
-    fun `deve reutilizar show existente por slug mesmo com year divergente`() =
+    fun `deve criar outro show quando fingerprint divergir mesmo com slug igual`() =
         runBlocking {
             val payload =
                 episodePayload(
@@ -242,38 +235,38 @@ class PlexEpisodeWatchServiceTest {
                     grandparentSlug = "frieren-beyond-journeys-end",
                     year = 2026,
                 )
-            val existingShow =
-                TvShow(
-                    id = 17,
-                    originalTitle = "葬送のフリーレン",
-                    year = 2023,
-                    slug = "frieren-beyond-journeys-end",
-                    fingerprint = "show-fp",
-                )
             val persistedEpisode =
                 TvEpisode(
                     id = 20,
-                    showId = 17,
+                    showId = 18,
                     title = "A Expedicao Monopolar",
                     seasonNumber = 2,
                     episodeNumber = 23,
                     fingerprint = "episode-fp",
                 )
+            val newShow =
+                TvShow(
+                    id = 18,
+                    originalTitle = "Frieren e a Jornada para o Alem",
+                    year = 2026,
+                    slug = "frieren-beyond-journeys-end",
+                    fingerprint = "new-show-fp",
+                )
 
-            every { tvShowRepository.findBySlug("frieren-beyond-journeys-end") } returns existingShow
+            every { tvShowRepository.findByFingerprint(any()) } returns null
+            every { tvShowRepository.save(any()) } returns newShow
+            every { externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(any(), any(), any()) } returns null
             every { tvEpisodeRepository.findByFingerprint(any()) } returns null
-            every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(17, 2, 23) } returns null
+            every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(18, 2, 23) } returns null
             every { tvEpisodeRepository.save(any()) } returns persistedEpisode
             every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
             every { tvEpisodeWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
             every { externalIdentifierRepository.findByProviderAndExternalId(any(), any()) } returns null
             every { externalIdentifierRepository.save(any()) } answers { firstArg() }
-            every { tvShowRepository.save(any()) } answers { firstArg() }
-
             service.processScrobble(payload)
 
-            verify(exactly = 0) { tvShowRepository.save(any()) }
-            verify(exactly = 0) { tvShowRepository.findByShowTitle(any()) }
+            verify(exactly = 1) { tvShowRepository.save(match { it.id == 0L && it.year == 2026 }) }
+            verify(exactly = 1) { tvShowRepository.findByFingerprint(any()) }
         }
 
     private fun episodePayload(

@@ -139,7 +139,6 @@ class PlexShowImportService(
         val normalizedTitle = show.title.trim()
         val normalizedSummary = show.summary?.trim()?.ifBlank { null }
         val normalizedSlug = resolveSlug(show.slug)
-        val normalizedGuid = show.guid?.trim()?.ifBlank { null }
         val normalizedYear = show.year
         val showExternalIds = extractShowExternalIds(show.guids.orEmpty())
         val existingByTmdb = showExternalIds.firstOrNull { it.first == Provider.TMDB }?.let { findShowByExternalId(it.first, it.second) }
@@ -199,12 +198,6 @@ class PlexShowImportService(
             )
         }
 
-        safeLink(
-            entityType = EntityType.SHOW,
-            entityId = persistedShow.id,
-            provider = Provider.PLEX,
-            externalId = normalizedGuid,
-        )
         persistShowExternalIds(persistedShow.id, showExternalIds)
 
         return persistedShow
@@ -225,8 +218,9 @@ class PlexShowImportService(
                 title = title,
             )
 
+        val episodeExternalIds = extractEpisodeExternalIds(episode.guids.orEmpty())
         val existingEpisode =
-            findExistingEpisode(episode.guid, show.id)
+            findEpisodeByExternalIds(episodeExternalIds, show.id)
                 ?: tvEpisodeRepository.findByFingerprint(fingerprint)
                 ?: tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(show.id, episode.parentIndex, episode.index)
 
@@ -250,13 +244,7 @@ class PlexShowImportService(
                 if (merged != existingEpisode) tvEpisodeRepository.save(merged) else existingEpisode
             }
 
-        safeLink(
-            entityType = EntityType.EPISODE,
-            entityId = persistedEpisode.id,
-            provider = Provider.PLEX,
-            externalId = episode.guid,
-        )
-        persistEpisodeExternalIds(persistedEpisode.id, episode.guids.orEmpty())
+        persistEpisodeExternalIds(persistedEpisode.id, episodeExternalIds)
 
         return persistedEpisode
     }
@@ -340,19 +328,21 @@ class PlexShowImportService(
         return tvShowRepository.findById(identifier.entityId).orElse(null)
     }
 
-    private fun findExistingEpisode(
-        plexGuid: String?,
+    private fun findEpisodeByExternalIds(
+        externalIds: List<Pair<Provider, String>>,
         showId: Long,
     ): TvEpisode? {
-        val guid = plexGuid?.trim()?.ifBlank { null } ?: return null
-        val identifier =
-            externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
-                entityType = EntityType.EPISODE,
-                provider = Provider.PLEX,
-                externalId = guid,
-            ) ?: return null
-        val episode = tvEpisodeRepository.findById(identifier.entityId).orElse(null) ?: return null
-        return episode.takeIf { it.showId == showId }
+        externalIds.forEach { (provider, externalId) ->
+            val identifier =
+                externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
+                    entityType = EntityType.EPISODE,
+                    provider = provider,
+                    externalId = externalId,
+                ) ?: return@forEach
+            val episode = tvEpisodeRepository.findById(identifier.entityId).orElse(null) ?: return@forEach
+            if (episode.showId == showId) return episode
+        }
+        return null
     }
 
     private fun persistShowExternalIds(
@@ -371,30 +361,31 @@ class PlexShowImportService(
 
     private fun persistEpisodeExternalIds(
         episodeId: Long,
-        guids: List<PlexGuid>,
+        externalIds: List<Pair<Provider, String>>,
     ) {
+        externalIds.forEach { (provider, externalId) ->
+            safeLink(
+                entityType = EntityType.EPISODE,
+                entityId = episodeId,
+                provider = provider,
+                externalId = externalId,
+            )
+        }
+    }
+
+    private fun extractEpisodeExternalIds(guids: List<PlexGuid>): List<Pair<Provider, String>> =
         guids
-            .asSequence()
             .mapNotNull { guid ->
                 val raw = guid.id.trim()
                 when {
                     raw.startsWith("tmdb://", ignoreCase = true) -> Provider.TMDB to raw.substringAfter("tmdb://")
-                    raw.startsWith("imdb://", ignoreCase = true) -> Provider.IMDB to raw.substringAfter("imdb://")
                     raw.startsWith("tvdb://", ignoreCase = true) -> Provider.TVDB to raw.substringAfter("tvdb://")
+                    raw.startsWith("imdb://", ignoreCase = true) -> Provider.IMDB to raw.substringAfter("imdb://")
                     else -> null
                 }
             }.map { (provider, externalId) -> provider to externalId.trim() }
             .filter { (_, externalId) -> externalId.isNotBlank() }
             .distinct()
-            .forEach { (provider, externalId) ->
-                safeLink(
-                    entityType = EntityType.EPISODE,
-                    entityId = episodeId,
-                    provider = provider,
-                    externalId = externalId,
-                )
-            }
-    }
 
     private fun safeLink(
         entityType: EntityType,

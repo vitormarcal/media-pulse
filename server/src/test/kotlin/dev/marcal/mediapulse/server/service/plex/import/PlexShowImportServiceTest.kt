@@ -157,16 +157,16 @@ class PlexShowImportServiceTest {
                 )
             }
             verify(exactly = 1) { tvEpisodeRepository.save(match { it.showId == 10L && it.episodeNumber == 1 }) }
-            verify(exactly = 6) {
+            verify(exactly = 4) {
                 externalIdentifierRepository.save(
                     match {
                         (
                             it.entityType == EntityType.SHOW &&
-                                (it.provider == Provider.PLEX || it.provider == Provider.TVDB || it.provider == Provider.TMDB)
+                                (it.provider == Provider.TVDB || it.provider == Provider.TMDB)
                         ) ||
                             (
                                 it.entityType == EntityType.EPISODE &&
-                                    (it.provider == Provider.PLEX || it.provider == Provider.TVDB || it.provider == Provider.IMDB)
+                                    (it.provider == Provider.TVDB || it.provider == Provider.IMDB)
                             )
                     },
                 )
@@ -174,7 +174,7 @@ class PlexShowImportServiceTest {
         }
 
     @Test
-    fun `should merge existing show and episode using canonical ids without duplicating ext ids`() =
+    fun `should merge existing show and episode using stable external ids without duplicating ext ids`() =
         runBlocking {
             val show =
                 PlexShow(
@@ -218,14 +218,13 @@ class PlexShowImportServiceTest {
             every {
                 externalIdentifierRepository.findByEntityTypeAndProviderAndExternalId(
                     EntityType.EPISODE,
-                    Provider.PLEX,
-                    "plex://episode/ep1",
+                    Provider.TVDB,
+                    "8956111",
                 )
-            } returns null
+            } returns ExternalIdentifier(entityType = EntityType.EPISODE, entityId = 20, provider = Provider.TVDB, externalId = "8956111")
             every { tvShowRepository.findById(10) } returns java.util.Optional.of(existingShow)
-            every { externalIdentifierRepository.findByProviderAndExternalId(Provider.PLEX, "plex://show/abc123") } returns mockk()
+            every { tvEpisodeRepository.findById(20) } returns java.util.Optional.of(existingEpisode)
             every { externalIdentifierRepository.findByProviderAndExternalId(Provider.TVDB, "371980") } returns mockk()
-            every { externalIdentifierRepository.findByProviderAndExternalId(Provider.PLEX, "plex://episode/ep1") } returns mockk()
             every { externalIdentifierRepository.findByProviderAndExternalId(Provider.TVDB, "8956111") } returns mockk()
             every { tvShowRepository.findByFingerprint(any()) } returns null
             every { tvEpisodeRepository.findByFingerprint(any()) } returns existingEpisode
@@ -252,5 +251,38 @@ class PlexShowImportServiceTest {
             }
             verify(exactly = 1) { tvEpisodeRepository.save(match { it.summary == "updated-episode" }) }
             verify(exactly = 0) { externalIdentifierRepository.save(any()) }
+            verify(exactly = 0) { externalIdentifierRepository.findByProviderAndExternalId(Provider.PLEX, any()) }
         }
+
+    @Test
+    fun `should reuse episode fingerprint after plex library rebuild changes plex ids`() {
+        val show = TvShow(id = 10, originalTitle = "Severance", year = 2022, fingerprint = "show-fp")
+        val existingEpisode =
+            TvEpisode(
+                id = 20,
+                showId = 10,
+                title = "Good News About Hell",
+                seasonNumber = 1,
+                episodeNumber = 1,
+                fingerprint = "episode-fp",
+            )
+        val rebuiltPlexEpisode =
+            PlexEpisode(
+                ratingKey = "9876",
+                title = "Good News About Hell",
+                guid = "plex://episode/rebuilt-library-id",
+                parentIndex = 1,
+                index = 1,
+                guids = emptyList(),
+            )
+
+        every { tvEpisodeRepository.findByFingerprint(any()) } returns existingEpisode
+
+        val result = service.upsertEpisode(show, rebuiltPlexEpisode)
+
+        assertEquals(20, result.id)
+        verify(exactly = 0) { externalIdentifierRepository.findByProviderAndExternalId(Provider.PLEX, any()) }
+        verify(exactly = 0) { externalIdentifierRepository.save(any()) }
+        verify(exactly = 0) { tvEpisodeRepository.save(any()) }
+    }
 }

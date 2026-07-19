@@ -32,10 +32,11 @@ Show identity prefers canonical third-party ids when available.
   1. `TMDB`
   2. `TVDB`
   3. show fingerprint by `original_title + year`
-- Plex GUID is not used as canonical identity. It is stored only as an auxiliary external identifier.
-- Plex episode scrobbles bootstrap the show by fingerprint when needed; they do not resolve the show by Plex GUID or by title-only matching.
-- Third-party IDs (TMDB/TVDB) are stored as external identifiers when available.
-- Episode identity uses `show_id + season_number + episode_number + title`.
+- Plex `ratingKey` and `plex://...` GUIDs are never persisted or used for reconciliation.
+- `ratingKey` is used only in memory while navigating the current Plex API import.
+- Plex episode scrobbles bootstrap the show by fingerprint when needed; they do not resolve the show by Plex GUID, slug, or title-only matching.
+- Third-party IDs (TMDB/TVDB/IMDB) are stored as external identifiers when available.
+- Episode resolution prefers third-party IDs and falls back to the fingerprint based on show, season, episode number, and title.
 
 ## Tables
 
@@ -45,7 +46,7 @@ Show identity prefers canonical third-party ids when available.
 - `tv_episodes`
 - `tv_episode_watches`
 
-Migrations: `V11__create_tv_schema.sql`, `V12__add_tv_show_images.sql`, `V13__add_tv_episode_season_title.sql`.
+Migrations: `V11__create_tv_schema.sql`, `V12__add_tv_show_images.sql`, `V13__add_tv_episode_season_title.sql`, `V32__remove_plex_external_identifiers.sql`.
 
 ## Show images
 

@@ -26,7 +26,8 @@ Plex payload -> Media Pulse domain:
 
 Movie identity uses fingerprint by `original_title + year`.
 
-- Plex GUID is not used as canonical identity.
+- Plex `ratingKey` and `plex://...` GUIDs are never persisted or used for reconciliation.
+- `ratingKey` is used only in memory while navigating the current Plex API import.
 - Third-party IDs (TMDB/IMDB) are stored as external identifiers when available.
 
 ## Tables

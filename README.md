@@ -51,6 +51,7 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - `V29__create_games_schema.sql`
 - `V30__add_album_lists.sql`
 - `V31__type_musicbrainz_external_identifiers.sql`
+- `V32__remove_plex_external_identifiers.sql`
 
 ## Configuração
 
