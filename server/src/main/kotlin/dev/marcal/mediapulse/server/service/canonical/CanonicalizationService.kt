@@ -32,18 +32,9 @@ class CanonicalizationService(
         musicbrainzId: String? = null,
         spotifyId: String? = null,
     ): Artist {
-        fun findByExternal(
-            provider: Provider,
-            externalId: String,
-        ): Artist? {
-            val ext = extRepo.findByProviderAndExternalId(provider, externalId) ?: return null
-            if (ext.entityType != EntityType.ARTIST) return null
-            return artistRepo.findById(ext.entityId).orElse(null)
-        }
-
         val found =
-            musicbrainzId?.let { findByExternal(Provider.MUSICBRAINZ, it) }
-                ?: spotifyId?.let { findByExternal(Provider.SPOTIFY, it) }
+            musicbrainzId?.let(artistRepo::findByMusicbrainzArtistId)
+                ?: spotifyId?.let(artistRepo::findBySpotifyId)
                 ?: artistRepo.findByFingerprint(FingerprintUtil.artistFp(name))
 
         val artist =
@@ -51,13 +42,24 @@ class CanonicalizationService(
                 Artist(
                     name = name,
                     fingerprint = FingerprintUtil.artistFp(name),
+                    spotifyId = spotifyId,
+                    musicbrainzArtistId = musicbrainzId,
                 ),
             )
 
-        musicbrainzId?.let { safeLink(EntityType.ARTIST, artist.id, Provider.MUSICBRAINZ, it) }
-        spotifyId?.let { safeLink(EntityType.ARTIST, artist.id, Provider.SPOTIFY, it) }
+        if (found == null) return artist
 
-        return artist
+        val resolvedSpotifyId = artist.spotifyId ?: spotifyId?.takeIf { artistRepo.findBySpotifyId(it) == null }
+        val resolvedMusicbrainzId =
+            artist.musicbrainzArtistId ?: musicbrainzId?.takeIf { artistRepo.findByMusicbrainzArtistId(it) == null }
+        if (resolvedSpotifyId == artist.spotifyId && resolvedMusicbrainzId == artist.musicbrainzArtistId) return artist
+        return artistRepo.save(
+            artist.copy(
+                spotifyId = resolvedSpotifyId,
+                musicbrainzArtistId = resolvedMusicbrainzId,
+                updatedAt = Instant.now(),
+            ),
+        )
     }
 
     @Transactional

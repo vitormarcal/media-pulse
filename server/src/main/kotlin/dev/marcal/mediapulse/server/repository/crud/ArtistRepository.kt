@@ -5,4 +5,8 @@ import org.springframework.data.repository.CrudRepository
 
 interface ArtistRepository : CrudRepository<Artist, Long> {
     fun findByFingerprint(fingerprint: String): Artist?
+
+    fun findBySpotifyId(spotifyId: String): Artist?
+
+    fun findByMusicbrainzArtistId(musicbrainzArtistId: String): Artist?
 }

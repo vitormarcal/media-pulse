@@ -1274,7 +1274,8 @@ class MusicQueryRepository(
                       (SELECT COUNT(DISTINCT tp.album_id) FROM track_playbacks tp JOIN tracks t ON t.id = tp.track_id WHERE t.artist_id = a.id) AS unique_albums_played,
                       (SELECT COUNT(*) FROM albums al WHERE al.artist_id = a.id) AS library_albums_count,
                       (SELECT COUNT(*) FROM tracks t WHERE t.artist_id = a.id) AS library_tracks_count,
-                      (SELECT MAX(tp.played_at) FROM track_playbacks tp JOIN tracks t ON t.id = tp.track_id WHERE t.artist_id = a.id) AS last_played
+                      (SELECT MAX(tp.played_at) FROM track_playbacks tp JOIN tracks t ON t.id = tp.track_id WHERE t.artist_id = a.id) AS last_played,
+                      a.musicbrainz_artist_id
                     FROM artists a
                     WHERE a.id = :artistId
                     """.trimIndent(),
@@ -1393,7 +1394,10 @@ class MusicQueryRepository(
             albums = albums,
             topTracks = topTracks,
             playsByDay = days,
-            musicBrainz = musicBrainzLink(EntityType.ARTIST, artistId, ExternalEntityType.ARTIST),
+            musicBrainz =
+                (summaryRow[8] as String?)?.let {
+                    MusicBrainzLinkDto(it, ExternalEntityType.ARTIST.name)
+                },
         )
     }
 

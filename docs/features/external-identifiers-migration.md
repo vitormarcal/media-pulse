@@ -53,7 +53,7 @@ Estados possíveis:
 | 3 | Filmes | Moderado | CONCLUÍDO | `movies.tmdb_id` e `movies.imdb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V35`. |
 | 4 | Séries | Moderado | CONCLUÍDO | `tv_shows.tmdb_id`, `tv_shows.tvdb_id` e `tv_shows.imdb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V36`. |
 | 5 | Episódios | Moderado/alto | CONCLUÍDO | `tv_episodes.tmdb_id`, `tv_episodes.tvdb_id` e `tv_episodes.imdb_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V37`. |
-| 6 | Artistas | Moderado | NÃO INICIADO | `artists.spotify_id` e `artists.musicbrainz_artist_id` | IDs MusicBrainz legados sem tipo devem ser auditados como candidatos a `ARTIST`. |
+| 6 | Artistas | Moderado | CONCLUÍDO | `artists.spotify_id` e `artists.musicbrainz_artist_id` | As colunas contêm os dados canônicos; vínculos genéricos são removidos pela migration `V38`. |
 | 7 | Álbuns | Alto | NÃO INICIADO | Colunas para Spotify e MusicBrainz ou tabela específica, conforme cardinalidade | Separar `RELEASE_GROUP` de `RELEASE`; confirmar se um álbum possui vários releases. |
 | 8 | Faixas | Alto | NÃO INICIADO | `track_spotify_ids` e `track_musicbrainz_recording_ids` | Relações `0..N` confirmadas; uma coluna escalar causaria perda de dados. |
 | 9 | Limpeza compartilhada | Alto | NÃO INICIADO | Remoção de `external_identifiers` e do modelo genérico | Somente depois de todas as etapas anteriores estarem concluídas. |
@@ -265,3 +265,33 @@ Ao avançar uma etapa, atualizar sua linha na tabela de status e adicionar uma e
 - documentação da ingestão Plex foi alinhada ao novo modelo;
 - validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: build concluído com sucesso;
 - etapa marcada como `CONCLUÍDO`: o domínio de episódios não lê nem grava `external_identifiers`.
+
+### 2026-07-19 — Início da auditoria de artistas
+
+- etapa movida para `EM AUDITORIA`;
+- o schema atual de `artists` ainda não possui colunas próprias para Spotify ou MusicBrainz;
+- `CanonicalizationService` procura artistas por identificador MusicBrainz ou Spotify, cria o artista quando necessário e grava os dois providers em `external_identifiers`;
+- a importação de reproduções do Spotify fornece o identificador Spotify ao fluxo de canonicalização; a importação e os scrobbles de música do Plex fornecem o identificador MusicBrainz quando presente;
+- `MusicBrainzPageEnrichmentService` procura e grava vínculos MusicBrainz tipados como `ARTIST` nos fluxos de criação manual de artista, aplicação de candidato, enriquecimento de álbum e importação de discografia;
+- a página de artista lê o vínculo MusicBrainz tipado para expor o identificador e a importação de discografia exige esse vínculo;
+- `CanonicalizationServiceTest` e `MusicBrainzPageEnrichmentServiceTest` já cobrem parte da deduplicação e da gravação dos identificadores; os testes deverão ser adaptados para validar as futuras colunas específicas;
+- foram preparadas consultas somente de leitura para auditar volume, cobertura, cardinalidade, duplicidades, referências órfãs, formatos, combinações inesperadas e identificadores MusicBrainz legados sem tipo;
+- nenhuma migration ou alteração de comportamento foi realizada; a segurança das duas colunas escalares depende do resultado da auditoria da base.
+
+### 2026-07-19 — Conclusão de artistas
+
+- existem 5.807 artistas e 550 vínculos `ARTIST` em `external_identifiers`: 505 registros Spotify e 45 registros MusicBrainz;
+- 515 artistas possuem ao menos um identificador e 5.292 não possuem nenhum; os artistas sem identificadores permanecem com as duas novas colunas nulas;
+- os vínculos MusicBrainz incluem 24 registros tipados como `ARTIST` e 21 registros legados sem tipo;
+- os 21 MusicBrainz legados são UUIDs válidos, apontam para artistas existentes, não competem com vínculos tipados e foram tratados como identificadores de artista;
+- cada artista possui no máximo um identificador de cada provider e cada identificador externo é distinto dentro de seu provider;
+- não foram encontradas referências órfãs, duplicidades globais, providers ou tipos inesperados, valores nulos, vazios, com espaços ou em formato inválido;
+- criada a migration `V38__migrate_artist_external_identifiers.sql`;
+- adicionadas as colunas anuláveis e únicas `artists.spotify_id` e `artists.musicbrainz_artist_id`;
+- a migration rejeita dados inválidos, cardinalidade inesperada e referências órfãs, copia os vínculos válidos e confere a equivalência antes de remover a origem;
+- os 550 vínculos `ARTIST` são removidos de `external_identifiers` somente depois da cópia validada;
+- `ARTIST` foi removido da constraint de tipos de `external_identifiers`, mas permanece no enum `EntityType` por ser usado em avaliações, comentários e outros modelos de domínio;
+- canonicalização, importações Spotify e Plex, criação e vinculação MusicBrainz, importação de discografia e página do artista passaram a usar as colunas de `artists`;
+- os contratos HTTP existentes foram preservados;
+- validação executada com `GRADLE_USER_HOME=/tmp/media-pulse-gradle ./gradlew ktlintFormat test -PskipIntegrationTests` no diretório `server`: build concluído com sucesso;
+- etapa marcada como `CONCLUÍDO`: o domínio de artistas não lê nem grava `external_identifiers`.

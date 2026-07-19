@@ -32,7 +32,8 @@ class MusicBrainzPageEnrichmentServiceTest {
     private val terms = mockk<AlbumTermsService>()
     private val service = MusicBrainzPageEnrichmentService(client, albums, artists, externalIds, terms)
     private val album = Album(id = 10, artistId = 20, title = "Album", titleKey = "album", fingerprint = "album:20")
-    private val artist = Artist(id = 20, name = "Artist", fingerprint = "artist")
+    private val artist =
+        Artist(id = 20, name = "Artist", fingerprint = "artist", musicbrainzArtistId = "artist-1")
     private val candidate =
         MbReleaseGroupCandidate(
             id = "rg-1",
@@ -75,43 +76,37 @@ class MusicBrainzPageEnrichmentServiceTest {
 
             assertEquals(true, result.yearAdded)
             assertEquals("rg-1", result.releaseGroupMbid)
-            verify(exactly = 2) { externalIds.save(any()) }
+            verify(exactly = 1) { externalIds.save(any()) }
             verify(exactly = 1) { terms.addMusicBrainzTerms(album, listOf("rock"), listOf("indie")) }
         }
 
     @Test
     fun `reapplying the same artist link is idempotent`() {
         every { artists.findById(20) } returns Optional.of(artist)
-        every { externalIds.findByEntityTypeAndEntityIdAndProviderAndExternalEntityType(any(), any(), any(), any()) } returns
-            ExternalIdentifier(
-                id = 1,
-                entityType = dev.marcal.mediapulse.server.model.EntityType.ARTIST,
-                entityId = 20,
-                provider = dev.marcal.mediapulse.server.model.Provider.MUSICBRAINZ,
-                externalEntityType = dev.marcal.mediapulse.server.model.ExternalEntityType.ARTIST,
-                externalId = "artist-1",
-            )
 
         service.applyArtist(20, "artist-1")
 
         verify(exactly = 0) { externalIds.save(any()) }
+        verify(exactly = 0) { artists.save(any()) }
     }
 
     @Test
     fun `creating an artist reuses the canonical name match and stores typed identity`() =
         runBlocking {
+            val artistWithoutMbid = artist.copy(musicbrainzArtistId = null)
             coEvery { client.getArtist("artist-1") } returns MbArtistCandidate("artist-1", "Artist")
             every { externalIds.findByProviderAndExternalId(any(), "artist-1") } returns null
-            every { artists.findByFingerprint(any()) } returns artist
-            every { externalIds.findByEntityTypeAndEntityIdAndProviderAndExternalEntityType(any(), any(), any(), any()) } returns null
-            every { externalIds.save(any()) } answers { firstArg() }
+            every { artists.findByMusicbrainzArtistId("artist-1") } returns null
+            every { artists.findByFingerprint(any()) } returns artistWithoutMbid
+            every { artists.findById(20) } returns Optional.of(artistWithoutMbid)
+            every { artists.save(any()) } answers { firstArg() }
 
             val result = service.createArtist("artist-1")
 
             assertEquals(20, result.artistId)
             assertEquals(false, result.created)
-            verify(exactly = 0) { artists.save(any()) }
-            verify(exactly = 1) { externalIds.save(any()) }
+            verify(exactly = 1) { artists.save(match { it.musicbrainzArtistId == "artist-1" }) }
+            verify(exactly = 0) { externalIds.save(any()) }
         }
 
     @Test

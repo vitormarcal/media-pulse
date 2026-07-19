@@ -45,18 +45,14 @@ class MusicBrainzPageEnrichmentService(
 
     suspend fun createArtist(artistMbid: String): MusicBrainzArtistCreateResult {
         val remote = client.getArtist(artistMbid)
-        val linked = externalIds.findByProviderAndExternalId(Provider.MUSICBRAINZ, remote.id)
-        if (linked != null && linked.entityType != EntityType.ARTIST) {
-            throw ResponseStatusException(HttpStatus.CONFLICT, "MusicBrainz identifier is linked to another local entity")
-        }
-        val linkedArtist = linked?.let { artists.findById(it.entityId).orElse(null) }
+        val linkedArtist = artists.findByMusicbrainzArtistId(remote.id)
         val sameName = artists.findByFingerprint(FingerprintUtil.artistFp(remote.name))
         val created = linkedArtist == null && sameName == null
         val artist =
             linkedArtist ?: sameName ?: artists.save(
                 Artist(name = remote.name, fingerprint = FingerprintUtil.artistFp(remote.name)),
             )
-        link(EntityType.ARTIST, artist.id, ExternalEntityType.ARTIST, remote.id)
+        linkArtist(artist.id, remote.id)
         return MusicBrainzArtistCreateResult(artist.id, remote.id, created)
     }
 
@@ -100,7 +96,7 @@ class MusicBrainzPageEnrichmentService(
         val preview = previewAlbum(albumId, releaseGroupMbid)
         val album = requireAlbum(albumId)
         link(EntityType.ALBUM, album.id, ExternalEntityType.RELEASE_GROUP, preview.candidate.releaseGroupMbid)
-        preview.candidate.artistMbid?.let { link(EntityType.ARTIST, album.artistId, ExternalEntityType.ARTIST, it) }
+        preview.candidate.artistMbid?.let { linkArtist(album.artistId, it) }
         val yearAdded =
             album.year == null &&
                 preview.candidate.firstReleaseYear != null &&
@@ -128,7 +124,7 @@ class MusicBrainzPageEnrichmentService(
         artistMbid: String,
     ): MusicBrainzEnrichmentResult {
         requireArtist(artistId)
-        link(EntityType.ARTIST, artistId, ExternalEntityType.ARTIST, artistMbid)
+        linkArtist(artistId, artistMbid)
         return MusicBrainzEnrichmentResult(artistId = artistId, artistMbid = artistMbid)
     }
 
@@ -220,14 +216,24 @@ class MusicBrainzPageEnrichmentService(
     }
 
     private fun requireArtistMbid(artistId: Long): String =
-        externalIds
-            .findByEntityTypeAndEntityIdAndProviderAndExternalEntityType(
-                EntityType.ARTIST,
-                artistId,
-                Provider.MUSICBRAINZ,
-                ExternalEntityType.ARTIST,
-            )?.externalId
+        requireArtist(artistId).musicbrainzArtistId
             ?: throw ResponseStatusException(HttpStatus.CONFLICT, "Artist must be linked to MusicBrainz first")
+
+    private fun linkArtist(
+        artistId: Long,
+        mbid: String,
+    ) {
+        val artist = requireArtist(artistId)
+        if (artist.musicbrainzArtistId == mbid) return
+        if (artists.findByMusicbrainzArtistId(mbid)?.id?.let { it != artistId } == true) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "MusicBrainz identifier is linked to another local entity")
+        }
+        try {
+            artists.save(artist.copy(musicbrainzArtistId = mbid, updatedAt = java.time.Instant.now()))
+        } catch (e: DataIntegrityViolationException) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "MusicBrainz identifier is linked to another local entity", e)
+        }
+    }
 
     private suspend fun reconcileLegacyRelease(albumId: Long) {
         val legacy =

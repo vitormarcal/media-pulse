@@ -57,17 +57,10 @@ class CanonicalizationServiceTest {
 
     @Test
     fun `should find existing artist by musicbrainz id`() {
-        val existingArtist = Artist(id = 100L, name = "Existing Artist", fingerprint = "fp123")
-        val externalId =
-            ExternalIdentifier(
-                entityType = EntityType.ARTIST,
-                entityId = 100L,
-                provider = Provider.MUSICBRAINZ,
-                externalId = "mb-id-123",
-            )
+        val existingArtist =
+            Artist(id = 100L, name = "Existing Artist", fingerprint = "fp123", musicbrainzArtistId = "mb-id-123")
 
-        every { extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, "mb-id-123") } returns externalId
-        every { artistRepo.findById(100L) } returns java.util.Optional.of(existingArtist)
+        every { artistRepo.findByMusicbrainzArtistId("mb-id-123") } returns existingArtist
 
         val result = service.ensureArtist(name = "New Artist", musicbrainzId = "mb-id-123")
 
@@ -78,18 +71,10 @@ class CanonicalizationServiceTest {
 
     @Test
     fun `should find existing artist by spotify id when musicbrainz id not provided`() {
-        val existingArtist = Artist(id = 101L, name = "Spotify Artist", fingerprint = "fp456")
-        val externalId =
-            ExternalIdentifier(
-                entityType = EntityType.ARTIST,
-                entityId = 101L,
-                provider = Provider.SPOTIFY,
-                externalId = "spotify-id-456",
-            )
+        val existingArtist =
+            Artist(id = 101L, name = "Spotify Artist", fingerprint = "fp456", spotifyId = "spotify-id-456")
 
-        every { extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, any()) } returns null
-        every { extRepo.findByProviderAndExternalId(Provider.SPOTIFY, "spotify-id-456") } returns externalId
-        every { artistRepo.findById(101L) } returns java.util.Optional.of(existingArtist)
+        every { artistRepo.findBySpotifyId("spotify-id-456") } returns existingArtist
 
         val result = service.ensureArtist(name = "Spotify Artist", spotifyId = "spotify-id-456")
 
@@ -101,7 +86,6 @@ class CanonicalizationServiceTest {
     fun `should find existing artist by fingerprint when no external ids provided`() {
         val existingArtist = Artist(id = 102L, name = "Fingerprint Artist", fingerprint = "fpprint")
 
-        every { extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, any()) } returns null
         every { artistRepo.findByFingerprint(any()) } returns existingArtist
 
         val result = service.ensureArtist(name = "Fingerprint Artist")
@@ -114,41 +98,34 @@ class CanonicalizationServiceTest {
     fun `should create new artist when not found`() {
         val newArtist = Artist(id = 103L, name = "New Artist", fingerprint = "fpnew")
 
-        every { extRepo.findByProviderAndExternalId(any(), any()) } returns null
+        every { artistRepo.findBySpotifyId("spotify-123") } returns null
         every { artistRepo.findByFingerprint(any()) } returns null
         every { artistRepo.save(any()) } returns newArtist
-        every { extRepo.save(any()) } returns
-            ExternalIdentifier(
-                entityType = EntityType.ARTIST,
-                entityId = 103L,
-                provider = Provider.SPOTIFY,
-                externalId = "spotify-123",
-            )
 
         val result = service.ensureArtist(name = "New Artist", spotifyId = "spotify-123")
 
         assertEquals(newArtist.id, result.id)
         verify(exactly = 1) { artistRepo.save(any()) }
-        verify(exactly = 1) { extRepo.save(any()) }
+        verify(exactly = 1) { artistRepo.save(match { it.spotifyId == "spotify-123" }) }
+        verify(exactly = 0) { extRepo.save(any()) }
     }
 
     @Test
     fun `should link artist to multiple external providers`() {
         val artist = Artist(id = 104L, name = "Multi Provider", fingerprint = "fpmulti")
 
-        every { extRepo.findByProviderAndExternalId(Provider.MUSICBRAINZ, "mb-123") } returns null
-        every { extRepo.findByProviderAndExternalId(Provider.SPOTIFY, any()) } returns null
+        every { artistRepo.findByMusicbrainzArtistId("mb-123") } returns null
+        every { artistRepo.findBySpotifyId("sp-123") } returns null
         every { artistRepo.findByFingerprint(any()) } returns artist
-        every { extRepo.save(any()) } returnsMany
-            listOf(
-                ExternalIdentifier(entityType = EntityType.ARTIST, entityId = 104L, provider = Provider.MUSICBRAINZ, externalId = "mb-123"),
-                ExternalIdentifier(entityType = EntityType.ARTIST, entityId = 104L, provider = Provider.SPOTIFY, externalId = "sp-123"),
-            )
+        every { artistRepo.save(any()) } answers { firstArg() }
 
         val result = service.ensureArtist(name = "Multi Provider", musicbrainzId = "mb-123", spotifyId = "sp-123")
 
         assertEquals(artist.id, result.id)
-        verify(exactly = 2) { extRepo.save(any()) }
+        assertEquals("mb-123", result.musicbrainzArtistId)
+        assertEquals("sp-123", result.spotifyId)
+        verify(exactly = 1) { artistRepo.save(any()) }
+        verify(exactly = 0) { extRepo.save(any()) }
     }
 
     // ==================== ensureAlbum Tests ====================

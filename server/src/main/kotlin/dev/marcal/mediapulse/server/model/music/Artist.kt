@@ -16,6 +16,8 @@ data class Artist(
     val id: Long = 0,
     @Column(nullable = false) val name: String,
     @Column(nullable = false, unique = true) val fingerprint: String,
+    @Column(name = "spotify_id", unique = true) val spotifyId: String? = null,
+    @Column(name = "musicbrainz_artist_id", unique = true) val musicbrainzArtistId: String? = null,
     @Column(name = "created_at") val createdAt: Instant = Instant.now(),
     @Column(name = "updated_at") val updatedAt: Instant? = null,
 )
