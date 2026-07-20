@@ -102,7 +102,7 @@ Os endpoints de ranking e análise por período exigem `start` e `end` explícit
 - mínimo recente: 2 plays dentro da janela recente
 - gap mínimo: 90 dias entre o último play histórico e o primeiro play recente
 
-Os resultados são ordenados por força de redescoberta, usando um score interno simples: `quietGapDays * ln(historicalPlayCount + 1) * ln(recentPlayCount + 1)`. Esse score não é exposto no contrato; ele só prioriza retornos com gap longo, histórico relevante e atividade recente real.
+Os resultados são ordenados por força de redescoberta, usando um score interno simples: `quietGapDays * ln(historicalPlayCount + 1) * ln(recentPlayCount + 1)`. Esse score não é exposto no contrato; ele só prioriza retornos com gap longo, histórico relevante e atividade recente real. Empates são resolvidos por gap, plays históricos, plays recentes, play mais recente e ID do álbum.
 
 Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, último play histórico, primeiro play recente, play mais recente e `quietGapDays`.
 

@@ -37,8 +37,6 @@ Movie identity uses fingerprint by `original_title + year`.
 - `movie_watches`
 - `movie_images`
 
-Migrations: `V7__create_movies_schema.sql`, `V8__add_movie_images.sql`, `V9__add_slug_to_movies.sql`, `V35__migrate_movie_external_identifiers.sql`.
-
 ## Movie images
 
 - The service downloads all relevant movie images available in Plex payload (`Image[]`).

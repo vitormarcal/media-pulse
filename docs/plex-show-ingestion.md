@@ -50,8 +50,6 @@ Show identity prefers canonical third-party ids when available.
 - `tv_episodes`
 - `tv_episode_watches`
 
-Migrations: `V11__create_tv_schema.sql`, `V12__add_tv_show_images.sql`, `V13__add_tv_episode_season_title.sql`, `V32__remove_plex_external_identifiers.sql`, `V36__migrate_show_external_identifiers.sql`, `V37__migrate_episode_external_identifiers.sql`.
-
 ## Show images
 
 - The service downloads all relevant show images available in Plex payload (`Image[]`).

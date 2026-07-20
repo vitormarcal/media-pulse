@@ -31,251 +31,23 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - frontend estático gerado pelo Nuxt
 - entrega no mesmo domínio, com APIs em `/api/*` e UI em `/`
 
-## Migrations atuais
-
-- `V1__create_event_sources_table.sql`
-- `V2__create_music_schema.sql`
-- `V3__create_books_schema.sql`
-- `V4__add_slug_to_books.sql`
-- `V5__rebuild_book_reads_as_sessions.sql`
-- `V6__add_edition_information_to_book_editions.sql`
-- `V7__create_movies_schema.sql`
-- `V8__add_movie_images.sql`
-- `V9__add_slug_to_movies.sql`
-- `V10__allow_manual_movie_sources.sql`
-- `V11__create_tv_schema.sql`
-- `V12__add_tv_show_images.sql`
-- `V13__add_tv_episode_season_title.sql`
-- `V14__create_music_duplicate_review_state.sql`
-- `V15__add_movie_collections.sql`
-- `V29__create_games_schema.sql`
-- `V30__add_album_lists.sql`
-- `V31__type_musicbrainz_external_identifiers.sql`
-- `V32__remove_plex_external_identifiers.sql`
-- `V33__remove_book_external_identifiers.sql`
-- `V34__migrate_game_external_identifiers.sql`
-- `V35__migrate_movie_external_identifiers.sql`
-- `V36__migrate_show_external_identifiers.sql`
-- `V37__migrate_episode_external_identifiers.sql`
-- `V38__migrate_artist_external_identifiers.sql`
-- `V39__migrate_album_external_identifiers.sql`
-- `V40__migrate_track_external_identifiers.sql`
-
 ## Configuração
 
-`application.yml` depende principalmente destas variáveis de ambiente:
-
-### Infra
+Para iniciar o backend, configure o acesso ao PostgreSQL:
 
 - `SPRING_DATASOURCE_URL`
 - `SPRING_DATASOURCE_USERNAME`
 - `SPRING_DATASOURCE_PASSWORD`
-- `SPRING_JPA_HIBERNATE_DDL_AUTO` (`validate` por padrão)
-- `SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE` (`15MB`)
-- `SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE` (`15MB`)
 
-### Pipeline e storage
+Integrações, pipeline, storage, CORS e limites HTTP possuem defaults e opções documentados em `server/src/main/resources/application.yml`. Sobrescreva somente o necessário por variáveis de ambiente e nunca versione credenciais reais.
 
-- `PIPELINE_IMPORT_ENABLED`
-- `PIPELINE_IMPORT_CRON`
-- `PIPELINE_RUN_ON_STARTUP`
-- `MEDIA_PULSE_FRONTEND_STATIC_PATH`
-- `media-pulse.allowed-origin` via config YAML para CORS
-- `media-pulse.storage.covers-path`
-- `media-pulse.storage.imports-path`
+## Documentação
 
-### Plex
-
-- `PLEX_URL`
-- `PLEX_TOKEN`
-- `PLEX_IMPORT_ENABLED`
-- `PLEX_IMPORT_MOVIES_ENABLED`
-- `PLEX_IMPORT_SHOWS_ENABLED`
-- `PLEX_IMPORT_PAGE_SIZE`
-
-### Spotify
-
-- `SPOTIFY_ENABLED`
-- `SPOTIFY_API_BASE_URL`
-- `SPOTIFY_ACCOUNTS_BASE_URL`
-- `SPOTIFY_CLIENT_ID`
-- `SPOTIFY_CLIENT_SECRET`
-- `SPOTIFY_REFRESH_TOKEN`
-- `SPOTIFY_OAUTH_ENABLED`
-- `SPOTIFY_REDIRECT_URI`
-- `SPOTIFY_SCOPES`
-- `SPOTIFY_IMPORT_ENABLED`
-- `SPOTIFY_IMPORT_PAGE_SIZE`
-- `SPOTIFY_POLL_ENABLED`
-- `SPOTIFY_POLL_CRON`
-
-### Hardcover
-
-- `HARDCOVER_ENABLED`
-- `HARDCOVER_API_BASE_URL`
-- `HARDCOVER_TOKEN`
-- `HARDCOVER_USER_ID`
-- `HARDCOVER_POLL_ENABLED`
-- `HARDCOVER_POLL_CRON`
-- `HARDCOVER_POLL_PAGE_SIZE`
-
-### TMDb
-
-- `TMDB_ENABLED`
-- `TMDB_API_BASE_URL`
-- `TMDB_IMAGE_BASE_URL`
-- `TMDB_TOKEN`
-- `TMDB_API_KEY`
-- `TMDB_RATE_LIMIT_PER_SECOND`
-- `TMDB_MAX_429_RETRIES`
-- `TMDB_RETRY_BACKOFF_MS`
-
-### IGDB e SteamGridDB
-
-- `IGDB_ENABLED`
-- `IGDB_API_BASE_URL`
-- `IGDB_OAUTH_BASE_URL`
-- `IGDB_CLIENT_ID`
-- `IGDB_CLIENT_SECRET`
-- `STEAMGRIDDB_ENABLED`
-- `STEAMGRIDDB_API_BASE_URL`
-- `STEAMGRIDDB_API_KEY`
-
-### MusicBrainz e HTTP clients
-
-A interface de música permite adicionar um artista confirmando um candidato do MusicBrainz e, na página do artista vinculado, buscar outros release groups. A importação é seletiva e idempotente: cria somente discos ausentes e preserva possíveis correspondências para revisão manual.
-
-- `MB_IMPORT_ENABLED`
-- `MB_ENRICH_BATCH_SIZE`
-- `MB_ENRICH_MAX_TAGS`
-- `MB_ENRICH_MIN_REQUEST_INTERVAL_MS`
-- parâmetros `media-pulse.http.*` controlam pools e timeouts para clientes remotos, locais e de imagens
-
-## Endpoints por domínio
-
-### Books
-
-- `GET /api/books/library`
-- `GET /api/books/stats`
-- `GET /api/books/year/{year}`
-- `GET /api/books/{bookId}`
-- `GET /api/books/slug/{slug}`
-- `GET /api/books/authors/{authorId}`
-- `GET /api/books/list`
-- `GET /api/books/search`
-- `GET /api/books/summary`
-
-### Music
-
-- `GET /api/music/summary`
-- `GET /api/music/recent-albums`
-- `GET /api/music/library/artists`
-- `GET /api/music/library/albums`
-- `GET /api/music/library/tracks`
-- `GET /api/music/search`
-- `GET /api/music/albums/{albumId}`
-- `GET /api/music/albums/{albumId}/musicbrainz/candidates`
-- `GET /api/music/albums/{albumId}/musicbrainz/preview`
-- `POST /api/music/albums/{albumId}/musicbrainz`
-- `GET /api/music/lists`
-- `GET /api/music/lists/{slug}`
-- `POST /api/music/lists`
-- `PUT /api/music/lists/{listId}`
-- `DELETE /api/music/lists/{listId}`
-- `POST /api/music/lists/{listId}/albums/{albumId}`
-- `DELETE /api/music/lists/{listId}/albums/{albumId}`
-- `PUT /api/music/lists/{listId}/order`
-- `PATCH /api/music/lists/{listId}/albums/{albumId}/listened`
-- `GET /api/music/artists/{artistId}`
-- `GET /api/music/artists/{artistId}/musicbrainz/candidates`
-- `POST /api/music/artists/{artistId}/musicbrainz`
-- `GET /api/music/tracks/{trackId}`
-- `GET /api/music/tops/artists`
-- `GET /api/music/tops/albums`
-- `GET /api/music/tops/tracks`
-- `GET /api/music/tops/genres`
-- `GET /api/music/coverage/artists`
-- `GET /api/music/coverage/albums`
-- `GET /api/music/albums/never-played`
-- `GET /api/music/genres/trending`
-- `GET /api/music/genres/recent`
-- `GET /api/music/genres/underplayed`
-- `GET /api/music/genres/top-by-source`
-- `GET /api/music/admin/track-duplicates`
-- `POST /api/music/admin/track-duplicates/ignore`
-- `POST /api/music/admin/track-duplicates/merge`
-- `POST /api/music/admin/track-duplicates/merge-batch`
-
-### Movies
-
-- `GET /api/movies/library`
-- `GET /api/movies/recent`
-- `GET /api/movies/{movieId}`
-- `GET /api/movies/slug/{slug}`
-- `GET /api/people/{slug}`
-- `GET /api/people/search`
-- `GET /api/people/{personId}/tmdb-filmography`
-- `GET /api/people/{personId}/tmdb-show-filmography`
-- `GET /api/movies/companies/{slug}`
-- `GET /api/movies/terms/{kind}/{slug}`
-- `GET /api/movies/lists`
-- `GET /api/movies/lists/{slug}`
-- `GET /api/movies/collections`
-- `GET /api/movies/search`
-- `GET /api/movies/summary`
-- `GET /api/movies/stats`
-- `GET /api/movies/year/{year}`
-- `GET /api/movies/catalog/suggestions`
-- `POST /api/movies/catalog`
-- `POST /api/movies/{movieId}/watches`
-
-### Shows
-
-- `GET /api/shows/library`
-- `GET /api/shows/recent`
-- `GET /api/shows/currently-watching`
-- `GET /api/shows/{showId}`
-- `GET /api/shows/slug/{slug}`
-- `GET /api/shows/slug/{slug}/seasons/{seasonNumber}`
-- `GET /api/shows/search`
-- `GET /api/shows/summary`
-- `GET /api/shows/stats`
-- `GET /api/shows/year/{year}`
-- `GET /api/shows/catalog/suggestions`
-- `POST /api/shows/credits/sync-tmdb`
-- `POST /api/shows/{showId}/credits/sync-tmdb`
-- `POST /api/shows/catalog`
-- `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview`
-- `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/apply`
-- `POST /api/shows/watches`
-- `POST /api/shows/{showId}/watches`
-
-### Games
-
-- `GET /api/games/library`
-- `GET /api/games/{gameId}`
-- `GET /api/games/slug/{slug}`
-- `GET /api/games/search`
-- `GET /api/games/stats`
-- `GET /api/games/catalog/suggestions`
-- `POST /api/games/catalog`
-- `POST /api/games/{gameId}/sessions`
-- `PATCH /api/games/{gameId}/sessions/{sessionId}`
-- `DELETE /api/games/{gameId}/sessions/{sessionId}`
-
-## Endpoints operacionais
-
-- `POST /webhook/plex`
-- `POST /event-sources/reprocess`
-- `POST /event-sources/{id}/reprocess`
-- `POST /api/spotify/import`
-- `POST /api/spotify/extended/import`
-- `POST /api/spotify/backfill-album-tracks`
-- `GET /oauth/spotify/login`
-- `GET /oauth/spotify/callback`
-- `POST /api/plex/music/import`
-- `POST /api/musicbrainz/enrich-album-genres`
-- `POST /api/musicbrainz/enrich-album-genres/drain`
+- APIs de domínio: `docs/books-api.md`, `docs/music-api.md`, `docs/movies-api.md`, `docs/shows-api.md` e `docs/games-api.md`
+- Operações e integrações: `docs/operations-api.md`, `docs/plex-movie-ingestion.md` e `docs/plex-show-ingestion.md`
+- Contrato HTTP publicado: `docs/openapi.yaml`
+- Descoberta de novas features: `docs/feature-discovery.md`
+- Decisões de enriquecimento MusicBrainz: `docs/features/musicbrainz-album-enrichment.md`
 
 ## Frontend
 
@@ -287,7 +59,7 @@ Se o frontend rodar em outra origem, ajuste `media-pulse.allowed-origin` para in
 
 ## Docker
 
-O repositório agora tem três Dockerfiles com responsabilidades distintas:
+O repositório possui três Dockerfiles com responsabilidades distintas:
 
 - `frontend/Dockerfile`: build e entrega standalone do frontend estático via `nginx`
 - `server/Dockerfile`: build e entrega standalone do backend
@@ -296,20 +68,8 @@ O repositório agora tem três Dockerfiles com responsabilidades distintas:
 Fluxo padrão de publicação:
 
 ```bash
-make build VERSION=1.0.0-beta.35 EXTRA_TAGS="latest"
-make push VERSION=1.0.0-beta.35 EXTRA_TAGS="latest"
+make build VERSION=<versão> EXTRA_TAGS="latest"
+make push VERSION=<versão> EXTRA_TAGS="latest"
 ```
 
 Por padrão, o `Makefile` usa o `Dockerfile` raiz.
-
-## Documentação detalhada
-
-- `docs/books-api.md`
-- `docs/music-api.md`
-- `docs/movies-api.md`
-- `docs/shows-api.md`
-- `docs/games-api.md`
-- `docs/plex-movie-ingestion.md`
-- `docs/plex-show-ingestion.md`
-- `docs/operations-api.md`
-- `docs/openapi.yaml`
