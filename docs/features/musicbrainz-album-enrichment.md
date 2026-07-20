@@ -2,15 +2,13 @@
 
 ## Status
 
-Primeiro corte implementado. O segundo corte também permite criar um artista a partir do MusicBrainz e importar release groups selecionados de sua discografia. A persistência descrita originalmente nesta spec foi posteriormente substituída pelas estruturas específicas documentadas em `external-identifiers-migration.md`.
+Implementado. O fluxo também permite criar um artista a partir do MusicBrainz e importar release groups selecionados de sua discografia. O modelo persistente atual usa estruturas específicas por entidade, descritas em `docs/music-api.md`.
 
-Esta spec registra a decisão de começar pelo enriquecimento assistido de um álbum já existente. A criação manual de artistas e a importação de discografias ficam para incrementos posteriores.
+Esta spec registra o enriquecimento assistido de álbuns e sua evolução para criação de artistas e importação seletiva de discografias.
 
 ## Problema
 
-As páginas de álbum e artista não oferecem uma forma de reconciliar seus dados com o MusicBrainz. O enriquecimento existente é operacional, limitado a gêneros e pressupõe que o identificador MusicBrainz armazenado para um álbum seja um `release`.
-
-No desenho original, a tabela `external_identifiers` registrava apenas `provider = MUSICBRAINZ` e o UUID. Ela não informava qual entidade do MusicBrainz o UUID representava, tornando ambíguos IDs de artista, release group, release e recording. Essa limitação motivou a tipagem intermediária e, posteriormente, a migração para colunas e tabelas específicas por domínio.
+Álbuns e artistas precisam ser reconciliados com o MusicBrainz sem entregar ao provedor a identidade do catálogo local. A correspondência externa deve ser explícita, revisável e capaz de distinguir o trabalho canônico das edições conhecidas usadas durante a ingestão.
 
 No modelo do MusicBrainz:
 
@@ -19,7 +17,7 @@ No modelo do MusicBrainz:
 - `release` representa uma edição específica, como CD, vinil, deluxe ou lançamento de determinado país;
 - `recording` representa a gravação de uma faixa.
 
-Consequentemente, a identidade MusicBrainz principal do `Album` canônico deve ser um `release-group`. Um `release` pode coexistir como referência à edição usada para capa, mídia ou tracklist.
+Consequentemente, a identidade MusicBrainz principal do `Album` canônico é um `release-group`. Um ou mais `release` podem coexistir como aliases técnicos de edições conhecidas usadas na ingestão.
 
 Referências oficiais:
 
@@ -53,26 +51,18 @@ Na página do artista, o primeiro incremento deve apenas permitir estabelecer ou
 
 1. Indicar se o artista está vinculado ao MusicBrainz.
 2. Permitir vincular, revisar ou trocar a correspondência do artista.
-3. Não buscar nem inserir a discografia neste incremento.
+3. Permitir criar um artista local somente após confirmar sua identidade MusicBrainz.
+4. Exibir release groups da discografia classificados como já vinculados, possíveis correspondências ou ausentes.
+5. Importar apenas os release groups ausentes selecionados pelo owner.
 
-### Persistência histórica
+### Persistência
 
-O primeiro desenho registrou o tipo da entidade externa em `external_identifiers`, por exemplo:
+- `artists.musicbrainz_artist_id` armazena a identidade MusicBrainz `artist` do artista local;
+- `albums.musicbrainz_release_group_id` armazena a identidade canônica `release-group` do álbum;
+- `album_musicbrainz_release_ids` preserva aliases `release` `0..N` usados para reconhecer edições durante a ingestão;
+- `track_musicbrainz_recording_ids` preserva aliases `recording` `0..N` das faixas.
 
-```text
-provider: MUSICBRAINZ
-external_entity_type: ARTIST | RELEASE_GROUP | RELEASE | RECORDING
-external_id: UUID
-```
-
-Um álbum poderá manter simultaneamente:
-
-```text
-ALBUM  MUSICBRAINZ  RELEASE_GROUP  <MBID do disco canônico>
-ALBUM  MUSICBRAINZ  RELEASE        <MBID de uma edição conhecida>
-```
-
-Esse desenho foi posteriormente substituído por `artists.musicbrainz_artist_id`, `albums.musicbrainz_release_group_id`, `album_musicbrainz_release_ids` e `track_musicbrainz_recording_ids`. A tabela genérica foi removida pela migration `V40`.
+O release group representa o trabalho geral acompanhado pelo produto. Releases são referências técnicas: preservá-los não transforma o álbum local em uma edição comercial específica.
 
 ## API/UI
 
@@ -88,8 +78,6 @@ Na interface, a ação deve integrar-se ao modo de edição e aos componentes ex
 
 ## Non-goals
 
-- criar artista manualmente;
-- importar a discografia completa de um artista;
 - criar álbuns automaticamente;
 - escolher automaticamente uma edição específica;
 - substituir título, artista ou capa;
@@ -103,44 +91,32 @@ Na interface, a ação deve integrar-se ao modo de edição e aos componentes ex
 - O vínculo nunca deve ser aplicado automaticamente apenas por semelhança de texto; o owner confirma o candidato.
 - A busca deve priorizar título e artista e retornar uma lista curta e compreensível.
 - `release-group` é a identidade principal MusicBrainz do álbum canônico.
-- `release` identifica somente uma edição e será necessário futuramente para tracklist, formato, país e capas específicas.
+- `release` identifica somente uma edição e pode orientar resolução de release group, tracklist, formato, país ou capas específicas.
 - Dados locais preenchidos não devem ser sobrescritos silenciosamente.
-- O ano do MusicBrainz só preenche um ano local ausente neste primeiro corte.
+- O ano do MusicBrainz só preenche um ano local ausente.
 - Gêneros e tags devem manter informação de origem para permitir inspeção e correção.
 - A confirmação deve ser idempotente: reaplicar a mesma correspondência não cria vínculos nem termos duplicados.
 - Trocar uma correspondência existente exige confirmação explícita.
 
-### Identificadores legados
-
-O código atual chama `/ws/2/release/{MBID}` e, portanto, trata o identificador MusicBrainz existente de álbum como `release`.
-
-Durante a migration ou reconciliação:
-
-1. preservar o MBID legado;
-2. tentar resolvê-lo como `release`;
-3. quando resolvido, armazená-lo como `RELEASE` e obter seu `release-group` para criar o vínculo `RELEASE_GROUP`;
-4. não reclassificar como `RELEASE_GROUP` apenas por suposição;
-5. se o ID não puder ser resolvido, mantê-lo identificável como legado/indeterminado para revisão, sem descartá-lo.
-
-O enriquecimento atual de gêneros deve ser adaptado para preferir o `release-group`. O fallback por `release` pode continuar enquanto houver dados legados.
+O enriquecimento de gêneros prefere o release group canônico e pode usar um release técnico conhecido como fallback. Ao receber um release novo, a ingestão resolve seu release group antes de associá-lo ao álbum; divergências com a identidade canônica já vinculada são rejeitadas.
 
 ## Critérios mínimos de aceite
 
 - A página de um álbum existente permite pesquisar candidatos no MusicBrainz.
 - Nenhuma busca ou prévia altera dados locais.
 - O owner consegue selecionar, revisar e confirmar um `release-group`.
-- A confirmação persiste o tipo do identificador MusicBrainz sem ambiguidade.
+- A confirmação persiste o release group na coluna canônica sem ambiguidade.
 - O artista correspondente pode ser vinculado ao MBID de `artist`.
 - Ano ausente e gêneros/tags são enriquecidos sem sobrescrever os demais dados canônicos.
 - Repetir a confirmação é idempotente.
-- IDs legados são preservados e reconciliados sem reclassificação cega.
+- Releases conhecidos são preservados como aliases técnicos sem substituir o release group canônico.
 - A página do artista mostra e permite revisar seu vínculo MusicBrainz.
-- Há testes de service para seleção/aplicação, idempotência, troca de vínculo e tratamento de ID legado.
-- Migration, endpoints e comportamento são documentados em `README.md`, `docs/music-api.md` e `docs/openapi.yaml` durante a implementação.
+- Há testes de service para seleção/aplicação, idempotência, troca de vínculo e resolução de release.
+- Endpoints e comportamento permanecem alinhados em `docs/music-api.md` e `docs/openapi.yaml`.
 
-## Evolução posterior
+## Discografia e evolução posterior
 
-Esta base deve permitir a seguinte sequência sem fazer parte desta entrega:
+O fluxo implementado cobre a criação ou reconciliação até a importação seletiva de release groups. A escolha de uma release e a importação de tracklist e capa permanecem como evolução posterior:
 
 ```text
 Artista local

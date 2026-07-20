@@ -84,6 +84,9 @@ Para finalizar ou abandonar um ciclo em andamento, atualize a mesma sessão com 
 ## Invariantes
 
 - games são entradas de catálogo local com sessões manuais
+- cada game admite no máximo um `igdb_id` e um `steamgriddb_id`, armazenados diretamente em `games`
+- cada ID externo é único dentro de seu provider e não pode identificar dois games locais
+- `igdb_id` ancora deduplicação e enriquecimento de metadados; `steamgriddb_id` referencia a fonte de imagens associada ao mesmo game local
 - `GameDetailsResponse.rating` e `GameDetailsResponse.comments` podem incluir dados cross-domain de Ratings e Comments
 - provedores externos enriquecem metadados e imagens; o catálogo local continua sendo o contrato canônico
 

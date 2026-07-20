@@ -79,6 +79,8 @@ Lista sessões de leitura em ordem de atividade.
 
 - a API é read-only para livros
 - leituras são sessões consolidadas, não eventos crus de provider
+- ISBN-10 e ISBN-13 pertencem à edição e são armazenados diretamente em `book_editions.isbn_10` e `book_editions.isbn_13`
+- cada edição admite no máximo um valor de cada tipo de ISBN; esses identificadores não pertencem ao livro canônico
 - `BookDetailsResponse.comments` pode incluir comentários cross-domain criados pela Comments API
 
 ## Non-goals

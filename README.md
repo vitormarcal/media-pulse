@@ -17,10 +17,6 @@ O backend agrega dados de provedores externos, persiste uma visão canônica loc
 - `docs/`: contratos HTTP e notas operacionais
 - `http-client-env/`: exemplos de ambiente para clientes HTTP locais
 
-Planos de evolução em andamento:
-
-- [migração incremental de identificadores externos](docs/features/external-identifiers-migration.md)
-
 ## Backend
 
 - Stack: Kotlin 1.9 + Spring Boot 3.5

@@ -378,6 +378,9 @@ Filmes podem ser vinculados a uma coleção oficial do TMDb, como `The Matrix Co
 
 ## Invariantes
 
+- cada filme admite no máximo um `tmdb_id` e um `imdb_id`, armazenados diretamente em `movies`
+- cada ID externo é único dentro de seu provider e não pode identificar dois filmes locais
+- TMDb e IMDb identificam o mesmo filme canônico local e podem ser usados para deduplicação; o catálogo não depende de consultar esses provedores durante a leitura
 - `MovieDetailsResponse.rating` e `MovieDetailsResponse.comments` podem incluir dados cross-domain de Ratings e Comments
 - watches manuais usam `source=MANUAL`
 - endpoints `sync-tmdb` são ações explícitas de enriquecimento provider-specific

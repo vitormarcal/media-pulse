@@ -131,10 +131,15 @@ Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, últ
 - playbacks são agregados para as respostas públicas
 - rankings e análises por período exigem `start` e `end` explícitos quando o endpoint não tem `range`
 - endpoints de termos de álbum operam sobre catálogo local
-- a identidade MusicBrainz canônica de álbum é um `release-group`; `release` identifica uma edição
+- artistas admitem no máximo um ID Spotify e um MBID de `artist`, armazenados diretamente em `artists`
+- a identidade MusicBrainz canônica de um álbum é um único `release-group`, armazenado em `albums.musicbrainz_release_group_id`
+- MBIDs de `release` e IDs de álbum Spotify são aliases técnicos `0..N`, armazenados em `album_musicbrainz_release_ids` e `album_spotify_ids`
+- cada alias externo de álbum ou faixa pertence a uma única entidade local; as tabelas específicas garantem essa unicidade
+- aliases de álbum servem para reconhecer ingestões e deduplicar edições que convergem no mesmo trabalho; eles não significam que o produto acompanhe uma edição comercial específica
+- faixas admitem aliases Spotify e MBIDs de `recording` `0..N`, armazenados em `track_spotify_ids` e `track_musicbrainz_recording_ids`; nenhum alias válido deve ser descartado por haver mais de um
+- ao consolidar faixas duplicadas, todos os aliases externos das faixas de origem são transferidos para a faixa vencedora
 - busca e prévia MusicBrainz são read-only e toda correspondência exige confirmação do owner
 - o enriquecimento não sobrescreve título, artista, capa, tracklist ou ano já preenchido
-- identificadores MusicBrainz legados permanecem sem tipo até serem resolvidos como release
 - `POST /api/music/musicbrainz/artists` cria ou reutiliza um artista somente após validar o MBID no MusicBrainz
 - `GET /api/music/artists/{artistId}/musicbrainz/discography` é uma prévia read-only que classifica release groups
 - `POST /api/music/artists/{artistId}/musicbrainz/discography/import` aceita até 50 MBIDs pertencentes ao artista e cria somente itens classificados como ausentes
@@ -145,6 +150,8 @@ Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, últ
 - este contrato não cobre importação Spotify/Plex; endpoints operacionais ficam em `operations-api.md`
 - termos de álbum não documentam enriquecimento externo automático
 - importação de discografia não escolhe release, capa ou tracklist
+- o modelo atual não escolhe qual alias Spotify fornece a tracklist principal nem mescla automaticamente tracklists de edições distintas
+- associação manual de aliases Spotify, revisão de convergência entre edições e escolha da tracklist principal pertencem a uma evolução futura própria
 
 ## Critérios de aceite
 

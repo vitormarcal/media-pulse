@@ -146,6 +146,11 @@ Regras importantes:
 
 ## Invariantes
 
+- cada série admite no máximo um `tmdb_id`, um `tvdb_id` e um `imdb_id`, armazenados diretamente em `tv_shows`
+- cada episódio admite no máximo um identificador de cada um desses provedores, armazenados diretamente em `tv_episodes`
+- dentro de cada domínio, um ID externo é único por provider e não pode identificar duas entidades locais
+- identificadores externos têm prioridade na deduplicação de episódios; fingerprint e posição na temporada permanecem como fallbacks
+- séries e episódios sem identificadores externos continuam válidos no catálogo local
 - `ShowDetailsResponse.rating` e `ShowDetailsResponse.comments` podem incluir dados cross-domain de Ratings e Comments
 - `ShowSeasonEpisodeDto.rating` pode incluir rating por episódio
 - watches manuais usam `source=MANUAL`
