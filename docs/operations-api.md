@@ -44,6 +44,19 @@ Resposta body:
 }
 ```
 
+### `GET /api/spotify/status`
+
+Retorna o estado operacional da importação do Spotify. Os estados possíveis são:
+
+- `UNKNOWN`: nenhuma importação terminou desde a criação do estado;
+- `HEALTHY`: a última importação terminou com sucesso;
+- `REAUTHORIZATION_REQUIRED`: o Spotify retornou `invalid_grant`; novas tentativas de token ficam suspensas até a aplicação reiniciar com um refresh token novo;
+- `ERROR`: ocorreu outra falha na última importação.
+
+O contrato não expõe tokens nem a descrição crua retornada pelo provedor. Quando OAuth está habilitado e a autorização expirou, `reauthorizationUrl` aponta para `/oauth/spotify/login`.
+
+Refresh tokens do Spotify expiram após seis meses. Depois de obter um novo token, atualize `SPOTIFY_REFRESH_TOKEN` e reinicie a aplicação. Um refresh bem-sucedido altera o estado para `HEALTHY`.
+
 ## Spotify OAuth
 
 ### `GET /oauth/spotify/login`

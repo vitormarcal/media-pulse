@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.service.spotify
 
 import dev.marcal.mediapulse.server.config.SpotifyProperties
+import dev.marcal.mediapulse.server.integration.spotify.SpotifyReauthorizationRequiredException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,6 +28,10 @@ class SpotifyPollScheduler(
             try {
                 val imported = spotifyImportService.importRecentlyPlayed()
                 logger.info("Spotify poll done | imported={}", imported)
+            } catch (_: SpotifyReauthorizationRequiredException) {
+                logger.warn(
+                    "Spotify authorization expired; polling paused until the refresh token is replaced and the application restarted",
+                )
             } catch (e: Exception) {
                 logger.error("Spotify poll failed", e)
             }

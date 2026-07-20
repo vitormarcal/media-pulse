@@ -1,6 +1,7 @@
 <template>
   <div class="app-shell">
     <AppTopNav @open-search="searchOpen = true" />
+    <SpotifyStatusBanner v-if="spotifyStatus?.status === 'REAUTHORIZATION_REQUIRED'" :status="spotifyStatus" />
     <SearchOverlay
       :open="searchOpen"
       :loading="loading"
@@ -16,11 +17,17 @@
 
 <script setup lang="ts">
 import AppTopNav from '~/components/navigation/AppTopNav.vue'
+import SpotifyStatusBanner from '~/components/integrations/SpotifyStatusBanner.vue'
 import SearchOverlay from '~/components/navigation/SearchOverlay.vue'
 import { fetchGlobalSearch } from '~/composables/useGlobalSearch'
 import type { GlobalSearchData } from '~/types/search'
+import type { SpotifyStatusResponse } from '~/types/spotify'
 
 const route = useRoute()
+const config = useRuntimeConfig()
+const { data: spotifyStatus } = await useFetch<SpotifyStatusResponse>('/api/spotify/status', {
+  baseURL: config.public.apiBase,
+})
 const searchOpen = ref(false)
 const query = ref('')
 const results = ref<GlobalSearchData | null>(null)

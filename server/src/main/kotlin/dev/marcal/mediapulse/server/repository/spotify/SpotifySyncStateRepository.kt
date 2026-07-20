@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.repository.spotify
 
+import dev.marcal.mediapulse.server.model.spotify.SpotifyAuthorizationStatus
 import dev.marcal.mediapulse.server.model.spotify.SpotifySyncState
 import dev.marcal.mediapulse.server.repository.crud.SpotifySyncStateCrudRepository
 import org.springframework.stereotype.Repository
@@ -21,5 +22,34 @@ class SpotifySyncStateRepository(
         val current = getOrCreateSingleton()
         if (newAfterMs <= current.cursorAfterMs) return current
         return crud.save(current.copy(cursorAfterMs = newAfterMs, updatedAt = Instant.now()))
+    }
+
+    @Transactional
+    fun markHealthy(): SpotifySyncState {
+        val now = Instant.now()
+        return crud.save(
+            getOrCreateSingleton().copy(
+                authorizationStatus = SpotifyAuthorizationStatus.HEALTHY,
+                lastSuccessAt = now,
+                lastErrorCode = null,
+                updatedAt = now,
+            ),
+        )
+    }
+
+    @Transactional
+    fun markFailure(
+        status: SpotifyAuthorizationStatus,
+        errorCode: String,
+    ): SpotifySyncState {
+        val now = Instant.now()
+        return crud.save(
+            getOrCreateSingleton().copy(
+                authorizationStatus = status,
+                lastFailureAt = now,
+                lastErrorCode = errorCode.take(100),
+                updatedAt = now,
+            ),
+        )
     }
 }

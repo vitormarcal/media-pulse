@@ -2,9 +2,11 @@ package dev.marcal.mediapulse.server.service.spotify
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import dev.marcal.mediapulse.server.integration.spotify.SpotifyApiClient
+import dev.marcal.mediapulse.server.integration.spotify.SpotifyReauthorizationRequiredException
 import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyRecentlyPlayedItem
 import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyRecentlyPlayedResponse
 import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyTrack
+import dev.marcal.mediapulse.server.model.spotify.SpotifyAuthorizationStatus
 import dev.marcal.mediapulse.server.repository.spotify.SpotifySyncStateRepository
 import dev.marcal.mediapulse.server.service.eventsource.EventSourceService
 import dev.marcal.mediapulse.server.service.eventsource.ProcessEventSourceService
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class SpotifyImportServiceTest {
     @MockK lateinit var spotifyApi: SpotifyApiClient
@@ -92,6 +95,9 @@ class SpotifyImportServiceTest {
                     id = 1L,
                     cursorAfterMs = 999L,
                 )
+            every { syncRepo.markHealthy() } returns
+                dev.marcal.mediapulse.server.model.spotify
+                    .SpotifySyncState(id = 1L)
 
             val item1PlayedAt = "2020-01-01T00:00:01Z"
             val item2PlayedAt = "2020-01-01T00:00:10Z"
@@ -175,5 +181,29 @@ class SpotifyImportServiceTest {
             verify(exactly = 1) { processEventSourceService.execute(777L) }
 
             verify(exactly = 1) { syncRepo.updateCursor(expectedNextAfterMs) }
+            verify(exactly = 1) { syncRepo.markHealthy() }
+        }
+
+    @Test
+    fun `should persist reauthorization status and propagate authentication failure`() =
+        runBlocking {
+            every { syncRepo.getOrCreateSingleton() } returns
+                dev.marcal.mediapulse.server.model.spotify
+                    .SpotifySyncState(id = 1L)
+            every {
+                syncRepo.markFailure(SpotifyAuthorizationStatus.REAUTHORIZATION_REQUIRED, "invalid_grant")
+            } returns
+                dev.marcal.mediapulse.server.model.spotify
+                    .SpotifySyncState(id = 1L)
+            coEvery { spotifyApi.getRecentlyPlayed(any(), any()) } throws SpotifyReauthorizationRequiredException()
+
+            assertFailsWith<SpotifyReauthorizationRequiredException> {
+                service.importRecentlyPlayed()
+            }
+
+            verify(exactly = 1) {
+                syncRepo.markFailure(SpotifyAuthorizationStatus.REAUTHORIZATION_REQUIRED, "invalid_grant")
+            }
+            verify(exactly = 0) { syncRepo.markHealthy() }
         }
 }

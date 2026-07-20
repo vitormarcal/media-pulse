@@ -1240,6 +1240,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/SpotifyImportResponse"
 
+  /api/spotify/status:
+    get:
+      summary: Spotify operational status
+      tags: [Spotify]
+      responses:
+        "200":
+          description: Current Spotify import and authorization status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpotifyStatusResponse"
+
   /oauth/spotify/login:
     get:
       summary: Spotify OAuth login
@@ -4414,6 +4426,31 @@ components:
         accepted:
           type: boolean
       required: [limit, accepted]
+    SpotifyStatusResponse:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        status:
+          type: string
+          enum: [UNKNOWN, HEALTHY, REAUTHORIZATION_REQUIRED, ERROR]
+        lastSuccessAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastFailureAt:
+          type: string
+          format: date-time
+          nullable: true
+        message:
+          type: string
+          nullable: true
+        reauthorizationAvailable:
+          type: boolean
+        reauthorizationUrl:
+          type: string
+          nullable: true
+      required: [enabled, status, reauthorizationAvailable]
 
     PlexMusicImportRequest:
       type: object

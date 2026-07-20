@@ -2,6 +2,9 @@ package dev.marcal.mediapulse.server.service.spotify
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import dev.marcal.mediapulse.server.integration.spotify.SpotifyApiClient
+import dev.marcal.mediapulse.server.integration.spotify.SpotifyReauthorizationRequiredException
+import dev.marcal.mediapulse.server.integration.spotify.SpotifyTokenRefreshException
+import dev.marcal.mediapulse.server.model.spotify.SpotifyAuthorizationStatus
 import dev.marcal.mediapulse.server.repository.spotify.SpotifySyncStateRepository
 import dev.marcal.mediapulse.server.service.eventsource.EventSourceService
 import dev.marcal.mediapulse.server.service.eventsource.ProcessEventSourceService
@@ -85,9 +88,23 @@ class SpotifyImportService(
                 syncRepo.updateCursor(maxSeenMs + 1)
             }
 
+            syncRepo.markHealthy()
+            logger.info("Spotify import completed | runId={} imported={} elapsedMs={}", runId, imported, System.currentTimeMillis() - start)
             return imported
+        } catch (e: SpotifyReauthorizationRequiredException) {
+            syncRepo.markFailure(SpotifyAuthorizationStatus.REAUTHORIZATION_REQUIRED, e.errorCode)
+            logger.warn(
+                "Spotify import stopped because reauthorization is required | runId={} elapsedMs={}",
+                runId,
+                System.currentTimeMillis() - start,
+            )
+            throw e
+        } catch (e: Exception) {
+            val errorCode = (e as? SpotifyTokenRefreshException)?.errorCode ?: "import_failed"
+            syncRepo.markFailure(SpotifyAuthorizationStatus.ERROR, errorCode)
+            logger.error("Spotify import failed | runId={} elapsedMs={}", runId, System.currentTimeMillis() - start, e)
+            throw e
         } finally {
-            logger.info("Spotify import finished | runId={} elapsedMs={}", runId, System.currentTimeMillis() - start)
             running.set(false)
         }
     }
