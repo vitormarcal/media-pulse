@@ -50,6 +50,7 @@ class PlexEpisodeWatchService(
         val show =
             episodeByExternalIds?.let { tvShowRepository.findById(it.showId).orElse(null) }
                 ?: tvShowRepository.findByFingerprint(showFingerprint)
+                ?: findUniqueShowBySlugAndYear(showSlug, showYear)
                 ?: tvShowRepository.save(
                     TvShow(
                         originalTitle = showOriginalTitle,
@@ -141,6 +142,14 @@ class PlexEpisodeWatchService(
             return null
         }
         return linkedEpisodes.singleOrNull()
+    }
+
+    private fun findUniqueShowBySlugAndYear(
+        slug: String?,
+        year: Int?,
+    ): TvShow? {
+        if (slug == null || year == null) return null
+        return tvShowRepository.findAllBySlugAndYear(slug, year).singleOrNull()
     }
 
     private fun mergeEpisode(

@@ -237,6 +237,11 @@ class PlexEpisodeWatchServiceTest {
                 )
 
             every { tvShowRepository.findByFingerprint(any()) } returns null
+            every { tvShowRepository.findAllBySlugAndYear("frieren-beyond-journeys-end", 2026) } returns
+                listOf(
+                    newShow.copy(id = 16),
+                    newShow.copy(id = 17),
+                )
             every { tvShowRepository.save(any()) } returns newShow
             every { tvEpisodeRepository.findByFingerprint(any()) } returns null
             every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(18, 2, 23) } returns null
@@ -247,6 +252,54 @@ class PlexEpisodeWatchServiceTest {
 
             verify(exactly = 1) { tvShowRepository.save(match { it.id == 0L && it.year == 2026 }) }
             verify(exactly = 1) { tvShowRepository.findByFingerprint(any()) }
+        }
+
+    @Test
+    fun `deve reutilizar candidato unico por slug e ano quando ids e fingerprint nao resolverem`() =
+        runBlocking {
+            val payload =
+                episodePayload(
+                    grandparentTitle = "Kakegurui",
+                    originalTitle = "\u3064\u307e\u3093\u306a\u3044\u5973",
+                    year = 2017,
+                    grandparentSlug = "kakegurui",
+                )
+            val existingShow =
+                TvShow(
+                    id = 86,
+                    originalTitle = "\u8ced\u30b1\u30b0\u30eb\u30a4",
+                    year = 2017,
+                    slug = "kakegurui",
+                    fingerprint = "canonical-show-fp",
+                )
+            val persistedEpisode =
+                TvEpisode(
+                    id = 2082,
+                    showId = 86,
+                    title = "A Expedicao Monopolar",
+                    seasonNumber = 2,
+                    seasonTitle = "Temporada 2",
+                    episodeNumber = 23,
+                    summary = "desc",
+                    durationMs = 1260000,
+                    originallyAvailableAt = LocalDate.parse("2009-05-11"),
+                    fingerprint = "episode-fp",
+                )
+
+            every { tvShowRepository.findByFingerprint(any()) } returns null
+            every { tvShowRepository.findAllBySlugAndYear("kakegurui", 2017) } returns listOf(existingShow)
+            every { tvEpisodeRepository.findByFingerprint(any()) } returns null
+            every { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(86, 2, 23) } returns null
+            every { tvEpisodeRepository.save(any()) } returns persistedEpisode
+            every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
+            every { tvEpisodeWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
+
+            val result = service.processScrobble(payload)
+
+            assertNotNull(result)
+            assertEquals(2082, result.episodeId)
+            verify(exactly = 0) { tvShowRepository.save(any()) }
+            verify(exactly = 1) { tvShowRepository.findAllBySlugAndYear("kakegurui", 2017) }
         }
 
     @Test

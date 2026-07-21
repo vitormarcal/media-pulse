@@ -9,6 +9,11 @@ interface TvShowRepository : CrudRepository<TvShow, Long> {
 
     fun findBySlug(slug: String): TvShow?
 
+    fun findAllBySlugAndYear(
+        slug: String,
+        year: Int,
+    ): List<TvShow>
+
     fun findByTmdbId(tmdbId: String): TvShow?
 
     fun findByTvdbId(tvdbId: String): TvShow?
