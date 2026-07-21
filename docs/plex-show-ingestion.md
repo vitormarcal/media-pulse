@@ -35,7 +35,7 @@ Show identity prefers canonical third-party ids when available.
   3. show fingerprint by `original_title + year`
 - Plex `ratingKey` and `plex://...` GUIDs are never persisted or used for reconciliation.
 - `ratingKey` is used only in memory while navigating the current Plex API import.
-- Plex episode scrobbles bootstrap the show by fingerprint when needed; they do not resolve the show by Plex GUID, slug, or title-only matching.
+- Plex episode scrobbles first reuse the canonical show of an episode identified by unambiguous third-party IDs. When no episode ID resolves, they bootstrap the show by fingerprint; they do not resolve the show by Plex GUID, slug, or title-only matching.
 - Show third-party IDs (TMDB/TVDB/IMDB) are stored directly in `tv_shows` when available.
 - Episode third-party IDs (TMDB/TVDB/IMDB) are stored directly in `tv_episodes` when available.
 - Episode resolution prefers third-party IDs and falls back to the fingerprint based on show, season, episode number, and title.

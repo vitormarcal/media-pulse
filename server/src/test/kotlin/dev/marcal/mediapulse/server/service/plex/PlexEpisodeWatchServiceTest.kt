@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.LocalDate
+import java.util.Optional
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -246,6 +247,62 @@ class PlexEpisodeWatchServiceTest {
 
             verify(exactly = 1) { tvShowRepository.save(match { it.id == 0L && it.year == 2026 }) }
             verify(exactly = 1) { tvShowRepository.findByFingerprint(any()) }
+        }
+
+    @Test
+    fun `deve reutilizar show canonico quando titulo do Plex divergir mas ids do episodio coincidirem`() =
+        runBlocking {
+            val payload =
+                episodePayload(
+                    grandparentTitle = "Kakegurui",
+                    originalTitle = "\u3064\u307e\u3093\u306a\u3044\u5973",
+                    year = 2017,
+                    grandparentSlug = "kakegurui",
+                )
+            val canonicalShow =
+                TvShow(
+                    id = 86,
+                    originalTitle = "\u8ced\u30b1\u30b0\u30eb\u30a4",
+                    year = 2017,
+                    slug = "kakegurui",
+                    fingerprint = "canonical-show-fp",
+                )
+            val canonicalEpisode =
+                TvEpisode(
+                    id = 2082,
+                    showId = 86,
+                    title = "A Expedicao Monopolar",
+                    seasonNumber = 2,
+                    seasonTitle = "Temporada 2",
+                    episodeNumber = 23,
+                    summary = "desc",
+                    durationMs = 1260000,
+                    originallyAvailableAt = LocalDate.parse("2009-05-11"),
+                    fingerprint = "canonical-episode-fp",
+                    tmdbId = "64673",
+                    tvdbId = "588991",
+                    imdbId = "tt1426233",
+                )
+
+            every { tvEpisodeRepository.findByTmdbId("64673") } returns canonicalEpisode
+            every { tvEpisodeRepository.findByTvdbId("588991") } returns canonicalEpisode
+            every { tvEpisodeRepository.findByImdbId("tt1426233") } returns canonicalEpisode
+            every { tvShowRepository.findById(86) } returns Optional.of(canonicalShow)
+            every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
+            every { tvEpisodeWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
+
+            val result = service.processScrobble(payload)
+
+            assertNotNull(result)
+            assertEquals(2082, result.episodeId)
+            verify(exactly = 0) { tvShowRepository.findByFingerprint(any()) }
+            verify(exactly = 0) { tvShowRepository.save(any()) }
+            verify(exactly = 0) { tvEpisodeRepository.findByFingerprint(any()) }
+            verify(exactly = 0) { tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(any(), any(), any()) }
+            verify(exactly = 0) { tvEpisodeRepository.save(any()) }
+            verify(exactly = 1) {
+                tvEpisodeWatchCrudRepository.insertIgnore(2082, TvEpisodeWatchSource.PLEX.name, Instant.ofEpochSecond(1775146349))
+            }
         }
 
     private fun episodePayload(

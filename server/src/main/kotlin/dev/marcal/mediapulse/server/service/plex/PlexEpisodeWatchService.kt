@@ -43,9 +43,13 @@ class PlexEpisodeWatchService(
         val showSlug = resolveSlug(meta.grandparentSlug)
         val seasonTitle = meta.parentTitle?.trim()?.ifBlank { null }
         val showFingerprint = FingerprintUtil.tvShowFp(originalTitle = showOriginalTitle, year = showYear)
+        val episodeExternalIds = extractEpisodeExternalIds(meta.guidList)
+        val resolvableEpisodeExternalIds = unambiguousExternalIds(episodeExternalIds)
+        val episodeByExternalIds = findEpisodeByExternalIds(resolvableEpisodeExternalIds)
 
         val show =
-            tvShowRepository.findByFingerprint(showFingerprint)
+            episodeByExternalIds?.let { tvShowRepository.findById(it.showId).orElse(null) }
+                ?: tvShowRepository.findByFingerprint(showFingerprint)
                 ?: tvShowRepository.save(
                     TvShow(
                         originalTitle = showOriginalTitle,
@@ -83,10 +87,8 @@ class PlexEpisodeWatchService(
                 title = episodeTitle,
             )
 
-        val episodeExternalIds = extractEpisodeExternalIds(meta.guidList)
-        val resolvableEpisodeExternalIds = unambiguousExternalIds(episodeExternalIds)
         val existingEpisode =
-            findEpisodeByExternalIds(resolvableEpisodeExternalIds, show.id)
+            episodeByExternalIds?.takeIf { it.showId == show.id }
                 ?: tvEpisodeRepository.findByFingerprint(episodeFingerprint)
                 ?: tvEpisodeRepository.findByShowIdAndSeasonNumberAndEpisodeNumber(show.id, meta.parentIndex, meta.index)
 
@@ -125,15 +127,20 @@ class PlexEpisodeWatchService(
         )
     }
 
-    private fun findEpisodeByExternalIds(
-        externalIds: List<Pair<Provider, String>>,
-        showId: Long,
-    ): TvEpisode? {
-        externalIds.forEach { (provider, externalId) ->
-            val episode = findEpisodeByExternalId(provider, externalId) ?: return@forEach
-            if (episode.showId == showId) return episode
+    private fun findEpisodeByExternalIds(externalIds: List<Pair<Provider, String>>): TvEpisode? {
+        val linkedEpisodes =
+            externalIds
+                .mapNotNull { (provider, externalId) -> findEpisodeByExternalId(provider, externalId) }
+                .distinctBy { it.id }
+        if (linkedEpisodes.size > 1) {
+            logger.warn(
+                "Ignoring Plex episode identifiers linked to different episodes. episodeIds={}, externalIds={}",
+                linkedEpisodes.map { it.id },
+                externalIds,
+            )
+            return null
         }
-        return null
+        return linkedEpisodes.singleOrNull()
     }
 
     private fun mergeEpisode(
