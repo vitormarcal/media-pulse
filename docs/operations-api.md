@@ -50,12 +50,12 @@ Retorna o estado operacional da importação do Spotify. Os estados possíveis s
 
 - `UNKNOWN`: nenhuma importação terminou desde a criação do estado;
 - `HEALTHY`: a última importação terminou com sucesso;
-- `REAUTHORIZATION_REQUIRED`: o Spotify retornou `invalid_grant`; novas tentativas de token ficam suspensas até a aplicação reiniciar com um refresh token novo;
+- `REAUTHORIZATION_REQUIRED`: o Spotify retornou `invalid_grant`; novas tentativas de token ficam suspensas até uma nova autorização OAuth;
 - `ERROR`: ocorreu outra falha na última importação.
 
 O contrato não expõe tokens nem a descrição crua retornada pelo provedor. Quando OAuth está habilitado e a autorização expirou, `reauthorizationUrl` aponta para `/oauth/spotify/login`.
 
-Refresh tokens do Spotify expiram após seis meses. Depois de obter um novo token, atualize `SPOTIFY_REFRESH_TOKEN` e reinicie a aplicação. Um refresh bem-sucedido altera o estado para `HEALTHY`.
+O refresh token obtido pelo OAuth é persistido localmente em `spotify_credentials`, sua única fonte de configuração. Uma nova autorização atualiza a credencial sem exigir reinício e altera o estado para `HEALTHY`.
 
 ## Spotify OAuth
 
@@ -70,7 +70,9 @@ Quando habilitado:
 
 ### `GET /oauth/spotify/callback`
 
-Troca o `code` do OAuth por tokens e retorna um texto simples com o `SPOTIFY_REFRESH_TOKEN` obtido.
+Troca o `code` do OAuth por tokens, persiste o refresh token localmente, usa o access token recebido imediatamente e redireciona para a home (`/`). Nenhum token é exposto na resposta.
+
+Resposta de sucesso: `302 Found` com `Location: /`.
 
 Casos de erro documentados no código:
 
@@ -210,7 +212,7 @@ Query params:
 
 - endpoints operacionais podem disparar trabalho assíncrono
 - segredos e tokens reais não devem ser documentados em arquivos versionados
-- callbacks OAuth retornam texto simples porque são usados para configuração local
+- callbacks OAuth não expõem tokens; o callback Spotify persiste a credencial e redireciona para a home
 
 ## Non-goals
 

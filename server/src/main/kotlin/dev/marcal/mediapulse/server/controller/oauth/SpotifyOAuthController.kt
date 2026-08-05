@@ -1,7 +1,7 @@
 package dev.marcal.mediapulse.server.controller.oauth
 
 import dev.marcal.mediapulse.server.config.SpotifyProperties
-import dev.marcal.mediapulse.server.integration.spotify.SpotifyOAuthTokenService
+import dev.marcal.mediapulse.server.service.spotify.SpotifyAuthorizationService
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference
 @RestController
 class SpotifyOAuthController(
     private val props: SpotifyProperties,
-    private val tokenService: SpotifyOAuthTokenService,
+    private val authorizationService: SpotifyAuthorizationService,
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(SpotifyOAuthController::class.java)
@@ -69,15 +69,12 @@ class SpotifyOAuthController(
             return ResponseEntity.badRequest().body("Missing 'code' in callback")
         }
 
-        val expected = lastState.get()
-        if (expected != null && state != expected) {
+        val expected = lastState.getAndSet(null)
+        if (expected == null || state != expected) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid state")
         }
 
-        val tokens = tokenService.exchangeCodeForTokens(code)
-
-        val refresh = tokens.refresh_token
-        if (refresh.isNullOrBlank()) {
+        if (!authorizationService.authorize(code)) {
             return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(
@@ -86,19 +83,11 @@ class SpotifyOAuthController(
                 )
         }
 
-        // Você vai copiar isso e colocar na ENV VAR
-        val body =
-            """
-            Success.
-
-            Copy this to your environment:
-            SPOTIFY_REFRESH_TOKEN=$refresh
-
-            Access token (short-lived) received too, expires_in=${tokens.expires_in}.
-            """.trimIndent()
-
-        logger.info("Spotify OAuth success: refresh token obtained")
-        return ResponseEntity.ok(body)
+        logger.info("Spotify OAuth success: credentials stored")
+        return ResponseEntity
+            .status(HttpStatus.FOUND)
+            .header(HttpHeaders.LOCATION, "/")
+            .build()
     }
 
     private fun generateState(): String {

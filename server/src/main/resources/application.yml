@@ -73,7 +73,6 @@ media-pulse:
     accounts-base-url: ${SPOTIFY_ACCOUNTS_BASE_URL:https://accounts.spotify.com}
     client-id: ${SPOTIFY_CLIENT_ID:}
     client-secret: ${SPOTIFY_CLIENT_SECRET:}
-    refresh-token: ${SPOTIFY_REFRESH_TOKEN:}
     oauth:
       enabled: ${SPOTIFY_OAUTH_ENABLED:false}
       redirect-uri: ${SPOTIFY_REDIRECT_URI:http://localhost:8080/oauth/spotify/callback}

@@ -1,6 +1,9 @@
 package dev.marcal.mediapulse.server.integration.spotify
 
 import dev.marcal.mediapulse.server.config.SpotifyProperties
+import dev.marcal.mediapulse.server.repository.spotify.SpotifyCredentialsRepository
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
@@ -17,7 +20,6 @@ class SpotifyAuthServiceTest {
         SpotifyProperties(
             clientId = "client-id",
             clientSecret = "client-secret",
-            refreshToken = "refresh-token",
         )
 
     @Test
@@ -79,6 +81,8 @@ class SpotifyAuthServiceTest {
                             .build(),
                     )
                 }.build()
-        return SpotifyAuthService(props, webClient)
+        val credentialsRepository = mockk<SpotifyCredentialsRepository>()
+        every { credentialsRepository.getRefreshToken() } returns "refresh-token"
+        return SpotifyAuthService(props, webClient, credentialsRepository)
     }
 }

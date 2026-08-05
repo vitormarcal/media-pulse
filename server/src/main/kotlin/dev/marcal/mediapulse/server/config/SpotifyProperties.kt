@@ -9,7 +9,6 @@ data class SpotifyProperties(
     val accountsBaseUrl: String = "https://accounts.spotify.com",
     val clientId: String,
     val clientSecret: String,
-    val refreshToken: String,
     val import: Import = Import(),
     val poll: Poll = Poll(),
     val oauth: OAuth = OAuth(),

@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.integration.spotify
 
 import dev.marcal.mediapulse.server.config.SpotifyProperties
+import dev.marcal.mediapulse.server.repository.spotify.SpotifyCredentialsRepository
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.apache.commons.codec.binary.Base64
 import org.springframework.http.HttpHeaders
@@ -16,6 +17,7 @@ import java.util.concurrent.atomic.AtomicReference
 class SpotifyAuthService(
     private val props: SpotifyProperties,
     private val spotifyAccountsWebClient: WebClient,
+    private val credentialsRepository: SpotifyCredentialsRepository,
 ) {
     data class CachedToken(
         val accessToken: String,
@@ -39,13 +41,29 @@ class SpotifyAuthService(
         return fresh.accessToken
     }
 
+    fun acceptAuthorization(
+        accessToken: String,
+        expiresIn: Int?,
+    ) {
+        cache.set(
+            CachedToken(
+                accessToken = accessToken,
+                expiresAt = Instant.now().plusSeconds((expiresIn ?: 3600).toLong()),
+            ),
+        )
+        reauthorizationRequired.set(false)
+    }
+
     private suspend fun refresh(): CachedToken {
+        val refreshToken =
+            credentialsRepository.getRefreshToken()
+                ?: throw SpotifyReauthorizationRequiredException("No refresh token is configured")
         val basic = Base64.encodeBase64String("${props.clientId}:${props.clientSecret}".toByteArray())
 
         val form =
             LinkedMultiValueMap<String, String>().apply {
                 add("grant_type", "refresh_token")
-                add("refresh_token", props.refreshToken)
+                add("refresh_token", refreshToken)
             }
 
         val resp =

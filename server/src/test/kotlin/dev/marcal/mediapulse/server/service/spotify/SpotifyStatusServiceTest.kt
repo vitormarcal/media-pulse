@@ -22,7 +22,6 @@ class SpotifyStatusServiceTest {
             SpotifyProperties(
                 clientId = "id",
                 clientSecret = "secret",
-                refreshToken = "token",
                 oauth = SpotifyProperties.OAuth(enabled = true),
             )
 
@@ -37,7 +36,7 @@ class SpotifyStatusServiceTest {
     fun `should not expose provider details for generic error`() {
         every { repository.getOrCreateSingleton() } returns
             SpotifySyncState(authorizationStatus = SpotifyAuthorizationStatus.ERROR, lastErrorCode = "invalid_client")
-        val props = SpotifyProperties(clientId = "id", clientSecret = "secret", refreshToken = "token")
+        val props = SpotifyProperties(clientId = "id", clientSecret = "secret")
 
         val response = SpotifyStatusService(props, repository).getStatus()
 

@@ -1282,12 +1282,13 @@ paths:
           schema:
             type: string
       responses:
-        "200":
-          description: OK
-          content:
-            text/plain:
+        "302":
+          description: Authorization stored; redirect to the home page
+          headers:
+            Location:
               schema:
                 type: string
+                example: /
         "400":
           description: Bad request
           content:
