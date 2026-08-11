@@ -29,6 +29,13 @@
 
       <AlbumMusicBrainzPanel v-if="editMode" :album-id="Number(data.id)" :link="data.musicBrainz" @applied="refresh" />
 
+      <AlbumDuplicateTracksPanel
+        v-if="editMode"
+        :album-id="Number(data.id)"
+        :album-title="data.title"
+        @merged="refresh"
+      />
+
       <MediaRatingPanel
         media-type="albums"
         :entity-id="Number(data.id)"
@@ -53,6 +60,7 @@
 
 <script setup lang="ts">
 import AlbumContextPanel from '~/components/music/AlbumContextPanel.vue'
+import AlbumDuplicateTracksPanel from '~/components/music/AlbumDuplicateTracksPanel.vue'
 import AlbumListsPanel from '~/components/music/AlbumListsPanel.vue'
 import AlbumPageHero from '~/components/music/AlbumPageHero.vue'
 import AlbumMusicBrainzPanel from '~/components/music/AlbumMusicBrainzPanel.vue'
