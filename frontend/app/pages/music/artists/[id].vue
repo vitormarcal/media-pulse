@@ -10,7 +10,12 @@
     </div>
 
     <template v-else-if="data">
-      <ArtistPageHero :title="data.title" :cover-url="data.coverUrl" :hero-meta="data.heroMeta" />
+      <ArtistPageHero
+        :artist-id="Number(data.id)"
+        :title="data.title"
+        :cover-url="data.coverUrl"
+        :hero-meta="data.heroMeta"
+      />
 
       <ArtistContextPanel :stats="data.stats" :recent-days="data.recentDays" />
 

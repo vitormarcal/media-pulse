@@ -7,7 +7,7 @@
         <p>Consolide representações do mesmo álbum sem perder o histórico ou os vínculos dos provedores.</p>
       </div>
       <nav aria-label="Navegação administrativa de música">
-        <NuxtLink to="/music">Música</NuxtLink>
+        <NuxtLink :to="artistReturnUrl">{{ contextualArtistId ? 'Voltar ao artista' : 'Música' }}</NuxtLink>
         <NuxtLink to="/music/admin/duplicates">Faixas duplicadas</NuxtLink>
         <span>Álbuns duplicados</span>
       </nav>
@@ -180,12 +180,18 @@ import type {
 } from '~/types/music'
 
 const config = useRuntimeConfig()
-const artistFilter = ref('')
+const route = useRoute()
+const contextualArtistName = routeQueryValue(route.query.artist)
+const contextualArtistId = routeQueryValue(route.query.artistId)
+const artistReturnUrl = computed(() =>
+  contextualArtistId ? `/music/artists/${encodeURIComponent(contextualArtistId)}` : '/music',
+)
+const artistFilter = ref(contextualArtistName)
 const albumFilter = ref('')
 const suggestions = ref<DuplicateAlbumSuggestionResponse[]>([])
 const suggestionsPending = ref(false)
 const suggestionsError = ref('')
-const catalogQuery = ref('')
+const catalogQuery = ref(contextualArtistName)
 const catalog = ref<AlbumMergeCatalogResponse['artists']>([])
 const manualSelection = ref<number[]>([])
 const manualArtistId = ref<number | null>(null)
@@ -280,6 +286,7 @@ async function confirmMerge() {
     preview.value = null
     manualSelection.value = []
     await loadSuggestions()
+    if (contextualArtistName) await searchCatalog()
   } catch (error) {
     notice.value = error instanceof Error ? error.message : 'Não foi possível concluir a mesclagem.'
   } finally {
@@ -294,7 +301,11 @@ function confidenceLabel(value: string) {
   return value === 'HIGH' ? 'Alta confiança' : 'Revisar'
 }
 
-await loadSuggestions()
+function routeQueryValue(value: string | string[] | null | undefined) {
+  return Array.isArray(value) ? (value[0] ?? '') : (value ?? '')
+}
+
+await Promise.all([loadSuggestions(), contextualArtistName ? searchCatalog() : Promise.resolve()])
 useHead({
   title: 'Mesclar álbuns · Media Pulse',
   meta: [{ name: 'description', content: 'Revisão e mesclagem de álbuns duplicados da biblioteca musical.' }],

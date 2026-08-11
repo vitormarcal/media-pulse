@@ -10,6 +10,16 @@
         <div class="meta-list">
           <span v-for="item in heroMeta" :key="item" class="meta-pill">{{ item }}</span>
         </div>
+
+        <NuxtLink
+          class="merge-albums-link"
+          :to="{
+            path: '/music/admin/album-duplicates',
+            query: { artist: title, artistId: String(artistId) },
+          }"
+        >
+          Revisar álbuns duplicados
+        </NuxtLink>
       </div>
 
       <div class="cover-frame">
@@ -22,6 +32,7 @@
 
 <script setup lang="ts">
 const props = defineProps<{
+  artistId: number
   title: string
   coverUrl: string | null
   heroMeta: string[]
@@ -102,6 +113,27 @@ h1 {
   background: color-mix(in srgb, var(--base-color-surface-wash) 72%, white);
   color: var(--base-color-text-primary);
   font-size: 0.8rem;
+}
+
+.merge-albums-link {
+  width: fit-content;
+  margin-top: 4px;
+  padding: 10px 16px;
+  border-radius: 16px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.merge-albums-link:hover {
+  background: var(--base-color-border);
+}
+
+.merge-albums-link:focus-visible {
+  outline: 3px solid var(--base-color-focus, #435ee5);
+  outline-offset: 2px;
 }
 
 .cover-frame {
