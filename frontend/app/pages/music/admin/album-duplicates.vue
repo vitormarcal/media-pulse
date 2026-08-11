@@ -39,15 +39,25 @@
       <div class="section-heading">
         <div>
           <p class="kicker">Fila sugerida</p>
-          <h2>Possíveis convergências</h2>
+          <h2>
+            {{
+              contextualArtistName ? `Possíveis convergências de ${contextualArtistName}` : 'Possíveis convergências'
+            }}
+          </h2>
         </div>
         <span>{{ suggestions.length }} grupo(s)</span>
       </div>
       <div v-if="suggestions.length" class="suggestion-grid">
         <article v-for="group in suggestions" :key="suggestionKey(group)" class="suggestion-card">
           <header>
-            <div>
-              <p class="artist">{{ group.artistName }}</p>
+            <div class="suggestion-identity">
+              <p v-if="!contextualArtistId" class="artist">{{ group.artistName }}</p>
+              <div class="album-titles" aria-label="Álbuns desta revisão">
+                <div v-for="album in group.candidates" :key="album.albumId">
+                  <h3>{{ album.title }}</h3>
+                  <span>{{ album.year ?? 'Ano desconhecido' }} · álbum #{{ album.albumId }}</span>
+                </div>
+              </div>
               <p>{{ group.reason }}</p>
             </div>
             <span class="badge">{{ confidenceLabel(group.confidence) }}</span>
@@ -444,6 +454,31 @@ select {
 }
 .suggestion-card header p {
   margin: 2px 0;
+}
+.suggestion-identity {
+  min-width: 0;
+}
+.album-titles {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+.album-titles > div {
+  padding-left: 12px;
+  border-left: 3px solid #e60023;
+}
+.album-titles h3 {
+  overflow: hidden;
+  margin: 0;
+  color: #211922;
+  font-size: 16px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.album-titles span {
+  color: #62625b;
+  font-size: 12px;
 }
 .artist {
   font-weight: 700 !important;
