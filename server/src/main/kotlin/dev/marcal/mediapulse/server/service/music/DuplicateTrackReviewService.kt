@@ -8,6 +8,7 @@ import dev.marcal.mediapulse.server.api.music.DuplicateTrackIgnoreRequest
 import dev.marcal.mediapulse.server.api.music.DuplicateTrackMergeRequest
 import dev.marcal.mediapulse.server.api.music.DuplicateTrackMergeResponse
 import dev.marcal.mediapulse.server.api.music.DuplicateTrackReviewPageResponse
+import dev.marcal.mediapulse.server.api.music.ManualTrackMergeRequest
 import dev.marcal.mediapulse.server.repository.MusicDuplicateReviewRepository
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -72,6 +73,22 @@ class DuplicateTrackReviewService(
     fun merge(request: DuplicateTrackMergeRequest): DuplicateTrackMergeResponse = mergeInternal(request)
 
     @Transactional
+    fun manualMerge(request: ManualTrackMergeRequest): DuplicateTrackMergeResponse {
+        validateMergeSelection(request.targetTrackId, request.sourceTrackIds)
+        repository.lockAlbum(request.albumId)
+
+        val selectedTrackIds = (listOf(request.targetTrackId) + request.sourceTrackIds).distinct()
+        val albumTrackIds = repository.findAlbumTrackIds(request.albumId, selectedTrackIds)
+        if (albumTrackIds.size != selectedTrackIds.size) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Todas as faixas devem pertencer ao álbum selecionado")
+        }
+
+        val sourceTrackIds = request.sourceTrackIds.distinct()
+        val stats = repository.mergeTracks(request.targetTrackId, sourceTrackIds)
+        return mergeResponse(request.albumId, "manual:${request.targetTrackId}", request.targetTrackId, sourceTrackIds, stats)
+    }
+
+    @Transactional
     fun mergeBatch(request: DuplicateTrackBatchMergeRequest): DuplicateTrackBatchMergeResponse {
         require(request.merges.isNotEmpty()) { "merges deve conter ao menos um grupo" }
 
@@ -83,8 +100,7 @@ class DuplicateTrackReviewService(
     }
 
     private fun mergeInternal(request: DuplicateTrackMergeRequest): DuplicateTrackMergeResponse {
-        require(request.sourceTrackIds.isNotEmpty()) { "sourceTrackIds deve conter ao menos uma faixa" }
-        require(request.sourceTrackIds.none { it == request.targetTrackId }) { "targetTrackId não pode aparecer em sourceTrackIds" }
+        validateMergeSelection(request.targetTrackId, request.sourceTrackIds)
 
         repository.lockAlbum(request.albumId)
 
@@ -117,17 +133,39 @@ class DuplicateTrackReviewService(
             groupKey = request.groupKey,
         )
 
-        return DuplicateTrackMergeResponse(
+        return mergeResponse(
             albumId = request.albumId,
             groupKey = request.groupKey,
             targetTrackId = request.targetTrackId,
-            mergedTrackIds = request.sourceTrackIds.distinct().sorted(),
-            deletedDuplicatePlaybacks = mergeStats.deletedDuplicatePlaybacks,
-            movedPlaybacks = mergeStats.movedPlaybacks,
-            linkedExternalIdentifiers = mergeStats.linkedExternalIdentifiers,
-            migratedAlbumLinks = mergeStats.migratedAlbumLinks,
+            sourceTrackIds = request.sourceTrackIds.distinct(),
+            stats = mergeStats,
         )
     }
+
+    private fun validateMergeSelection(
+        targetTrackId: Long,
+        sourceTrackIds: List<Long>,
+    ) {
+        require(sourceTrackIds.isNotEmpty()) { "sourceTrackIds deve conter ao menos uma faixa" }
+        require(sourceTrackIds.none { it == targetTrackId }) { "targetTrackId não pode aparecer em sourceTrackIds" }
+    }
+
+    private fun mergeResponse(
+        albumId: Long,
+        groupKey: String,
+        targetTrackId: Long,
+        sourceTrackIds: List<Long>,
+        stats: MusicDuplicateReviewRepository.MergeStats,
+    ) = DuplicateTrackMergeResponse(
+        albumId = albumId,
+        groupKey = groupKey,
+        targetTrackId = targetTrackId,
+        mergedTrackIds = sourceTrackIds.sorted(),
+        deletedDuplicatePlaybacks = stats.deletedDuplicatePlaybacks,
+        movedPlaybacks = stats.movedPlaybacks,
+        linkedExternalIdentifiers = stats.linkedExternalIdentifiers,
+        migratedAlbumLinks = stats.migratedAlbumLinks,
+    )
 
     private fun toGroupResponse(rows: List<MusicDuplicateReviewRepository.DuplicateTrackCandidateRow>): DuplicateTrackGroupResponse {
         val sortedCandidates =

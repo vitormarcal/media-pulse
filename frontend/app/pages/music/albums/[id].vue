@@ -33,6 +33,7 @@
         v-if="editMode"
         :album-id="Number(data.id)"
         :album-title="data.title"
+        :tracks="data.tracks"
         @merged="refresh"
       />
 

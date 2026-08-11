@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.api.music.DuplicateTrackIgnoreRequest
 import dev.marcal.mediapulse.server.api.music.DuplicateTrackMergeRequest
 import dev.marcal.mediapulse.server.api.music.DuplicateTrackMergeResponse
 import dev.marcal.mediapulse.server.api.music.DuplicateTrackReviewPageResponse
+import dev.marcal.mediapulse.server.api.music.ManualTrackMergeRequest
 import dev.marcal.mediapulse.server.service.music.DuplicateTrackReviewService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -46,6 +47,11 @@ class MusicDuplicateReviewController(
     fun merge(
         @RequestBody request: DuplicateTrackMergeRequest,
     ): DuplicateTrackMergeResponse = service.merge(request)
+
+    @PostMapping("/manual-merge")
+    fun manualMerge(
+        @RequestBody request: ManualTrackMergeRequest,
+    ): DuplicateTrackMergeResponse = service.manualMerge(request)
 
     @PostMapping("/merge-batch")
     fun mergeBatch(

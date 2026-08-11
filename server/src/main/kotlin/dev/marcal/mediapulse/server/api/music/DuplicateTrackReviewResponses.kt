@@ -49,6 +49,12 @@ data class DuplicateTrackMergeRequest(
     val sourceTrackIds: List<Long>,
 )
 
+data class ManualTrackMergeRequest(
+    val albumId: Long,
+    val targetTrackId: Long,
+    val sourceTrackIds: List<Long>,
+)
+
 data class DuplicateTrackBatchMergeRequest(
     val merges: List<DuplicateTrackMergeRequest>,
 )

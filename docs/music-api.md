@@ -55,6 +55,7 @@ No frontend atual, `/music` concentra tanto o recorte editorial quanto o arquivo
 | `GET /api/music/admin/track-duplicates` | `limit=20`, `cursor?`, `includeIgnored=false`, `artist?`, `album?` | `DuplicateTrackReviewPageResponse` |
 | `POST /api/music/admin/track-duplicates/ignore` | body com `albumId`, `groupKey`, `ignored=true` | vazio |
 | `POST /api/music/admin/track-duplicates/merge` | body com `albumId`, `groupKey`, `targetTrackId`, `sourceTrackIds[]` | `DuplicateTrackMergeResponse` |
+| `POST /api/music/admin/track-duplicates/manual-merge` | body com `albumId`, `targetTrackId`, `sourceTrackIds[]` | Mescla faixas escolhidas manualmente após validar que todas pertencem ao álbum. |
 | `POST /api/music/admin/track-duplicates/merge-batch` | body com `merges[]` | `DuplicateTrackBatchMergeResponse` |
 | `GET /api/music/admin/album-duplicates` | `limit=50`, `artist?`, `album?` | Sugestões de álbuns do mesmo artista por título ou sobreposição de faixas. |
 | `GET /api/music/admin/album-duplicates/catalog` | `q`, `limit=100` | Catálogo agrupado por artista para mesclagem manual. |

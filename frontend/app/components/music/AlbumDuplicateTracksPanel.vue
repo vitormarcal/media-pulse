@@ -13,6 +13,45 @@
       </label>
     </header>
 
+    <section class="manual-merge">
+      <div>
+        <p class="eyebrow">Seleção manual</p>
+        <h3>Mesclar duas faixas deste álbum</h3>
+        <p>Use quando você reconhece uma duplicata que não apareceu nas sugestões automáticas.</p>
+      </div>
+
+      <div class="manual-track-list">
+        <div v-for="track in tracks" :key="track.trackId" class="manual-track-row">
+          <label class="track-selection">
+            <input v-model="manualTrackIds" type="checkbox" :value="track.trackId" />
+            <span>
+              <strong>{{ track.title }}</strong>
+              <small>{{ track.position }} · {{ track.meta }}</small>
+            </span>
+          </label>
+          <label class="canonical-choice">
+            <input
+              v-model="manualTargetTrackId"
+              type="radio"
+              name="manual-target-track"
+              :value="track.trackId"
+              :disabled="!manualTrackIds.includes(track.trackId)"
+            />
+            Manter
+          </label>
+        </div>
+      </div>
+
+      <button
+        class="secondary-button manual-review-button"
+        type="button"
+        :disabled="manualTrackIds.length < 2 || manualTargetTrackId === null"
+        @click="openManualConfirmation"
+      >
+        Revisar mesclagem manual
+      </button>
+    </section>
+
     <div v-if="pending" class="state-card">Buscando possíveis duplicatas...</div>
     <div v-else-if="loadError" class="state-card state-card--error">
       <p>{{ loadError }}</p>
@@ -160,6 +199,7 @@ import type {
   DuplicateTrackGroupResponse,
   DuplicateTrackMergeResponse,
   DuplicateTrackReviewPageResponse,
+  AlbumTrackModel,
 } from '~/types/music'
 
 type GroupSelection = { targetTrackId: number; sourceTrackIds: number[] }
@@ -169,9 +209,10 @@ type Confirmation = {
   message: string
   confirmLabel: string
   groupKeys: string[]
+  manual: boolean
 }
 
-const props = defineProps<{ albumId: number; albumTitle: string }>()
+const props = defineProps<{ albumId: number; albumTitle: string; tracks: AlbumTrackModel[] }>()
 const emit = defineEmits<{ merged: [] }>()
 const config = useRuntimeConfig()
 const includeIgnored = ref(false)
@@ -184,6 +225,8 @@ const busyGroupId = ref<string | null>(null)
 const busyBatch = ref(false)
 const feedback = ref<Feedback | null>(null)
 const confirmation = ref<Confirmation | null>(null)
+const manualTrackIds = ref<number[]>([])
+const manualTargetTrackId = ref<number | null>(null)
 
 const allSelected = computed(
   () => groups.value.length > 0 && groups.value.every((group) => selectedGroupIds.value.includes(groupKey(group))),
@@ -191,6 +234,11 @@ const allSelected = computed(
 const confirmationBusy = computed(() => busyBatch.value || busyGroupId.value !== null)
 
 watch(includeIgnored, loadGroups)
+watch(manualTrackIds, (trackIds) => {
+  if (manualTargetTrackId.value === null || !trackIds.includes(manualTargetTrackId.value)) {
+    manualTargetTrackId.value = trackIds[0] ?? null
+  }
+})
 
 async function loadGroups() {
   pending.value = true
@@ -305,6 +353,7 @@ function openGroupConfirmation(group: DuplicateTrackGroupResponse) {
     message: `A faixa #${selection.targetTrackId} será mantida e ${selection.sourceTrackIds.length} registro(s) serão absorvidos.`,
     confirmLabel: 'Confirmar mesclagem',
     groupKeys: [groupKey(group)],
+    manual: false,
   }
 }
 
@@ -318,6 +367,19 @@ function openBatchConfirmation() {
     message: `${mergeable.length} grupo(s) serão consolidados usando as escolhas atuais.`,
     confirmLabel: 'Confirmar lote',
     groupKeys: mergeable,
+    manual: false,
+  }
+}
+
+function openManualConfirmation() {
+  if (manualTargetTrackId.value === null || manualTrackIds.value.length < 2) return
+  const target = props.tracks.find((track) => track.trackId === manualTargetTrackId.value)
+  confirmation.value = {
+    title: 'Mesclar faixas selecionadas manualmente',
+    message: `“${target?.title ?? `#${manualTargetTrackId.value}`}” será mantida e ${manualTrackIds.value.length - 1} faixa(s) serão absorvidas.`,
+    confirmLabel: 'Confirmar mesclagem',
+    groupKeys: [],
+    manual: true,
   }
 }
 
@@ -326,6 +388,12 @@ function closeConfirmation() {
 }
 
 async function confirmMerge() {
+  if (confirmation.value?.manual) {
+    confirmation.value = null
+    await mergeManualSelection()
+    return
+  }
+
   const groupKeys = confirmation.value?.groupKeys ?? []
   const selectedGroups = groups.value.filter((group) => groupKeys.includes(groupKey(group)))
   if (!selectedGroups.length) return
@@ -350,6 +418,32 @@ async function confirmMerge() {
     emit('merged')
   } catch (error) {
     feedback.value = { tone: 'error', message: errorMessage(error, 'Não foi possível concluir o lote.') }
+  } finally {
+    busyBatch.value = false
+  }
+}
+
+async function mergeManualSelection() {
+  if (manualTargetTrackId.value === null) return
+  busyBatch.value = true
+  feedback.value = null
+  try {
+    const response = await $fetch<DuplicateTrackMergeResponse>('/api/music/admin/track-duplicates/manual-merge', {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+      body: {
+        albumId: props.albumId,
+        targetTrackId: manualTargetTrackId.value,
+        sourceTrackIds: manualTrackIds.value.filter((trackId) => trackId !== manualTargetTrackId.value),
+      },
+    })
+    feedback.value = { tone: 'success', message: `${response.mergedTrackIds.length} faixa(s) foram absorvidas.` }
+    manualTrackIds.value = []
+    manualTargetTrackId.value = null
+    await loadGroups()
+    emit('merged')
+  } catch (error) {
+    feedback.value = { tone: 'error', message: errorMessage(error, 'Não foi possível concluir a mesclagem manual.') }
   } finally {
     busyBatch.value = false
   }
@@ -416,9 +510,65 @@ await loadGroups()
 .duplicate-panel,
 .group-list,
 .group-card,
-.candidate-card {
+.candidate-card,
+.manual-merge {
   display: grid;
   gap: 20px;
+}
+.manual-merge {
+  padding: 20px;
+  border-radius: 24px;
+  background: var(--base-color-surface-soft);
+}
+.manual-merge h3 {
+  margin: 5px 0 8px;
+}
+.manual-merge > div:first-child p:last-child {
+  color: var(--base-color-text-secondary);
+}
+.manual-track-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px;
+}
+.manual-track-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 16px;
+  background: white;
+}
+.track-selection {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+.track-selection > span {
+  display: grid;
+  min-width: 0;
+}
+.manual-track-row strong,
+.manual-track-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.manual-track-row small {
+  color: var(--base-color-text-secondary);
+}
+.canonical-choice {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.manual-review-button {
+  justify-self: start;
 }
 .duplicate-panel {
   padding: 24px;

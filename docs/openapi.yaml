@@ -1181,6 +1181,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DuplicateTrackBatchMergeResponse"
+  /api/music/admin/track-duplicates/manual-merge:
+    post:
+      summary: Merge manually selected tracks from the same album
+      tags: [Music]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualTrackMergeRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DuplicateTrackMergeResponse"
 
   /api/music/admin/album-duplicates:
     get:
@@ -4393,6 +4410,21 @@ components:
           items:
             $ref: "#/components/schemas/DuplicateTrackMergeRequest"
       required: [merges]
+    ManualTrackMergeRequest:
+      type: object
+      properties:
+        albumId:
+          type: integer
+          format: int64
+        targetTrackId:
+          type: integer
+          format: int64
+        sourceTrackIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+      required: [albumId, targetTrackId, sourceTrackIds]
     DuplicateTrackMergeResponse:
       type: object
       properties:

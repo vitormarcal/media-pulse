@@ -404,6 +404,22 @@ class MusicDuplicateReviewRepository(
             .singleResult
     }
 
+    fun findAlbumTrackIds(
+        albumId: Long,
+        trackIds: List<Long>,
+    ): Set<Long> =
+        jdbc
+            .queryForList(
+                """
+                SELECT track_id
+                FROM album_tracks
+                WHERE album_id = :albumId
+                  AND track_id IN (:trackIds)
+                """.trimIndent(),
+                mapOf("albumId" to albumId, "trackIds" to trackIds),
+                Long::class.java,
+            ).toSet()
+
     fun mergeTracks(
         targetTrackId: Long,
         sourceTrackIds: List<Long>,
