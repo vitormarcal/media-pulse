@@ -14,6 +14,19 @@ interface TvShowRepository : CrudRepository<TvShow, Long> {
         year: Int,
     ): List<TvShow>
 
+    @Query(
+        nativeQuery = true,
+        value = """
+            SELECT DISTINCT s.*
+            FROM tv_shows s
+            LEFT JOIN tv_show_titles st ON st.show_id = s.id
+            WHERE LOWER(s.original_title) = LOWER(:title)
+               OR LOWER(st.title) = LOWER(:title)
+            ORDER BY s.id
+        """,
+    )
+    fun findAllByExactTitle(title: String): List<TvShow>
+
     fun findByTmdbId(tmdbId: String): TvShow?
 
     fun findByTvdbId(tvdbId: String): TvShow?

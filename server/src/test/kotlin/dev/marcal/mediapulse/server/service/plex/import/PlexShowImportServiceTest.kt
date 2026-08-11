@@ -236,6 +236,39 @@ class PlexShowImportServiceTest {
         }
 
     @Test
+    fun `should generate local slug when plex show has no slug`() {
+        val show =
+            PlexShow(
+                ratingKey = "6878",
+                slug = null,
+                title = "Entrevistas Favoritas",
+                originalTitle = null,
+                year = null,
+                summary = null,
+                guid = "tv.plex.agents.none://6878",
+                guids = emptyList(),
+            )
+
+        every { tvShowRepository.findByFingerprint(any()) } returns null
+        every { tvShowRepository.save(any()) } answers { firstArg<TvShow>().copy(id = 97) }
+        every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
+
+        val result = service.upsertShow(show)
+
+        assertEquals("entrevistas-favoritas", result.slug)
+        verify(exactly = 1) {
+            tvShowRepository.save(
+                match {
+                    it.id == 0L &&
+                        it.originalTitle == "Entrevistas Favoritas" &&
+                        it.year == null &&
+                        it.slug == "entrevistas-favoritas"
+                },
+            )
+        }
+    }
+
+    @Test
     fun `should reuse episode fingerprint after plex library rebuild changes plex ids`() {
         val show = TvShow(id = 10, originalTitle = "Severance", year = 2022, fingerprint = "show-fp")
         val existingEpisode =

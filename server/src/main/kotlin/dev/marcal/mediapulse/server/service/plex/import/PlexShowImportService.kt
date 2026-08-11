@@ -14,6 +14,7 @@ import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowTitleCrudRepository
 import dev.marcal.mediapulse.server.service.plex.PlexShowArtworkService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
+import dev.marcal.mediapulse.server.util.SlugTextUtil
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -134,7 +135,7 @@ class PlexShowImportService(
         val normalizedOriginal = show.originalTitle?.trim()?.ifBlank { null } ?: show.title.trim()
         val normalizedTitle = show.title.trim()
         val normalizedSummary = show.summary?.trim()?.ifBlank { null }
-        val normalizedSlug = resolveSlug(show.slug)
+        val normalizedSlug = resolveSlug(show.slug, normalizedTitle)
         val normalizedYear = show.year
         val showExternalIds = extractShowExternalIds(show.guids.orEmpty())
         val existingByTmdb = showExternalIds.firstOrNull { it.first == Provider.TMDB }?.let { findShowByExternalId(it.first, it.second) }
@@ -503,5 +504,12 @@ class PlexShowImportService(
             .distinct()
             .toList()
 
-    private fun resolveSlug(slug: String?): String? = slug?.trim()?.ifBlank { null }
+    private fun resolveSlug(
+        slug: String?,
+        fallbackTitle: String,
+    ): String? {
+        val plexSlug = slug?.trim()?.ifBlank { null }
+        if (plexSlug != null) return plexSlug
+        return SlugTextUtil.normalize(fallbackTitle).replace('_', '-').ifBlank { null }
+    }
 }

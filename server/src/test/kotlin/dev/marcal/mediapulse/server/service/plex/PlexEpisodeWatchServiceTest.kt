@@ -358,6 +358,77 @@ class PlexEpisodeWatchServiceTest {
             }
         }
 
+    @Test
+    fun `deve reutilizar serie e episodio importados para metadados plex sem agente`() =
+        runBlocking {
+            val payload =
+                episodePayload(
+                    grandparentTitle = "Entrevistas Favoritas",
+                    originalTitle = "2015-06-09 - Ayn Rand on Love and Happiness | Blank on Blank",
+                    year = 2015,
+                    grandparentSlug = null,
+                ).let {
+                    it.copy(
+                        metadata =
+                            it.metadata.copy(
+                                grandparentGuid = "tv.plex.agents.none://6878",
+                                guid = "tv.plex.agents.none://6889",
+                                parentIndex = 2015,
+                                index = 60901,
+                                guidList = emptyList(),
+                            ),
+                    )
+                }
+            val existingShow =
+                TvShow(
+                    id = 97,
+                    originalTitle = "Entrevistas Favoritas",
+                    year = null,
+                    slug = null,
+                    fingerprint = "imported-show-fp",
+                )
+            val existingEpisode =
+                TvEpisode(
+                    id = 2814,
+                    showId = 97,
+                    title = "2015-06-09 - Ayn Rand on Love and Happiness | Blank on Blank",
+                    seasonNumber = 2015,
+                    episodeNumber = 60901,
+                    fingerprint = "imported-episode-fp",
+                )
+
+            every { tvShowRepository.findByFingerprint(any()) } returns null
+            every { tvShowRepository.findAllByExactTitle("Entrevistas Favoritas") } returns listOf(existingShow)
+            every { tvShowRepository.save(any()) } answers { firstArg() }
+            every { tvEpisodeRepository.findByFingerprint(any()) } returns existingEpisode
+            every { tvEpisodeRepository.save(any()) } answers { firstArg() }
+            every { tvShowTitleCrudRepository.insertIgnore(any(), any(), any(), any(), any()) } just runs
+            every { tvEpisodeWatchCrudRepository.insertIgnore(any(), any(), any()) } just runs
+
+            val result = service.processScrobble(payload)
+
+            assertNotNull(result)
+            assertEquals(2814, result.episodeId)
+            verify(exactly = 1) { tvShowRepository.findAllByExactTitle("Entrevistas Favoritas") }
+            verify(exactly = 1) {
+                tvShowRepository.save(
+                    match {
+                        it.id == 97L &&
+                            it.year == null &&
+                            it.slug == "entrevistas-favoritas"
+                    },
+                )
+            }
+            verify(exactly = 0) { tvShowRepository.save(match { it.id == 0L }) }
+            verify(exactly = 1) {
+                tvEpisodeWatchCrudRepository.insertIgnore(
+                    2814,
+                    TvEpisodeWatchSource.PLEX.name,
+                    Instant.ofEpochSecond(1775146349),
+                )
+            }
+        }
+
     private fun episodePayload(
         event: String = "media.scrobble",
         type: String = "episode",

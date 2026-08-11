@@ -13,6 +13,7 @@ import dev.marcal.mediapulse.server.repository.crud.TvEpisodeWatchCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowTitleCrudRepository
 import dev.marcal.mediapulse.server.util.FingerprintUtil
+import dev.marcal.mediapulse.server.util.SlugTextUtil
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -39,8 +40,9 @@ class PlexEpisodeWatchService(
 
         val showOriginalTitle = meta.grandparentTitle?.trim()?.ifBlank { null } ?: return null
         val showDescription = null
-        val showYear = meta.parentYear ?: meta.year
-        val showSlug = resolveSlug(meta.grandparentSlug)
+        val hasUnmatchedPlexMetadata = meta.grandparentGuid?.startsWith("tv.plex.agents.none://", ignoreCase = true) == true
+        val showYear = if (hasUnmatchedPlexMetadata) null else meta.parentYear ?: meta.year
+        val showSlug = resolveSlug(meta.grandparentSlug, showOriginalTitle)
         val seasonTitle = meta.parentTitle?.trim()?.ifBlank { null }
         val showFingerprint = FingerprintUtil.tvShowFp(originalTitle = showOriginalTitle, year = showYear)
         val episodeExternalIds = extractEpisodeExternalIds(meta.guidList)
@@ -51,6 +53,7 @@ class PlexEpisodeWatchService(
             episodeByExternalIds?.let { tvShowRepository.findById(it.showId).orElse(null) }
                 ?: tvShowRepository.findByFingerprint(showFingerprint)
                 ?: findUniqueShowBySlugAndYear(showSlug, showYear)
+                ?: findUniqueUnmatchedShowByTitle(showOriginalTitle, hasUnmatchedPlexMetadata)
                 ?: tvShowRepository.save(
                     TvShow(
                         originalTitle = showOriginalTitle,
@@ -150,6 +153,14 @@ class PlexEpisodeWatchService(
     ): TvShow? {
         if (slug == null || year == null) return null
         return tvShowRepository.findAllBySlugAndYear(slug, year).singleOrNull()
+    }
+
+    private fun findUniqueUnmatchedShowByTitle(
+        title: String,
+        hasUnmatchedPlexMetadata: Boolean,
+    ): TvShow? {
+        if (!hasUnmatchedPlexMetadata) return null
+        return tvShowRepository.findAllByExactTitle(title).singleOrNull()
     }
 
     private fun mergeEpisode(
@@ -296,5 +307,12 @@ class PlexEpisodeWatchService(
             else -> this
         }
 
-    private fun resolveSlug(slug: String?): String? = slug?.trim()?.ifBlank { null }
+    private fun resolveSlug(
+        slug: String?,
+        fallbackTitle: String,
+    ): String? {
+        val plexSlug = slug?.trim()?.ifBlank { null }
+        if (plexSlug != null) return plexSlug
+        return SlugTextUtil.normalize(fallbackTitle).replace('_', '-').ifBlank { null }
+    }
 }

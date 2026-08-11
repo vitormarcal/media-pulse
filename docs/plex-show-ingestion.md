@@ -14,8 +14,8 @@ It also supports full show library import during pipeline startup and manual wat
 Plex payload -> Media Pulse domain:
 
 - `Metadata.originalTitle` / `Metadata.grandparentTitle` -> `tv_shows.original_title`
-- `Metadata.grandparentSlug` -> `tv_shows.slug`
-- `Metadata.parentYear` / `Metadata.year` -> `tv_shows.year`
+- `Metadata.grandparentSlug` -> `tv_shows.slug`; when absent, a local slug is generated from the show title
+- `Metadata.parentYear` / `Metadata.year` -> `tv_shows.year`, except for unmatched `tv.plex.agents.none` episode metadata, whose `year` describes the episode and is not used as the show year
 - `Metadata.summary` -> `tv_episodes.summary`
 - `Metadata.title` -> `tv_episodes.title`
 - `Metadata.parentIndex` -> `tv_episodes.season_number`
@@ -36,6 +36,7 @@ Show identity prefers canonical third-party ids when available.
 - Plex `ratingKey` and `plex://...` GUIDs are never persisted or used for reconciliation.
 - `ratingKey` is used only in memory while navigating the current Plex API import.
 - Plex episode scrobbles first reuse the canonical show of an episode identified by unambiguous third-party IDs. When no episode ID resolves, they try the show fingerprint and then an exact `slug + year` match accepted only when it returns one candidate. They do not resolve the show by Plex GUID, slug alone, or title-only matching.
+- For unmatched `tv.plex.agents.none` libraries without canonical IDs, a scrobble may reuse an exact title match only when it resolves to one local show. Ambiguous title matches are ignored and a separate show is created.
 - Show third-party IDs (TMDB/TVDB/IMDB) are stored directly in `tv_shows` when available.
 - Episode third-party IDs (TMDB/TVDB/IMDB) are stored directly in `tv_episodes` when available.
 - Episode resolution prefers third-party IDs and falls back to the fingerprint based on show, season, episode number, and title.
@@ -65,6 +66,7 @@ Show library import runs in the startup pipeline when enabled.
 
 - It imports from Plex `show` sections using paginated reads.
 - It persists canonical shows, episodes, localized titles, show IDs in `tv_shows`, and episode IDs in `tv_episodes` when available.
+- It generates a local show slug from the Plex title when the provider does not supply one, keeping imported shows navigable.
 - Show reconciliation during import prefers TMDB/TVDB identifiers over fingerprint fallback.
 - It does not create rows in `tv_episode_watches`.
 
