@@ -535,7 +535,7 @@ await loadGroups()
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
-  align-items: center;
+  align-items: start;
   padding: 12px;
   border-radius: 16px;
   background: white;
@@ -544,14 +544,17 @@ await loadGroups()
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 10px;
-  align-items: center;
+  align-items: start;
   min-width: 0;
 }
 .track-selection > span {
   display: grid;
   min-width: 0;
 }
-.manual-track-row strong,
+.manual-track-row strong {
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
 .manual-track-row small {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -566,6 +569,7 @@ await loadGroups()
   align-items: center;
   font-size: 0.75rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 .manual-review-button {
   justify-self: start;
