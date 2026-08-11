@@ -92,24 +92,32 @@ class CanonicalizationService(
 
         val byExternal =
             musicbrainzReleaseGroupId?.let(albumRepo::findByMusicbrainzReleaseGroupId)
+                ?: musicbrainzReleaseGroupId?.let(albumRepo::findByMusicbrainzReleaseGroupAlias)
                 ?: musicbrainzId?.let(albumMusicBrainzReleaseIds::findByReleaseId)?.let { albumRepo.findById(it.albumId).orElse(null) }
                 ?: spotifyId?.let(albumSpotifyIds::findBySpotifyId)?.let { albumRepo.findById(it.albumId).orElse(null) }
 
+        val byTitleAlias =
+            if (byExternal == null) {
+                albumRepo.findByTitleAlias(artist.id, titleKey)
+            } else {
+                null
+            }
+
         val byExactYear =
-            if (byExternal == null && year != null) {
+            if (byExternal == null && byTitleAlias == null && year != null) {
                 albumRepo.findByArtistIdAndTitleKeyAndYear(artist.id, titleKey, year)
             } else {
                 null
             }
 
         val byNullYearPolicy =
-            if (byExternal == null && byExactYear == null && year == null) {
+            if (byExternal == null && byTitleAlias == null && byExactYear == null && year == null) {
                 pickBestForNullYear()
             } else {
                 null
             }
 
-        val found = byExternal ?: byExactYear ?: byNullYearPolicy ?: albumRepo.findByFingerprint(fp)
+        val found = byExternal ?: byTitleAlias ?: byExactYear ?: byNullYearPolicy ?: albumRepo.findByFingerprint(fp)
 
         val created =
             found ?: albumRepo.save(

@@ -33,6 +33,7 @@ class SpaForwardController {
         "/music/lists/{slug}",
         "/music/terms/{kind}/{slug}",
         "/music/admin/duplicates",
+        "/music/admin/album-duplicates",
     )
     fun forwardToIndex(): String = "forward:/index.html"
 }

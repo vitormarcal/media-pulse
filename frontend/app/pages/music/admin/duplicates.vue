@@ -13,6 +13,7 @@
       <nav class="admin-subheader__nav" aria-label="Navegação administrativa de música">
         <NuxtLink class="admin-nav-link" to="/music"> Música </NuxtLink>
         <NuxtLink class="admin-nav-link" to="/music?view=archive&kind=albums"> Arquivo </NuxtLink>
+        <NuxtLink class="admin-nav-link" to="/music/admin/album-duplicates"> Álbuns duplicados </NuxtLink>
         <span class="admin-nav-link admin-nav-link--active"> Revisão de duplicatas </span>
       </nav>
     </section>

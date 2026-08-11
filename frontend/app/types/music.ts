@@ -160,6 +160,60 @@ export interface ArtistPageResponse {
   musicBrainz: MusicBrainzLink | null
 }
 
+export interface AlbumMergeCandidateResponse {
+  albumId: number
+  title: string
+  year: number | null
+  coverUrl: string | null
+  trackCount: number
+  playbackCount: number
+  lastPlayed: string | null
+  spotifyIds: string[]
+  musicBrainzReleaseIds: string[]
+  musicBrainzReleaseGroupId: string | null
+  rating: number | null
+}
+
+export interface DuplicateAlbumSuggestionResponse {
+  artistId: number
+  artistName: string
+  reason: string
+  confidence: 'HIGH' | 'MEDIUM'
+  suggestedTargetAlbumId: number
+  candidates: AlbumMergeCandidateResponse[]
+}
+
+export interface DuplicateAlbumReviewResponse {
+  items: DuplicateAlbumSuggestionResponse[]
+}
+
+export interface AlbumMergeCatalogResponse {
+  artists: Array<{
+    artistId: number
+    artistName: string
+    albums: AlbumMergeCandidateResponse[]
+  }>
+}
+
+export interface AlbumMergePreviewResponse {
+  artistId: number
+  artistName: string
+  targetAlbumId: number
+  candidates: AlbumMergeCandidateResponse[]
+  totalTracks: number
+  totalPlaybacks: number
+  warnings: string[]
+}
+
+export interface AlbumMergeResponse {
+  albumId: number
+  mergedAlbumIds: number[]
+  movedPlaybacks: number
+  migratedTrackLinks: number
+  linkedExternalIdentifiers: number
+  storedTitleAliases: number
+}
+
 export interface TopArtistResponse {
   artistId: number
   artistName: string

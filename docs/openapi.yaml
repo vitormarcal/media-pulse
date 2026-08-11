@@ -1182,6 +1182,64 @@ paths:
               schema:
                 $ref: "#/components/schemas/DuplicateTrackBatchMergeResponse"
 
+  /api/music/admin/album-duplicates:
+    get:
+      summary: Suggest duplicate albums for owner review
+      tags: [Music]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: artist, in: query, schema: { type: string } }
+        - { name: album, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DuplicateAlbumReviewResponse" }
+  /api/music/admin/album-duplicates/catalog:
+    get:
+      summary: Search albums grouped by artist for a manual merge
+      tags: [Music]
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 100 } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlbumMergeCatalogResponse" }
+  /api/music/admin/album-duplicates/preview:
+    post:
+      summary: Preview a definitive album merge
+      tags: [Music]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlbumMergePreviewRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlbumMergePreviewResponse" }
+  /api/music/admin/album-duplicates/merge:
+    post:
+      summary: Merge albums into an owner-selected canonical album
+      tags: [Music]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlbumMergeRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlbumMergeResponse" }
+
   /api/spotify/import:
     post:
       summary: Spotify import
@@ -4371,6 +4429,93 @@ components:
           items:
             $ref: "#/components/schemas/DuplicateTrackMergeResponse"
       required: [processedGroups, results]
+    AlbumMergeCandidateResponse:
+      type: object
+      properties:
+        albumId: { type: integer, format: int64 }
+        title: { type: string }
+        year: { type: integer, nullable: true }
+        coverUrl: { type: string, nullable: true }
+        trackCount: { type: integer, format: int64 }
+        playbackCount: { type: integer, format: int64 }
+        lastPlayed: { type: string, format: date-time, nullable: true }
+        spotifyIds: { type: array, items: { type: string } }
+        musicBrainzReleaseIds: { type: array, items: { type: string } }
+        musicBrainzReleaseGroupId: { type: string, nullable: true }
+        rating: { type: integer, nullable: true }
+      required: [albumId, title, trackCount, playbackCount, spotifyIds, musicBrainzReleaseIds]
+    DuplicateAlbumSuggestionResponse:
+      type: object
+      properties:
+        artistId: { type: integer, format: int64 }
+        artistName: { type: string }
+        reason: { type: string }
+        confidence: { type: string, enum: [HIGH, MEDIUM] }
+        suggestedTargetAlbumId: { type: integer, format: int64 }
+        candidates:
+          type: array
+          items: { $ref: "#/components/schemas/AlbumMergeCandidateResponse" }
+      required: [artistId, artistName, reason, confidence, suggestedTargetAlbumId, candidates]
+    DuplicateAlbumReviewResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/DuplicateAlbumSuggestionResponse" }
+      required: [items]
+    AlbumMergeArtistResponse:
+      type: object
+      properties:
+        artistId: { type: integer, format: int64 }
+        artistName: { type: string }
+        albums:
+          type: array
+          items: { $ref: "#/components/schemas/AlbumMergeCandidateResponse" }
+      required: [artistId, artistName, albums]
+    AlbumMergeCatalogResponse:
+      type: object
+      properties:
+        artists:
+          type: array
+          items: { $ref: "#/components/schemas/AlbumMergeArtistResponse" }
+      required: [artists]
+    AlbumMergePreviewRequest:
+      type: object
+      properties:
+        targetAlbumId: { type: integer, format: int64 }
+        sourceAlbumIds: { type: array, items: { type: integer, format: int64 } }
+      required: [targetAlbumId, sourceAlbumIds]
+    AlbumMergePreviewResponse:
+      type: object
+      properties:
+        artistId: { type: integer, format: int64 }
+        artistName: { type: string }
+        targetAlbumId: { type: integer, format: int64 }
+        candidates: { type: array, items: { $ref: "#/components/schemas/AlbumMergeCandidateResponse" } }
+        totalTracks: { type: integer, format: int64 }
+        totalPlaybacks: { type: integer, format: int64 }
+        warnings: { type: array, items: { type: string } }
+      required: [artistId, artistName, targetAlbumId, candidates, totalTracks, totalPlaybacks, warnings]
+    AlbumMergeRequest:
+      type: object
+      properties:
+        targetAlbumId: { type: integer, format: int64 }
+        sourceAlbumIds: { type: array, items: { type: integer, format: int64 } }
+        titleFromAlbumId: { type: integer, format: int64 }
+        coverFromAlbumId: { type: integer, format: int64 }
+        yearFromAlbumId: { type: integer, format: int64 }
+        ratingFromAlbumId: { type: integer, format: int64, nullable: true }
+      required: [targetAlbumId, sourceAlbumIds]
+    AlbumMergeResponse:
+      type: object
+      properties:
+        albumId: { type: integer, format: int64 }
+        mergedAlbumIds: { type: array, items: { type: integer, format: int64 } }
+        movedPlaybacks: { type: integer }
+        migratedTrackLinks: { type: integer }
+        linkedExternalIdentifiers: { type: integer }
+        storedTitleAliases: { type: integer }
+      required: [albumId, mergedAlbumIds, movedPlaybacks, migratedTrackLinks, linkedExternalIdentifiers, storedTitleAliases]
     AlbumTrackRow:
       type: object
       properties:

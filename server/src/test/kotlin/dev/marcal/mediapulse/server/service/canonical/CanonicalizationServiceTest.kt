@@ -58,6 +58,8 @@ class CanonicalizationServiceTest {
         MockKAnnotations.init(this)
         every { albumSpotifyIds.findBySpotifyId(any()) } returns null
         every { albumMusicBrainzReleaseIds.findByReleaseId(any()) } returns null
+        every { albumRepo.findByMusicbrainzReleaseGroupAlias(any()) } returns null
+        every { albumRepo.findByTitleAlias(any(), any()) } returns null
         every { trackSpotifyIds.findBySpotifyId(any()) } returns null
         every { trackMusicBrainzRecordingIds.findByRecordingId(any()) } returns null
         every { albumSpotifyIds.save(any()) } answers { firstArg() }
@@ -413,6 +415,35 @@ class CanonicalizationServiceTest {
         }
 
         verify(exactly = 0) { albumMusicBrainzReleaseIds.save(any()) }
+    }
+
+    @Test
+    fun `should resolve merged album by title alias when no external id exists`() {
+        val artist = Artist(id = 207L, name = "Artist", fingerprint = "artist-fp")
+        val canonical = Album(id = 217L, artistId = artist.id, title = "Album", titleKey = "album", fingerprint = "album-fp")
+        every { albumRepo.findByTitleAlias(artist.id, "album ao vivo") } returns canonical
+
+        val result = service.ensureAlbum(artist, "Album - Ao Vivo", null, null)
+
+        assertEquals(canonical.id, result.id)
+        verify(exactly = 0) { albumRepo.save(any()) }
+    }
+
+    @Test
+    fun `should prefer spotify album id over a title alias`() {
+        val artist = Artist(id = 208L, name = "Artist", fingerprint = "artist-fp")
+        val spotifyAlbum = Album(id = 218L, artistId = artist.id, title = "Canonical", titleKey = "canonical", fingerprint = "spotify-fp")
+        val titleAlbum = Album(id = 219L, artistId = artist.id, title = "Alias target", titleKey = "alias-target", fingerprint = "alias-fp")
+        every { albumSpotifyIds.findBySpotifyId("spotify-album") } returns
+            dev.marcal.mediapulse.server.model.music
+                .AlbumSpotifyId(albumId = spotifyAlbum.id, spotifyId = "spotify-album")
+        every { albumRepo.findById(spotifyAlbum.id) } returns java.util.Optional.of(spotifyAlbum)
+        every { albumRepo.findByTitleAlias(artist.id, "same-title") } returns titleAlbum
+
+        val result = service.ensureAlbum(artist, "Same Title", null, null, spotifyId = "spotify-album")
+
+        assertEquals(spotifyAlbum.id, result.id)
+        verify(exactly = 0) { albumRepo.findByTitleAlias(any(), any()) }
     }
 
     // ==================== ensureTrack Tests ====================

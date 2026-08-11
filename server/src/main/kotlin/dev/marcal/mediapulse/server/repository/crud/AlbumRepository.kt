@@ -13,6 +13,33 @@ interface AlbumRepository : JpaRepository<Album, Long> {
 
     fun findByMusicbrainzReleaseGroupId(musicbrainzReleaseGroupId: String): Album?
 
+    @Query(
+        value =
+            """
+            SELECT a.* FROM albums a
+            JOIN album_musicbrainz_release_group_aliases alias ON alias.album_id = a.id
+            WHERE alias.release_group_id = :releaseGroupId
+            """,
+        nativeQuery = true,
+    )
+    fun findByMusicbrainzReleaseGroupAlias(
+        @Param("releaseGroupId") releaseGroupId: String,
+    ): Album?
+
+    @Query(
+        value =
+            """
+            SELECT a.* FROM albums a
+            JOIN album_title_aliases alias ON alias.album_id = a.id
+            WHERE alias.artist_id = :artistId AND alias.title_key = :titleKey
+            """,
+        nativeQuery = true,
+    )
+    fun findByTitleAlias(
+        @Param("artistId") artistId: Long,
+        @Param("titleKey") titleKey: String,
+    ): Album?
+
     fun findByArtistIdAndTitleKeyAndYear(
         artistId: Long,
         titleKey: String,
