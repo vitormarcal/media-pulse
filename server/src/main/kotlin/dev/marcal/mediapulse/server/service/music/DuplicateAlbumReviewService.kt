@@ -7,6 +7,7 @@ import dev.marcal.mediapulse.server.api.music.AlbumMergePreviewRequest
 import dev.marcal.mediapulse.server.api.music.AlbumMergePreviewResponse
 import dev.marcal.mediapulse.server.api.music.AlbumMergeRequest
 import dev.marcal.mediapulse.server.api.music.AlbumMergeResponse
+import dev.marcal.mediapulse.server.api.music.AlbumTrackOrderPreviewResponse
 import dev.marcal.mediapulse.server.api.music.DuplicateAlbumReviewResponse
 import dev.marcal.mediapulse.server.api.music.DuplicateAlbumSuggestionResponse
 import dev.marcal.mediapulse.server.repository.AlbumMergeRepository
@@ -89,7 +90,9 @@ class DuplicateAlbumReviewService(
 
     fun preview(request: AlbumMergePreviewRequest): AlbumMergePreviewResponse {
         val resolved = resolve(request.targetAlbumId, request.sourceAlbumIds)
+        validateSelectedAlbum(request.trackOrderFromAlbumId, resolved.candidates)
         val target = resolved.candidates.first { it.albumId == request.targetAlbumId }
+        val trackOrder = planTrackOrder(resolved.candidates, request.trackOrderFromAlbumId)
         return AlbumMergePreviewResponse(
             artistId = resolved.artistId,
             artistName = resolved.artistName,
@@ -97,7 +100,15 @@ class DuplicateAlbumReviewService(
             candidates = resolved.candidates,
             totalTracks = resolved.candidates.sumOf { it.trackCount },
             totalPlaybacks = resolved.candidates.sumOf { it.playbackCount },
-            warnings = listOf("A operação é definitiva.", "Faixas com títulos iguais serão mantidas separadas."),
+            trackOrder = trackOrder.toResponse(request.trackOrderFromAlbumId),
+            warnings =
+                buildList {
+                    add("A operação é definitiva.")
+                    add("Faixas com títulos iguais serão mantidas separadas.")
+                    if (trackOrder.conflictedTrackCount > 0) {
+                        add("${trackOrder.conflictedTrackCount} faixa(s) adicional(is) perderão a posição por conflito.")
+                    }
+                },
         )
     }
 
@@ -106,7 +117,13 @@ class DuplicateAlbumReviewService(
         val resolved = resolve(request.targetAlbumId, request.sourceAlbumIds)
         val allowed = resolved.candidates.associateBy { it.albumId }
         val selectedIds =
-            listOfNotNull(request.titleFromAlbumId, request.coverFromAlbumId, request.yearFromAlbumId, request.ratingFromAlbumId)
+            listOfNotNull(
+                request.titleFromAlbumId,
+                request.coverFromAlbumId,
+                request.yearFromAlbumId,
+                request.ratingFromAlbumId,
+                request.trackOrderFromAlbumId,
+            )
         if (selectedIds.any { it !in allowed }) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Os campos escolhidos devem vir de um dos álbuns da mesclagem")
         }
@@ -121,7 +138,19 @@ class DuplicateAlbumReviewService(
         val titleChoice = freshById.getValue(request.titleFromAlbumId)
         val coverChoice = freshById.getValue(request.coverFromAlbumId)
         val yearChoice = freshById.getValue(request.yearFromAlbumId)
-        val stats = repository.merge(target.id, request.sourceAlbumIds.distinct(), fresh.artistId, request.ratingFromAlbumId)
+        val originalLinks = repository.findTrackLinks(freshById.keys)
+        val trackOrder = AlbumTrackOrderPlanner.plan(originalLinks, request.trackOrderFromAlbumId)
+        val targetTrackIds = originalLinks.filter { it.albumId == target.id }.mapTo(mutableSetOf()) { it.trackId }
+        val migratedTrackLinks = trackOrder.links.count { it.trackId !in targetTrackIds }
+        val stats =
+            repository.merge(
+                target.id,
+                request.sourceAlbumIds.distinct(),
+                fresh.artistId,
+                request.ratingFromAlbumId,
+                trackOrder.links,
+                migratedTrackLinks,
+            )
         val titleKey = TitleKeyUtil.albumTitleKey(titleChoice.title).ifBlank { "unknown" }
         albumRepository.save(
             target.copy(
@@ -164,6 +193,28 @@ class DuplicateAlbumReviewService(
             candidate.spotifyIds.size * 10_000L +
             (if (candidate.coverUrl != null) 1_000L else 0L) +
             candidate.trackCount * 10L + candidate.playbackCount
+
+    private fun planTrackOrder(
+        candidates: List<AlbumMergeCandidateResponse>,
+        trackOrderFromAlbumId: Long,
+    ) = AlbumTrackOrderPlanner.plan(repository.findTrackLinks(candidates.map { it.albumId }), trackOrderFromAlbumId)
+
+    private fun validateSelectedAlbum(
+        selectedAlbumId: Long,
+        candidates: List<AlbumMergeCandidateResponse>,
+    ) {
+        if (candidates.none { it.albumId == selectedAlbumId }) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A ordem das faixas deve vir de um dos álbuns da mesclagem")
+        }
+    }
+
+    private fun AlbumTrackOrderPlanner.Plan.toResponse(fromAlbumId: Long) =
+        AlbumTrackOrderPreviewResponse(
+            fromAlbumId = fromAlbumId,
+            positionedTrackCount = positionedTrackCount,
+            unpositionedTrackCount = unpositionedTrackCount,
+            conflictedTrackCount = conflictedTrackCount,
+        )
 
     private data class ResolvedMerge(
         val artistId: Long,

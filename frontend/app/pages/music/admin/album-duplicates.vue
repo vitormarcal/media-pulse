@@ -166,6 +166,21 @@
             </option>
           </select></label
         >
+        <label
+          ><span>Usar ordem das faixas de</span
+          ><select v-model.number="mergeForm.trackOrderFromAlbumId" @change="refreshPreview">
+            <option v-for="album in preview.candidates" :key="album.albumId" :value="album.albumId">
+              {{ album.title }} (#{{ album.albumId }})
+            </option>
+          </select></label
+        >
+      </div>
+      <div class="track-order-summary">
+        <strong>{{ preview.trackOrder.positionedTrackCount }} faixa(s) manterão uma posição</strong>
+        <span>{{ preview.trackOrder.unpositionedTrackCount }} ficarão sem número</span>
+        <span v-if="preview.trackOrder.conflictedTrackCount">
+          {{ preview.trackOrder.conflictedTrackCount }} por conflito com a tracklist escolhida
+        </span>
       </div>
       <ul>
         <li v-for="warning in preview.warnings" :key="warning">{{ warning }}</li>
@@ -209,7 +224,13 @@ const preview = ref<AlbumMergePreviewResponse | null>(null)
 const mergePending = ref(false)
 const notice = ref('')
 const ratingChoice = ref('')
-const mergeForm = reactive({ targetAlbumId: 0, titleFromAlbumId: 0, coverFromAlbumId: 0, yearFromAlbumId: 0 })
+const mergeForm = reactive({
+  targetAlbumId: 0,
+  titleFromAlbumId: 0,
+  coverFromAlbumId: 0,
+  yearFromAlbumId: 0,
+  trackOrderFromAlbumId: 0,
+})
 
 async function loadSuggestions() {
   suggestionsPending.value = true
@@ -258,6 +279,7 @@ async function prepareMerge(albums: AlbumMergeCandidateResponse[], targetId: num
   mergeForm.titleFromAlbumId = suggested.albumId
   mergeForm.coverFromAlbumId = suggested.albumId
   mergeForm.yearFromAlbumId = suggested.albumId
+  mergeForm.trackOrderFromAlbumId = suggested.albumId
   ratingChoice.value = suggested.rating ? String(suggested.albumId) : ''
   await fetchPreview(albums.map((album) => album.albumId))
   nextTick(() => document.querySelector('.merge-editor')?.scrollIntoView({ behavior: 'smooth' }))
@@ -270,6 +292,7 @@ async function fetchPreview(allIds: number[]) {
     body: {
       targetAlbumId: mergeForm.targetAlbumId,
       sourceAlbumIds: allIds.filter((id) => id !== mergeForm.targetAlbumId),
+      trackOrderFromAlbumId: mergeForm.trackOrderFromAlbumId,
     },
   })
 }
@@ -533,6 +556,19 @@ select {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 14px;
+}
+.track-order-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  border-radius: 16px;
+  background: #e5e5e0;
+  padding: 12px 16px;
+  color: #62625b;
+  font-size: 14px;
+}
+.track-order-summary strong {
+  color: #211922;
 }
 .danger {
   justify-self: start;

@@ -4516,7 +4516,16 @@ components:
       properties:
         targetAlbumId: { type: integer, format: int64 }
         sourceAlbumIds: { type: array, items: { type: integer, format: int64 } }
+        trackOrderFromAlbumId: { type: integer, format: int64, description: Album whose track positions take priority; defaults to targetAlbumId }
       required: [targetAlbumId, sourceAlbumIds]
+    AlbumTrackOrderPreviewResponse:
+      type: object
+      properties:
+        fromAlbumId: { type: integer, format: int64 }
+        positionedTrackCount: { type: integer }
+        unpositionedTrackCount: { type: integer }
+        conflictedTrackCount: { type: integer }
+      required: [fromAlbumId, positionedTrackCount, unpositionedTrackCount, conflictedTrackCount]
     AlbumMergePreviewResponse:
       type: object
       properties:
@@ -4526,8 +4535,9 @@ components:
         candidates: { type: array, items: { $ref: "#/components/schemas/AlbumMergeCandidateResponse" } }
         totalTracks: { type: integer, format: int64 }
         totalPlaybacks: { type: integer, format: int64 }
+        trackOrder: { $ref: "#/components/schemas/AlbumTrackOrderPreviewResponse" }
         warnings: { type: array, items: { type: string } }
-      required: [artistId, artistName, targetAlbumId, candidates, totalTracks, totalPlaybacks, warnings]
+      required: [artistId, artistName, targetAlbumId, candidates, totalTracks, totalPlaybacks, trackOrder, warnings]
     AlbumMergeRequest:
       type: object
       properties:
@@ -4537,6 +4547,7 @@ components:
         coverFromAlbumId: { type: integer, format: int64 }
         yearFromAlbumId: { type: integer, format: int64 }
         ratingFromAlbumId: { type: integer, format: int64, nullable: true }
+        trackOrderFromAlbumId: { type: integer, format: int64, description: Album whose track positions take priority; defaults to targetAlbumId }
       required: [targetAlbumId, sourceAlbumIds]
     AlbumMergeResponse:
       type: object

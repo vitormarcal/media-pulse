@@ -202,6 +202,12 @@ export interface AlbumMergePreviewResponse {
   candidates: AlbumMergeCandidateResponse[]
   totalTracks: number
   totalPlaybacks: number
+  trackOrder: {
+    fromAlbumId: number
+    positionedTrackCount: number
+    unpositionedTrackCount: number
+    conflictedTrackCount: number
+  }
   warnings: string[]
 }
 

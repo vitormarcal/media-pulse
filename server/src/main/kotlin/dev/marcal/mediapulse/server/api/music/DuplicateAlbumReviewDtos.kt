@@ -42,6 +42,14 @@ data class AlbumMergeCandidateResponse(
 data class AlbumMergePreviewRequest(
     val targetAlbumId: Long,
     val sourceAlbumIds: List<Long>,
+    val trackOrderFromAlbumId: Long = targetAlbumId,
+)
+
+data class AlbumTrackOrderPreviewResponse(
+    val fromAlbumId: Long,
+    val positionedTrackCount: Int,
+    val unpositionedTrackCount: Int,
+    val conflictedTrackCount: Int,
 )
 
 data class AlbumMergePreviewResponse(
@@ -51,6 +59,7 @@ data class AlbumMergePreviewResponse(
     val candidates: List<AlbumMergeCandidateResponse>,
     val totalTracks: Long,
     val totalPlaybacks: Long,
+    val trackOrder: AlbumTrackOrderPreviewResponse,
     val warnings: List<String>,
 )
 
@@ -61,6 +70,7 @@ data class AlbumMergeRequest(
     val coverFromAlbumId: Long = targetAlbumId,
     val yearFromAlbumId: Long = targetAlbumId,
     val ratingFromAlbumId: Long? = targetAlbumId,
+    val trackOrderFromAlbumId: Long = targetAlbumId,
 )
 
 data class AlbumMergeResponse(

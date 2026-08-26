@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.music.AlbumMergeCandidateResponse
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
+import java.time.Instant
 
 @Repository
 class AlbumMergeRepository(
@@ -22,6 +23,14 @@ class AlbumMergeRepository(
         val migratedTrackLinks: Int,
         val linkedExternalIdentifiers: Int,
         val storedTitleAliases: Int,
+    )
+
+    data class TrackLink(
+        val albumId: Long,
+        val trackId: Long,
+        val discNumber: Int?,
+        val trackNumber: Int?,
+        val createdAt: Instant,
     )
 
     fun findCatalogAlbumIds(
@@ -158,12 +167,35 @@ class AlbumMergeRepository(
         }
     }
 
+    fun findTrackLinks(albumIds: Collection<Long>): List<TrackLink> {
+        if (albumIds.isEmpty()) return emptyList()
+        return jdbc.query(
+            """
+            SELECT album_id, track_id, disc_number, track_number, created_at
+            FROM album_tracks
+            WHERE album_id IN (:albumIds)
+            ORDER BY album_id, track_id
+            """.trimIndent(),
+            mapOf("albumIds" to albumIds),
+        ) { rs, _ ->
+            TrackLink(
+                albumId = rs.getLong("album_id"),
+                trackId = rs.getLong("track_id"),
+                discNumber = rs.getObject("disc_number") as Int?,
+                trackNumber = rs.getObject("track_number") as Int?,
+                createdAt = rs.getTimestamp("created_at").toInstant(),
+            )
+        }
+    }
+
     @Suppress("LongMethod")
     fun merge(
         targetId: Long,
         sourceIds: List<Long>,
         artistId: Long,
         ratingAlbumId: Long?,
+        trackLinks: List<TrackLink>,
+        migratedTrackLinks: Int,
     ): MergeStats {
         val params = MapSqlParameterSource().addValue("targetId", targetId).addValue("sourceIds", sourceIds).addValue("artistId", artistId)
 
@@ -212,18 +244,7 @@ class AlbumMergeRepository(
         )
         val playbacks = jdbc.update("UPDATE track_playbacks SET album_id = :targetId WHERE album_id IN (:sourceIds)", params)
 
-        val links =
-            jdbc.update(
-                """
-                INSERT INTO album_tracks(album_id, track_id, disc_number, track_number, created_at)
-                SELECT :targetId, source.track_id, NULL, NULL, source.created_at
-                FROM album_tracks source
-                LEFT JOIN album_tracks existing ON existing.album_id = :targetId AND existing.track_id = source.track_id
-                WHERE source.album_id IN (:sourceIds) AND existing.track_id IS NULL
-                ON CONFLICT (album_id, track_id) DO NOTHING
-                """.trimIndent(),
-                params,
-            )
+        replaceTrackLinks(targetId, sourceIds, trackLinks)
 
         copyDistinct("album_genres", "genre_id", params)
         copyDistinct("album_genre_sources", "genre_id, source", params)
@@ -235,7 +256,34 @@ class AlbumMergeRepository(
         mergeRating(targetId, sourceIds, ratingAlbumId)
         jdbc.update("DELETE FROM albums WHERE id IN (:sourceIds)", params)
 
-        return MergeStats(playbacks, links, spotify + mbReleases, aliases)
+        return MergeStats(playbacks, migratedTrackLinks, spotify + mbReleases, aliases)
+    }
+
+    private fun replaceTrackLinks(
+        targetId: Long,
+        sourceIds: List<Long>,
+        trackLinks: List<TrackLink>,
+    ) {
+        jdbc.update(
+            "DELETE FROM album_tracks WHERE album_id = :targetId OR album_id IN (:sourceIds)",
+            mapOf("targetId" to targetId, "sourceIds" to sourceIds),
+        )
+        if (trackLinks.isEmpty()) return
+        jdbc.batchUpdate(
+            """
+            INSERT INTO album_tracks(album_id, track_id, disc_number, track_number, created_at)
+            VALUES (:targetId, :trackId, :discNumber, :trackNumber, :createdAt)
+            """.trimIndent(),
+            trackLinks
+                .map { link ->
+                    MapSqlParameterSource()
+                        .addValue("targetId", targetId)
+                        .addValue("trackId", link.trackId)
+                        .addValue("discNumber", link.discNumber)
+                        .addValue("trackNumber", link.trackNumber)
+                        .addValue("createdAt", link.createdAt)
+                }.toTypedArray(),
+        )
     }
 
     private fun copyDistinct(

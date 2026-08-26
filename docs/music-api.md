@@ -59,8 +59,8 @@ No frontend atual, `/music` concentra tanto o recorte editorial quanto o arquivo
 | `POST /api/music/admin/track-duplicates/merge-batch` | body com `merges[]` | `DuplicateTrackBatchMergeResponse` |
 | `GET /api/music/admin/album-duplicates` | `limit=50`, `artist?`, `album?` | Sugestões de álbuns do mesmo artista por título ou sobreposição de faixas. |
 | `GET /api/music/admin/album-duplicates/catalog` | `q`, `limit=100` | Catálogo agrupado por artista para mesclagem manual. |
-| `POST /api/music/admin/album-duplicates/preview` | body com `targetAlbumId`, `sourceAlbumIds[]` | Prévia e avisos da mesclagem definitiva. |
-| `POST /api/music/admin/album-duplicates/merge` | body com principal, fontes e origem de título/capa/ano/avaliação | Consolida os álbuns no principal. |
+| `POST /api/music/admin/album-duplicates/preview` | body com `targetAlbumId`, `sourceAlbumIds[]`, `trackOrderFromAlbumId?` | Prévia, posições preservadas, conflitos e avisos da mesclagem definitiva. |
+| `POST /api/music/admin/album-duplicates/merge` | body com principal, fontes e origem de título/capa/ano/avaliação/ordem das faixas | Consolida os álbuns no principal. |
 | `GET /api/music/tops/artists` | `start`, `end`, `limit=20` | lista de artistas |
 | `GET /api/music/tops/albums` | `start`, `end`, `limit=20` | lista de álbuns |
 | `GET /api/music/tops/tracks` | `start`, `end`, `limit=20` | lista de faixas |
@@ -144,6 +144,7 @@ Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, últ
 - faixas admitem aliases Spotify e MBIDs de `recording` `0..N`, armazenados em `track_spotify_ids` e `track_musicbrainz_recording_ids`; nenhum alias válido deve ser descartado por haver mais de um
 - ao consolidar faixas duplicadas, todos os aliases externos das faixas de origem são transferidos para a faixa vencedora
 - a mesclagem manual de álbuns é definitiva, exige álbuns do mesmo artista e nunca mescla faixas homônimas automaticamente
+- a tracklist escolhida na mesclagem de álbuns tem prioridade; posições completas das demais edições são preservadas quando livres e ficam nulas quando conflitam
 - títulos absorvidos são preservados em `album_title_aliases`; Spotify IDs, releases e release groups MusicBrainz também continuam resolvendo para o álbum principal
 - a canonicalização de álbuns prioriza release group, release e Spotify ID; aliases de título são usados depois dos identificadores externos
 - busca e prévia MusicBrainz são read-only e toda correspondência exige confirmação do owner
