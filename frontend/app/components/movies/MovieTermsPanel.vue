@@ -14,9 +14,9 @@
 
         <div class="chip-list">
           <component
+            :is="editingEnabled ? 'article' : NuxtLink"
             v-for="item in group.items"
             :key="item.id"
-            :is="editingEnabled ? 'article' : NuxtLink"
             :to="editingEnabled ? undefined : item.href"
             class="term-pill"
             :class="[
@@ -50,7 +50,11 @@
         </div>
       </section>
 
-      <p v-if="!visibleGroups.length" class="empty-copy">Ainda não há marcações ativas para este filme.</p>
+      <p v-if="!visibleGroups.length" class="empty-copy">
+        {{
+          enrichmentStatus === 'PENDING' ? 'Completando marcações…' : 'Ainda não há marcações ativas para este filme.'
+        }}
+      </p>
     </div>
 
     <div v-if="editingEnabled" class="editor-panel">
@@ -141,6 +145,7 @@ const props = defineProps<{
   terms: MoviePageData['terms']
   embedded?: boolean
   editing?: boolean
+  enrichmentStatus?: MoviePageData['enrichment']['terms']
 }>()
 
 const emit = defineEmits<{

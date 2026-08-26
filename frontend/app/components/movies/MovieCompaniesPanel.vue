@@ -20,7 +20,9 @@
       </NuxtLink>
     </div>
 
-    <p v-else class="empty-copy">Nenhuma empresa vinculada.</p>
+    <p v-else class="empty-copy">
+      {{ enrichmentStatus === 'PENDING' ? 'Completando empresas…' : 'Nenhuma empresa encontrada.' }}
+    </p>
 
     <div v-if="editingEnabled" class="editor-toolbar">
       <button type="button" class="secondary-button" :disabled="syncing" @click="syncFromTmdb">
@@ -40,6 +42,7 @@ const props = defineProps<{
   movieId: number
   companies: MoviePageData['companies']
   editing?: boolean
+  enrichmentStatus?: MoviePageData['enrichment']['companies']
 }>()
 
 const emit = defineEmits<{

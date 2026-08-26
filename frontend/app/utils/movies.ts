@@ -715,6 +715,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
       provider: identifier.provider,
       externalId: identifier.externalId,
     })),
+    enrichment: movie.enrichment,
     lists: {
       summary: movie.lists.length
         ? `${movie.lists.length} listas manuais já incluem este filme.`

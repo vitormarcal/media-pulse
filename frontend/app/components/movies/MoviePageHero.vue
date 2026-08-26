@@ -32,6 +32,7 @@
             <MovieCompaniesPanel
               :movie-id="movieId"
               :companies="companies"
+              :enrichment-status="enrichment.companies"
               :editing="editingCompanies"
               @changed="$emit('companiesChanged')"
             />
@@ -41,6 +42,7 @@
             <MovieTermsPanel
               :movie-id="movieId"
               :terms="terms"
+              :enrichment-status="enrichment.terms"
               :editing="editingTerms"
               embedded
               @changed="$emit('termsChanged')"
@@ -75,6 +77,7 @@ const props = defineProps<{
   identifiers: MoviePageData['identifiers']
   companies: MoviePageData['companies']
   terms: MoviePageData['terms']
+  enrichment: MoviePageData['enrichment']
 }>()
 
 const { resolveMediaUrl } = useMediaUrl()

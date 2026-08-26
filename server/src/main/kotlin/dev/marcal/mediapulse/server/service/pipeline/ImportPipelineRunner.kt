@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.config.PipelineProperties
 import dev.marcal.mediapulse.server.config.PlexProperties
 import dev.marcal.mediapulse.server.config.SpotifyProperties
 import dev.marcal.mediapulse.server.service.hardcover.HardcoverImportService
+import dev.marcal.mediapulse.server.service.movie.MovieAutomaticEnrichmentService
 import dev.marcal.mediapulse.server.service.musicbrainz.MusicBrainzAlbumGenreEnrichmentService
 import dev.marcal.mediapulse.server.service.plex.import.PlexMovieImportService
 import dev.marcal.mediapulse.server.service.plex.import.PlexMusicImportService
@@ -28,6 +29,7 @@ class ImportPipelineRunner(
     private val mbService: MusicBrainzAlbumGenreEnrichmentService,
     private val spotifyImportService: SpotifyImportService,
     private val hardcoverImportService: HardcoverImportService,
+    private val movieAutomaticEnrichmentService: MovieAutomaticEnrichmentService,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val running = AtomicBoolean(false)
@@ -61,6 +63,13 @@ class ImportPipelineRunner(
                     "Pipeline Plex movies done | moviesSeen={} moviesUpserted={}",
                     stats.moviesSeen,
                     stats.moviesUpserted,
+                )
+                val enrichment = movieAutomaticEnrichmentService.enrichPending(limit = plexProps.import.pageSize)
+                logger.info(
+                    "Pipeline movie enrichment done | candidates={} completed={} pending={}",
+                    enrichment.candidates,
+                    enrichment.completed,
+                    enrichment.pending,
                 )
             } else {
                 logger.info("Pipeline Plex movies skipped | reason=disabled")

@@ -56,6 +56,17 @@ Movie library import runs in the existing startup pipeline (`ApplicationReadyEve
 - It persists canonical movies, localized titles, and TMDB/IMDB external ids.
 - It does not create rows in `movie_watches` (watch history comes only from scrobble events).
 
+## Automatic enrichment
+
+Movies imported from the Plex library or received through scrobble webhooks are enriched asynchronously from TMDb.
+
+- Movies with a TMDb id enter the pending terms, credits, and companies synchronization immediately.
+- Movies with only an IMDb id are first resolved through TMDb's external-id lookup.
+- Import and scrobble persistence do not depend on TMDb availability.
+- Incomplete steps remain pending and are retried periodically.
+- IMDb ids without a TMDb match are shown as blocked and retried after 24 hours.
+- The retry interval is configured by `TMDB_ENRICHMENT_INTERVAL_MS` (default: `120000`).
+
 ## Movies API
 
 Read-only movie endpoints:

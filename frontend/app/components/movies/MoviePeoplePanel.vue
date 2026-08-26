@@ -30,7 +30,9 @@
         </div>
       </section>
 
-      <p v-if="!people.groups.length" class="empty-copy">Nenhum crédito disponível.</p>
+      <p v-if="!people.groups.length" class="empty-copy">
+        {{ enrichmentStatus === 'PENDING' ? 'Completando créditos…' : 'Nenhum crédito disponível.' }}
+      </p>
 
       <div v-if="editingEnabled" class="editor-shell">
         <div class="editor-actions">
@@ -182,6 +184,7 @@ const props = defineProps<{
   movieId: number
   people: MoviePageData['people']
   editing?: boolean
+  enrichmentStatus?: MoviePageData['enrichment']['credits']
 }>()
 
 const emit = defineEmits<{

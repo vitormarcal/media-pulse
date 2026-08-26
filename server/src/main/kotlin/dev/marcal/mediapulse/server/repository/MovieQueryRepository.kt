@@ -259,7 +259,11 @@ class MovieQueryRepository(
                       mc.poster_url AS collection_poster_url,
                       mc.backdrop_url AS collection_backdrop_url,
                       m.tmdb_id,
-                      m.imdb_id
+                      m.imdb_id,
+                      m.terms_synced_at,
+                      m.credits_synced_at,
+                      m.companies_synced_at,
+                      m.tmdb_resolution_checked_at
                     FROM movies m
                     LEFT JOIN movie_collections mc ON mc.id = m.collection_id
                     WHERE m.id = :movieId
@@ -315,6 +319,21 @@ class MovieQueryRepository(
                 (base[13] as String?)?.let { MovieExternalIdDto(provider = "IMDB", externalId = it) },
                 (base[12] as String?)?.let { MovieExternalIdDto(provider = "TMDB", externalId = it) },
             )
+
+        val hasTmdb = base[12] != null
+        val hasImdb = base[13] != null
+        val termsStatus = enrichmentStepStatus(hasTmdb, base[14] != null)
+        val creditsStatus = enrichmentStepStatus(hasTmdb, base[15] != null)
+        val companiesStatus = enrichmentStepStatus(hasTmdb, base[16] != null)
+        val enrichmentStatus =
+            when {
+                !hasTmdb && (!hasImdb || base[17] != null) -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.BLOCKED
+                termsStatus == dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE &&
+                    creditsStatus == dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE &&
+                    companiesStatus == dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE ->
+                    dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE
+                else -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.PENDING
+            }
 
         val lists = getMovieLists(movieId)
         val companies = getMovieCompanies(movieId)
@@ -396,8 +415,26 @@ class MovieQueryRepository(
             collection = collection,
             rating = rating,
             comments = comments,
+            enrichment =
+                dev.marcal.mediapulse.server.api.movies.MovieAutomaticEnrichmentDto(
+                    status = enrichmentStatus,
+                    tmdbResolutionPending = !hasTmdb && hasImdb && base[17] == null,
+                    terms = termsStatus,
+                    credits = creditsStatus,
+                    companies = companiesStatus,
+                ),
         )
     }
+
+    private fun enrichmentStepStatus(
+        hasTmdb: Boolean,
+        synced: Boolean,
+    ): dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus =
+        when {
+            synced -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE
+            hasTmdb -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.PENDING
+            else -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.BLOCKED
+        }
 
     fun getMovieLists(movieId: Long): List<MovieListSummaryDto> =
         entityManager

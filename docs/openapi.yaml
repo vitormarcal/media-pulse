@@ -5103,7 +5103,26 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MediaCommentDto"
-      required: [movieId, title, originalTitle, images, watches, externalIds, lists, companies, people, terms, comments]
+        enrichment:
+          $ref: "#/components/schemas/MovieAutomaticEnrichmentDto"
+      required: [movieId, title, originalTitle, images, watches, externalIds, lists, companies, people, terms, comments, enrichment]
+    MovieEnrichmentStatus:
+      type: string
+      enum: [PENDING, COMPLETE, BLOCKED]
+    MovieAutomaticEnrichmentDto:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/MovieEnrichmentStatus"
+        tmdbResolutionPending:
+          type: boolean
+        terms:
+          $ref: "#/components/schemas/MovieEnrichmentStatus"
+        credits:
+          $ref: "#/components/schemas/MovieEnrichmentStatus"
+        companies:
+          $ref: "#/components/schemas/MovieEnrichmentStatus"
+      required: [status, tmdbResolutionPending, terms, credits, companies]
     PersonSuggestionDto:
       type: object
       properties:

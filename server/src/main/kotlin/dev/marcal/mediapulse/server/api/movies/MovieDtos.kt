@@ -314,6 +314,20 @@ enum class MovieEnrichmentApplyMode {
     SELECTED,
 }
 
+enum class MovieEnrichmentStatus {
+    PENDING,
+    COMPLETE,
+    BLOCKED,
+}
+
+data class MovieAutomaticEnrichmentDto(
+    val status: MovieEnrichmentStatus,
+    val tmdbResolutionPending: Boolean,
+    val terms: MovieEnrichmentStatus,
+    val credits: MovieEnrichmentStatus,
+    val companies: MovieEnrichmentStatus,
+)
+
 data class MovieDetailsResponse(
     val movieId: Long,
     val title: String,
@@ -332,6 +346,14 @@ data class MovieDetailsResponse(
     val collection: MovieCollectionDto? = null,
     val rating: MediaRatingDto? = null,
     val comments: List<MediaCommentDto> = emptyList(),
+    val enrichment: MovieAutomaticEnrichmentDto =
+        MovieAutomaticEnrichmentDto(
+            status = MovieEnrichmentStatus.BLOCKED,
+            tmdbResolutionPending = false,
+            terms = MovieEnrichmentStatus.BLOCKED,
+            credits = MovieEnrichmentStatus.BLOCKED,
+            companies = MovieEnrichmentStatus.BLOCKED,
+        ),
 )
 
 data class MovieTermCreateRequest(

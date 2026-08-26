@@ -96,6 +96,11 @@ data class TmdbMovieSearchResponse(
     val results: List<TmdbMovieSearchItemResponse> = emptyList(),
 )
 
+data class TmdbFindMovieResponse(
+    @JsonProperty("movie_results")
+    val movieResults: List<TmdbMovieSearchItemResponse> = emptyList(),
+)
+
 data class TmdbDiscoverMovieResponse(
     val page: Int? = null,
     @JsonProperty("total_pages")
@@ -1364,6 +1369,43 @@ class TmdbApiClient(
         }
 
         return emptyList()
+    }
+
+    fun findMovieTmdbIdByImdbId(imdbId: String): String? {
+        if (!tmdbProperties.enabled) return null
+
+        val normalizedImdbId = imdbId.trim()
+        if (normalizedImdbId.isBlank()) return null
+
+        return try {
+            tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
+            val response =
+                tmdbWebClient
+                    .get()
+                    .uri { uriBuilder ->
+                        val builder =
+                            uriBuilder
+                                .path("/find/{externalId}")
+                                .queryParam("external_source", "imdb_id")
+                        if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
+                            builder.queryParam("api_key", tmdbProperties.apiKey)
+                        }
+                        builder.build(normalizedImdbId)
+                    }.retrieve()
+                    .bodyToMono<TmdbFindMovieResponse>()
+                    .block()
+                    ?: return null
+
+            response.movieResults
+                .singleOrNull()
+                ?.id
+                ?.toString()
+        } catch (ex: WebClientResponseException.NotFound) {
+            null
+        } catch (ex: Exception) {
+            logger.warn("Failed to resolve TMDb movie from IMDb id={}", normalizedImdbId, ex)
+            null
+        }
     }
 
     fun fetchCompanyMovies(tmdbCompanyId: String): TmdbCompanyMovies? {

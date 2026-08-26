@@ -299,6 +299,17 @@ export interface MovieDetailsResponse {
   collection: MovieCollectionDto | null
   rating: MediaRatingDto | null
   comments: MediaCommentDto[]
+  enrichment: MovieAutomaticEnrichment
+}
+
+export type MovieEnrichmentStatus = 'PENDING' | 'COMPLETE' | 'BLOCKED'
+
+export interface MovieAutomaticEnrichment {
+  status: MovieEnrichmentStatus
+  tmdbResolutionPending: boolean
+  terms: MovieEnrichmentStatus
+  credits: MovieEnrichmentStatus
+  companies: MovieEnrichmentStatus
 }
 
 export interface MovieTermCreateRequest {
@@ -536,6 +547,7 @@ export interface MoviePageData {
     provider: string
     externalId: string
   }>
+  enrichment: MovieAutomaticEnrichment
   lists: {
     summary: string
     visibleCount: number

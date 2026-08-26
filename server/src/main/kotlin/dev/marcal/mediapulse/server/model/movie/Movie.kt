@@ -35,6 +35,8 @@ data class Movie(
     val companiesSyncedAt: Instant? = null,
     @Column(name = "tmdb_id", unique = true)
     val tmdbId: String? = null,
+    @Column(name = "tmdb_resolution_checked_at")
+    val tmdbResolutionCheckedAt: Instant? = null,
     @Column(name = "imdb_id", unique = true)
     val imdbId: String? = null,
     @Column(nullable = false, unique = true)

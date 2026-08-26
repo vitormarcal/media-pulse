@@ -147,6 +147,14 @@ Campos suportados no MVP:
 - `IMDB_ID`
 - `IMAGES`
 
+O detalhe do filme também retorna `enrichment`, com o estado automático agregado e os estados individuais de termos, créditos e empresas:
+
+- `PENDING`: há trabalho aguardando processamento ou nova tentativa
+- `COMPLETE`: a etapa foi concluída, inclusive quando o TMDb retornou uma lista vazia
+- `BLOCKED`: o filme ainda não possui um vínculo que permita consultar o TMDb
+
+Filmes com apenas IMDb têm o vínculo TMDb resolvido automaticamente. A importação e o registro de sessões não são revertidos quando o provedor está indisponível.
+
 ## Termos de filmes
 
 Cada filme agora pode ter termos de classificação editáveis em duas famílias:

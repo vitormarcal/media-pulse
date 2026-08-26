@@ -10,6 +10,17 @@
     </div>
 
     <template v-else-if="data">
+      <div v-if="data.enrichment.status === 'PENDING'" class="enrichment-state" role="status">
+        <span class="enrichment-dot" aria-hidden="true" />
+        <span>{{
+          data.enrichment.tmdbResolutionPending ? 'Localizando este filme no TMDb…' : 'Completando informações…'
+        }}</span>
+      </div>
+
+      <div v-else-if="data.enrichment.status === 'BLOCKED' && activeAction" class="enrichment-state blocked">
+        <span>Vincule este filme ao TMDb para completar pessoas, empresas e marcações.</span>
+      </div>
+
       <div ref="heroTarget">
         <MoviePageHero
           :movie-id="data.movieId"
@@ -23,6 +34,7 @@
           :identifiers="data.identifiers"
           :companies="data.companies"
           :terms="data.terms"
+          :enrichment="data.enrichment"
           @companies-changed="handleCompaniesChanged"
           @terms-changed="handleTermsChanged"
         />
@@ -73,6 +85,7 @@
         <MoviePeoplePanel
           :movie-id="data.movieId"
           :people="data.people"
+          :enrichment-status="data.enrichment.credits"
           :editing="activeAction === 'people'"
           @changed="handlePeopleChanged"
         />
@@ -137,6 +150,24 @@ const movieActions: Array<{ id: MovieAction; label: string; description: string 
 ]
 
 const { data, error, status, refresh } = await useMoviePageData(slug.value)
+let enrichmentPoll: ReturnType<typeof setInterval> | null = null
+let enrichmentPollCount = 0
+
+onMounted(() => {
+  enrichmentPoll = setInterval(async () => {
+    if (data.value?.enrichment.status !== 'PENDING' || enrichmentPollCount >= 15) {
+      if (enrichmentPoll) clearInterval(enrichmentPoll)
+      enrichmentPoll = null
+      return
+    }
+    enrichmentPollCount++
+    await refresh()
+  }, 4000)
+})
+
+onBeforeUnmount(() => {
+  if (enrichmentPoll) clearInterval(enrichmentPoll)
+})
 
 const heroSubtitle = computed(() => {
   if (!data.value) return null
@@ -217,6 +248,37 @@ async function toggleAction(action: MovieAction) {
   width: min(1480px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 28px 0 84px;
+}
+
+.enrichment-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 0 12px calc(-1 * var(--sema-space-section));
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-secondary);
+  font-size: 0.78rem;
+}
+
+.enrichment-state.blocked {
+  color: var(--base-color-text-primary);
+}
+
+.enrichment-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--base-color-brand-red);
+  animation: enrichment-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes enrichment-pulse {
+  50% {
+    opacity: 0.35;
+  }
 }
 
 .movie-actions {

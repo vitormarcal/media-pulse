@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.config.PipelineProperties
 import dev.marcal.mediapulse.server.config.PlexProperties
 import dev.marcal.mediapulse.server.config.SpotifyProperties
 import dev.marcal.mediapulse.server.service.hardcover.HardcoverImportService
+import dev.marcal.mediapulse.server.service.movie.MovieAutomaticEnrichmentService
 import dev.marcal.mediapulse.server.service.musicbrainz.MusicBrainzAlbumGenreEnrichmentService
 import dev.marcal.mediapulse.server.service.plex.import.PlexMovieImportService
 import dev.marcal.mediapulse.server.service.plex.import.PlexMusicImportService
@@ -42,6 +43,8 @@ class ImportPipelineRunnerTest {
 
     @MockK lateinit var spotifyImportService: SpotifyImportService
 
+    @MockK lateinit var movieAutomaticEnrichmentService: MovieAutomaticEnrichmentService
+
     private lateinit var runner: ImportPipelineRunner
 
     @BeforeEach
@@ -60,6 +63,7 @@ class ImportPipelineRunnerTest {
                 spotifyImportService = spotifyImportService,
                 hardcoverProperties = hardcoverProperties,
                 hardcoverImportService = hardcoverImportService,
+                movieAutomaticEnrichmentService = movieAutomaticEnrichmentService,
             )
     }
 
@@ -102,6 +106,8 @@ class ImportPipelineRunnerTest {
                 )
             coEvery { spotifyImportService.importRecentlyPlayed() } returns 100
             coEvery { plexMovieImportService.importAllMovies(pageSize = 200) } returns PlexMovieImportService.ImportStats(10, 10)
+            coEvery { movieAutomaticEnrichmentService.enrichPending(200) } returns
+                MovieAutomaticEnrichmentService.BatchResult(10, 10, 0)
             coEvery { plexShowImportService.importAllShows(pageSize = 200) } returns PlexShowImportService.ImportStats(4, 4, 20, 20)
             coEvery { mbService.enrichBatch(100) } returns 50
             coEvery { hardcoverImportService.importUserBooks() } returns 5
@@ -110,6 +116,7 @@ class ImportPipelineRunnerTest {
 
             coVerify(exactly = 1) { plexMusicImportService.importAllMusicLibrary(pageSize = 200) }
             coVerify(exactly = 1) { plexMovieImportService.importAllMovies(pageSize = 200) }
+            coVerify(exactly = 1) { movieAutomaticEnrichmentService.enrichPending(200) }
             coVerify(exactly = 1) { plexShowImportService.importAllShows(pageSize = 200) }
             coVerify(exactly = 1) { spotifyImportService.importRecentlyPlayed() }
             coVerify(exactly = 1) { mbService.enrichBatch(100) }
