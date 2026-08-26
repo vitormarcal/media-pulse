@@ -1,5 +1,7 @@
 # Plex movie scrobble ingestion
 
+O fluxo automático de enriquecimento compartilhado por filmes e séries está descrito em [`features/automatic-media-enrichment.md`](features/automatic-media-enrichment.md). Este documento trata do mapeamento e da persistência específicos do Plex para filmes.
+
 ## Scope
 
 This feature ingests only Plex `media.scrobble` events for `Metadata.type=movie`.

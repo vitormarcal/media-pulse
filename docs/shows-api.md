@@ -1,5 +1,7 @@
 # Shows API
 
+O comportamento transversal de enriquecimento automático de filmes e séries está descrito em [`features/automatic-media-enrichment.md`](features/automatic-media-enrichment.md). Esta página registra os detalhes específicos do domínio de séries.
+
 A Shows API expõe consulta read-only da biblioteca e do histórico agregado de séries, além de ingestão manual idempotente de episode watches.
 
 ## Escopo e origem dos dados

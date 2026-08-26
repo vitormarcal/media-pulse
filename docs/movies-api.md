@@ -1,5 +1,7 @@
 # Movies API
 
+O contrato transversal de enriquecimento automático de filmes e séries está descrito em [`features/automatic-media-enrichment.md`](features/automatic-media-enrichment.md). Esta página registra os detalhes específicos do domínio de filmes.
+
 A Movies API expõe consulta read-only da biblioteca e do histórico de watches, além de ações editoriais de catálogo e sessão manual.
 
 ## Escopo e origem dos dados

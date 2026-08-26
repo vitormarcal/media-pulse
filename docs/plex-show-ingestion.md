@@ -1,5 +1,7 @@
 # Plex show scrobble ingestion
 
+Após a ingestão local, séries podem entrar no fluxo de enriquecimento automático descrito em [`features/automatic-media-enrichment.md`](features/automatic-media-enrichment.md). Este documento trata do mapeamento e da persistência específicos do Plex.
+
 ## Scope
 
 This feature ingests Plex `media.scrobble` events for `Metadata.type=episode`.
