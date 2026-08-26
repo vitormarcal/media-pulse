@@ -1,7 +1,7 @@
 <template>
   <main class="album-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página do álbum...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -43,15 +43,16 @@
         :initial-rating="data.rating"
         title="Avaliação"
         description=""
+        minimal
       />
 
       <MediaCommentsPanel
         :entity-id="Number(data.id)"
         media-type="albums"
-        title="Impressões do álbum"
+        title="Comentários do álbum"
         description=""
         :comments="data.comments"
-        empty-label="Nenhuma impressão manual registrada para este álbum ainda."
+        empty-label="Nenhum comentário."
       />
 
       <AlbumTrackList :tracks="data.tracks" />

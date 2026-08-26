@@ -1,11 +1,6 @@
 <template>
   <section v-if="collection" class="collection-panel">
-    <SectionHeading
-      eyebrow="Coleção"
-      :title="collection.name"
-      description="A franquia ao redor deste filme, entre catálogo local e sugestões do TMDb."
-      :summary="collectionSummary"
-    />
+    <SectionHeading eyebrow="Coleção" :title="collection.name" :summary="collectionSummary" />
 
     <div class="collection-grid">
       <div class="collection-poster">

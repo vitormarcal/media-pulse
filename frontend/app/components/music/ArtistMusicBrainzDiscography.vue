@@ -3,7 +3,7 @@
     <div class="heading">
       <div>
         <p class="eyebrow">Discografia</p>
-        <h2>Buscar outros discos deste artista</h2>
+        <h2>Importar discos</h2>
         <p class="muted">Revise release groups antes de criar discos locais. Capas e faixas não serão importadas.</p>
       </div>
       <button type="button" class="secondary" :disabled="loading" @click="load">Buscar discografia</button>

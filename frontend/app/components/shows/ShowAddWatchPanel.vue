@@ -1,21 +1,8 @@
 <template>
   <section class="add-watch-panel">
-    <SectionHeading
-      eyebrow="Episódio"
-      title="Marque um episódio assistido"
-      description="Use quando uma temporada ficou sem evento, mas você sabe onde aquela lembrança precisa entrar."
-      summary="A marcação manual entra no histórico e recalcula o progresso da série."
-    />
+    <SectionHeading eyebrow="Episódio" title="Marcar episódio" />
 
     <article class="panel-card">
-      <div class="panel-copy">
-        <p class="panel-title">Registrar episódio</p>
-        <p class="panel-body">
-          Informe temporada, episódio e data. Se o título não estiver à mão, a página usa uma descrição simples para
-          manter o histórico navegável.
-        </p>
-      </div>
-
       <form class="panel-form" @submit.prevent="handleSubmit">
         <div class="episode-grid">
           <label class="field">
@@ -149,23 +136,10 @@ async function handleSubmit() {
   background: color-mix(in srgb, var(--base-color-surface-strong) 84%, var(--base-color-surface-soft));
 }
 
-.panel-copy {
-  display: grid;
-  gap: 6px;
-}
-
-.panel-title,
-.panel-body,
 .feedback {
   margin: 0;
 }
 
-.panel-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-.panel-body,
 .feedback {
   color: var(--base-color-text-secondary);
   line-height: 1.6;

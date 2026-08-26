@@ -4,8 +4,7 @@
       <div class="summary-copy">
         <p class="eyebrow">Catálogo</p>
         <div>
-          <h2>Amplie sua biblioteca</h2>
-          <p class="muted">Adicione um artista e continue pela discografia que você quiser guardar.</p>
+          <h2>Adicionar artista</h2>
         </div>
       </div>
       <button type="button" class="secondary-action" @click="toggle">
@@ -51,7 +50,7 @@
         <div>
           <p class="group-label">Pronto para adicionar</p>
           <strong>{{ selected.name }}</strong>
-          <p class="muted">O artista será criado já vinculado à identidade escolhida.</p>
+          <p class="muted">Será criado com este vínculo do MusicBrainz.</p>
         </div>
         <button type="button" class="primary-action" :disabled="loading" @click="create(selected)">
           {{ loading ? 'Adicionando...' : 'Adicionar à biblioteca' }}

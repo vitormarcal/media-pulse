@@ -34,9 +34,7 @@
         </div>
       </section>
 
-      <p v-if="!people.groups.length" class="empty-copy">
-        Ainda não há créditos locais puxados do TMDb para esta série.
-      </p>
+      <p v-if="!people.groups.length" class="empty-copy">Nenhum crédito disponível.</p>
 
       <p v-if="feedback" class="feedback">{{ feedback }}</p>
     </div>

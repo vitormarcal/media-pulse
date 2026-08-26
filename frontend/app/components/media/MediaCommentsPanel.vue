@@ -1,18 +1,13 @@
 <template>
   <section class="comments-panel">
-    <SectionHeading
-      eyebrow="Comentários"
-      :title="title"
-      :description="description"
-      summary="Impressões manuais com data própria, para registrar retornos e mudanças de leitura da obra ao longo do tempo."
-    />
+    <SectionHeading eyebrow="Comentários" :title="title" :description="description" />
 
     <div v-if="localComments.length" class="summary-card">
       <div>
-        <p class="summary-label">Arquivo pessoal</p>
+        <p class="summary-label">Comentários</p>
         <strong>{{ localComments.length }} {{ localComments.length === 1 ? 'comentário' : 'comentários' }}</strong>
       </div>
-      <p class="summary-copy">Última impressão {{ buildCommentLabel(localComments[0]) }}</p>
+      <p class="summary-copy">Último comentário: {{ buildCommentLabel(localComments[0]) }}</p>
     </div>
 
     <div v-if="localComments.length" class="comment-list">
@@ -72,14 +67,7 @@
     <div class="composer-shell">
       <div class="composer-header">
         <div>
-          <p class="summary-label">Nova impressão</p>
-          <p class="summary-copy">
-            {{
-              localComments.length
-                ? 'Adicione outra camada sem apagar as anteriores.'
-                : 'Comece o histórico editorial desta obra.'
-            }}
-          </p>
+          <p class="summary-label">Novo comentário</p>
         </div>
 
         <button
@@ -99,7 +87,7 @@
             v-model="draftBody"
             class="textarea"
             rows="5"
-            placeholder="Escreva o que ficou dessa experiência."
+            placeholder="Escreva um comentário."
             :disabled="submitting"
           />
         </label>

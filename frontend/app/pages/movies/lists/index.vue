@@ -1,7 +1,7 @@
 <template>
   <main class="lists-index-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a estante de listas...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -21,12 +21,7 @@
       />
 
       <section class="lists-section">
-        <SectionHeading
-          eyebrow="Estante manual"
-          title="Todos os recortes já abertos"
-          description="Cada lista manual funciona como uma porta de entrada menor, mais intencional e menos enciclopédica para a filmoteca."
-          :summary="data.summary"
-        />
+        <SectionHeading eyebrow="Listas" title="Listas manuais" :summary="data.summary" />
 
         <p v-if="!data.items.length" class="quiet-empty">Nenhuma lista manual foi criada ainda.</p>
 

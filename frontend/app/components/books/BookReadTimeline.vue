@@ -1,11 +1,6 @@
 <template>
   <section class="read-timeline">
-    <SectionHeading
-      eyebrow="Histórico"
-      title="Os registros de leitura mais recentes"
-      description="Uma linha do tempo curta para saber em que ponto esse livro andou, parou ou fechou."
-      summary="O status importa, mas a sequência das passagens importa mais."
-    />
+    <SectionHeading eyebrow="Histórico" title="Leituras recentes" />
 
     <div class="timeline-list">
       <article v-for="read in reads" :key="read.id" class="timeline-item">

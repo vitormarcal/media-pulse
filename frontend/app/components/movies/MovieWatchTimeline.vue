@@ -1,11 +1,6 @@
 <template>
   <section class="watch-timeline">
-    <SectionHeading
-      eyebrow="Histórico"
-      title="As sessões mais recentes"
-      description="Uma linha do tempo curta para localizar quando esse filme voltou a aparecer."
-      summary="Aqui a repetição também conta a história."
-    />
+    <SectionHeading eyebrow="Histórico" title="Sessões recentes" />
 
     <div class="timeline-list">
       <article v-for="watch in watches" :key="watch.id" class="timeline-item">

@@ -55,22 +55,15 @@
     </div>
 
     <article v-else-if="editingEnabled" class="empty-state">
-      <p class="empty-eyebrow">Curadoria manual</p>
-      <h3>Este filme ainda não abriu nenhum recorte.</h3>
-      <p>
-        Listas manuais funcionam melhor como coleções pequenas e navegáveis. Use o modo de ajuste para ligar este filme
-        a uma lista existente ou criar uma nova.
-      </p>
+      <p class="empty-eyebrow">Listas</p>
+      <h3>Este filme não está em nenhuma lista.</h3>
     </article>
 
-    <p v-else class="quiet-empty">Nenhuma lista manual foi ligada a este filme ainda.</p>
+    <p v-else class="quiet-empty">Nenhuma lista vinculada.</p>
 
     <div v-if="editingEnabled" class="editor-panel">
       <div class="editor-head">
         <p class="editor-eyebrow">Ajustes</p>
-        <p class="editor-copy">
-          Adicione o filme a recortes existentes ou crie uma nova lista manual sem sair da página.
-        </p>
       </div>
 
       <div v-if="availableLists.length" class="editor-group">
@@ -142,15 +135,9 @@ const feedback = ref<string | null>(null)
 const draftName = ref('')
 const draftDescription = ref('')
 
-const sectionTitle = computed(() =>
-  props.lists.visibleCount ? 'Recortes que já incluem este filme' : 'Nenhuma lista manual por aqui ainda',
-)
+const sectionTitle = computed(() => (props.lists.visibleCount ? 'Listas com este filme' : 'Listas'))
 
-const sectionDescription = computed(() =>
-  props.lists.visibleCount
-    ? 'Cada lista manual vira uma porta de entrada própria para a biblioteca, com ordem e contexto definidos por você.'
-    : 'Quando uma lista manual existe, ela deve ser navegável como recorte editorial, não apenas lembrada como etiqueta.',
-)
+const sectionDescription = computed(() => '')
 
 const currentListIds = computed(() => new Set(props.lists.items.map((item) => item.listId)))
 const availableLists = computed(() => allLists.value.filter((item) => !currentListIds.value.has(item.listId)))
@@ -176,9 +163,7 @@ function cardShellStyle(item: MoviePageData['lists']['items'][number]) {
 }
 
 function fallbackDescription(itemCount: number) {
-  return itemCount > 1
-    ? `Um recorte manual com ${itemCount} filmes para navegar fora da biblioteca geral.`
-    : 'Um recorte manual enxuto, pensado como porta de entrada para revisitas e descobertas.'
+  return `${itemCount} ${itemCount === 1 ? 'filme' : 'filmes'}`
 }
 
 async function loadAllLists() {
@@ -423,7 +408,6 @@ watch(
 
 h3,
 .card-description,
-.editor-copy,
 .editor-note,
 .feedback,
 .chip-meta,
@@ -438,7 +422,6 @@ h3 {
 }
 
 .card-description,
-.editor-copy,
 .editor-note,
 .feedback,
 .empty-state p {

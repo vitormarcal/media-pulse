@@ -1,11 +1,6 @@
 <template>
   <section class="add-session-panel">
-    <SectionHeading
-      eyebrow="Sessão"
-      title="Registrar jornada"
-      description="Use sessões para separar backlog, jogando, finalizado e abandonado, cada uma com início e fim próprios."
-      summary="O modelo segue a ideia de temporadas e leituras: múltiplas passagens preservadas no tempo."
-    />
+    <SectionHeading eyebrow="Sessão" title="Registrar sessão" />
 
     <article class="panel-card">
       <form class="panel-form" @submit.prevent="handleSubmit">

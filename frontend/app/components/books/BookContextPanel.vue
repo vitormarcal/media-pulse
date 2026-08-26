@@ -1,11 +1,6 @@
 <template>
   <section class="context-panel">
-    <SectionHeading
-      eyebrow="Contexto"
-      title="Onde esse livro ficou no seu percurso"
-      description="O estado atual da leitura, a presença de edições e a avaliação que veio junto."
-      summary="Mais lembrança do ponto em que ele ficou do que estatística pura."
-    />
+    <SectionHeading eyebrow="Contexto" title="Leitura" />
 
     <div class="panel-grid">
       <article class="stats-card">
@@ -26,7 +21,7 @@
             <span>{{ edition.meta.join(' · ') }}</span>
           </div>
         </div>
-        <p v-else class="editions-empty">Nenhuma edição específica apareceu por aqui ainda.</p>
+        <p v-else class="editions-empty">Nenhuma edição disponível.</p>
       </article>
     </div>
   </section>

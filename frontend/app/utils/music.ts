@@ -166,19 +166,19 @@ function buildCollectionMetrics(payload: {
       id: 'artists',
       label: 'Artistas no recorte',
       value: formatShortNumber(payload.summary.artistsCount),
-      note: 'quem apareceu agora',
+      note: 'no período',
     },
     {
       id: 'albums',
       label: 'Álbuns em circulação',
       value: formatShortNumber(payload.summary.albumsCount),
-      note: 'a vitrine recente',
+      note: 'no período',
     },
     {
       id: 'tracks',
       label: 'Faixas tocadas',
       value: formatShortNumber(payload.summary.tracksCount),
-      note: 'o detalhe do período',
+      note: 'no período',
     },
     {
       id: 'frontier',
@@ -252,19 +252,19 @@ function buildLibraryMetrics(stats: MusicStatsResponse): MusicLibraryMetric[] {
       id: 'artists',
       label: 'Artistas no histórico',
       value: formatShortNumber(stats.total.uniqueArtistsCount),
-      note: 'quem já apareceu de fato no histórico de plays consolidado',
+      note: 'com plays registrados',
     },
     {
       id: 'albums',
       label: 'Álbuns no histórico',
       value: formatShortNumber(stats.total.uniqueAlbumsCount),
-      note: 'a unidade principal de descoberta e retorno já registrada no arquivo',
+      note: 'com plays registrados',
     },
     {
       id: 'tracks',
       label: 'Faixas no histórico',
       value: formatShortNumber(stats.total.uniqueTracksCount),
-      note: 'a camada mais granular já tocada ao longo do arquivo',
+      note: 'com plays registrados',
     },
     {
       id: 'plays',
@@ -431,19 +431,19 @@ function kindCopy(kind: MusicLibraryKind) {
       return {
         name: 'artistas',
         title: 'Artistas',
-        description: 'Os nomes que estruturam sua escuta.',
+        description: '',
       }
     case 'albums':
       return {
         name: 'álbuns',
         title: 'Álbuns',
-        description: 'O eixo principal de descoberta e retorno.',
+        description: '',
       }
     case 'tracks':
       return {
         name: 'faixas',
         title: 'Faixas',
-        description: 'A camada mais granular da coleção.',
+        description: '',
       }
   }
 }
@@ -516,7 +516,7 @@ export function buildMusicLibraryPageData(payload: {
       },
       context: {
         eyebrow: 'Ano',
-        title: `O que ${payload.yearResults.year} concentrou`,
+        title: `Resumo de ${payload.yearResults.year}`,
         description: '',
         summary: '',
         metrics: [
@@ -536,13 +536,13 @@ export function buildMusicLibraryPageData(payload: {
             id: 'artists',
             label: 'Artistas no ano',
             value: formatShortNumber(payload.yearResults.stats.uniqueArtistsCount),
-            note: 'quem estruturou a fase',
+            note: 'no período',
           },
           {
             id: 'tracks',
             label: 'Faixas no ano',
             value: formatShortNumber(payload.yearResults.stats.uniqueTracksCount),
-            note: 'detalhe do período',
+            note: 'no período',
           },
         ],
       },
@@ -559,7 +559,7 @@ export function buildMusicLibraryPageData(payload: {
         {
           id: 'year-artists',
           eyebrow: 'Artistas do ano',
-          title: 'Quem puxou essa fase',
+          title: 'Artistas do período',
           description: '',
           summary: '',
           items: yearArtists,
@@ -568,7 +568,7 @@ export function buildMusicLibraryPageData(payload: {
         {
           id: 'year-tracks',
           eyebrow: 'Faixas do ano',
-          title: 'O detalhe que voltou mais',
+          title: 'Faixas do período',
           description: '',
           summary: '',
           items: yearTracks,
@@ -684,7 +684,7 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
         {
           id: 'genre',
           title: 'Gêneros',
-          description: 'A camada mais estável da classificação do álbum, boa para abrir recortes amplos do arquivo.',
+          description: '',
           items: album.terms
             .filter((term) => term.kind === 'GENRE')
             .map((term) => ({
@@ -709,7 +709,7 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
         {
           id: 'tag',
           title: 'Tags',
-          description: 'Recortes mais específicos e livres para ligar discos por clima, cena, fase ou obsessão.',
+          description: '',
           items: album.terms
             .filter((term) => term.kind === 'TAG')
             .map((term) => ({

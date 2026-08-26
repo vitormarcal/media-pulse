@@ -237,25 +237,25 @@ function buildLibraryMetrics(stats: BooksStatsResponse): BookLibraryMetric[] {
       id: 'books',
       label: 'Livros no arquivo',
       value: formatShortNumber(stats.total.booksCount),
-      note: 'tamanho da estante',
+      note: 'títulos cadastrados',
     },
     {
       id: 'reads',
       label: 'Registros acumulados',
       value: formatShortNumber(stats.total.readsCount),
-      note: 'passagens anotadas',
+      note: 'leituras registradas',
     },
     {
       id: 'finished',
       label: 'Concluídos acumulados',
       value: formatShortNumber(stats.total.completedCount),
-      note: 'fechamentos no arquivo',
+      note: 'leituras concluídas',
     },
     {
       id: 'dormant',
       label: 'Sem leitura ainda',
       value: formatShortNumber(stats.unreadCount),
-      note: 'catálogo ainda intacto',
+      note: 'sem leitura registrada',
     },
   ]
 }
@@ -298,19 +298,19 @@ function buildContextMetrics(payload: {
       id: 'reading',
       label: 'Leituras em curso',
       value: formatShortNumber(payload.summary.counts.reading),
-      note: 'o que segue aberto',
+      note: 'leituras em andamento',
     },
     {
       id: 'finished',
       label: 'Concluídos no recorte',
       value: formatShortNumber(payload.summary.counts.finished),
-      note: 'o que saiu da pilha',
+      note: 'leituras concluídas',
     },
     {
       id: 'paused',
       label: 'Pausados agora',
       value: formatShortNumber(payload.summary.counts.paused),
-      note: 'ritmo suspenso',
+      note: 'leituras pausadas',
     },
     {
       id: 'author',
@@ -398,7 +398,7 @@ export function buildBookLibraryPageData(payload: {
       },
       context: {
         eyebrow: 'Ano',
-        title: `O que ${payload.selectedYear} concentrou`,
+        title: `Resumo de ${payload.selectedYear}`,
         description: '',
         summary: '',
         metrics: [
@@ -406,19 +406,19 @@ export function buildBookLibraryPageData(payload: {
             id: 'year-finished',
             label: 'Concluídos no ano',
             value: formatShortNumber(payload.yearResults.stats.finishedCount),
-            note: 'saíram da pilha',
+            note: 'concluídos no período',
           },
           {
             id: 'year-reading',
             label: 'Em leitura no ano',
             value: formatShortNumber(payload.yearResults.stats.currentlyReadingCount),
-            note: 'seguiram abertos',
+            note: 'em andamento no período',
           },
           {
             id: 'year-paused',
             label: 'Pausados no ano',
             value: formatShortNumber(payload.yearResults.stats.pausedCount),
-            note: 'perderam ritmo',
+            note: 'pausados no período',
           },
           {
             id: 'year-pages',

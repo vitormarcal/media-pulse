@@ -3,8 +3,7 @@
     <SectionHeading
       eyebrow="Entrada manual"
       title="Adicionar game ao catálogo"
-      description="A criação continua manual, mas a busca inicial usa IGDB para preencher metadados e SteamGridDB para trazer imagem."
-      summary="Se a sugestão não servir, crie uma entrada mínima com título e ano."
+      description="Busque no IGDB ou informe os dados manualmente."
     />
 
     <article class="form-card">
@@ -70,7 +69,7 @@
             <p class="suggestions-label">Entrada mínima</p>
             <h3>Crie uma entrada mínima</h3>
           </div>
-          <p class="suggestions-summary">Use quando a busca externa não ajudar ou quando você já souber o IGDB ID.</p>
+          <p class="suggestions-summary">Informe os dados diretamente.</p>
         </div>
 
         <form class="manual-form" @submit.prevent="handleManualSubmit">

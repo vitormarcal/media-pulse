@@ -35,7 +35,7 @@
               <strong>{{ currentRating ?? '—' }}</strong>
               <div>
                 <p class="current-title">{{ currentScaleItem?.title ?? 'Ainda sem nota' }}</p>
-                <span class="current-copy">
+                <span v-if="!minimal" class="current-copy">
                   {{ currentScaleItem?.description ?? 'Escolha uma nota abaixo.' }}
                 </span>
               </div>
@@ -58,15 +58,15 @@
           </button>
         </div>
 
-        <p class="scale-copy">
+        <p v-if="!minimal" class="scale-copy">
           {{ currentScaleItem ? currentScaleItem.description : 'Escolha uma nota.' }}
         </p>
 
-        <div class="scale-anchors">
+        <div v-if="!minimal" class="scale-anchors">
           <span v-for="anchor in anchors" :key="anchor.id" class="anchor-item">{{ anchor.label }}</span>
         </div>
 
-        <details class="scale-reference">
+        <details v-if="!minimal" class="scale-reference">
           <summary>Escala completa</summary>
 
           <div class="reference-list">
@@ -150,12 +150,14 @@ const props = withDefaults(
     description?: string
     label?: string
     compact?: boolean
+    minimal?: boolean
   }>(),
   {
     title: 'Como essa obra fica na sua escala',
     description: '',
     label: 'Sua nota',
     compact: false,
+    minimal: false,
   },
 )
 

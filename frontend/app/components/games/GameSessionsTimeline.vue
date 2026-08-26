@@ -1,11 +1,6 @@
 <template>
   <section class="session-timeline">
-    <SectionHeading
-      eyebrow="Histórico"
-      title="Sessões registradas"
-      description="Cada sessão preserva um estado da relação com o jogo sem sobrescrever passagens anteriores."
-      summary="Backlog, jogando, finalizado e abandonado podem aparecer mais de uma vez quando fizer sentido."
-    />
+    <SectionHeading eyebrow="Histórico" title="Sessões" />
 
     <div v-if="sessions.length" class="timeline-list">
       <article v-for="session in sessions" :key="session.id" class="timeline-item">
@@ -48,7 +43,12 @@
                 <button type="submit" class="primary-button" :disabled="savingId === session.sessionId">
                   {{ savingId === session.sessionId ? 'Salvando...' : 'Salvar' }}
                 </button>
-                <button type="button" class="secondary-button" :disabled="savingId === session.sessionId" @click="cancelEdit">
+                <button
+                  type="button"
+                  class="secondary-button"
+                  :disabled="savingId === session.sessionId"
+                  @click="cancelEdit"
+                >
                   Cancelar
                 </button>
               </div>
@@ -60,10 +60,20 @@
             </div>
           </div>
           <div v-if="editingId !== session.sessionId" class="timeline-actions">
-            <button type="button" class="edit-button" :disabled="deletingId === session.sessionId" @click="startEdit(session)">
+            <button
+              type="button"
+              class="edit-button"
+              :disabled="deletingId === session.sessionId"
+              @click="startEdit(session)"
+            >
               Editar
             </button>
-            <button type="button" class="remove-button" :disabled="deletingId === session.sessionId" @click="remove(session)">
+            <button
+              type="button"
+              class="remove-button"
+              :disabled="deletingId === session.sessionId"
+              @click="remove(session)"
+            >
               {{ deletingId === session.sessionId ? 'Removendo...' : 'Remover sessão' }}
             </button>
           </div>
@@ -72,7 +82,7 @@
     </div>
 
     <article v-else class="empty-card">
-      <p>Nenhuma sessão registrada para este game ainda.</p>
+      <p>Nenhuma sessão.</p>
     </article>
 
     <p v-if="feedback" class="feedback" :class="{ error: feedbackError }">{{ feedback }}</p>

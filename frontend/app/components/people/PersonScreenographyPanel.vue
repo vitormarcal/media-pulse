@@ -2,8 +2,8 @@
   <section class="screenography-panel">
     <SectionHeading
       eyebrow="Filmografia TMDb"
-      title="Expandir a presença desta pessoa"
-      description="Cruze filmes e séries do TMDb com o catálogo local e traga o que ainda estiver faltando."
+      title="Importar filmografia"
+      description="Compare o TMDb com o catálogo local antes de importar títulos ausentes."
       :summary="panelSummary"
     />
 

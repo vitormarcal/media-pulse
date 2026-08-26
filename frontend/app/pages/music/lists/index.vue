@@ -3,9 +3,8 @@
     <section class="hero">
       <div class="hero-copy">
         <NuxtLink class="back-link" to="/music">Voltar para música</NuxtLink>
-        <p class="eyebrow">Curadoria pessoal</p>
+        <p class="eyebrow">Listas</p>
         <h1>Listas de álbuns</h1>
-        <p class="intro">Recortes para ouvir com intenção, preservar uma ordem e acompanhar o caminho.</p>
       </div>
 
       <form class="create-card" @submit.prevent="createList">
@@ -16,7 +15,7 @@
         </label>
         <label>
           Descrição <span>opcional</span>
-          <textarea v-model="draft.description" rows="3" placeholder="De onde veio este recorte e por que ouvi-lo." />
+          <textarea v-model="draft.description" rows="3" placeholder="Descrição da lista" />
         </label>
         <button type="submit" :disabled="saving || !draft.name.trim()">
           {{ saving ? 'Criando...' : 'Criar lista' }}
@@ -28,15 +27,15 @@
     <section class="collection">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Estante manual</p>
-          <h2>Seus percursos</h2>
+          <p class="eyebrow">Arquivo</p>
+          <h2>Suas listas</h2>
         </div>
         <p>{{ data?.length || 0 }} listas</p>
       </div>
 
-      <p v-if="status === 'pending'" class="state-card">Buscando suas listas...</p>
+      <p v-if="status === 'pending'" class="state-card">Carregando...</p>
       <p v-else-if="error" class="state-card error">Não foi possível carregar as listas.</p>
-      <p v-else-if="!data?.length" class="state-card">Crie a primeira lista para começar um percurso.</p>
+      <p v-else-if="!data?.length" class="state-card">Nenhuma lista.</p>
 
       <div v-else class="list-grid">
         <NuxtLink v-for="item in data" :key="item.listId" :to="`/music/lists/${item.slug}`" class="list-card">
@@ -139,11 +138,6 @@ h1 {
   font-size: clamp(3rem, 6vw, 4.38rem);
   line-height: 0.9;
   letter-spacing: -0.075em;
-}
-.intro {
-  max-width: 38rem;
-  color: var(--base-color-text-secondary);
-  line-height: 1.6;
 }
 .create-card {
   display: grid;

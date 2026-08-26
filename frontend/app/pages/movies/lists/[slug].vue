@@ -1,7 +1,7 @@
 <template>
   <main class="list-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página da lista...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -234,7 +234,7 @@ const gridDescription = computed(() => '')
 const gridSummary = computed(() =>
   data.value
     ? `${data.value.stats.movieCount} filmes no recorte e ${data.value.stats.watchedMoviesCount} com sessão registrada.`
-    : 'Uma nova porta de entrada para a biblioteca.',
+    : 'Nenhum filme disponível.',
 )
 const persistedMovieIds = computed(() => data.value?.movies.map((movie) => movie.movieId) ?? [])
 const orderedMovieIds = computed(() => orderedMovies.value.map((movie) => movie.movieId))

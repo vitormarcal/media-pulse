@@ -1,11 +1,11 @@
 <template>
   <main class="games-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página de games...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
-      <p>Não foi possível montar a página de games com os dados atuais.</p>
+      <p>Não foi possível carregar os games.</p>
       <pre>{{ error.message }}</pre>
     </div>
 
@@ -56,10 +56,7 @@
       </section>
 
       <section class="library-section">
-        <SectionHeading
-          eyebrow="Arquivo"
-          :title="data.mode === 'search' ? 'O que respondeu à busca' : 'A parede completa de games'"
-        />
+        <SectionHeading eyebrow="Arquivo" :title="data.mode === 'search' ? 'Resultados' : 'Todos os games'" />
 
         <div v-if="displayItems.length" class="games-grid">
           <NuxtLink v-for="item in displayItems" :key="item.id" class="game-card" :to="item.href">

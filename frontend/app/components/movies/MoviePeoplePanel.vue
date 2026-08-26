@@ -30,9 +30,7 @@
         </div>
       </section>
 
-      <p v-if="!people.groups.length" class="empty-copy">
-        Ainda não há créditos locais puxados do TMDb para este filme.
-      </p>
+      <p v-if="!people.groups.length" class="empty-copy">Nenhum crédito disponível.</p>
 
       <div v-if="editingEnabled" class="editor-shell">
         <div class="editor-actions">

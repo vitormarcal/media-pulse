@@ -1,7 +1,7 @@
 <template>
   <main class="collection-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a coleção...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -30,12 +30,7 @@
       />
 
       <section class="members-section">
-        <SectionHeading
-          eyebrow="Coleção completa"
-          title="Todos os filmes deste recorte"
-          description="Parte já existe no catálogo local, parte ainda aparece como extensão externa da franquia. A página serve para navegar pelos dois lados sem trocar de contexto."
-          :summary="pageData.context.summary"
-        />
+        <SectionHeading eyebrow="Coleção" title="Filmes" :summary="pageData.context.summary" />
 
         <div class="members-masonry">
           <article

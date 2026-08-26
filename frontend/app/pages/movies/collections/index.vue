@@ -1,7 +1,7 @@
 <template>
   <main class="collections-index-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a estante de coleções...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -22,12 +22,7 @@
       />
 
       <section class="collections-section">
-        <SectionHeading
-          eyebrow="Estante de coleções"
-          title="Franquias e conjuntos já presentes"
-          description="Cada coleção concentra o que já entrou no catálogo local e transforma continuidade de franquia em navegação direta, sem depender de lembrar qual filme era o ponto de partida."
-          :summary="data.summary"
-        />
+        <SectionHeading eyebrow="Coleções" title="Franquias e conjuntos" :summary="data.summary" />
 
         <p v-if="!data.items.length" class="quiet-empty">Nenhuma coleção local apareceu ainda.</p>
 

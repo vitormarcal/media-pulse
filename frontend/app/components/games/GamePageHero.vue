@@ -76,8 +76,7 @@ const heroShellStyle = computed(() =>
   gap: 24px;
   padding: clamp(24px, 4vw, 42px);
   border-radius: 40px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
   background-size: cover;
   background-position: center;
   border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);

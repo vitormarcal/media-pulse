@@ -1,7 +1,7 @@
 <template>
   <main class="show-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página da série...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -26,8 +26,8 @@
         media-type="shows"
         :entity-id="data.showId"
         :initial-rating="data.rating"
-        title="Peso geral da série"
-        description="Uma série pode oscilar entre temporadas. A nota aqui representa o saldo final que ela ocupa para você hoje."
+        title="Nota da série"
+        minimal
       />
 
       <ShowAddWatchPanel :show-id="data.showId" @created="handleWatchCreated" />
@@ -35,10 +35,10 @@
       <MediaCommentsPanel
         :entity-id="data.showId"
         media-type="shows"
-        title="Impressões da série"
-        description="Comentários em momentos diferentes para acompanhar como a série muda de peso conforme as temporadas avançam ou você retorna a ela."
+        title="Comentários da série"
+        description=""
         :comments="data.comments"
-        empty-label="Nenhuma impressão manual registrada para esta série ainda."
+        empty-label="Nenhum comentário."
       />
 
       <ShowWatchTimeline :watches="data.recentWatches" />

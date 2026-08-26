@@ -1,7 +1,7 @@
 <template>
   <main class="company-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página da empresa...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -77,7 +77,7 @@ const gridDescription = computed(() => 'O catálogo local primeiro, usando a pro
 const gridSummary = computed(() =>
   data.value
     ? `${data.value.stats.movieCount} filmes locais e ${data.value.stats.watchedMoviesCount} com sessão registrada.`
-    : 'Uma nova porta de entrada para a biblioteca.',
+    : 'Nenhum filme disponível.',
 )
 
 async function handleCatalogAdded() {

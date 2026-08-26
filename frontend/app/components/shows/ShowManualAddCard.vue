@@ -3,8 +3,7 @@
     <SectionHeading
       eyebrow="Entrada manual"
       title="Adicionar série ao catálogo"
-      description="A busca no TMDb traz a série com contexto, poster e episódios, para ela já nascer navegável na biblioteca."
-      summary="Se a sugestão não servir ou você já souber os IDs, a entrada mínima continua disponível logo abaixo."
+      description="Busque no TMDb ou informe os dados manualmente."
     />
 
     <article class="form-card">
@@ -78,9 +77,7 @@
             <p class="suggestions-label">Entrada mínima</p>
             <h3>Crie uma entrada mínima</h3>
           </div>
-          <p class="suggestions-summary">
-            Use quando você quiser registrar direto ou quando a busca externa não ajudar.
-          </p>
+          <p class="suggestions-summary">Informe os dados diretamente.</p>
         </div>
 
         <form class="manual-form" @submit.prevent="handleManualSubmit">

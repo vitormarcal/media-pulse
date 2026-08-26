@@ -1,7 +1,7 @@
 <template>
   <main class="author-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página do autor...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -16,9 +16,7 @@
 
       <BooksLibraryGrid
         eyebrow="Livros"
-        title="Os livros que trazem essa assinatura"
-        description="Os títulos que já apareceram no arquivo e sustentam a entrada por autoria."
-        summary="Autor como aprofundamento, livro como unidade principal de navegação."
+        title="Livros"
         :items="data.books"
         empty-message="Nenhum livro apareceu para esse autor."
       />

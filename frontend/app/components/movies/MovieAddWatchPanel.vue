@@ -1,18 +1,10 @@
 <template>
   <section class="add-watch-panel">
-    <SectionHeading
-      eyebrow="Sessão"
-      title="Adicione uma sessão manual"
-      description="Quando o filme entrou por cinema, lembrança ou histórico antigo, você ainda consegue posicionar essa sessão no tempo."
-      summary="Uma ação curta para completar a linha do tempo sem depender só do Plex."
-    />
+    <SectionHeading eyebrow="Sessão" title="Registrar sessão" />
 
     <article class="panel-card">
       <div class="panel-copy">
         <p class="panel-title">Registrar sessão</p>
-        <p class="panel-body">
-          Escolha a data e hora que fazem sentido para essa lembrança. O restante da página se atualiza logo depois.
-        </p>
       </div>
 
       <form class="panel-form" @submit.prevent="handleSubmit">
@@ -109,7 +101,6 @@ async function handleSubmit() {
 }
 
 .panel-title,
-.panel-body,
 .feedback {
   margin: 0;
 }
@@ -119,7 +110,6 @@ async function handleSubmit() {
   font-weight: 700;
 }
 
-.panel-body,
 .feedback {
   color: var(--base-color-text-secondary);
   line-height: 1.6;

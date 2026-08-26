@@ -1,7 +1,7 @@
 <template>
   <main class="person-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página da pessoa...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -133,7 +133,7 @@ const gridDescription = computed(() => '')
 const gridSummary = computed(() =>
   data.value
     ? `${data.value.stats.movieCount} filmes locais e ${data.value.stats.watchedMoviesCount} com sessão registrada.`
-    : 'Uma nova porta de entrada para a biblioteca.',
+    : 'Nenhum título disponível.',
 )
 const showsTitle = computed(() =>
   data.value ? `As séries locais ligadas a ${data.value.name}` : 'Séries desta pessoa',

@@ -3,11 +3,11 @@
     <AppHeader />
 
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a primeira página do momento...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
-      <p>Não foi possível montar a página inicial com os dados atuais da API.</p>
+      <p>Não foi possível carregar a página inicial.</p>
       <pre>{{ error.message }}</pre>
     </div>
 
@@ -49,7 +49,7 @@ useHead({
   meta: [
     {
       name: 'description',
-      content: 'Uma home editorial para acompanhar música, filmes, séries, livros e games sem cara de dashboard.',
+      content: 'Atividade recente de música, filmes, séries, livros e games.',
     },
   ],
 })

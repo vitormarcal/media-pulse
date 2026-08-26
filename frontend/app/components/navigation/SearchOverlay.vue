@@ -13,15 +13,13 @@
       </div>
 
       <div class="search-body">
-        <p v-if="!localQuery.trim()" class="search-hint">
-          Use a busca para saltar direto para uma obra ou explorar por nome.
-        </p>
+        <p v-if="!localQuery.trim()" class="search-hint">Digite para buscar.</p>
 
-        <p v-else-if="loading" class="search-hint">Procurando em toda a coleção...</p>
+        <p v-else-if="loading" class="search-hint">Buscando...</p>
 
         <p v-else-if="error" class="search-hint error">Não foi possível concluir a busca agora.</p>
 
-        <p v-else-if="results && results.total === 0" class="search-hint">Nenhum resultado apareceu para esse termo.</p>
+        <p v-else-if="results && results.total === 0" class="search-hint">Nenhum resultado.</p>
 
         <div v-else-if="results" class="result-groups">
           <section v-for="group in results.groups" :key="group.id" class="result-group">

@@ -1,7 +1,7 @@
 <template>
   <main class="season-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a temporada...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -52,12 +52,7 @@
       />
 
       <section class="episodes-section">
-        <SectionHeading
-          eyebrow="Episódios"
-          title="A temporada em ordem"
-          description="Cada episódio aparece com o estado de watch e as informações que já chegaram do catálogo."
-          summary="Aqui a temporada deixa de ser só porcentagem e vira uma lista navegável."
-        />
+        <SectionHeading eyebrow="Episódios" title="Temporada" />
 
         <div class="episode-list">
           <article

@@ -1,11 +1,6 @@
 <template>
   <section class="company-members-panel">
-    <SectionHeading
-      eyebrow="Catálogo TMDb"
-      :title="company.name"
-      description="Uma expansão sob demanda da filmografia desta empresa, cruzada com o catálogo local."
-      :summary="panelSummary"
-    />
+    <SectionHeading eyebrow="Catálogo TMDb" :title="company.name" :summary="panelSummary" />
 
     <div class="members-grid">
       <div class="company-logo">

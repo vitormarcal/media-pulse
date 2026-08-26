@@ -1,11 +1,6 @@
 <template>
   <section class="context-panel">
-    <SectionHeading
-      eyebrow="Contexto"
-      title="O lugar desse filme no seu histórico"
-      description="Uma leitura curta do quanto ele reapareceu no seu histórico."
-      summary="Só o bastante para recolocar o filme na memória."
-    />
+    <SectionHeading eyebrow="Contexto" title="Histórico" />
 
     <div class="panel-grid">
       <article class="stats-card">

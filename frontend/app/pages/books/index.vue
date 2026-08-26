@@ -1,11 +1,11 @@
 <template>
   <main class="books-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página de livros...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
-      <p>Não foi possível montar a página de livros com os dados atuais.</p>
+      <p>Não foi possível carregar os livros.</p>
       <pre>{{ error.message }}</pre>
     </div>
 
@@ -224,8 +224,8 @@ useHead(() => ({
       name: 'description',
       content:
         showEditorialLayer.value || !libraryData.value
-          ? 'Recorte editorial das leituras em curso e dos livros concluídos recentemente no Media Pulse.'
-          : 'Arquivo completo dos livros no Media Pulse, com busca, recortes anuais e navegação editorial.',
+          ? 'Leituras em andamento e livros concluídos recentemente.'
+          : 'Catálogo de livros com busca e filtros por ano.',
     },
   ],
 }))

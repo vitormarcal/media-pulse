@@ -1,11 +1,6 @@
 <template>
   <section class="progress-panel">
-    <SectionHeading
-      eyebrow="Andamento"
-      title="Onde a série ficou"
-      description="Um recorte do quanto já andou e de quais temporadas ainda continuam abertas."
-      summary="Aqui o progresso serve só para te recolocar no ponto certo."
-    />
+    <SectionHeading eyebrow="Andamento" title="Progresso" />
 
     <div class="panel-grid">
       <article class="overview-card">

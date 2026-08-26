@@ -1,7 +1,7 @@
 <template>
   <main class="movie-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página do filme...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -39,8 +39,8 @@
         media-type="movies"
         :entity-id="data.movieId"
         :initial-rating="data.rating"
-        title="Quanto esse filme realmente segura"
-        description="A nota existe para diferenciar entusiasmo momentâneo de filme que realmente ficou grande no seu repertório."
+        title="Nota do filme"
+        minimal
       />
 
       <MoviePeoplePanel
@@ -59,10 +59,10 @@
       <MediaCommentsPanel
         :entity-id="data.movieId"
         media-type="movies"
-        title="Impressões do filme"
-        description="Cada retorno ao filme pode render uma leitura diferente. Os comentários preservam essas camadas sem sobrescrever a anterior."
+        title="Comentários do filme"
+        description=""
         :comments="data.comments"
-        empty-label="Nenhuma impressão manual registrada para este filme ainda."
+        empty-label="Nenhum comentário."
       />
 
       <MovieWatchTimeline :movie-id="data.movieId" :watches="data.recentWatches" @deleted="handleWatchDeleted" />

@@ -1,11 +1,11 @@
 <template>
   <main class="music-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página de música...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
-      <p>Não foi possível montar a página de música com os dados atuais.</p>
+      <p>Não foi possível carregar a página de música.</p>
       <pre>{{ error.message }}</pre>
     </div>
 
@@ -42,7 +42,7 @@
         />
 
         <section class="music-section">
-          <SectionHeading eyebrow="Artistas" title="Mais presentes" />
+          <SectionHeading eyebrow="Artistas" title="Mais ouvidos" />
 
           <div class="strip-grid">
             <MusicStripCard
@@ -61,7 +61,7 @@
         </section>
 
         <section class="music-section">
-          <SectionHeading eyebrow="Faixas" title="Replay recente" />
+          <SectionHeading eyebrow="Faixas" title="Mais tocadas recentemente" />
 
           <div class="strip-grid">
             <MusicStripCard
@@ -79,7 +79,7 @@
         </section>
 
         <section v-if="collectionData.rediscoveredAlbums.length" class="music-section">
-          <SectionHeading eyebrow="Redescobertas" title="Voltaram para perto" />
+          <SectionHeading eyebrow="Redescobertas" title="Álbuns retomados" />
 
           <div class="strip-grid">
             <MusicStripCard
@@ -97,7 +97,7 @@
         </section>
 
         <section class="music-section">
-          <SectionHeading eyebrow="Descoberta" title="Primeira audição" />
+          <SectionHeading eyebrow="Descoberta" title="Álbuns recentes" />
 
           <div class="strip-grid">
             <MusicStripCard
@@ -309,7 +309,7 @@ useHead(() => ({
       name: 'description',
       content:
         showEditorialLayer.value || !libraryData.value
-          ? 'Recorte editorial da escuta recente no Media Pulse, com foco em álbuns, artistas e faixas em rotação.'
+          ? 'Álbuns, artistas e faixas ouvidos recentemente.'
           : 'Arquivo completo de música no Media Pulse, com exploração por artistas, álbuns e faixas.',
     },
   ],

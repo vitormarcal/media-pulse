@@ -1,7 +1,7 @@
 <template>
   <main class="term-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página do termo...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -93,7 +93,7 @@ const gridDescription = computed(() =>
 const gridSummary = computed(() =>
   data.value
     ? `${data.value.stats.movieCount} filmes no recorte e ${data.value.stats.watchedMoviesCount} com sessão registrada.`
-    : 'Uma nova porta de entrada para a biblioteca.',
+    : 'Nenhum filme disponível.',
 )
 
 useHead(() => ({

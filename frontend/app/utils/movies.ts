@@ -181,19 +181,19 @@ function buildStatsMetrics(stats: MoviesStatsResponse): MovieLibraryMetric[] {
       id: 'catalog',
       label: 'Filmes no arquivo',
       value: formatShortNumber(stats.total.uniqueMoviesCount),
-      note: 'o tamanho do acervo já reconhecido por aqui',
+      note: 'títulos cadastrados',
     },
     {
       id: 'watches',
       label: 'Sessões acumuladas',
       value: formatShortNumber(stats.total.watchesCount),
-      note: 'quantas vezes esse catálogo já voltou para a tela',
+      note: 'sessões registradas',
     },
     {
       id: 'unwatched',
       label: 'Ainda sem sessão',
       value: formatShortNumber(stats.unwatchedCount),
-      note: 'o pedaço do arquivo que ainda existe mais como promessa do que memória',
+      note: 'sem sessão registrada',
     },
     {
       id: 'span',
@@ -229,25 +229,25 @@ function buildContextMetrics(payload: {
       id: 'catalog',
       label: 'Filmes no arquivo',
       value: formatShortNumber(payload.stats.total.uniqueMoviesCount),
-      note: 'o tamanho atual do catálogo reconhecido por aqui',
+      note: 'títulos cadastrados',
     },
     {
       id: 'month',
       label: 'Sessões no recorte',
       value: formatShortNumber(payload.summary.watchesCount),
-      note: 'o quanto a tela andou neste período mais recente',
+      note: 'no período',
     },
     {
       id: 'rewatches',
       label: 'Retornos acumulados',
       value: formatShortNumber(rewatchCount),
-      note: 'quando um filme reaparece e deixa de ser só passagem',
+      note: 'sessões repetidas',
     },
     {
       id: 'unwatched',
       label: 'Ainda sem sessão',
       value: formatShortNumber(payload.stats.unwatchedCount),
-      note: 'a parte do acervo que segue mais catálogo do que memória',
+      note: 'sem sessão registrada',
     },
   ]
 }
@@ -276,7 +276,7 @@ export function buildMovieCollectionData(payload: {
       eyebrow: 'Panorama',
       title: 'Ritmo da filmoteca',
       description: '',
-      summary: `${formatShortNumber(payload.summary.uniqueMoviesCount)} filmes circularam no recorte recente e ${formatShortNumber(payload.stats.total.watchesCount)} sessões já ficaram registradas no histórico total`,
+      summary: `${formatShortNumber(payload.summary.uniqueMoviesCount)} filmes recentes · ${formatShortNumber(payload.stats.total.watchesCount)} sessões no histórico`,
       metrics: buildContextMetrics(payload),
     },
   }
@@ -351,9 +351,8 @@ export function buildMovieCollectionPageData(
     },
     context: {
       eyebrow: 'Coleção',
-      title: 'O estado atual desse recorte',
-      description:
-        'Uma leitura curta do tamanho da franquia, do que já entrou no catálogo e do que ainda existe só como referência externa.',
+      title: 'Resumo da coleção',
+      description: '',
       summary: members.length
         ? `${formatShortNumber(members.length)} filmes na coleção, ${formatShortNumber(cataloguedCount)} já presentes no catálogo local e ${formatShortNumber(missingCount)} ainda fora dele.`
         : 'Ainda não há membros retornados para esta coleção.',
@@ -362,19 +361,19 @@ export function buildMovieCollectionPageData(
           id: 'collection-total',
           label: 'Filmes na coleção',
           value: formatShortNumber(members.length),
-          note: 'o tamanho completo do recorte vindo do TMDb',
+          note: 'itens retornados pelo TMDb',
         },
         {
           id: 'collection-catalogued',
           label: 'No catálogo',
           value: formatShortNumber(cataloguedCount),
-          note: 'o quanto da coleção já entrou de fato no arquivo',
+          note: 'itens cadastrados',
         },
         {
           id: 'collection-missing',
           label: 'Fora do catálogo',
           value: formatShortNumber(missingCount),
-          note: 'o que ainda aparece só como referência externa',
+          note: 'itens ainda não cadastrados',
         },
         {
           id: 'collection-coverage',
@@ -445,7 +444,7 @@ export function buildMovieCollectionsIndexPageData(
       })),
     },
     summary: items.length
-      ? `${formatShortNumber(items.length)} coleções locais já funcionam como porta de entrada para a filmoteca.`
+      ? `${formatShortNumber(items.length)} coleções locais.`
       : 'Nenhuma coleção local foi consolidada ainda.',
     items,
   }
@@ -500,7 +499,7 @@ export function buildMovieLibraryPageData(payload: {
       },
       context: {
         eyebrow: 'Ano',
-        title: `O que ${payload.selectedYear} concentrou`,
+        title: `Resumo de ${payload.selectedYear}`,
         description: '',
         summary: `${formatShortNumber(payload.yearResults.stats.uniqueMoviesCount)} filmes e ${formatShortNumber(payload.yearResults.stats.watchesCount)} sessões apareceram neste recorte.`,
         metrics: [
@@ -508,25 +507,25 @@ export function buildMovieLibraryPageData(payload: {
             id: 'year-movies',
             label: 'Filmes vistos no ano',
             value: formatShortNumber(payload.yearResults.stats.uniqueMoviesCount),
-            note: 'o quanto esse ano realmente teve presença na tela',
+            note: 'títulos com sessão registrada',
           },
           {
             id: 'year-watches',
             label: 'Sessões no ano',
             value: formatShortNumber(payload.yearResults.stats.watchesCount),
-            note: 'a intensidade do retorno aos filmes naquele período',
+            note: 'sessões registradas',
           },
           {
             id: 'year-rewatches',
             label: 'Revisitas no ano',
             value: formatShortNumber(payload.yearResults.stats.rewatchesCount),
-            note: 'quando o mesmo título voltou mais de uma vez',
+            note: 'sessões repetidas',
           },
           {
             id: 'year-unwatched',
-            label: 'Fora desse recorte',
+            label: 'Não vistos no ano',
             value: formatShortNumber(payload.yearResults.unwatched.length),
-            note: 'parte do catálogo que não entrou em cena naquele ano',
+            note: 'títulos sem sessão no período',
           },
         ],
       },
@@ -807,7 +806,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
         {
           id: 'genre',
           title: 'Gêneros',
-          description: 'A camada mais estável da classificação, boa para filtros e listas inteligentes.',
+          description: '',
           items: movie.terms
             .filter((term) => term.kind === 'GENRE')
             .map((term) => ({
@@ -832,7 +831,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
         {
           id: 'tag',
           title: 'Tags',
-          description: 'Recortes mais específicos e livres, vindos do TMDb ou da sua própria curadoria.',
+          description: '',
           items: movie.terms
             .filter((term) => term.kind === 'TAG')
             .map((term) => ({
@@ -973,9 +972,8 @@ export function buildMovieListsIndexPageData(lists: MovieListSummaryDto[]): Movi
 
   return {
     hero: {
-      title: 'Os recortes manuais da filmoteca',
-      intro:
-        'Uma estante de listas feitas à mão para quando a biblioteca inteira é grande demais e você quer entrar por afinidade, ocasião ou obsessão.',
+      title: 'Listas de filmes',
+      intro: '',
       backLink: '/movies',
       backLabel: 'Voltar para filmes',
       accentLink: '/movies?add=1',
@@ -987,12 +985,12 @@ export function buildMovieListsIndexPageData(lists: MovieListSummaryDto[]): Movi
             imageUrl: spotlight.coverImageUrl ?? spotlight.previewMovies[0]?.imageUrl ?? null,
             href: spotlight.href,
             meta: `${spotlight.itemCount} filmes`,
-            note: 'O recorte mais recentemente atualizado vira a primeira entrada visual da estante.',
+            note: 'Lista atualizada mais recentemente',
           }
         : null,
     },
     summary: items.length
-      ? `${formatShortNumber(items.length)} listas manuais ativas somando portas de entrada próprias para a biblioteca.`
+      ? `${formatShortNumber(items.length)} listas manuais.`
       : 'Nenhuma lista manual foi criada ainda.',
     items,
   }

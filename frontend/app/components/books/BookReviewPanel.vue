@@ -1,11 +1,6 @@
 <template>
   <section class="review-panel">
-    <SectionHeading
-      eyebrow="Review"
-      title="O que ficou escrito sobre esse livro"
-      description="A leitura crítica entra como camada editorial da página, sem competir com o restante do contexto."
-      summary="Texto direto, superfície quente e ritmo de leitura antes de qualquer chrome extra."
-    />
+    <SectionHeading eyebrow="Review" title="Resenha" />
 
     <article class="review-card">
       <p v-if="reviewedLabel" class="review-meta">{{ reviewedLabel }}</p>

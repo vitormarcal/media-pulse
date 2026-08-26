@@ -1,11 +1,6 @@
 <template>
   <section class="watch-timeline">
-    <SectionHeading
-      eyebrow="Histórico"
-      title="Os episódios que vieram por último"
-      description="Uma linha do tempo recente para retomar o fio da meada sem procurar demais."
-      summary="A ordem importa mais do que a contagem."
-    />
+    <SectionHeading eyebrow="Histórico" title="Episódios recentes" />
 
     <div class="timeline-list">
       <article v-for="watch in watches" :key="watch.id" class="timeline-item">

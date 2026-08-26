@@ -203,7 +203,7 @@ export function buildHomePageData(payload: {
   return {
     generatedAt: new Date().toISOString(),
     hero: {
-      title: 'Em rotação agora',
+      title: 'Atividade recente',
       intro: '',
       lead: heroLead,
       supporting: heroSupporting,
@@ -214,7 +214,7 @@ export function buildHomePageData(payload: {
       {
         id: 'music',
         eyebrow: 'Música',
-        title: 'Álbuns no ouvido',
+        title: 'Álbuns recentes',
         description: '',
         summary: `${formatShortNumber(payload.musicSummary.albumsCount)} álbuns · ${formatShortNumber(payload.musicSummary.tracksCount)} faixas`,
         items: payload.recentAlbums.items.slice(0, 6).map(recentAlbumToShelfItem),
@@ -230,7 +230,7 @@ export function buildHomePageData(payload: {
       {
         id: 'movies',
         eyebrow: 'Filmes',
-        title: 'Tela recente',
+        title: 'Filmes recentes',
         description: '',
         summary: `${formatShortNumber(payload.movieSummary.uniqueMoviesCount)} filmes · ${formatShortNumber(payload.movieSummary.watchesCount)} registros`,
         items: payload.recentMovies.items.slice(0, 6).map(recentMovieToShelfItem),
@@ -238,7 +238,7 @@ export function buildHomePageData(payload: {
       {
         id: 'books',
         eyebrow: 'Livros',
-        title: 'Na mesa',
+        title: 'Leituras atuais',
         description: '',
         summary: `${formatShortNumber(payload.booksSummary.counts.reading)} lendo · ${formatShortNumber(payload.booksSummary.counts.finished)} concluídos`,
         items: [
@@ -249,7 +249,7 @@ export function buildHomePageData(payload: {
       {
         id: 'games',
         eyebrow: 'Games',
-        title: 'Controles à mão',
+        title: 'Games',
         description: '',
         summary: `${formatShortNumber(payload.gamesStats.totalGamesCount)} games · ${formatShortNumber(payload.gamesStats.sessionsCount)} sessões`,
         items: payload.gamesLibrary.items.slice(0, 6).map(gameToShelfItem),

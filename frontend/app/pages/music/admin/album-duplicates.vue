@@ -3,8 +3,7 @@
     <section class="admin-subheader">
       <div>
         <p class="kicker">Painel administrativo</p>
-        <h2>Ferramentas de saneamento da biblioteca</h2>
-        <p>Consolide representações do mesmo álbum sem perder o histórico ou os vínculos dos provedores.</p>
+        <h2>Duplicatas de música</h2>
       </div>
       <nav aria-label="Navegação administrativa de música">
         <NuxtLink :to="artistReturnUrl">{{ contextualArtistId ? 'Voltar ao artista' : 'Música' }}</NuxtLink>
@@ -17,10 +16,7 @@
       <div>
         <p class="kicker">Administração de música</p>
         <h1>Mesclar álbuns</h1>
-        <p>
-          Revise sugestões ou escolha manualmente álbuns do mesmo artista. Nenhuma mesclagem acontece sem sua
-          confirmação.
-        </p>
+        <p>A mesclagem exige confirmação e preserva histórico e identificadores externos.</p>
       </div>
     </section>
 

@@ -1,6 +1,6 @@
 <template>
   <main class="list-page">
-    <p v-if="status === 'pending'" class="state-card">Abrindo a lista...</p>
+    <p v-if="status === 'pending'" class="state-card">Carregando...</p>
     <p v-else-if="error" class="state-card error">Não foi possível abrir esta lista.</p>
 
     <template v-else-if="data">
@@ -12,7 +12,7 @@
               {{ editing ? 'Fechar edição' : 'Editar lista' }}
             </button>
           </div>
-          <p class="eyebrow">Percurso de escuta</p>
+          <p class="eyebrow">Lista de álbuns</p>
           <h1>{{ data.name }}</h1>
           <p v-if="data.description" class="intro">{{ data.description }}</p>
           <div class="metrics">
@@ -43,7 +43,7 @@
           <label
             >Buscar álbum <input v-model="searchText" placeholder="Nome do álbum ou artista" @input="scheduleSearch"
           /></label>
-          <p class="hint">Nesta primeira versão, a busca considera álbuns já presentes no Media Pulse.</p>
+          <p class="hint">A busca inclui apenas álbuns do catálogo local.</p>
           <div v-if="searching" class="hint">Buscando...</div>
           <div class="search-results">
             <button
@@ -80,9 +80,7 @@
         </label>
       </section>
 
-      <p v-if="!displayItems.length" class="state-card">
-        A lista está vazia. Abra a edição para procurar o primeiro álbum.
-      </p>
+      <p v-if="!displayItems.length" class="state-card">Lista vazia. Use “Editar lista” para adicionar um álbum.</p>
 
       <section v-else class="album-stack">
         <article

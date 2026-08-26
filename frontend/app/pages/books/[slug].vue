@@ -1,7 +1,7 @@
 <template>
   <main class="book-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página do livro...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">

@@ -223,19 +223,19 @@ function buildStatsMetrics(stats: ShowsStatsResponse): ShowLibraryMetric[] {
       id: 'catalog',
       label: 'Séries no arquivo',
       value: formatShortNumber(stats.total.uniqueShowsCount),
-      note: 'o tamanho do acervo já reconhecido por aqui',
+      note: 'títulos cadastrados',
     },
     {
       id: 'watches',
       label: 'Registros acumulados',
       value: formatShortNumber(stats.total.watchesCount),
-      note: 'quanto esse arquivo já foi percorrido ao longo do tempo',
+      note: 'episódios registrados',
     },
     {
       id: 'unwatched',
       label: 'Ainda sem watch',
       value: formatShortNumber(stats.unwatchedCount),
-      note: 'o pedaço da biblioteca que ainda existe mais como catálogo do que como memória',
+      note: 'sem episódio registrado',
     },
     {
       id: 'span',
@@ -267,27 +267,27 @@ function buildContextMetrics(payload: {
   return [
     {
       id: 'unique',
-      label: 'Séries que passaram pelo recorte',
+      label: 'Séries recentes',
       value: formatShortNumber(payload.summary.uniqueShowsCount),
-      note: 'o bastante para lembrar o tamanho da rotação do mês',
+      note: 'com atividade no período',
     },
     {
       id: 'watches',
       label: 'Episódios marcados',
       value: formatShortNumber(payload.summary.watchesCount),
-      note: 'a medida real do quanto esse catálogo andou',
+      note: 'no período',
     },
     {
       id: 'open',
-      label: 'Ainda abertas agora',
+      label: 'Em andamento',
       value: formatShortNumber(payload.currentShows.length),
-      note: 'as que ainda estão pedindo o próximo episódio',
+      note: 'com próximo episódio pendente',
     },
     {
       id: 'recent',
-      label: 'Memória curta disponível',
+      label: 'Registros recentes',
       value: formatShortNumber(payload.recentShows.items.length),
-      note: 'entradas recentes o bastante para recolocar o fio da meada',
+      note: 'episódios mais recentes',
     },
   ]
 }
@@ -480,7 +480,7 @@ export function buildShowCollectionData(payload: {
       eyebrow: 'Mês',
       title: 'Rotação recente',
       description: '',
-      summary: `${formatShortNumber(payload.summary.uniqueShowsCount)} séries passaram por aqui e ${formatShortNumber(payload.summary.watchesCount)} episódios foram marcados neste recorte.`,
+      summary: `${formatShortNumber(payload.summary.uniqueShowsCount)} séries · ${formatShortNumber(payload.summary.watchesCount)} episódios`,
       metrics: buildContextMetrics(payload),
     },
   }
@@ -531,7 +531,7 @@ export function buildShowLibraryPageData(payload: {
       },
       context: {
         eyebrow: 'Ano',
-        title: `O que ${payload.selectedYear} concentrou`,
+        title: `Resumo de ${payload.selectedYear}`,
         description: '',
         summary: `${formatShortNumber(payload.yearResults.stats.uniqueShowsCount)} séries e ${formatShortNumber(payload.yearResults.stats.watchesCount)} registros apareceram neste recorte.`,
         metrics: [
@@ -539,25 +539,25 @@ export function buildShowLibraryPageData(payload: {
             id: 'year-shows',
             label: 'Séries vistas no ano',
             value: formatShortNumber(payload.yearResults.stats.uniqueShowsCount),
-            note: 'o quanto esse ano realmente teve presença',
+            note: 'títulos com episódio registrado',
           },
           {
             id: 'year-watches',
             label: 'Registros no ano',
             value: formatShortNumber(payload.yearResults.stats.watchesCount),
-            note: 'a intensidade do retorno às séries naquele período',
+            note: 'episódios registrados',
           },
           {
             id: 'year-rewatches',
             label: 'Revisitas no ano',
             value: formatShortNumber(payload.yearResults.stats.rewatchesCount),
-            note: 'quando o mesmo título voltou mais de uma vez',
+            note: 'registros repetidos',
           },
           {
             id: 'year-unwatched',
-            label: 'Fora desse recorte',
+            label: 'Não vistas no ano',
             value: formatShortNumber(payload.yearResults.unwatched.length),
-            note: 'parte do catálogo que não entrou em cena naquele ano',
+            note: 'títulos sem episódio no período',
           },
         ],
       },

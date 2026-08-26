@@ -1,11 +1,6 @@
 <template>
   <section class="context-panel">
-    <SectionHeading
-      eyebrow="Contexto"
-      title="Onde essa autoria realmente apareceu"
-      description="Uma leitura curta do volume, do fechamento e do que ainda segue aberto."
-      summary="O foco está no rastro de leitura, não em biografia."
-    />
+    <SectionHeading eyebrow="Contexto" title="Leituras" />
 
     <div class="panel-grid">
       <article class="stats-card">

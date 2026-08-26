@@ -3,16 +3,13 @@
     <SectionHeading
       eyebrow="Catálogo"
       title="Buscar sugestões no TMDb"
-      description="Um ponto de revisão para puxar metadados sem atropelar o que o catálogo já sabe."
-      summary="Primeiro a comparação, depois a decisão."
+      description="Compare os dados atuais com o TMDb antes de aplicar alterações."
     />
 
     <article class="action-card">
       <div class="copy">
         <p class="copy-title">Enriquecimento por TMDb</p>
-        <p class="copy-body">
-          Use o vínculo já conhecido do filme ou informe um `TMDb ID` para abrir uma leitura curta do que vale trazer.
-        </p>
+        <p class="copy-body">Use o vínculo existente ou informe o TMDb ID.</p>
       </div>
 
       <form class="action-form" @submit.prevent="handlePreview">
@@ -39,9 +36,6 @@
             <p class="dialog-eyebrow">Diff</p>
             <h3>{{ preview.title }}</h3>
             <p class="dialog-summary">TMDb {{ preview.resolvedTmdbId }}</p>
-            <p class="dialog-lead">
-              O quadro abaixo separa metadados e imagem para que a escolha pareça editorial, não operacional.
-            </p>
           </div>
           <button type="button" class="close-button" @click="closePreview">Fechar</button>
         </div>
@@ -62,9 +56,6 @@
               <p class="summary-value">
                 {{ availableFieldsCount }} bloco<span v-if="availableFieldsCount !== 1">s</span> com sugestão
               </p>
-              <p class="summary-note">
-                Incluindo metadados e novas imagens quando houver ganho claro para o detalhe do filme.
-              </p>
             </article>
 
             <article class="summary-card">
@@ -75,9 +66,6 @@
                   >s</span
                 >
                 para aplicar
-              </p>
-              <p class="summary-note">
-                A seleção padrão privilegia lacunas e o material visual mais útil como nova referência.
               </p>
             </article>
           </div>
@@ -108,11 +96,8 @@
           <div class="studio-head">
             <div>
               <p class="dialog-eyebrow">Imagens</p>
-              <h4>Escolha o que entra no detalhe</h4>
-              <p class="studio-summary">
-                A principal atual fica em contraste com as novas sugestões. Marque o que mantém no filme e promova uma
-                imagem para capa principal.
-              </p>
+              <h4>Selecionar imagens</h4>
+              <p class="studio-summary">Selecione as imagens que serão salvas e escolha a capa principal.</p>
             </div>
             <label class="studio-toggle">
               <input v-model="selectedFields" type="checkbox" value="IMAGES" :disabled="!preview.images.available" />
@@ -563,8 +548,6 @@ watch(selectedImageKeys, (keys) => {
 }
 
 .dialog-summary,
-.dialog-lead,
-.summary-note,
 .field-current,
 .field-suggested,
 .studio-summary,
@@ -573,8 +556,6 @@ watch(selectedImageKeys, (keys) => {
   color: var(--base-color-text-secondary);
 }
 
-.dialog-lead,
-.summary-note,
 .studio-summary,
 .current-note,
 .candidate-note,

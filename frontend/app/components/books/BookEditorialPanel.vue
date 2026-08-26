@@ -1,15 +1,10 @@
 <template>
   <section class="editorial-panel">
-    <SectionHeading
-      eyebrow="Editorial"
-      title="O que ficou escrito sobre este livro"
-      description="Comentários manuais e review importado convivem no mesmo plano, ordenados por quando foram escritos."
-      summary="Uma linha editorial única para releituras, mudanças de humor e anotações importadas."
-    />
+    <SectionHeading eyebrow="Comentários" title="Textos sobre o livro" />
 
     <div v-if="entries.length" class="summary-card">
       <div>
-        <p class="summary-label">Linha editorial</p>
+        <p class="summary-label">Comentários</p>
         <strong>{{ entries.length }} {{ entries.length === 1 ? 'registro' : 'registros' }}</strong>
       </div>
       <p class="summary-copy">Mais recente {{ buildEntryLabel(entries[0]) }}</p>
@@ -75,20 +70,13 @@
     </div>
 
     <article v-else class="empty-card">
-      <p>Nenhum texto editorial registrado para este livro ainda.</p>
+      <p>Nenhum texto registrado.</p>
     </article>
 
     <div class="composer-shell">
       <div class="composer-header">
         <div>
-          <p class="summary-label">Nova impressão</p>
-          <p class="summary-copy">
-            {{
-              entries.length
-                ? 'Adicione uma nova camada sem competir com o histórico já escrito.'
-                : 'Comece a linha editorial deste livro.'
-            }}
-          </p>
+          <p class="summary-label">Novo comentário</p>
         </div>
 
         <button
@@ -108,7 +96,7 @@
             v-model="draftBody"
             class="textarea"
             rows="5"
-            placeholder="Escreva o que ficou desta leitura."
+            placeholder="Escreva um comentário."
             :disabled="submitting"
           />
         </label>

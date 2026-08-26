@@ -1,11 +1,11 @@
 <template>
   <main class="shows-page">
     <div v-if="editorialStatus === 'pending' || libraryStatus === 'pending'" class="state-card">
-      <p>Montando a página de séries...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="editorialError || libraryError" class="state-card error">
-      <p>Não foi possível montar a página de séries com os dados atuais.</p>
+      <p>Não foi possível carregar as séries.</p>
       <pre>{{ editorialError?.message || libraryError?.message }}</pre>
     </div>
 
@@ -256,7 +256,7 @@ useHead(() => ({
   meta: [
     {
       name: 'description',
-      content: 'Entrada principal das séries no Media Pulse, unindo recorte editorial, busca e arquivo.',
+      content: 'Séries em andamento, episódios recentes, busca e catálogo.',
     },
   ],
 }))

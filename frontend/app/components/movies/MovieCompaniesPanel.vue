@@ -20,7 +20,7 @@
       </NuxtLink>
     </div>
 
-    <p v-else class="empty-copy">Ainda não há estúdios ou produtoras locais ligados a este filme.</p>
+    <p v-else class="empty-copy">Nenhuma empresa vinculada.</p>
 
     <div v-if="editingEnabled" class="editor-toolbar">
       <button type="button" class="secondary-button" :disabled="syncing" @click="syncFromTmdb">

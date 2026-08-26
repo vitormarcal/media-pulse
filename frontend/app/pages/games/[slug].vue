@@ -1,7 +1,7 @@
 <template>
   <main class="game-page">
     <div v-if="status === 'pending'" class="state-card">
-      <p>Montando a página do game...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="error" class="state-card error">
@@ -31,8 +31,8 @@
         media-type="games"
         :entity-id="data.gameId"
         :initial-rating="data.rating"
-        title="Quanto esse game ficou na sua escala"
-        description="A nota ajuda a separar backlog curioso de jogo que realmente ocupou espaço no repertório."
+        title="Nota do game"
+        minimal
       />
 
       <GameAddSessionPanel :game-id="data.gameId" @created="handleSessionChanged" />
@@ -40,10 +40,10 @@
       <MediaCommentsPanel
         :entity-id="data.gameId"
         media-type="games"
-        title="Impressões do game"
-        description="Cada campanha, retorno ou abandono pode render uma leitura diferente sem apagar as anteriores."
+        title="Comentários do game"
+        description=""
         :comments="data.comments"
-        empty-label="Nenhuma impressão manual registrada para este game ainda."
+        empty-label="Nenhum comentário."
       />
 
       <GameSessionsTimeline :game-id="data.gameId" :sessions="data.sessions" @changed="handleSessionChanged" />

@@ -3,11 +3,7 @@
     <section class="admin-subheader">
       <div class="admin-subheader__copy">
         <p class="review-kicker">Painel administrativo</p>
-        <h2>Ferramentas de saneamento da biblioteca</h2>
-        <p class="admin-subheader__summary">
-          Área operacional para revisar inconsistências de catálogo, consolidar faixas e limpar duplicações sem sair da
-          linguagem visual principal.
-        </p>
+        <h2>Duplicatas de música</h2>
       </div>
 
       <nav class="admin-subheader__nav" aria-label="Navegação administrativa de música">
@@ -22,10 +18,7 @@
       <div class="review-hero__copy">
         <p class="review-kicker">Administração de música</p>
         <h1>Revisão de faixas duplicadas</h1>
-        <p class="review-intro">
-          Esta fila reúne grupos suspeitos dentro do mesmo álbum. Você escolhe a faixa canônica, marca o que deve ser
-          absorvido e executa o merge com visibilidade do que será preservado.
-        </p>
+        <p class="review-intro">Escolha a faixa canônica e os registros que serão absorvidos.</p>
       </div>
 
       <div class="review-hero__actions">
@@ -887,11 +880,6 @@ useHead({
   font-size: 1.75rem;
   line-height: 1;
   letter-spacing: -0.04em;
-}
-
-.admin-subheader__summary {
-  margin: 0;
-  color: var(--base-color-text-secondary);
 }
 
 .admin-subheader__nav {

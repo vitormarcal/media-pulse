@@ -1,11 +1,11 @@
 <template>
   <main class="movies-page">
     <div v-if="editorialStatus === 'pending' || libraryStatus === 'pending'" class="state-card">
-      <p>Montando a página de filmes...</p>
+      <p>Carregando...</p>
     </div>
 
     <div v-else-if="editorialError || libraryError" class="state-card error">
-      <p>Não foi possível montar a página de filmes com os dados atuais.</p>
+      <p>Não foi possível carregar os filmes.</p>
       <pre>{{ editorialError?.message || libraryError?.message }}</pre>
     </div>
 
@@ -21,7 +21,7 @@
         />
 
         <section class="movies-section">
-          <SectionHeading eyebrow="Em circulação" title="Ainda por perto" />
+          <SectionHeading eyebrow="Em circulação" title="Filmes recentes" />
 
           <div class="strip-grid">
             <MediaStripCard
@@ -253,7 +253,7 @@ const entryCards = computed(() => {
       href: '/movies/lists',
       eyebrow: 'Listas',
       title: 'Entrar por recortes manuais',
-      meta: 'Afinidade, ocasião e obsessão antes do arquivo inteiro.',
+      meta: 'Listas manuais',
       imageUrl: recentImage,
     },
     {
@@ -326,7 +326,7 @@ useHead(() => ({
   meta: [
     {
       name: 'description',
-      content: 'Entrada principal dos filmes no Media Pulse, unindo recorte editorial, busca, biblioteca e curadoria.',
+      content: 'Filmes recentes, busca e catálogo.',
     },
   ],
 }))
