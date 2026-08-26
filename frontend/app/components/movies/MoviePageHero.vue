@@ -2,9 +2,6 @@
   <section class="movie-hero">
     <div class="hero-topbar">
       <NuxtLink class="back-link" to="/movies"> Voltar para filmes </NuxtLink>
-      <button type="button" class="edit-page-button" :class="{ active: editing }" @click="$emit('toggleEditing')">
-        {{ editing ? 'Fechar ajustes' : 'Ajustar página' }}
-      </button>
     </div>
 
     <div class="hero-grid" :style="heroShellStyle">
@@ -18,7 +15,10 @@
           <span v-for="item in heroMeta" :key="item" class="meta-pill">{{ item }}</span>
         </div>
 
-        <div v-if="identifiers.length || companies.visibleCount || terms.visibleCount || editing" class="detail-stack">
+        <div
+          v-if="identifiers.length || companies.visibleCount || terms.visibleCount || editingCompanies || editingTerms"
+          class="detail-stack"
+        >
           <div v-if="identifiers.length" class="detail-row">
             <p class="detail-label">IDs</p>
             <div class="detail-pills">
@@ -28,20 +28,20 @@
             </div>
           </div>
 
-          <div v-if="companies.visibleCount || editing" class="detail-row companies-row">
+          <div v-if="companies.visibleCount || editingCompanies" class="detail-row companies-row">
             <MovieCompaniesPanel
               :movie-id="movieId"
               :companies="companies"
-              :editing="editing"
+              :editing="editingCompanies"
               @changed="$emit('companiesChanged')"
             />
           </div>
 
-          <div v-if="terms.visibleCount || editing" class="detail-row terms-row">
+          <div v-if="terms.visibleCount || editingTerms" class="detail-row terms-row">
             <MovieTermsPanel
               :movie-id="movieId"
               :terms="terms"
-              :editing="editing"
+              :editing="editingTerms"
               embedded
               @changed="$emit('termsChanged')"
             />
@@ -65,7 +65,8 @@ import type { MoviePageData } from '~/types/movies'
 
 const props = defineProps<{
   movieId: number
-  editing: boolean
+  editingCompanies: boolean
+  editingTerms: boolean
   title: string
   subtitle: string | null
   description: string | null
@@ -89,7 +90,6 @@ const heroShellStyle = computed(() =>
 defineEmits<{
   companiesChanged: []
   termsChanged: []
-  toggleEditing: []
 }>()
 </script>
 
@@ -113,22 +113,6 @@ defineEmits<{
   background: var(--base-color-surface-warm);
   color: var(--base-color-text-primary);
   font-size: 0.8rem;
-}
-
-.edit-page-button {
-  border: 0;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.58);
-  color: var(--base-color-text-secondary);
-  font: inherit;
-  font-size: 0.76rem;
-  cursor: pointer;
-}
-
-.edit-page-button.active {
-  background: color-mix(in srgb, var(--base-color-surface-warm) 88%, white);
-  color: var(--base-color-text-primary);
 }
 
 .hero-grid {

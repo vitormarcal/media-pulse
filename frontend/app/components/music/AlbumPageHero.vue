@@ -2,9 +2,6 @@
   <section class="album-hero">
     <div class="hero-topbar">
       <NuxtLink class="back-link" to="/"> Voltar para a capa </NuxtLink>
-      <button type="button" class="edit-page-button" :class="{ active: editing }" @click="$emit('toggleEditing')">
-        {{ editing ? 'Fechar ajustes' : 'Ajustar tags' }}
-      </button>
     </div>
 
     <div class="hero-grid" :style="heroShellStyle">
@@ -63,7 +60,6 @@ const heroShellStyle = computed(() =>
 
 defineEmits<{
   termsChanged: []
-  toggleEditing: []
 }>()
 </script>
 
@@ -87,22 +83,6 @@ defineEmits<{
   background: var(--base-color-surface-warm);
   color: var(--base-color-text-primary);
   font-size: 0.8rem;
-}
-
-.edit-page-button {
-  border: 0;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.58);
-  color: var(--base-color-text-secondary);
-  font: inherit;
-  font-size: 0.76rem;
-  cursor: pointer;
-}
-
-.edit-page-button.active {
-  background: color-mix(in srgb, var(--base-color-surface-warm) 88%, white);
-  color: var(--base-color-text-primary);
 }
 
 .hero-grid {

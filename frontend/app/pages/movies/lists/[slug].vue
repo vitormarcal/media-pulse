@@ -21,7 +21,7 @@
                 :class="{ active: reorderMode }"
                 @click="toggleReorderMode"
               >
-                {{ reorderMode ? 'Fechar ajustes' : 'Ajustar ordem' }}
+                {{ reorderMode ? 'Fechar edição' : 'Editar lista' }}
               </button>
             </div>
 
