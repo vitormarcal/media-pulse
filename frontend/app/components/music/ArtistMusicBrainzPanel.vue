@@ -8,6 +8,11 @@
     <button class="secondary" type="button" :disabled="loading" @click="search">
       {{ link ? 'Revisar vínculo' : 'Buscar artista' }}
     </button>
+    <button v-if="link" class="secondary" type="button" :disabled="loading" @click="refreshProfile">
+      Atualizar dados
+    </button>
+    <p v-if="profile?.syncedAt" class="muted">Atualizado em {{ new Date(profile.syncedAt).toLocaleString('pt-BR') }}</p>
+    <p v-if="profile?.syncError" class="error-copy">{{ profile.syncError }}</p>
     <p v-if="message" class="muted">{{ message }}</p>
     <div v-if="candidates.length" class="candidates">
       <button
@@ -24,8 +29,12 @@
   </section>
 </template>
 <script setup lang="ts">
-import type { MusicBrainzArtistCandidate, MusicBrainzLink } from '~/types/music'
-const props = defineProps<{ artistId: number; link: MusicBrainzLink | null }>()
+import type { ArtistMusicBrainzProfile, MusicBrainzArtistCandidate, MusicBrainzLink } from '~/types/music'
+const props = defineProps<{
+  artistId: number
+  link: MusicBrainzLink | null
+  profile: ArtistMusicBrainzProfile | null
+}>()
 const emit = defineEmits<{ applied: [] }>()
 const config = useRuntimeConfig()
 const candidates = ref<MusicBrainzArtistCandidate[]>([])
@@ -61,6 +70,23 @@ async function apply(candidate: MusicBrainzArtistCandidate) {
     loading.value = false
   }
 }
+async function refreshProfile() {
+  loading.value = true
+  message.value = ''
+  try {
+    await $fetch(`/api/music/artists/${props.artistId}/musicbrainz/refresh`, {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+    })
+    message.value = 'Dados atualizados com sucesso.'
+    emit('applied')
+  } catch {
+    message.value = 'Não foi possível atualizar os dados.'
+    emit('applied')
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 <style scoped>
 .mb-panel {
@@ -86,6 +112,9 @@ p {
 .muted,
 .candidate span {
   color: var(--base-color-text-secondary);
+}
+.error-copy {
+  color: #9e0a0a;
 }
 button {
   width: fit-content;

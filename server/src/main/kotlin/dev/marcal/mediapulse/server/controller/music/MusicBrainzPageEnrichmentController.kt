@@ -51,10 +51,15 @@ class MusicBrainzPageEnrichmentController(
     ) = service.searchArtist(artistId)
 
     @PostMapping("/artists/{artistId}/musicbrainz")
-    fun applyArtist(
+    suspend fun applyArtist(
         @PathVariable artistId: Long,
         @RequestBody request: MusicBrainzArtistApplyRequest,
     ) = service.applyArtist(artistId, request.artistMbid)
+
+    @PostMapping("/artists/{artistId}/musicbrainz/refresh")
+    suspend fun refreshArtist(
+        @PathVariable artistId: Long,
+    ) = service.refreshArtist(artistId)
 
     @GetMapping("/artists/{artistId}/musicbrainz/discography")
     suspend fun artistDiscography(

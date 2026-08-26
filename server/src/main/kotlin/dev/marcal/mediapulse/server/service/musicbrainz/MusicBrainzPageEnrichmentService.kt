@@ -12,10 +12,12 @@ import dev.marcal.mediapulse.server.api.music.MusicBrainzEnrichmentResult
 import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzApiClient
 import dev.marcal.mediapulse.server.model.music.Album
 import dev.marcal.mediapulse.server.model.music.Artist
+import dev.marcal.mediapulse.server.repository.ArtistProfileRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumMusicBrainzReleaseIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import dev.marcal.mediapulse.server.repository.crud.ArtistRepository
 import dev.marcal.mediapulse.server.service.music.AlbumTermsService
+import dev.marcal.mediapulse.server.service.music.ArtistGenresService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.TitleKeyUtil
 import org.springframework.dao.DataIntegrityViolationException
@@ -30,6 +32,8 @@ class MusicBrainzPageEnrichmentService(
     private val artists: ArtistRepository,
     private val albumReleaseIds: AlbumMusicBrainzReleaseIdRepository,
     private val albumTermsService: AlbumTermsService,
+    private val artistProfiles: ArtistProfileRepository,
+    private val artistGenresService: ArtistGenresService,
 ) {
     suspend fun searchNewArtist(query: String): List<MusicBrainzArtistCandidateDto> {
         val normalized = query.trim()
@@ -49,6 +53,7 @@ class MusicBrainzPageEnrichmentService(
                 Artist(name = remote.name, fingerprint = FingerprintUtil.artistFp(remote.name)),
             )
         linkArtist(artist.id, remote.id)
+        enrichArtist(artist.id, remote)
         return MusicBrainzArtistCreateResult(artist.id, remote.id, created)
     }
 
@@ -115,13 +120,91 @@ class MusicBrainzPageEnrichmentService(
         return client.searchArtists(artist.name).map { it.toDto() }
     }
 
-    fun applyArtist(
+    suspend fun applyArtist(
         artistId: Long,
         artistMbid: String,
     ): MusicBrainzEnrichmentResult {
         requireArtist(artistId)
         linkArtist(artistId, artistMbid)
+        refreshArtist(artistId)
         return MusicBrainzEnrichmentResult(artistId = artistId, artistMbid = artistMbid)
+    }
+
+    suspend fun refreshArtist(artistId: Long): MusicBrainzEnrichmentResult {
+        val artist = requireArtist(artistId)
+        val mbid =
+            artist.musicbrainzArtistId
+                ?: throw ResponseStatusException(HttpStatus.CONFLICT, "Artist must be linked to MusicBrainz first")
+        try {
+            enrichArtist(artistId, client.getArtist(mbid))
+        } catch (e: Exception) {
+            artists.save(requireArtist(artistId).copy(musicbrainzSyncError = "Não foi possível atualizar os dados do MusicBrainz"))
+            throw e
+        }
+        return MusicBrainzEnrichmentResult(artistId = artistId, artistMbid = mbid)
+    }
+
+    private fun enrichArtist(
+        artistId: Long,
+        remote: dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistCandidate,
+    ) {
+        val current = requireArtist(artistId)
+        artists.save(
+            current.copy(
+                artistType = remote.type,
+                countryCode = remote.country,
+                areaName = remote.area?.name,
+                beginAreaName = remote.beginArea?.name,
+                lifeSpanBegin = remote.lifeSpan?.begin,
+                lifeSpanEnd = remote.lifeSpan?.end,
+                lifeSpanEnded = remote.lifeSpan?.ended == true,
+                disambiguation = remote.disambiguation,
+                musicbrainzSyncedAt = java.time.Instant.now(),
+                musicbrainzSyncError = null,
+                updatedAt = java.time.Instant.now(),
+            ),
+        )
+        artistProfiles.replaceAliases(
+            artistId,
+            remote.aliases.filterNot { it.name.trim().equals(current.name.trim(), ignoreCase = true) },
+        )
+        artistProfiles.replaceLinks(artistId, curatedLinks(remote.relations))
+        artistGenresService.addMusicBrainzGenres(
+            artistId,
+            remote.genres
+                .sortedByDescending {
+                    it.count
+                }.mapNotNull { it.name }
+                .map { it.trim().lowercase() }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .take(20),
+        )
+    }
+
+    private fun curatedLinks(relations: List<dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbUrlRelation>): Map<String, String> {
+        val candidates =
+            relations.mapNotNull { relation ->
+                val url = relation.url?.resource ?: return@mapNotNull null
+                val type =
+                    when {
+                        url.contains("bandcamp.com", ignoreCase = true) -> "BANDCAMP"
+                        relation.type == "official homepage" -> "OFFICIAL"
+                        relation.type == "discogs" -> "DISCOGS"
+                        relation.type == "wikipedia" -> "WIKIPEDIA"
+                        else -> null
+                    } ?: return@mapNotNull null
+                type to url
+            }
+        return candidates.groupBy({ it.first }, { it.second }).mapValues { (type, urls) ->
+            if (type == "WIKIPEDIA") {
+                urls.firstOrNull { it.contains("pt.wikipedia.org") }
+                    ?: urls.firstOrNull { it.contains("en.wikipedia.org") }
+                    ?: urls.first()
+            } else {
+                urls.first()
+            }
+        }
     }
 
     suspend fun getArtistDiscography(artistId: Long): MusicBrainzDiscographyPreviewResponse {

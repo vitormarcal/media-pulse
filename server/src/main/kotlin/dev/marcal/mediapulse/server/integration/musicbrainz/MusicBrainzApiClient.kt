@@ -221,7 +221,7 @@ class MusicBrainzApiClient(
     suspend fun getArtist(mbid: String) =
         mbGet(
             path = "/ws/2/artist/$mbid",
-            inc = "",
+            inc = "aliases+genres+url-rels",
             clazz = dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistCandidate::class.java,
             mbid = mbid,
         )

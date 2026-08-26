@@ -158,6 +158,29 @@ export interface ArtistPageResponse {
   }>
   playsByDay: PlaysByDayRow[]
   musicBrainz: MusicBrainzLink | null
+  profile: ArtistMusicBrainzProfile | null
+  genres: AlbumTermDto[]
+}
+
+export interface ArtistMusicBrainzProfile {
+  type: string | null
+  countryCode: string | null
+  areaName: string | null
+  beginAreaName: string | null
+  lifeSpanBegin: string | null
+  lifeSpanEnd: string | null
+  lifeSpanEnded: boolean
+  disambiguation: string | null
+  aliases: Array<{
+    name: string
+    locale: string | null
+    sortName: string | null
+    type: string | null
+    primary: boolean
+  }>
+  links: Array<{ type: 'OFFICIAL' | 'WIKIPEDIA' | 'DISCOGS' | 'BANDCAMP'; url: string }>
+  syncedAt: string | null
+  syncError: string | null
 }
 
 export interface AlbumMergeCandidateResponse {
@@ -548,6 +571,8 @@ export interface ArtistPageData {
   topTracks: ArtistTrackModel[]
   recentDays: AlbumDayModel[]
   musicBrainz: MusicBrainzLink | null
+  profile: ArtistMusicBrainzProfile | null
+  genres: AlbumTermDto[]
 }
 
 export interface MusicCollectionContextMetric {

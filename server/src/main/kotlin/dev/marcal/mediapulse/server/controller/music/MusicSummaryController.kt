@@ -19,6 +19,7 @@ import dev.marcal.mediapulse.server.api.music.TrackPageResponse
 import dev.marcal.mediapulse.server.repository.MusicQueryRepository
 import dev.marcal.mediapulse.server.service.music.AlbumListsService
 import dev.marcal.mediapulse.server.service.music.AlbumTermsService
+import dev.marcal.mediapulse.server.service.music.ArtistGenresService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -38,6 +39,7 @@ class MusicSummaryController(
     private val repository: MusicQueryRepository,
     private val albumTermsService: AlbumTermsService,
     private val albumListsService: AlbumListsService,
+    private val artistGenresService: ArtistGenresService,
 ) {
     @GetMapping("/summary")
     fun summary(
@@ -172,6 +174,19 @@ class MusicSummaryController(
     fun artistPage(
         @PathVariable artistId: Long,
     ): ArtistPageResponse = repository.getArtistPage(artistId)
+
+    @PostMapping("/artists/{artistId}/genres")
+    fun addArtistGenre(
+        @PathVariable artistId: Long,
+        @RequestBody request: AlbumTermCreateRequest,
+    ): AlbumTermDto = artistGenresService.addGenre(artistId, request)
+
+    @PostMapping("/artists/{artistId}/genres/{termId}/visibility")
+    fun updateArtistGenreVisibility(
+        @PathVariable artistId: Long,
+        @PathVariable termId: Long,
+        @RequestBody request: AlbumTermVisibilityRequest,
+    ): AlbumTermDto = artistGenresService.updateVisibility(artistId, termId, request.hidden)
 
     @GetMapping("/tracks/{trackId}")
     fun trackPage(

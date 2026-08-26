@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.music.RediscoveredAlbumResponse
 import dev.marcal.mediapulse.server.repository.MusicQueryRepository
 import dev.marcal.mediapulse.server.service.music.AlbumListsService
 import dev.marcal.mediapulse.server.service.music.AlbumTermsService
+import dev.marcal.mediapulse.server.service.music.ArtistGenresService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -16,7 +17,8 @@ class MusicSummaryControllerTest {
     private val repository = mockk<MusicQueryRepository>(relaxed = true)
     private val albumTermsService = mockk<AlbumTermsService>(relaxed = true)
     private val albumListsService = mockk<AlbumListsService>(relaxed = true)
-    private val controller = MusicSummaryController(repository, albumTermsService, albumListsService)
+    private val controller =
+        MusicSummaryController(repository, albumTermsService, albumListsService, mockk<ArtistGenresService>(relaxed = true))
 
     @Test
     fun `rediscovered albums should delegate with normalized limit`() {

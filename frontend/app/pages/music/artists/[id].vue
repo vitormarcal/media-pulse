@@ -15,11 +15,20 @@
         :title="data.title"
         :cover-url="data.coverUrl"
         :hero-meta="data.heroMeta"
+        :profile="data.profile"
+        :genres="data.genres"
       />
 
       <ArtistContextPanel :stats="data.stats" :recent-days="data.recentDays" />
 
-      <ArtistMusicBrainzPanel :artist-id="Number(data.id)" :link="data.musicBrainz" @applied="refresh" />
+      <ArtistMusicBrainzPanel
+        :artist-id="Number(data.id)"
+        :link="data.musicBrainz"
+        :profile="data.profile"
+        @applied="refresh"
+      />
+
+      <ArtistGenresPanel :artist-id="Number(data.id)" :genres="data.genres" @changed="refresh" />
 
       <ArtistMusicBrainzDiscography
         :artist-id="Number(data.id)"
@@ -45,6 +54,7 @@
 import ArtistContextPanel from '~/components/music/ArtistContextPanel.vue'
 import ArtistPageHero from '~/components/music/ArtistPageHero.vue'
 import ArtistTrackList from '~/components/music/ArtistTrackList.vue'
+import ArtistGenresPanel from '~/components/music/ArtistGenresPanel.vue'
 import ArtistMusicBrainzPanel from '~/components/music/ArtistMusicBrainzPanel.vue'
 import ArtistMusicBrainzDiscography from '~/components/music/ArtistMusicBrainzDiscography.vue'
 import MusicLibraryGrid from '~/components/music/MusicLibraryGrid.vue'

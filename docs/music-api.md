@@ -46,6 +46,9 @@ No frontend atual, `/music` concentra tanto o recorte editorial quanto o arquivo
 | `GET /api/music/artists/{artistId}` | `artistId` | `ArtistPageResponse` |
 | `GET /api/music/artists/{artistId}/musicbrainz/candidates` | `artistId` | Candidatos de artista sem alterar dados locais. |
 | `POST /api/music/artists/{artistId}/musicbrainz` | body com `artistMbid` | Confirma ou troca o vínculo do artista. |
+| `POST /api/music/artists/{artistId}/musicbrainz/refresh` | `artistId` | Atualiza individualmente o snapshot MusicBrainz do artista. |
+| `POST /api/music/artists/{artistId}/genres` | body com `name`, `kind=GENRE` | Adiciona um gênero manual ao artista. |
+| `POST /api/music/artists/{artistId}/genres/{termId}/visibility` | body com `hidden` | Oculta ou restaura o gênero naquele artista. |
 | `GET /api/music/tracks/{trackId}` | `trackId` | `TrackPageResponse` |
 | `GET /api/music/terms/{kind}/{slug}` | `kind=GENRE|TAG`, `slug` | `AlbumTermDetailsResponse` |
 | `GET /api/music/terms/search` | `q`, `kind=GENRE|TAG`, `limit=10` | `AlbumTermSuggestionDto[]` |
@@ -153,6 +156,10 @@ Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, últ
 - `GET /api/music/artists/{artistId}/musicbrainz/discography` é uma prévia read-only que classifica release groups
 - `POST /api/music/artists/{artistId}/musicbrainz/discography/import` aceita até 50 MBIDs pertencentes ao artista e cria somente itens classificados como ausentes
 - possíveis correspondências locais nunca são mescladas automaticamente durante a importação de discografia
+- confirmar ou trocar o vínculo de um artista importa automaticamente tipo, país/áreas, período, desambiguação, aliases, gêneros e links curados do MusicBrainz
+- o snapshot de identidade do artista é somente leitura e pode ser atualizado individualmente; a página nunca consulta o provedor durante leitura
+- aliases e links são substituídos pelo snapshot mais recente; gêneros são cumulativos e preservam inclusões manuais e preferências de ocultação
+- links externos de artista são limitados a site oficial, Wikipedia, Discogs e Bandcamp, com preferência por Wikipedia em português e depois inglês
 
 ## Non-goals
 

@@ -16,6 +16,36 @@ data class ArtistPageResponse(
     val topTracks: List<ArtistTrackRow>,
     val playsByDay: List<PlaysByDayRow>,
     val musicBrainz: MusicBrainzLinkDto? = null,
+    val profile: ArtistMusicBrainzProfileDto? = null,
+    val genres: List<AlbumTermDto> = emptyList(),
+)
+
+data class ArtistMusicBrainzProfileDto(
+    val type: String?,
+    val countryCode: String?,
+    val areaName: String?,
+    val beginAreaName: String?,
+    val lifeSpanBegin: String?,
+    val lifeSpanEnd: String?,
+    val lifeSpanEnded: Boolean,
+    val disambiguation: String?,
+    val aliases: List<ArtistAliasDto>,
+    val links: List<ArtistExternalLinkDto>,
+    val syncedAt: Instant?,
+    val syncError: String?,
+)
+
+data class ArtistAliasDto(
+    val name: String,
+    val locale: String?,
+    val sortName: String?,
+    val type: String?,
+    val primary: Boolean,
+)
+
+data class ArtistExternalLinkDto(
+    val type: String,
+    val url: String,
 )
 
 data class ArtistAlbumRow(

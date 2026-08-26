@@ -807,5 +807,7 @@ export function buildArtistPageData(artist: ArtistPageResponse): ArtistPageData 
       plays: day.plays,
     })),
     musicBrainz: artist.musicBrainz,
+    profile: artist.profile,
+    genres: artist.genres,
   }
 }

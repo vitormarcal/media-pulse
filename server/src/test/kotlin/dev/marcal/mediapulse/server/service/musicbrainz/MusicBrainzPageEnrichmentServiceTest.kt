@@ -1,18 +1,26 @@
 package dev.marcal.mediapulse.server.service.musicbrainz
 
 import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzApiClient
+import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArea
+import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistAlias
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistCandidate
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistCredit
+import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistGenre
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistRef
+import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbLifeSpan
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbReleaseGroupCandidate
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbReleaseGroupResponse
+import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbUrlRelation
+import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbUrlResource
 import dev.marcal.mediapulse.server.model.music.Album
 import dev.marcal.mediapulse.server.model.music.AlbumMusicBrainzReleaseId
 import dev.marcal.mediapulse.server.model.music.Artist
+import dev.marcal.mediapulse.server.repository.ArtistProfileRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumMusicBrainzReleaseIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import dev.marcal.mediapulse.server.repository.crud.ArtistRepository
 import dev.marcal.mediapulse.server.service.music.AlbumTermsService
+import dev.marcal.mediapulse.server.service.music.ArtistGenresService
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
@@ -30,7 +38,9 @@ class MusicBrainzPageEnrichmentServiceTest {
     private val artists = mockk<ArtistRepository>()
     private val releaseIds = mockk<AlbumMusicBrainzReleaseIdRepository>()
     private val terms = mockk<AlbumTermsService>()
-    private val service = MusicBrainzPageEnrichmentService(client, albums, artists, releaseIds, terms)
+    private val profiles = mockk<ArtistProfileRepository>(relaxed = true)
+    private val artistGenres = mockk<ArtistGenresService>(relaxed = true)
+    private val service = MusicBrainzPageEnrichmentService(client, albums, artists, releaseIds, terms, profiles, artistGenres)
     private val album = Album(id = 10, artistId = 20, title = "Album", titleKey = "album", fingerprint = "album:20")
     private val artist = Artist(id = 20, name = "Artist", fingerprint = "artist", musicbrainzArtistId = "artist-1")
     private val candidate =
@@ -92,13 +102,47 @@ class MusicBrainzPageEnrichmentServiceTest {
         }
 
     @Test
-    fun `reapplying the same artist link is idempotent`() {
-        every { artists.findById(20) } returns Optional.of(artist)
+    fun `reapplying the same artist link refreshes profile without changing identity`() =
+        runBlocking {
+            every { artists.findById(20) } returns Optional.of(artist)
+            every { artists.save(any()) } answers { firstArg() }
+            coEvery { client.getArtist("artist-1") } returns MbArtistCandidate("artist-1", "Artist")
 
-        service.applyArtist(20, "artist-1")
+            service.applyArtist(20, "artist-1")
 
-        verify(exactly = 0) { artists.save(any()) }
-    }
+            verify(exactly = 1) { artists.save(match { it.musicbrainzArtistId == "artist-1" && it.musicbrainzSyncedAt != null }) }
+        }
+
+    @Test
+    fun `artist enrichment stores identity aliases curated links and cumulative genres`() =
+        runBlocking {
+            every { artists.findById(20) } returns Optional.of(artist)
+            every { artists.save(any()) } answers { firstArg() }
+            coEvery { client.getArtist("artist-1") } returns
+                MbArtistCandidate(
+                    id = "artist-1",
+                    name = "Artist",
+                    type = "Group",
+                    country = "GB",
+                    area = MbArea("Oxford"),
+                    beginArea = MbArea("Abingdon"),
+                    lifeSpan = MbLifeSpan("1985", null, false),
+                    aliases = listOf(MbArtistAlias("On a Friday"), MbArtistAlias("Artist")),
+                    genres = listOf(MbArtistGenre("alternative rock", 8)),
+                    relations =
+                        listOf(
+                            MbUrlRelation("wikipedia", MbUrlResource("https://pt.wikipedia.org/wiki/Artist")),
+                            MbUrlRelation("social network", MbUrlResource("https://example.test/ignored")),
+                        ),
+                )
+
+            service.refreshArtist(20)
+
+            verify { artists.save(match { it.artistType == "Group" && it.areaName == "Oxford" && it.musicbrainzSyncedAt != null }) }
+            verify { profiles.replaceAliases(20, match { it.map { alias -> alias.name } == listOf("On a Friday") }) }
+            verify { profiles.replaceLinks(20, mapOf("WIKIPEDIA" to "https://pt.wikipedia.org/wiki/Artist")) }
+            verify { artistGenres.addMusicBrainzGenres(20, listOf("alternative rock")) }
+        }
 
     @Test
     fun `creating an artist reuses canonical name match and stores identity`() =
@@ -108,13 +152,16 @@ class MusicBrainzPageEnrichmentServiceTest {
             every { artists.findByMusicbrainzArtistId("artist-1") } returns null
             every { artists.findByFingerprint(any()) } returns artistWithoutMbid
             every { artists.findById(20) } returns Optional.of(artistWithoutMbid)
-            every { artists.save(any()) } answers { firstArg() }
+            every { artists.save(any()) } answers {
+                val saved = firstArg<Artist>()
+                if (saved.musicbrainzArtistId != null) artistWithoutMbid.copy(musicbrainzArtistId = saved.musicbrainzArtistId) else saved
+            }
 
             val result = service.createArtist("artist-1")
 
             assertEquals(20, result.artistId)
             assertEquals(false, result.created)
-            verify(exactly = 1) { artists.save(match { it.musicbrainzArtistId == "artist-1" }) }
+            verify(atLeast = 1) { artists.save(match { it.musicbrainzArtistId == "artist-1" }) }
         }
 
     @Test

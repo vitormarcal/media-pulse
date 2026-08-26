@@ -15,6 +15,7 @@ import dev.marcal.mediapulse.server.api.music.ArtistAlbumRow
 import dev.marcal.mediapulse.server.api.music.ArtistCoverageResponse
 import dev.marcal.mediapulse.server.api.music.ArtistLibraryPageResponse
 import dev.marcal.mediapulse.server.api.music.ArtistLibraryRow
+import dev.marcal.mediapulse.server.api.music.ArtistMusicBrainzProfileDto
 import dev.marcal.mediapulse.server.api.music.ArtistPageResponse
 import dev.marcal.mediapulse.server.api.music.ArtistTrackRow
 import dev.marcal.mediapulse.server.api.music.IdName
@@ -63,6 +64,7 @@ class MusicQueryRepository(
     private val mediaCommentQueryRepository: MediaCommentQueryRepository,
     private val mediaRatingQueryRepository: MediaRatingQueryRepository,
     private val albumRepository: AlbumRepository,
+    private val artistProfileRepository: ArtistProfileRepository,
 ) {
     private companion object {
         private const val REDISCOVERED_RECENT_WINDOW_DAYS = 30L
@@ -1399,6 +1401,27 @@ class MusicQueryRepository(
                 (summaryRow[8] as String?)?.let {
                     MusicBrainzLinkDto(it, "ARTIST")
                 },
+            profile = artistProfile(artistId),
+            genres = artistProfileRepository.genres(artistId),
+        )
+    }
+
+    private fun artistProfile(artistId: Long): ArtistMusicBrainzProfileDto? {
+        val artist = entityManager.find(dev.marcal.mediapulse.server.model.music.Artist::class.java, artistId)
+        if (artist.musicbrainzSyncedAt == null && artist.musicbrainzSyncError == null) return null
+        return ArtistMusicBrainzProfileDto(
+            type = artist.artistType,
+            countryCode = artist.countryCode,
+            areaName = artist.areaName,
+            beginAreaName = artist.beginAreaName,
+            lifeSpanBegin = artist.lifeSpanBegin,
+            lifeSpanEnd = artist.lifeSpanEnd,
+            lifeSpanEnded = artist.lifeSpanEnded,
+            disambiguation = artist.disambiguation,
+            aliases = artistProfileRepository.aliases(artistId),
+            links = artistProfileRepository.links(artistId),
+            syncedAt = artist.musicbrainzSyncedAt,
+            syncError = artist.musicbrainzSyncError,
         )
     }
 
