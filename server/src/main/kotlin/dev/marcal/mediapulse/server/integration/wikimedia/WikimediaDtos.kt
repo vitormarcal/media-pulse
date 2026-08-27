@@ -3,12 +3,7 @@ package dev.marcal.mediapulse.server.integration.wikimedia
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class WikidataEntityResponse(
-    val entities: Map<String, WikidataEntity> = emptyMap(),
-)
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class WikidataEntity(
+data class WikidataClaimsResponse(
     val claims: Map<String, List<WikidataClaim>> = emptyMap(),
 )
 

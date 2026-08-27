@@ -30,9 +30,9 @@ class WikimediaApiClient(
         val uri =
             UriComponentsBuilder
                 .fromUriString("https://www.wikidata.org/w/api.php")
-                .queryParam("action", "wbgetentities")
-                .queryParam("ids", wikidataId)
-                .queryParam("props", "claims")
+                .queryParam("action", "wbgetclaims")
+                .queryParam("entity", wikidataId)
+                .queryParam("property", "P18")
                 .queryParam("format", "json")
                 .build()
                 .toUriString()
@@ -41,7 +41,7 @@ class WikimediaApiClient(
             .uri(uri)
             .exchangeToMono { response ->
                 if (response.statusCode().is2xxSuccessful) {
-                    response.bodyToMono<WikidataEntityResponse>()
+                    response.bodyToMono<WikidataClaimsResponse>()
                 } else {
                     response.bodyToMono<String>().defaultIfEmpty("").flatMap { body ->
                         val requestId = response.headers().header("x-request-id").firstOrNull()
@@ -67,9 +67,7 @@ class WikimediaApiClient(
                     }
                 }
             }.awaitSingle()
-            .entities[wikidataId]
-            ?.claims
-            ?.get("P18")
+            .claims["P18"]
             ?.firstOrNull()
             ?.mainsnak
             ?.datavalue

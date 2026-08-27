@@ -22,15 +22,15 @@ class WikimediaApiClientTest {
             val client =
                 clientReturning(
                     HttpStatus.OK,
-                    """{"entities":{"Q2831":{"claims":{"P18":[{"mainsnak":{"datavalue":{"value":"Michael Jackson 1984.jpg"}}}]}}}}""",
+                    """{"claims":{"P18":[{"mainsnak":{"datavalue":{"value":"Michael Jackson 1984.jpg"}}}]}}""",
                     onRequest = { request = it },
                 )
 
             assertEquals("Michael Jackson 1984.jpg", client.primaryImageFile("Q2831"))
             assertEquals("/w/api.php", request?.url()?.path)
-            assertEquals("wbgetentities", request?.url()?.query?.queryValue("action"))
-            assertEquals("Q2831", request?.url()?.query?.queryValue("ids"))
-            assertEquals("claims", request?.url()?.query?.queryValue("props"))
+            assertEquals("wbgetclaims", request?.url()?.query?.queryValue("action"))
+            assertEquals("Q2831", request?.url()?.query?.queryValue("entity"))
+            assertEquals("P18", request?.url()?.query?.queryValue("property"))
             assertEquals("json", request?.url()?.query?.queryValue("format"))
         }
 
@@ -59,7 +59,7 @@ class WikimediaApiClientTest {
                             ClientResponse
                                 .create(HttpStatus.OK)
                                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                                .body("""{"entities":{"Q2831":{"claims":{}}}}""")
+                                .body("""{"claims":{}}""")
                                 .build(),
                         )
                     }
