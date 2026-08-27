@@ -16,6 +16,8 @@ Metadados ausentes não são inventados. As imagens continuam sujeitas à licen�
 
 A etapa de imagem é independente do snapshot MusicBrainz. Ausência de vínculo, ausência de `P18`, indisponibilidade do provedor, MIME não suportado ou conteúdo inválido registram uma tentativa sem impedir os demais dados do artista.
 
+Respostas HTTP inválidas do Wikidata são registradas com URI, status, `Content-Type`, `x-request-id` e até 2.000 caracteres do corpo normalizado. Esse diagnóstico fica localizado no cliente Wikimedia; a orquestração registra apenas um resumo e continua preservando os demais dados do artista.
+
 Para validar:
 
 1. vincule ou atualize individualmente um artista sem foto;

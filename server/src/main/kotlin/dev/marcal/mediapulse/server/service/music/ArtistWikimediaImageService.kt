@@ -2,11 +2,13 @@ package dev.marcal.mediapulse.server.service.music
 
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbUrlRelation
 import dev.marcal.mediapulse.server.integration.wikimedia.WikimediaApiClient
+import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.repository.crud.ArtistRepository
 import dev.marcal.mediapulse.server.service.image.ImageStorageService
 import kotlinx.coroutines.CancellationException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import java.time.Instant
 
 @Service
@@ -66,16 +68,31 @@ class ArtistWikimediaImageService(
             )
         } catch (ex: CancellationException) {
             throw ex
+        } catch (ex: WebClientResponseException) {
+            logger.warn(
+                "Failed to enrich artist image from Wikimedia. artistId={} wikidataId={} status={}",
+                artistId,
+                wikidataId,
+                ex.statusCode.value(),
+            )
+            recordFailure(artist, wikidataId)
         } catch (ex: Exception) {
             logger.warn("Failed to enrich artist image from Wikimedia. artistId={} wikidataId={}", artistId, wikidataId, ex)
-            artists.save(
-                artist.copy(
-                    wikidataEntityId = wikidataId,
-                    wikimediaAttemptedAt = Instant.now(),
-                    wikimediaSyncError = "Não foi possível obter a foto no Wikimedia Commons",
-                ),
-            )
+            recordFailure(artist, wikidataId)
         }
+    }
+
+    private fun recordFailure(
+        artist: Artist,
+        wikidataId: String,
+    ) {
+        artists.save(
+            artist.copy(
+                wikidataEntityId = wikidataId,
+                wikimediaAttemptedAt = Instant.now(),
+                wikimediaSyncError = "Não foi possível obter a foto no Wikimedia Commons",
+            ),
+        )
     }
 
     private fun wikidataId(relation: MbUrlRelation): String? {
