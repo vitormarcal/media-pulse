@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class WikimediaApiClientTest {
     @Test
@@ -68,6 +69,41 @@ class WikimediaApiClientTest {
             client.primaryImageFile("Q2831")
 
             assertNull(request?.headers()?.getFirst(HttpHeaders.AUTHORIZATION))
+        }
+
+    @Test
+    fun `downloads an already encoded Wikimedia URL without encoding it again`() =
+        runBlocking {
+            var request: ClientRequest? = null
+            val webClient =
+                WebClient
+                    .builder()
+                    .exchangeFunction {
+                        request = it
+                        Mono.just(
+                            ClientResponse
+                                .create(HttpStatus.OK)
+                                .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_JPEG_VALUE)
+                                .body(byteArrayOf(1, 2, 3).toString(Charsets.ISO_8859_1))
+                                .build(),
+                        )
+                    }.build()
+            val metadata =
+                WikimediaImageMetadata(
+                    fileName = "Portrait (contrast).jpg",
+                    downloadUrl = "https://upload.wikimedia.org/Portrait_%28contrast%29.jpg",
+                    originalUrl = "https://upload.wikimedia.org/Portrait_%28contrast%29.jpg",
+                    descriptionUrl = null,
+                    mimeType = MediaType.IMAGE_JPEG_VALUE,
+                    author = null,
+                    license = null,
+                    licenseUrl = null,
+                )
+
+            val image = WikimediaApiClient(webClient).downloadImage(metadata)
+
+            assertEquals("/Portrait_%28contrast%29.jpg", request?.url()?.rawPath)
+            assertTrue(image.bytes.isNotEmpty())
         }
 
     private fun clientReturning(

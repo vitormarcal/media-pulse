@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.springframework.web.reactive.function.client.bodyToMono
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Mono
+import java.net.URI
 import java.nio.charset.StandardCharsets
 
 @Component
@@ -116,13 +117,14 @@ class WikimediaApiClient(
     }
 
     suspend fun downloadImage(metadata: WikimediaImageMetadata): ImageContent {
-        require(java.net.URI(metadata.downloadUrl).host == "upload.wikimedia.org") { "Unexpected Wikimedia image host" }
+        val downloadUri = URI.create(metadata.downloadUrl)
+        require(downloadUri.host == "upload.wikimedia.org") { "Unexpected Wikimedia image host" }
         val expectedType = metadata.mimeType?.substringBefore(';')?.lowercase()
         require(expectedType == null || expectedType in supportedTypes) { "Unsupported Wikimedia image type: $expectedType" }
         val response =
             client
                 .get()
-                .uri(metadata.downloadUrl)
+                .uri(downloadUri)
                 .accept(MediaType.IMAGE_JPEG, MediaType.IMAGE_PNG, MediaType.valueOf("image/webp"))
                 .exchangeToMono { response ->
                     if (!response.statusCode().is2xxSuccessful) error("Wikimedia image download failed: ${response.statusCode()}")

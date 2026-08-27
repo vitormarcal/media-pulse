@@ -20,6 +20,8 @@ Respostas HTTP inválidas do Wikidata são registradas com URI, status, `Content
 
 Durante a validação em container, `Special:EntityData/{id}.json` devolveu `400` em HTML exclusivamente para a requisição criada pelo WebClient, embora o mesmo endereço respondesse `200` via `curl` no host e no namespace de rede do container. A troca para `/w/api.php` revelou um `401` com `Jwt issuer is not configured`: o builder HTTP compartilhado havia herdado o token do TMDB/Hardcover e o enviava ao Wikidata. Os clientes agora clonam o builder antes de adicionar configuração própria, e o cliente Wikimedia remove defensivamente qualquer `Authorization`. A integração usa `wbgetclaims&property=P18`, evitando transferir ou desserializar declarações não relacionadas cujos valores podem ser objetos em vez de texto.
 
+URLs de download devolvidas por `imageinfo` já estão percent-encoded. Elas são entregues ao WebClient como `URI`, preservando sequências como `%28` e evitando dupla codificação (`%2528`), que faria o servidor de imagens responder `404`.
+
 Para validar:
 
 1. vincule ou atualize individualmente um artista sem foto;
