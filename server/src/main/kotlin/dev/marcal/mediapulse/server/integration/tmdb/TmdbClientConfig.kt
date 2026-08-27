@@ -25,6 +25,7 @@ class TmdbClientConfig(
 
         val webClientBuilder =
             builder
+                .clone()
                 .baseUrl(props.apiBaseUrl)
                 .exchangeStrategies(strategies)
 
@@ -47,6 +48,7 @@ class TmdbClientConfig(
                 .build()
 
         return builder
+            .clone()
             .exchangeStrategies(strategies)
             .build()
     }

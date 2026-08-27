@@ -13,10 +13,10 @@ class IgdbClientConfig(
     @Bean
     fun igdbWebClient(
         @Qualifier("remoteWebClientBuilder") builder: WebClient.Builder,
-    ): WebClient = builder.baseUrl(props.apiBaseUrl).build()
+    ): WebClient = builder.clone().baseUrl(props.apiBaseUrl).build()
 
     @Bean
     fun igdbOAuthWebClient(
         @Qualifier("remoteWebClientBuilder") builder: WebClient.Builder,
-    ): WebClient = builder.baseUrl(props.oauthBaseUrl).build()
+    ): WebClient = builder.clone().baseUrl(props.oauthBaseUrl).build()
 }

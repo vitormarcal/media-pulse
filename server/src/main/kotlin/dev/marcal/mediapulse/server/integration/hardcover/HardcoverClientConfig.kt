@@ -25,6 +25,7 @@ class HardcoverClientConfig(
 
         val clientBuilder =
             builder
+                .clone()
                 .baseUrl(props.apiBaseUrl)
                 .exchangeStrategies(strategies)
 
@@ -47,6 +48,7 @@ class HardcoverClientConfig(
                 .build()
 
         return builder
+            .clone()
             .exchangeStrategies(strategies)
             .build()
     }

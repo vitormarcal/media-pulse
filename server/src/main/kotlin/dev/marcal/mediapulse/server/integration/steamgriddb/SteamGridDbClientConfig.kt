@@ -13,5 +13,5 @@ class SteamGridDbClientConfig(
     @Bean
     fun steamGridDbWebClient(
         @Qualifier("remoteWebClientBuilder") builder: WebClient.Builder,
-    ): WebClient = builder.baseUrl(props.apiBaseUrl).build()
+    ): WebClient = builder.clone().baseUrl(props.apiBaseUrl).build()
 }

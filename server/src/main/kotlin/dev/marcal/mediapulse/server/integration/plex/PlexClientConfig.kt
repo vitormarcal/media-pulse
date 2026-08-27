@@ -17,6 +17,7 @@ class PlexClientConfig(
         @Qualifier("plexWebClientBuilder") builder: WebClient.Builder,
     ): WebClient =
         builder
+            .clone()
             .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
             .defaultHeader("X-Plex-Product", "media-pulse")
             .defaultHeader("X-Plex-Version", backendVersion.value)

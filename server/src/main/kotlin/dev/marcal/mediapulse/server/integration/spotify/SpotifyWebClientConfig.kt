@@ -16,6 +16,7 @@ class SpotifyWebClientConfig(
         @Qualifier("remoteWebClientBuilder") builder: WebClient.Builder,
     ): WebClient =
         builder
+            .clone()
             .baseUrl(props.apiBaseUrl)
             .build()
 
@@ -24,6 +25,7 @@ class SpotifyWebClientConfig(
         @Qualifier("remoteWebClientBuilder") builder: WebClient.Builder,
     ): WebClient =
         builder
+            .clone()
             .baseUrl(props.accountsBaseUrl)
             .build()
 
@@ -39,6 +41,7 @@ class SpotifyWebClientConfig(
                 .build()
 
         return builder
+            .clone()
             .exchangeStrategies(strategies)
             .build()
     }

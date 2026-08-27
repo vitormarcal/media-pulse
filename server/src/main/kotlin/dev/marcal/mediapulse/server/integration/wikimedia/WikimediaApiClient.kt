@@ -27,7 +27,15 @@ class WikimediaApiClient(
     }
 
     suspend fun primaryImageFile(wikidataId: String): String? {
-        val uri = "https://www.wikidata.org/wiki/Special:EntityData/$wikidataId.json"
+        val uri =
+            UriComponentsBuilder
+                .fromUriString("https://www.wikidata.org/w/api.php")
+                .queryParam("action", "wbgetentities")
+                .queryParam("ids", wikidataId)
+                .queryParam("props", "claims")
+                .queryParam("format", "json")
+                .build()
+                .toUriString()
         return client
             .get()
             .uri(uri)

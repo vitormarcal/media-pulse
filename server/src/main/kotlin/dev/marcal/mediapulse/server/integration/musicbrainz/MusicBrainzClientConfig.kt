@@ -11,6 +11,7 @@ class MusicBrainzClientConfig {
     @Bean
     fun musicBrainzWebClient(builder: WebClient.Builder): WebClient =
         builder
+            .clone()
             .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
             .build()
 }
