@@ -13,6 +13,30 @@
     </button>
     <p v-if="profile?.syncedAt" class="muted">Atualizado em {{ new Date(profile.syncedAt).toLocaleString('pt-BR') }}</p>
     <p v-if="profile?.syncError" class="error-copy">{{ profile.syncError }}</p>
+    <div v-if="profile?.image" class="image-source">
+      <p class="source-label">Foto do artista</p>
+      <p v-if="profile.image.localUrl" class="muted">
+        Wikimedia Commons<span v-if="profile.image.author"> · {{ profile.image.author }}</span
+        ><span v-if="profile.image.license"> · {{ profile.image.license }}</span>
+      </p>
+      <a
+        v-if="profile.image.descriptionUrl"
+        :href="profile.image.descriptionUrl"
+        target="_blank"
+        rel="noreferrer"
+        class="source-link"
+        >Ver arquivo original</a
+      >
+      <a
+        v-if="profile.image.licenseUrl"
+        :href="profile.image.licenseUrl"
+        target="_blank"
+        rel="noreferrer"
+        class="source-link"
+        >Ver licença</a
+      >
+      <p v-if="profile.image.syncError" class="image-note">{{ profile.image.syncError }}</p>
+    </div>
     <p v-if="message" class="muted">{{ message }}</p>
     <div v-if="candidates.length" class="candidates">
       <button
@@ -115,6 +139,28 @@ p {
 }
 .error-copy {
   color: #9e0a0a;
+}
+.image-source {
+  display: grid;
+  gap: 6px;
+  padding-top: 6px;
+}
+.source-label {
+  color: var(--base-color-text-primary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.source-link {
+  width: fit-content;
+  color: var(--base-color-text-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.image-note {
+  color: var(--base-color-text-secondary);
+  font-size: 0.84rem;
 }
 button {
   width: fit-content;

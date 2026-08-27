@@ -783,7 +783,7 @@ export function buildArtistPageData(artist: ArtistPageResponse): ArtistPageData 
   return {
     id: String(artist.artistId),
     title: artist.artistName,
-    coverUrl: heroCover,
+    coverUrl: artist.profile?.image?.localUrl ?? heroCover,
     heroMeta: [
       `${formatShortNumber(artist.libraryAlbumsCount)} álbuns na library`,
       `${formatShortNumber(artist.libraryTracksCount)} faixas na library`,

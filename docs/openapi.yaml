@@ -3440,10 +3440,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MediaCommentDto"
-        rating:
-          type: number
-          format: double
-          nullable: true
         authors:
           type: array
           items:
@@ -4264,7 +4260,25 @@ components:
               url: { type: string, format: uri }
         syncedAt: { type: string, format: date-time, nullable: true }
         syncError: { type: string, nullable: true }
+        image:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ArtistWikimediaImage"
       required: [lifeSpanEnded, aliases, links]
+    ArtistWikimediaImage:
+      type: object
+      properties:
+        localUrl: { type: string, nullable: true }
+        wikidataEntityId: { type: string, nullable: true }
+        fileName: { type: string, nullable: true }
+        originalUrl: { type: string, format: uri, nullable: true }
+        descriptionUrl: { type: string, format: uri, nullable: true }
+        author: { type: string, nullable: true }
+        license: { type: string, nullable: true }
+        licenseUrl: { type: string, format: uri, nullable: true }
+        importedAt: { type: string, format: date-time, nullable: true }
+        attemptedAt: { type: string, format: date-time, nullable: true }
+        syncError: { type: string, nullable: true }
     ArtistAlbumRow:
       type: object
       properties:

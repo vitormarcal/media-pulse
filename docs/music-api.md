@@ -160,6 +160,9 @@ Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, últ
 - o snapshot de identidade do artista é somente leitura e pode ser atualizado individualmente; a página nunca consulta o provedor durante leitura
 - aliases e links são substituídos pelo snapshot mais recente; gêneros são cumulativos e preservam inclusões manuais e preferências de ocultação
 - links externos de artista são limitados a site oficial, Wikipedia, Discogs e Bandcamp, com preferência por Wikipedia em português e depois inglês
+- artistas sem foto tentam resolver automaticamente MusicBrainz → Wikidata → imagem principal `P18` → Wikimedia Commons durante vínculo ou atualização individual
+- a foto é validada, baixada sob `/covers/wikimedia/artists/{artistId}/...` e nunca substituída automaticamente; a capa de álbum permanece como fallback
+- falhas da imagem são persistidas separadamente e não impedem a atualização dos demais dados MusicBrainz; autoria, licença e URLs disponíveis ficam no snapshot local
 
 ## Non-goals
 

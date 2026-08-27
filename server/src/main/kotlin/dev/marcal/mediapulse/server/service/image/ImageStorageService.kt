@@ -76,6 +76,28 @@ class ImageStorageService(
         return "/covers/${provider.lowercase()}/$artistId/$fileName"
     }
 
+    fun saveImageForArtist(
+        image: ImageContent,
+        provider: String,
+        artistId: Long,
+        fileNameHint: String? = null,
+    ): String {
+        val extension = extensionFromContentType(image.contentType)
+        val artistDir = baseDir.resolve(provider.lowercase()).resolve("artists").resolve(artistId.toString())
+        Files.createDirectories(artistDir)
+        val safeHint = fileNameHint?.let { SlugTextUtil.normalize(it) }
+        val fileName = "${safeHint?.takeIf(String::isNotBlank) ?: artistId}$extension"
+        val target = artistDir.resolve(fileName)
+        if (!Files.exists(target)) {
+            try {
+                Files.write(target, image.bytes, StandardOpenOption.CREATE_NEW)
+            } catch (_: FileAlreadyExistsException) {
+                logger.debug("Artist image already exists. target={}", target)
+            }
+        }
+        return "/covers/${provider.lowercase()}/artists/$artistId/$fileName"
+    }
+
     fun saveImageForBook(
         image: ImageContent,
         provider: String, // "HARDCOVER"

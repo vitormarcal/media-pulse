@@ -18,6 +18,7 @@ import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import dev.marcal.mediapulse.server.repository.crud.ArtistRepository
 import dev.marcal.mediapulse.server.service.music.AlbumTermsService
 import dev.marcal.mediapulse.server.service.music.ArtistGenresService
+import dev.marcal.mediapulse.server.service.music.ArtistWikimediaImageService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.TitleKeyUtil
 import org.springframework.dao.DataIntegrityViolationException
@@ -34,6 +35,7 @@ class MusicBrainzPageEnrichmentService(
     private val albumTermsService: AlbumTermsService,
     private val artistProfiles: ArtistProfileRepository,
     private val artistGenresService: ArtistGenresService,
+    private val artistImageService: ArtistWikimediaImageService,
 ) {
     suspend fun searchNewArtist(query: String): List<MusicBrainzArtistCandidateDto> {
         val normalized = query.trim()
@@ -144,7 +146,7 @@ class MusicBrainzPageEnrichmentService(
         return MusicBrainzEnrichmentResult(artistId = artistId, artistMbid = mbid)
     }
 
-    private fun enrichArtist(
+    private suspend fun enrichArtist(
         artistId: Long,
         remote: dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistCandidate,
     ) {
@@ -180,6 +182,7 @@ class MusicBrainzPageEnrichmentService(
                 .distinct()
                 .take(20),
         )
+        artistImageService.ensureImage(artistId, remote.relations)
     }
 
     private fun curatedLinks(relations: List<dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbUrlRelation>): Map<String, String> {

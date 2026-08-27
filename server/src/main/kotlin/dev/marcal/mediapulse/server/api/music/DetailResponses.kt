@@ -33,6 +33,21 @@ data class ArtistMusicBrainzProfileDto(
     val links: List<ArtistExternalLinkDto>,
     val syncedAt: Instant?,
     val syncError: String?,
+    val image: ArtistWikimediaImageDto?,
+)
+
+data class ArtistWikimediaImageDto(
+    val localUrl: String?,
+    val wikidataEntityId: String?,
+    val fileName: String?,
+    val originalUrl: String?,
+    val descriptionUrl: String?,
+    val author: String?,
+    val license: String?,
+    val licenseUrl: String?,
+    val importedAt: Instant?,
+    val attemptedAt: Instant?,
+    val syncError: String?,
 )
 
 data class ArtistAliasDto(

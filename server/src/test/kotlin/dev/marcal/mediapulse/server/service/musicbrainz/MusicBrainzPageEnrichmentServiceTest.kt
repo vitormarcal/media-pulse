@@ -21,6 +21,7 @@ import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import dev.marcal.mediapulse.server.repository.crud.ArtistRepository
 import dev.marcal.mediapulse.server.service.music.AlbumTermsService
 import dev.marcal.mediapulse.server.service.music.ArtistGenresService
+import dev.marcal.mediapulse.server.service.music.ArtistWikimediaImageService
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
@@ -40,7 +41,8 @@ class MusicBrainzPageEnrichmentServiceTest {
     private val terms = mockk<AlbumTermsService>()
     private val profiles = mockk<ArtistProfileRepository>(relaxed = true)
     private val artistGenres = mockk<ArtistGenresService>(relaxed = true)
-    private val service = MusicBrainzPageEnrichmentService(client, albums, artists, releaseIds, terms, profiles, artistGenres)
+    private val artistImages = mockk<ArtistWikimediaImageService>(relaxed = true)
+    private val service = MusicBrainzPageEnrichmentService(client, albums, artists, releaseIds, terms, profiles, artistGenres, artistImages)
     private val album = Album(id = 10, artistId = 20, title = "Album", titleKey = "album", fingerprint = "album:20")
     private val artist = Artist(id = 20, name = "Artist", fingerprint = "artist", musicbrainzArtistId = "artist-1")
     private val candidate =

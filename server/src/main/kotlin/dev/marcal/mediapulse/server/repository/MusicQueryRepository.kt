@@ -18,6 +18,7 @@ import dev.marcal.mediapulse.server.api.music.ArtistLibraryRow
 import dev.marcal.mediapulse.server.api.music.ArtistMusicBrainzProfileDto
 import dev.marcal.mediapulse.server.api.music.ArtistPageResponse
 import dev.marcal.mediapulse.server.api.music.ArtistTrackRow
+import dev.marcal.mediapulse.server.api.music.ArtistWikimediaImageDto
 import dev.marcal.mediapulse.server.api.music.IdName
 import dev.marcal.mediapulse.server.api.music.MusicBrainzLinkDto
 import dev.marcal.mediapulse.server.api.music.MusicByYearResponse
@@ -1422,6 +1423,22 @@ class MusicQueryRepository(
             links = artistProfileRepository.links(artistId),
             syncedAt = artist.musicbrainzSyncedAt,
             syncError = artist.musicbrainzSyncError,
+            image =
+                ArtistWikimediaImageDto(
+                    localUrl = artist.profileImageUrl,
+                    wikidataEntityId = artist.wikidataEntityId,
+                    fileName = artist.wikimediaFileName,
+                    originalUrl = artist.wikimediaOriginalUrl,
+                    descriptionUrl = artist.wikimediaDescriptionUrl,
+                    author = artist.wikimediaAuthor,
+                    license = artist.wikimediaLicense,
+                    licenseUrl = artist.wikimediaLicenseUrl,
+                    importedAt = artist.wikimediaImportedAt,
+                    attemptedAt = artist.wikimediaAttemptedAt,
+                    syncError = artist.wikimediaSyncError,
+                ).takeIf {
+                    it.localUrl != null || it.attemptedAt != null
+                },
         )
     }
 

@@ -181,6 +181,19 @@ export interface ArtistMusicBrainzProfile {
   links: Array<{ type: 'OFFICIAL' | 'WIKIPEDIA' | 'DISCOGS' | 'BANDCAMP'; url: string }>
   syncedAt: string | null
   syncError: string | null
+  image: {
+    localUrl: string | null
+    wikidataEntityId: string | null
+    fileName: string | null
+    originalUrl: string | null
+    descriptionUrl: string | null
+    author: string | null
+    license: string | null
+    licenseUrl: string | null
+    importedAt: string | null
+    attemptedAt: string | null
+    syncError: string | null
+  } | null
 }
 
 export interface AlbumMergeCandidateResponse {
