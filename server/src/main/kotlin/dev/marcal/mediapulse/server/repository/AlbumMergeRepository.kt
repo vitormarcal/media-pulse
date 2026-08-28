@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.music.AlbumMergeCandidateResponse
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
+import java.sql.Timestamp
 import java.time.Instant
 
 @Repository
@@ -281,7 +282,7 @@ class AlbumMergeRepository(
                         .addValue("trackId", link.trackId)
                         .addValue("discNumber", link.discNumber)
                         .addValue("trackNumber", link.trackNumber)
-                        .addValue("createdAt", link.createdAt)
+                        .addValue("createdAt", Timestamp.from(link.createdAt))
                 }.toTypedArray(),
         )
     }
