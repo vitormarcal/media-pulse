@@ -64,6 +64,10 @@ No frontend atual, `/music` concentra tanto o recorte editorial quanto o arquivo
 | `GET /api/music/admin/album-duplicates/catalog` | `q`, `limit=100` | Catálogo agrupado por artista para mesclagem manual. |
 | `POST /api/music/admin/album-duplicates/preview` | body com `targetAlbumId`, `sourceAlbumIds[]`, `trackOrderFromAlbumId?` | Prévia, posições preservadas, conflitos e avisos da mesclagem definitiva. |
 | `POST /api/music/admin/album-duplicates/merge` | body com principal, fontes e origem de título/capa/ano/avaliação/ordem das faixas | Consolida os álbuns no principal. |
+| `GET /api/music/admin/artist-duplicates` | `limit=50`, `artist?` | Sugere artistas por nome normalizado. |
+| `GET /api/music/admin/artist-duplicates/catalog` | `q`, `limit=100` | Busca artistas para uma seleção manual. |
+| `POST /api/music/admin/artist-duplicates/preview` | body com `targetArtistId` e `sourceArtistIds[]` | Mostra candidatos, totais e avisos antes do merge definitivo. |
+| `POST /api/music/admin/artist-duplicates/merge` | body com principal, fontes, origem de nome/foto/MusicBrainz/avaliação e aliases preservados | Consolida artistas no principal. |
 | `GET /api/music/tops/artists` | `start`, `end`, `limit=20` | lista de artistas |
 | `GET /api/music/tops/albums` | `start`, `end`, `limit=20` | lista de álbuns |
 | `GET /api/music/tops/tracks` | `start`, `end`, `limit=20` | lista de faixas |
@@ -147,6 +151,11 @@ Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, últ
 - faixas admitem aliases Spotify e MBIDs de `recording` `0..N`, armazenados em `track_spotify_ids` e `track_musicbrainz_recording_ids`; nenhum alias válido deve ser descartado por haver mais de um
 - ao consolidar faixas duplicadas, todos os aliases externos das faixas de origem são transferidos para a faixa vencedora
 - a mesclagem manual de álbuns é definitiva, exige álbuns do mesmo artista e nunca mescla faixas homônimas automaticamente
+- a mesclagem manual de artistas é definitiva; transfere álbuns, faixas e comentários, une gêneros e não mescla álbuns ou faixas automaticamente
+- nome, foto, perfil MusicBrainz e avaliação são escolhidos independentemente; cada nome não canônico, inclusive o nome anterior do artista principal, só vira alias quando explicitamente marcado
+- aliases de nome preservados em mesclagens anteriores sempre acompanham o artista absorvido
+- aliases de nome de artista participam da canonicalização depois dos identificadores externos e do nome canônico
+- identificadores externos divergentes impedem o merge de artistas e devem ser resolvidos antes da confirmação
 - a tracklist escolhida na mesclagem de álbuns tem prioridade; posições completas das demais edições são preservadas quando livres e ficam nulas quando conflitam
 - títulos absorvidos são preservados em `album_title_aliases`; Spotify IDs, releases e release groups MusicBrainz também continuam resolvendo para o álbum principal
 - a canonicalização de álbuns prioriza release group, release e Spotify ID; aliases de título são usados depois dos identificadores externos

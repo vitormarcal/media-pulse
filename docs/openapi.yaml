@@ -1314,6 +1314,63 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AlbumMergeResponse" }
 
+  /api/music/admin/artist-duplicates:
+    get:
+      summary: Suggest duplicate artists by normalized name for owner review
+      tags: [Music]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+        - { name: artist, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DuplicateArtistReviewResponse" }
+  /api/music/admin/artist-duplicates/catalog:
+    get:
+      summary: Search artists for a manual merge
+      tags: [Music]
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 100 } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArtistMergeCatalogResponse" }
+  /api/music/admin/artist-duplicates/preview:
+    post:
+      summary: Preview a definitive artist merge
+      tags: [Music]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArtistMergePreviewRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArtistMergePreviewResponse" }
+  /api/music/admin/artist-duplicates/merge:
+    post:
+      summary: Merge artists into an owner-selected canonical artist
+      tags: [Music]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArtistMergeRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArtistMergeResponse" }
+
   /api/spotify/import:
     post:
       summary: Spotify import
@@ -4677,6 +4734,80 @@ components:
         linkedExternalIdentifiers: { type: integer }
         storedTitleAliases: { type: integer }
       required: [albumId, mergedAlbumIds, movedPlaybacks, migratedTrackLinks, linkedExternalIdentifiers, storedTitleAliases]
+    ArtistMergeCandidateResponse:
+      type: object
+      properties:
+        artistId: { type: integer, format: int64 }
+        name: { type: string }
+        profileImageUrl: { type: string, nullable: true }
+        spotifyId: { type: string, nullable: true }
+        musicBrainzArtistId: { type: string, nullable: true }
+        artistType: { type: string, nullable: true }
+        areaName: { type: string, nullable: true }
+        disambiguation: { type: string, nullable: true }
+        albumCount: { type: integer, format: int64 }
+        trackCount: { type: integer, format: int64 }
+        playbackCount: { type: integer, format: int64 }
+        lastPlayed: { type: string, format: date-time, nullable: true }
+        rating: { type: integer, nullable: true }
+        aliases: { type: array, items: { type: string } }
+      required: [artistId, name, albumCount, trackCount, playbackCount, aliases]
+    DuplicateArtistSuggestionResponse:
+      type: object
+      properties:
+        reason: { type: string }
+        confidence: { type: string, enum: [HIGH, MEDIUM] }
+        suggestedTargetArtistId: { type: integer, format: int64 }
+        candidates: { type: array, items: { $ref: "#/components/schemas/ArtistMergeCandidateResponse" } }
+      required: [reason, confidence, suggestedTargetArtistId, candidates]
+    DuplicateArtistReviewResponse:
+      type: object
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/DuplicateArtistSuggestionResponse" } }
+      required: [items]
+    ArtistMergeCatalogResponse:
+      type: object
+      properties:
+        artists: { type: array, items: { $ref: "#/components/schemas/ArtistMergeCandidateResponse" } }
+      required: [artists]
+    ArtistMergePreviewRequest:
+      type: object
+      properties:
+        targetArtistId: { type: integer, format: int64 }
+        sourceArtistIds: { type: array, items: { type: integer, format: int64 } }
+      required: [targetArtistId, sourceArtistIds]
+    ArtistMergePreviewResponse:
+      type: object
+      properties:
+        targetArtistId: { type: integer, format: int64 }
+        candidates: { type: array, items: { $ref: "#/components/schemas/ArtistMergeCandidateResponse" } }
+        totalAlbums: { type: integer, format: int64 }
+        totalTracks: { type: integer, format: int64 }
+        totalPlaybacks: { type: integer, format: int64 }
+        warnings: { type: array, items: { type: string } }
+      required: [targetArtistId, candidates, totalAlbums, totalTracks, totalPlaybacks, warnings]
+    ArtistMergeRequest:
+      type: object
+      properties:
+        targetArtistId: { type: integer, format: int64 }
+        sourceArtistIds: { type: array, items: { type: integer, format: int64 } }
+        nameFromArtistId: { type: integer, format: int64 }
+        imageFromArtistId: { type: integer, format: int64 }
+        musicBrainzFromArtistId: { type: integer, format: int64 }
+        ratingFromArtistId: { type: integer, format: int64, nullable: true }
+        preserveAliasArtistIds: { type: array, items: { type: integer, format: int64 } }
+      required: [targetArtistId, sourceArtistIds]
+    ArtistMergeResponse:
+      type: object
+      properties:
+        artistId: { type: integer, format: int64 }
+        mergedArtistIds: { type: array, items: { type: integer, format: int64 } }
+        movedAlbums: { type: integer }
+        movedTracks: { type: integer }
+        movedComments: { type: integer }
+        mergedGenres: { type: integer }
+        storedNameAliases: { type: integer }
+      required: [artistId, mergedArtistIds, movedAlbums, movedTracks, movedComments, mergedGenres, storedNameAliases]
     AlbumTrackRow:
       type: object
       properties:

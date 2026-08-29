@@ -10,6 +10,7 @@
         <NuxtLink class="admin-nav-link" to="/music"> Música </NuxtLink>
         <NuxtLink class="admin-nav-link" to="/music?view=archive&kind=albums"> Arquivo </NuxtLink>
         <NuxtLink class="admin-nav-link" to="/music/admin/album-duplicates"> Álbuns duplicados </NuxtLink>
+        <NuxtLink class="admin-nav-link" to="/music/admin/artist-duplicates"> Artistas duplicados </NuxtLink>
         <span class="admin-nav-link admin-nav-link--active"> Revisão de duplicatas </span>
       </nav>
     </section>

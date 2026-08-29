@@ -60,6 +60,7 @@ class CanonicalizationServiceTest {
         every { albumMusicBrainzReleaseIds.findByReleaseId(any()) } returns null
         every { albumRepo.findByMusicbrainzReleaseGroupAlias(any()) } returns null
         every { albumRepo.findByTitleAlias(any(), any()) } returns null
+        every { artistRepo.findByNameAlias(any()) } returns null
         every { trackSpotifyIds.findBySpotifyId(any()) } returns null
         every { trackMusicBrainzRecordingIds.findByRecordingId(any()) } returns null
         every { albumSpotifyIds.save(any()) } answers { firstArg() }
@@ -133,6 +134,18 @@ class CanonicalizationServiceTest {
         assertEquals(newArtist.id, result.id)
         verify(exactly = 1) { artistRepo.save(any()) }
         verify(exactly = 1) { artistRepo.save(match { it.spotifyId == "spotify-123" }) }
+    }
+
+    @Test
+    fun `should resolve merged artist by preserved name alias`() {
+        val artist = Artist(id = 104L, name = "Björk", fingerprint = "canonical")
+        every { artistRepo.findByFingerprint(any()) } returns null
+        every { artistRepo.findByNameAlias(any()) } returns artist
+
+        val result = service.ensureArtist(name = "Bjork")
+
+        assertEquals(artist.id, result.id)
+        verify(exactly = 0) { artistRepo.save(any()) }
     }
 
     @Test

@@ -47,6 +47,7 @@ class CanonicalizationService(
             musicbrainzId?.let(artistRepo::findByMusicbrainzArtistId)
                 ?: spotifyId?.let(artistRepo::findBySpotifyId)
                 ?: artistRepo.findByFingerprint(FingerprintUtil.artistFp(name))
+                ?: artistRepo.findByNameAlias(FingerprintUtil.artistFp(name))
 
         val artist =
             found ?: artistRepo.save(

@@ -32,6 +32,8 @@ interface AlbumRepository : JpaRepository<Album, Long> {
             SELECT a.* FROM albums a
             JOIN album_title_aliases alias ON alias.album_id = a.id
             WHERE alias.artist_id = :artistId AND alias.title_key = :titleKey
+            ORDER BY a.id
+            LIMIT 1
             """,
         nativeQuery = true,
     )
@@ -40,6 +42,16 @@ interface AlbumRepository : JpaRepository<Album, Long> {
         @Param("titleKey") titleKey: String,
     ): Album?
 
+    @Query(
+        value =
+            """
+            SELECT * FROM albums
+            WHERE artist_id = :artistId AND title_key = :titleKey AND year = :year
+            ORDER BY id
+            LIMIT 1
+            """,
+        nativeQuery = true,
+    )
     fun findByArtistIdAndTitleKeyAndYear(
         artistId: Long,
         titleKey: String,

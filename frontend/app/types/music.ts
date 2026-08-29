@@ -256,6 +256,57 @@ export interface AlbumMergeResponse {
   storedTitleAliases: number
 }
 
+export interface ArtistMergeCandidateResponse {
+  artistId: number
+  name: string
+  profileImageUrl: string | null
+  spotifyId: string | null
+  musicBrainzArtistId: string | null
+  artistType: string | null
+  areaName: string | null
+  disambiguation: string | null
+  albumCount: number
+  trackCount: number
+  playbackCount: number
+  lastPlayed: string | null
+  rating: number | null
+  aliases: string[]
+}
+
+export interface DuplicateArtistSuggestionResponse {
+  reason: string
+  confidence: 'HIGH' | 'MEDIUM'
+  suggestedTargetArtistId: number
+  candidates: ArtistMergeCandidateResponse[]
+}
+
+export interface DuplicateArtistReviewResponse {
+  items: DuplicateArtistSuggestionResponse[]
+}
+
+export interface ArtistMergeCatalogResponse {
+  artists: ArtistMergeCandidateResponse[]
+}
+
+export interface ArtistMergePreviewResponse {
+  targetArtistId: number
+  candidates: ArtistMergeCandidateResponse[]
+  totalAlbums: number
+  totalTracks: number
+  totalPlaybacks: number
+  warnings: string[]
+}
+
+export interface ArtistMergeResponse {
+  artistId: number
+  mergedArtistIds: number[]
+  movedAlbums: number
+  movedTracks: number
+  movedComments: number
+  mergedGenres: number
+  storedNameAliases: number
+}
+
 export interface TopArtistResponse {
   artistId: number
   artistName: string

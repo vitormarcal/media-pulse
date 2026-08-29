@@ -8,6 +8,7 @@
       <nav aria-label="Navegação administrativa de música">
         <NuxtLink :to="artistReturnUrl">{{ contextualArtistId ? 'Voltar ao artista' : 'Música' }}</NuxtLink>
         <NuxtLink to="/music/admin/duplicates">Faixas duplicadas</NuxtLink>
+        <NuxtLink to="/music/admin/artist-duplicates">Artistas duplicados</NuxtLink>
         <span>Álbuns duplicados</span>
       </nav>
     </section>
