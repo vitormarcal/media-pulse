@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.79
+  version: 1.0.0-beta.80
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -1665,26 +1665,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PersonDetailsResponse"
-
-  /api/people/{slug}/tmdb-profile:
-    post:
-      summary: Fetch a person's profile from TMDb
-      tags: [Movies]
-      parameters:
-        - name: slug
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: TMDb profile, when available
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/PersonTmdbProfileDto"
-                nullable: true
 
   /api/movies/companies/{slug}:
     get:

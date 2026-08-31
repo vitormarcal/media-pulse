@@ -23,6 +23,24 @@ data class Person(
     val slug: String,
     @Column(name = "profile_url")
     val profileUrl: String? = null,
+    @Column(columnDefinition = "TEXT")
+    val biography: String? = null,
+    val birthday: String? = null,
+    val deathday: String? = null,
+    @Column(name = "place_of_birth")
+    val placeOfBirth: String? = null,
+    @Column(name = "known_for_department")
+    val knownForDepartment: String? = null,
+    val homepage: String? = null,
+    @Column(name = "imdb_id")
+    val imdbId: String? = null,
+    val popularity: Double? = null,
+    @Column(name = "tmdb_synced_at")
+    val tmdbSyncedAt: Instant? = null,
+    @Column(name = "tmdb_sync_attempted_at")
+    val tmdbSyncAttemptedAt: Instant? = null,
+    @Column(name = "tmdb_sync_error")
+    val tmdbSyncError: String? = null,
     @Column(name = "created_at")
     val createdAt: Instant = Instant.now(),
     @Column(name = "updated_at")

@@ -17,8 +17,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/recent` | `limit=20`, `cursor?` | `MoviesRecentResponse` |
 | `GET /api/movies/{movieId}` | `movieId` | `MovieDetailsResponse` |
 | `GET /api/movies/slug/{slug}` | `slug` | `MovieDetailsResponse` |
-| `GET /api/people/{slug}` | `slug` | `PersonDetailsResponse` local |
-| `POST /api/people/{slug}/tmdb-profile` | `slug` | `PersonTmdbProfileDto?` |
+| `GET /api/people/{slug}` | `slug` | `PersonDetailsResponse` com snapshot local do perfil |
 | `GET /api/movies/companies/{slug}` | `slug` | `MovieCompanyDetailsResponse` |
 | `GET /api/movies/lists` | - | `MovieListSummaryDto[]` |
 | `GET /api/movies/lists/{slug}` | `slug` | `MovieListDetailsResponse` |
@@ -334,7 +333,9 @@ Persistência:
 `GET /api/people/{slug}` abre a página local da pessoa sem consultar provedores externos.
 
 - retorna a pessoa, os papéis locais agregados e os filmes e séries ligados a ela
-- `POST /api/people/{slug}/tmdb-profile` consulta separadamente a biografia e os metadados editoriais no TMDb
+- quando o enriquecimento automático terminou, inclui em `tmdbProfile` o snapshot local de biografia, datas, origem, aliases e links
+- pessoas com `tmdb_id` e sem snapshot são processadas em segundo plano; falhas são registradas e repetidas com intervalo mínimo de um dia
+- a leitura da página nunca consulta o TMDb
 
 `GET /api/people/search` busca pessoas já persistidas localmente.
 

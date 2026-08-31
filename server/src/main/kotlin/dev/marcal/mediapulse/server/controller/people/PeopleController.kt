@@ -4,7 +4,6 @@ import dev.marcal.mediapulse.server.api.movies.PersonDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.PersonFilmographyResponse
 import dev.marcal.mediapulse.server.api.movies.PersonShowFilmographyResponse
 import dev.marcal.mediapulse.server.api.movies.PersonSuggestionDto
-import dev.marcal.mediapulse.server.api.movies.PersonTmdbProfileDto
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.service.person.PersonDetailsService
 import dev.marcal.mediapulse.server.service.person.PersonFilmographyService
@@ -28,11 +27,6 @@ class PeopleController(
     fun details(
         @PathVariable slug: String,
     ): PersonDetailsResponse = personDetailsService.fetchLocalDetails(slug)
-
-    @PostMapping("/{slug}/tmdb-profile")
-    fun tmdbProfile(
-        @PathVariable slug: String,
-    ): PersonTmdbProfileDto? = personDetailsService.fetchTmdbProfile(slug)
 
     @GetMapping("/search")
     fun search(

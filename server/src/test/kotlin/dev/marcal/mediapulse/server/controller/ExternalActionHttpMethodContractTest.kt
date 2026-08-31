@@ -28,7 +28,6 @@ class ExternalActionHttpMethodContractTest {
                 MusicBrainzPageEnrichmentController::class.java to "albumPreview",
                 MusicBrainzPageEnrichmentController::class.java to "artistCandidates",
                 MusicBrainzPageEnrichmentController::class.java to "artistDiscography",
-                PeopleController::class.java to "tmdbProfile",
                 PeopleController::class.java to "tmdbFilmography",
                 PeopleController::class.java to "tmdbShowFilmography",
             )

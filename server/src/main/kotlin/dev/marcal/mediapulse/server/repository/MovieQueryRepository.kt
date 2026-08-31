@@ -36,6 +36,7 @@ import dev.marcal.mediapulse.server.api.movies.MoviesYearStatsDto
 import dev.marcal.mediapulse.server.api.movies.PersonCreditDto
 import dev.marcal.mediapulse.server.api.movies.PersonDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.PersonSuggestionDto
+import dev.marcal.mediapulse.server.api.movies.PersonTmdbProfileDto
 import dev.marcal.mediapulse.server.api.movies.RangeDto
 import dev.marcal.mediapulse.server.api.shows.ShowLibraryCardDto
 import dev.marcal.mediapulse.server.model.EntityType
@@ -740,12 +741,35 @@ class MovieQueryRepository(
                         FROM tv_episodes te
                         JOIN tv_episode_watches tew ON tew.episode_id = te.id
                         WHERE te.show_id = sc.show_id
-                      ) THEN sc.show_id END) AS watched_shows_count
+                      ) THEN sc.show_id END) AS watched_shows_count,
+                      mp.biography,
+                      mp.birthday,
+                      mp.deathday,
+                      mp.place_of_birth,
+                      mp.known_for_department,
+                      mp.homepage,
+                      mp.imdb_id,
+                      mp.popularity,
+                      mp.tmdb_synced_at
                     FROM people mp
                     LEFT JOIN movie_credits mc ON mc.person_id = mp.id
                     LEFT JOIN show_credits sc ON sc.person_id = mp.id
                     WHERE mp.slug = :slug
-                    GROUP BY mp.id, mp.tmdb_id, mp.name, mp.slug, mp.profile_url
+                    GROUP BY
+                      mp.id,
+                      mp.tmdb_id,
+                      mp.name,
+                      mp.slug,
+                      mp.profile_url,
+                      mp.biography,
+                      mp.birthday,
+                      mp.deathday,
+                      mp.place_of_birth,
+                      mp.known_for_department,
+                      mp.homepage,
+                      mp.imdb_id,
+                      mp.popularity,
+                      mp.tmdb_synced_at
                     LIMIT 1
                     """.trimIndent(),
                 ).setParameter("slug", slug.trim())
@@ -754,6 +778,13 @@ class MovieQueryRepository(
                 ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Person not found")
 
         val personId = (base[0] as Number).toLong()
+        val aliases =
+            entityManager
+                .createNativeQuery(
+                    "SELECT name FROM person_aliases WHERE person_id = :personId ORDER BY name",
+                ).setParameter("personId", personId)
+                .resultList
+                .map { it as String }
 
         val roles =
             entityManager
@@ -915,6 +946,23 @@ class MovieQueryRepository(
             showCount = (base[7] as Number).toLong(),
             watchedShowsCount = (base[8] as Number).toLong(),
             shows = shows,
+            tmdbProfile =
+                if (base[17] != null) {
+                    PersonTmdbProfileDto(
+                        biography = base[9] as String?,
+                        birthday = base[10] as String?,
+                        deathday = base[11] as String?,
+                        placeOfBirth = base[12] as String?,
+                        knownForDepartment = base[13] as String?,
+                        aliases = aliases,
+                        homepage = base[14] as String?,
+                        imdbId = base[15] as String?,
+                        popularity = (base[16] as Number?)?.toDouble(),
+                        profileUrl = base[4] as String?,
+                    )
+                } else {
+                    null
+                },
         )
     }
 
