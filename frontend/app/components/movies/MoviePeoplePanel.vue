@@ -243,6 +243,7 @@ async function fetchTmdbCandidates() {
       `/api/movies/${props.movieId}/credits/tmdb-candidates`,
       {
         baseURL: config.public.apiBase,
+        method: 'POST',
       },
     )
     if (tmdbCandidates.value.reconciledCount) {

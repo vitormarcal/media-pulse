@@ -177,6 +177,7 @@ async function loadMembers() {
       `/api/movies/collections/${props.collection.id}/tmdb-members`,
       {
         baseURL: config.public.apiBase,
+        method: 'POST',
       },
     )
   } catch {

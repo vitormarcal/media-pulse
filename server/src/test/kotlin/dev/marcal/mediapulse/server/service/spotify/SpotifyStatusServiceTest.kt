@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.model.spotify.SpotifySyncState
 import dev.marcal.mediapulse.server.repository.spotify.SpotifySyncStateRepository
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -16,7 +17,7 @@ class SpotifyStatusServiceTest {
 
     @Test
     fun `should expose reauthorization action only when oauth is enabled`() {
-        every { repository.getOrCreateSingleton() } returns
+        every { repository.findSingleton() } returns
             SpotifySyncState(authorizationStatus = SpotifyAuthorizationStatus.REAUTHORIZATION_REQUIRED)
         val props =
             SpotifyProperties(
@@ -34,7 +35,7 @@ class SpotifyStatusServiceTest {
 
     @Test
     fun `should not expose provider details for generic error`() {
-        every { repository.getOrCreateSingleton() } returns
+        every { repository.findSingleton() } returns
             SpotifySyncState(authorizationStatus = SpotifyAuthorizationStatus.ERROR, lastErrorCode = "invalid_client")
         val props = SpotifyProperties(clientId = "id", clientSecret = "secret")
 
@@ -42,5 +43,16 @@ class SpotifyStatusServiceTest {
 
         assertEquals("A última importação do Spotify falhou. Consulte os logs da aplicação.", response.message)
         assertNull(response.reauthorizationUrl)
+    }
+
+    @Test
+    fun `status read should not create missing sync state`() {
+        every { repository.findSingleton() } returns null
+        val props = SpotifyProperties(clientId = "id", clientSecret = "secret")
+
+        val response = SpotifyStatusService(props, repository).getStatus()
+
+        assertEquals(SpotifyAuthorizationStatus.UNKNOWN, response.status)
+        verify(exactly = 0) { repository.getOrCreateSingleton() }
     }
 }

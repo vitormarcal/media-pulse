@@ -17,7 +17,8 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/recent` | `limit=20`, `cursor?` | `MoviesRecentResponse` |
 | `GET /api/movies/{movieId}` | `movieId` | `MovieDetailsResponse` |
 | `GET /api/movies/slug/{slug}` | `slug` | `MovieDetailsResponse` |
-| `GET /api/people/{slug}` | `slug` | `PersonDetailsResponse` |
+| `GET /api/people/{slug}` | `slug` | `PersonDetailsResponse` local |
+| `POST /api/people/{slug}/tmdb-profile` | `slug` | `PersonTmdbProfileDto?` |
 | `GET /api/movies/companies/{slug}` | `slug` | `MovieCompanyDetailsResponse` |
 | `GET /api/movies/lists` | - | `MovieListSummaryDto[]` |
 | `GET /api/movies/lists/{slug}` | `slug` | `MovieListDetailsResponse` |
@@ -29,9 +30,9 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/summary` | `range=month|year|custom`, `start?`, `end?` | `MoviesSummaryResponse` |
 | `GET /api/movies/stats` | - | `MoviesStatsResponse` |
 | `GET /api/movies/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `MoviesByYearResponse` |
-| `GET /api/movies/catalog/suggestions` | `q` | `MovieCatalogSuggestionsResponse` |
-| `GET /api/movies/collections/{collectionId}/tmdb-members` | `collectionId` | `MovieCollectionMembersResponse` |
-| `GET /api/movies/companies/{companyId}/tmdb-members` | `companyId` | `MovieCompanyMembersResponse` |
+| `POST /api/movies/catalog/suggestions` | `q` | `MovieCatalogSuggestionsResponse` |
+| `POST /api/movies/collections/{collectionId}/tmdb-members` | `collectionId` | `MovieCollectionMembersResponse` |
+| `POST /api/movies/companies/{companyId}/tmdb-members` | `companyId` | `MovieCompanyMembersResponse` |
 | `POST /api/movies/catalog` | body com `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieCatalogCreateResponse` |
 | `POST /api/movies/collections/backfill` | `limit=50` | `MovieCollectionBackfillResponse` |
 | `POST /api/movies/{movieId}/watches` | body com `watchedAt` | `ManualMovieWatchCreateResponse` |
@@ -45,7 +46,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/companies/sync-tmdb` | `limit=100` | `MovieCompaniesBatchSyncResponse` |
 | `POST /api/movies/{movieId}/credits/sync-tmdb` | `movieId` | `MovieCreditsSyncResponse` |
 | `POST /api/movies/credits/sync-tmdb` | `limit=100` | `MovieCreditsBatchSyncResponse` |
-| `GET /api/movies/{movieId}/credits/tmdb-candidates` | `movieId` | `MovieTmdbCreditCandidatesResponse` |
+| `POST /api/movies/{movieId}/credits/tmdb-candidates` | `movieId` | `MovieTmdbCreditCandidatesResponse` |
 | `POST /api/movies/{movieId}/credits/from-tmdb` | body com `personTmdbId`, `creditType`, `department?`, `job?`, `characterName?`, `billingOrder?` | `PersonCreditDto` |
 | `POST /api/movies/{movieId}/people` | body com `personId`, `group`, `roleLabel?` | `PersonCreditDto` |
 | `POST /api/movies/{movieId}/terms/sync-tmdb` | `movieId` | `MovieTermsSyncResponse` |
@@ -55,8 +56,8 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/terms/{termId}/visibility` | body com `hidden` | `MovieTermDto` |
 | `POST /api/movies/{movieId}/enrichment/preview` | body com `tmdbId?` | `MovieEnrichmentPreviewResponse` |
 | `POST /api/movies/{movieId}/enrichment/apply` | body com `tmdbId?`, `mode`, `fields[]` | `MovieEnrichmentApplyResponse` |
-| `GET /api/people/{personId}/tmdb-filmography` | `personId` | `PersonFilmographyResponse` |
-| `GET /api/people/{personId}/tmdb-show-filmography` | `personId` | `PersonShowFilmographyResponse` |
+| `POST /api/people/{personId}/tmdb-filmography` | `personId` | `PersonFilmographyResponse` |
+| `POST /api/people/{personId}/tmdb-show-filmography` | `personId` | `PersonShowFilmographyResponse` |
 
 ## Paginação e limites
 
@@ -104,7 +105,7 @@ O range do relatório anual é:
 
 ## Catálogo e enriquecimento
 
-`GET /api/movies/catalog/suggestions` busca correspondências no TMDb para apoiar a criação de catálogo pela UI.
+`POST /api/movies/catalog/suggestions` busca correspondências no TMDb para apoiar a criação de catálogo pela UI.
 
 - retorna cards curtos com `tmdbId`, `title`, `originalTitle`, `year`, `overview` e `posterUrl`
 - o fluxo esperado é: buscar por nome, escolher uma sugestão, salvar o catálogo já com contexto externo
@@ -243,7 +244,7 @@ Persistência:
 
 - retorna a empresa e os filmes do catálogo ligados a ela
 
-`GET /api/movies/companies/{companyId}/tmdb-members` expande o catálogo da empresa no TMDb.
+`POST /api/movies/companies/{companyId}/tmdb-members` expande o catálogo da empresa no TMDb.
 
 - usa `discover/movie` com `with_companies`
 - cruza o resultado com o catálogo local
@@ -318,7 +319,7 @@ Persistência:
 - `limit` é normalizado entre `1` e `1000`
 - falhas individuais não interrompem o lote
 
-`GET /api/movies/{movieId}/credits/tmdb-candidates` expande créditos extras do TMDb para a página do filme.
+`POST /api/movies/{movieId}/credits/tmdb-candidates` expande créditos extras do TMDb para a página do filme.
 
 - olha além do recorte principal já usado no sync automático
 - tenta reconciliar automaticamente pessoas que já existem localmente
@@ -330,9 +331,10 @@ Persistência:
 - cria a pessoa se ela ainda não estiver persistida
 - salva o vínculo filme-pessoa sem precisar rerodar o sync completo
 
-`GET /api/people/{slug}` abre a página local da pessoa.
+`GET /api/people/{slug}` abre a página local da pessoa sem consultar provedores externos.
 
-- retorna a pessoa, os papéis locais agregados, os filmes do catálogo ligados a ela e um bloco `tmdbProfile` com biografia e metadados editoriais quando o TMDb responder
+- retorna a pessoa, os papéis locais agregados e os filmes e séries ligados a ela
+- `POST /api/people/{slug}/tmdb-profile` consulta separadamente a biografia e os metadados editoriais no TMDb
 
 `GET /api/people/search` busca pessoas já persistidas localmente.
 
@@ -345,13 +347,13 @@ Persistência:
 - aceita grupos editoriais simples: `DIRECTORS`, `WRITERS`, `CAST`, `OTHER`
 - `roleLabel` é opcional em `WRITERS` e `CAST`, e obrigatório em `OTHER`
 
-`GET /api/people/{personId}/tmdb-filmography` expande a filmografia externa da pessoa.
+`POST /api/people/{personId}/tmdb-filmography` expande a filmografia externa da pessoa.
 
 - cruza a filmografia do TMDb com os filmes já catalogados localmente
 - quando encontra um filme já local, reaproveita essa oportunidade para persistir o vínculo `movie_credits` da pessoa com o filme
 - permite à UI mostrar o que já existe e o que ainda pode ser adicionado explicitamente
 
-`GET /api/people/{personId}/tmdb-show-filmography` faz o mesmo recorte para séries.
+`POST /api/people/{personId}/tmdb-show-filmography` faz o mesmo recorte para séries.
 
 - cruza `person/{id}/tv_credits` do TMDb com as séries já catalogadas localmente
 - quando encontra uma série já local, reaproveita essa oportunidade para persistir o vínculo `show_credits` da pessoa com a série
@@ -372,7 +374,7 @@ Filmes podem ser vinculados a uma coleção oficial do TMDb, como `The Matrix Co
 - inclui contagem de filmes e quantos já têm sessão
 - inclui preview curto de posters para páginas editoriais e cards de navegação
 
-`GET /api/movies/collections/{collectionId}/tmdb-members` busca os membros da coleção no TMDb sob demanda.
+`POST /api/movies/collections/{collectionId}/tmdb-members` busca os membros da coleção no TMDb sob demanda.
 
 - não persiste snapshot dos membros externos
 - cruza os membros retornados com `movies.tmdb_id`

@@ -153,6 +153,7 @@ async function handleSuggest() {
   try {
     const response = await $fetch<MovieCatalogSuggestionsResponse>('/api/movies/catalog/suggestions', {
       baseURL: config.public.apiBase,
+      method: 'POST',
       query: {
         q: title.value.trim(),
       },

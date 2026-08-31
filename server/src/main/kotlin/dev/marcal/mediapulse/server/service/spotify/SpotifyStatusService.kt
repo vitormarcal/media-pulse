@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.service.spotify
 import dev.marcal.mediapulse.server.config.SpotifyProperties
 import dev.marcal.mediapulse.server.controller.spotify.dto.SpotifyStatusResponse
 import dev.marcal.mediapulse.server.model.spotify.SpotifyAuthorizationStatus
+import dev.marcal.mediapulse.server.model.spotify.SpotifySyncState
 import dev.marcal.mediapulse.server.repository.spotify.SpotifySyncStateRepository
 import org.springframework.stereotype.Service
 
@@ -12,7 +13,7 @@ class SpotifyStatusService(
     private val syncStateRepository: SpotifySyncStateRepository,
 ) {
     fun getStatus(): SpotifyStatusResponse {
-        val state = syncStateRepository.getOrCreateSingleton()
+        val state = syncStateRepository.findSingleton() ?: SpotifySyncState()
         val requiresReauthorization = state.authorizationStatus == SpotifyAuthorizationStatus.REAUTHORIZATION_REQUIRED
         val reauthorizationAvailable = requiresReauthorization && props.oauth.enabled
 

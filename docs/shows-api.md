@@ -24,7 +24,7 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 | `GET /api/shows/summary` | `range=month|year|custom`, `start?`, `end?` | `ShowsSummaryResponse` |
 | `GET /api/shows/stats` | - | `ShowsStatsResponse` |
 | `GET /api/shows/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `ShowsByYearResponse` |
-| `GET /api/shows/catalog/suggestions` | `q` | `ShowCatalogSuggestionsResponse` |
+| `POST /api/shows/catalog/suggestions` | `q` | `ShowCatalogSuggestionsResponse` |
 | `POST /api/shows/credits/sync-tmdb` | `limit=100` | `ShowCreditsBatchSyncResponse` |
 | `POST /api/shows/{showId}/credits/sync-tmdb` | `showId` | `ShowCreditsSyncResponse` |
 | `POST /api/shows/catalog` | body com `title`, `year?`, `tmdbId?`, `tvdbId?`, `importEpisodes=true` | `ManualShowCatalogCreateResponse` |
@@ -107,7 +107,7 @@ Campos aceitos:
 
 ## Catálogo manual
 
-`GET /api/shows/catalog/suggestions` busca sugestões no TMDb usando o título informado em `q`.
+`POST /api/shows/catalog/suggestions` busca sugestões no TMDb usando o título informado em `q`.
 
 `POST /api/shows/catalog` cria ou consolida uma série sem registrar watch.
 

@@ -24,7 +24,7 @@ GET {{baseUrl}}/stats
 Accept: application/json
 
 ### Sugestoes IGDB para catalogo
-GET {{baseUrl}}/catalog/suggestions?q=hollow%20knight
+POST {{baseUrl}}/catalog/suggestions?q=hollow%20knight
 Accept: application/json
 
 ### Adicionar game ao catalogo via IGDB

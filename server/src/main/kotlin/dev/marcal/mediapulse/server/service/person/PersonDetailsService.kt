@@ -15,27 +15,24 @@ class PersonDetailsService(
     private val manualMovieCatalogService: ManualMovieCatalogService,
 ) {
     @Transactional(readOnly = true)
-    fun fetchDetails(slug: String): PersonDetailsResponse {
-        val local = repository.getPersonDetails(slug)
-        val tmdbProfile =
-            tmdbApiClient.fetchPersonDetails(local.tmdbId)?.let { profile ->
-                PersonTmdbProfileDto(
-                    biography = profile.biography,
-                    birthday = profile.birthday,
-                    deathday = profile.deathday,
-                    placeOfBirth = profile.placeOfBirth,
-                    knownForDepartment = profile.knownForDepartment,
-                    aliases = profile.alsoKnownAs,
-                    homepage = profile.homepage,
-                    imdbId = profile.imdbId,
-                    popularity = profile.popularity,
-                    profileUrl = profile.profilePath?.let(manualMovieCatalogService::buildTmdbImageUrl),
-                )
-            }
+    fun fetchLocalDetails(slug: String): PersonDetailsResponse = repository.getPersonDetails(slug)
 
-        return local.copy(
-            profileUrl = tmdbProfile?.profileUrl ?: local.profileUrl,
-            tmdbProfile = tmdbProfile,
-        )
+    @Transactional(readOnly = true)
+    fun fetchTmdbProfile(slug: String): PersonTmdbProfileDto? {
+        val person = repository.getPersonDetails(slug)
+        return tmdbApiClient.fetchPersonDetails(person.tmdbId)?.let { profile ->
+            PersonTmdbProfileDto(
+                biography = profile.biography,
+                birthday = profile.birthday,
+                deathday = profile.deathday,
+                placeOfBirth = profile.placeOfBirth,
+                knownForDepartment = profile.knownForDepartment,
+                aliases = profile.alsoKnownAs,
+                homepage = profile.homepage,
+                imdbId = profile.imdbId,
+                popularity = profile.popularity,
+                profileUrl = profile.profilePath?.let(manualMovieCatalogService::buildTmdbImageUrl),
+            )
+        }
     }
 }

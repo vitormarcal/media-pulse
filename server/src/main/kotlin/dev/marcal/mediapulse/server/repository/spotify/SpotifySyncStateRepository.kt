@@ -11,9 +11,12 @@ import java.time.Instant
 class SpotifySyncStateRepository(
     private val crud: SpotifySyncStateCrudRepository,
 ) {
+    @Transactional(readOnly = true)
+    fun findSingleton(): SpotifySyncState? = crud.findAll().firstOrNull()
+
     @Transactional
     fun getOrCreateSingleton(): SpotifySyncState {
-        val existing = crud.findAll().firstOrNull()
+        val existing = findSingleton()
         return existing ?: crud.save(SpotifySyncState(cursorAfterMs = 0, updatedAt = Instant.now()))
     }
 

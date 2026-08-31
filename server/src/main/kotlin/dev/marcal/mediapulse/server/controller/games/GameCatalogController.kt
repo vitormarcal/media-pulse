@@ -4,7 +4,6 @@ import dev.marcal.mediapulse.server.api.games.GameCatalogSuggestionsResponse
 import dev.marcal.mediapulse.server.api.games.ManualGameCatalogCreateRequest
 import dev.marcal.mediapulse.server.api.games.ManualGameCatalogCreateResponse
 import dev.marcal.mediapulse.server.service.game.ManualGameCatalogCreateFlowService
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -16,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 class GameCatalogController(
     private val manualGameCatalogCreateFlowService: ManualGameCatalogCreateFlowService,
 ) {
-    @GetMapping("/suggestions")
+    @PostMapping("/suggestions")
     fun suggestions(
         @RequestParam q: String,
     ): GameCatalogSuggestionsResponse = manualGameCatalogCreateFlowService.suggest(q)

@@ -42,12 +42,12 @@ class PeopleControllerTest {
                 movies = emptyList(),
                 tmdbProfile = null,
             )
-        every { personDetailsService.fetchDetails("quentin-tarantino-138") } returns expected
+        every { personDetailsService.fetchLocalDetails("quentin-tarantino-138") } returns expected
 
         val response = controller.details("quentin-tarantino-138")
 
         assertEquals(44, response.personId)
-        verify(exactly = 1) { personDetailsService.fetchDetails("quentin-tarantino-138") }
+        verify(exactly = 1) { personDetailsService.fetchLocalDetails("quentin-tarantino-138") }
     }
 
     @Test

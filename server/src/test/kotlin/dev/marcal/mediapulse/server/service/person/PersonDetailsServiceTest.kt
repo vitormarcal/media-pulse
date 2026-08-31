@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ManualMovieCatalogService
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -22,7 +23,29 @@ class PersonDetailsServiceTest {
         )
 
     @Test
-    fun `fetch details should merge local data with tmdb profile`() {
+    fun `fetch local details should not call tmdb`() {
+        val local =
+            PersonDetailsResponse(
+                personId = 44,
+                tmdbId = "138",
+                name = "Quentin Tarantino",
+                slug = "quentin-tarantino-138",
+                profileUrl = null,
+                roles = listOf("Direção", "Roteiro"),
+                movieCount = 4,
+                watchedMoviesCount = 3,
+                movies = emptyList(),
+            )
+        every { repository.getPersonDetails("quentin-tarantino-138") } returns local
+
+        val response = service.fetchLocalDetails("quentin-tarantino-138")
+
+        assertEquals(local, response)
+        verify(exactly = 0) { tmdbApiClient.fetchPersonDetails(any()) }
+    }
+
+    @Test
+    fun `fetch tmdb profile should return external profile separately`() {
         every { repository.getPersonDetails("quentin-tarantino-138") } returns
             PersonDetailsResponse(
                 personId = 44,
@@ -52,11 +75,11 @@ class PersonDetailsServiceTest {
             )
         every { manualMovieCatalogService.buildTmdbImageUrl("/qt.jpg") } returns "https://image.tmdb.org/t/p/original/qt.jpg"
 
-        val response = service.fetchDetails("quentin-tarantino-138")
+        val response = service.fetchTmdbProfile("quentin-tarantino-138")
 
-        assertEquals("Biografia curta.", response.tmdbProfile?.biography)
-        assertEquals("Directing", response.tmdbProfile?.knownForDepartment)
-        assertEquals("https://image.tmdb.org/t/p/original/qt.jpg", response.profileUrl)
-        assertEquals(listOf("QT"), response.tmdbProfile?.aliases)
+        assertEquals("Biografia curta.", response?.biography)
+        assertEquals("Directing", response?.knownForDepartment)
+        assertEquals("https://image.tmdb.org/t/p/original/qt.jpg", response?.profileUrl)
+        assertEquals(listOf("QT"), response?.aliases)
     }
 }

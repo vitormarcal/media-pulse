@@ -229,6 +229,7 @@ async function loadMovies() {
       `/api/people/${props.person.personId}/tmdb-filmography`,
       {
         baseURL: config.public.apiBase,
+        method: 'POST',
       },
     )
   } catch {
@@ -249,6 +250,7 @@ async function loadShows() {
       `/api/people/${props.person.personId}/tmdb-show-filmography`,
       {
         baseURL: config.public.apiBase,
+        method: 'POST',
       },
     )
   } catch {

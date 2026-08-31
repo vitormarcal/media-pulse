@@ -123,6 +123,7 @@ async function loadMembers() {
       `/api/movies/companies/${props.company.companyId}/tmdb-members`,
       {
         baseURL: config.public.apiBase,
+        method: 'POST',
       },
     )
   } catch {

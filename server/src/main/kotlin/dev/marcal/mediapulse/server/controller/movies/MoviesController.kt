@@ -157,7 +157,7 @@ class MoviesController(
         @RequestParam(defaultValue = "100") limit: Int,
     ): MovieCreditsBatchSyncResponse = movieCreditsService.syncAllFromTmdb(normalizeLimit("limit", limit))
 
-    @GetMapping("/{movieId}/credits/tmdb-candidates")
+    @PostMapping("/{movieId}/credits/tmdb-candidates")
     fun movieTmdbCreditCandidates(
         @PathVariable movieId: Long,
     ): MovieTmdbCreditCandidatesResponse = movieCreditsService.fetchTmdbCandidates(movieId)

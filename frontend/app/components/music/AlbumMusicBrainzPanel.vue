@@ -56,6 +56,7 @@ async function search() {
   try {
     candidates.value = await $fetch(`/api/music/albums/${props.albumId}/musicbrainz/candidates`, {
       baseURL: config.public.apiBase,
+      method: 'POST',
     })
     if (!candidates.value.length) message.value = 'Nenhuma correspondência encontrada.'
   } catch {
@@ -71,6 +72,7 @@ async function previewCandidate(candidate: MusicBrainzAlbumCandidate) {
   try {
     preview.value = await $fetch(`/api/music/albums/${props.albumId}/musicbrainz/preview`, {
       baseURL: config.public.apiBase,
+      method: 'POST',
       query: { releaseGroupMbid: candidate.releaseGroupMbid },
     })
   } catch {

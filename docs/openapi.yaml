@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.78
+  version: 1.0.0-beta.79
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -12,6 +12,8 @@ tags:
     description: Movie library, curation, enrichment, and watch endpoints.
   - name: Shows
     description: Show library, catalog, enrichment, and watch endpoints.
+  - name: Games
+    description: Game library, catalog, enrichment, and session endpoints.
   - name: Music
     description: Music library and listening insights.
   - name: Spotify
@@ -31,8 +33,19 @@ tags:
   - name: Ratings
     description: Manual ratings attached to media details.
 paths:
+  /api/games/catalog/suggestions:
+    post:
+      tags: [Games]
+      summary: Suggest game catalog matches from IGDB and SteamGridDB
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Game catalog suggestions }
   /api/music/musicbrainz/artists/candidates:
-    get:
+    post:
       tags: [Music]
       summary: Search MusicBrainz candidates before creating a local artist
       parameters:
@@ -59,7 +72,7 @@ paths:
         '200': { description: Artist created or reused }
         '409': { description: MBID already belongs to another local entity }
   /api/music/artists/{artistId}/musicbrainz/discography:
-    get:
+    post:
       tags: [Music]
       summary: Preview and classify the linked artist release groups
       parameters:
@@ -94,7 +107,7 @@ paths:
       responses:
         '200': { description: Missing albums created; linked or possible matches skipped }
   /api/music/albums/{albumId}/musicbrainz/candidates:
-    get:
+    post:
       tags: [Music]
       summary: Search MusicBrainz release-group candidates for a local album
       parameters:
@@ -105,7 +118,7 @@ paths:
       responses:
         '200': { description: Candidate list; no local data is changed }
   /api/music/albums/{albumId}/musicbrainz/preview:
-    get:
+    post:
       tags: [Music]
       summary: Preview MusicBrainz album enrichment
       parameters:
@@ -140,7 +153,7 @@ paths:
       responses:
         '200': { description: Enrichment applied }
   /api/music/artists/{artistId}/musicbrainz/candidates:
-    get:
+    post:
       tags: [Music]
       summary: Search MusicBrainz artist candidates
       parameters:
@@ -1653,6 +1666,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/PersonDetailsResponse"
 
+  /api/people/{slug}/tmdb-profile:
+    post:
+      summary: Fetch a person's profile from TMDb
+      tags: [Movies]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: TMDb profile, when available
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PersonTmdbProfileDto"
+                nullable: true
+
   /api/movies/companies/{slug}:
     get:
       summary: Movie company details by slug
@@ -1950,7 +1983,7 @@ paths:
                   $ref: "#/components/schemas/MovieCollectionSummaryDto"
 
   /api/movies/catalog/suggestions:
-    get:
+    post:
       summary: Suggest movie catalog matches from TMDb
       tags: [Movies]
       parameters:
@@ -2005,7 +2038,7 @@ paths:
                 $ref: "#/components/schemas/MovieCollectionBackfillResponse"
 
   /api/movies/collections/{collectionId}/tmdb-members:
-    get:
+    post:
       summary: Fetch official TMDb movie collection members
       tags: [Movies]
       parameters:
@@ -2024,7 +2057,7 @@ paths:
                 $ref: "#/components/schemas/MovieCollectionMembersResponse"
 
   /api/movies/companies/{companyId}/tmdb-members:
-    get:
+    post:
       summary: Fetch TMDb members for a movie company
       tags: [Movies]
       parameters:
@@ -2043,7 +2076,7 @@ paths:
                 $ref: "#/components/schemas/MovieCompanyMembersResponse"
 
   /api/people/{personId}/tmdb-filmography:
-    get:
+    post:
       summary: Fetch TMDb filmography for a local person
       tags: [Movies]
       parameters:
@@ -2061,7 +2094,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/PersonFilmographyResponse"
   /api/people/{personId}/tmdb-show-filmography:
-    get:
+    post:
       summary: Fetch TMDb show filmography for a local person
       tags: [Movies]
       parameters:
@@ -2194,7 +2227,7 @@ paths:
                 $ref: "#/components/schemas/MovieCreditsBatchSyncResponse"
 
   /api/movies/{movieId}/credits/tmdb-candidates:
-    get:
+    post:
       summary: Fetch extra TMDb credit candidates for a movie
       tags: [Movies]
       parameters:
@@ -2835,7 +2868,7 @@ paths:
                 $ref: "#/components/schemas/ShowsByYearResponse"
 
   /api/shows/catalog/suggestions:
-    get:
+    post:
       summary: Suggest show catalog matches from TMDb
       tags: [Shows]
       parameters:

@@ -70,6 +70,7 @@ async function search() {
   try {
     candidates.value = await $fetch(`/api/music/artists/${props.artistId}/musicbrainz/candidates`, {
       baseURL: config.public.apiBase,
+      method: 'POST',
     })
   } catch {
     message.value = 'Não foi possível consultar o MusicBrainz.'

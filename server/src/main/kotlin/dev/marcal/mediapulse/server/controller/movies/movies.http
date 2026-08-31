@@ -79,11 +79,11 @@ POST {{baseUrl}}/collections/backfill?limit=100000
 Accept: application/json
 
 ### Membros TMDb de uma colecao
-GET {{baseUrl}}/collections/1/tmdb-members
+POST {{baseUrl}}/collections/1/tmdb-members
 Accept: application/json
 
 ### Filmes TMDb de uma empresa
-GET {{baseUrl}}/companies/12/tmdb-members
+POST {{baseUrl}}/companies/12/tmdb-members
 Accept: application/json
 
 ### Sincronizar termos do TMDb para um filme
@@ -99,7 +99,7 @@ POST {{baseUrl}}/{{movieId}}/credits/sync-tmdb
 Accept: application/json
 
 ### Trazer pessoas extras do TMDb para um filme
-GET {{baseUrl}}/{{movieId}}/credits/tmdb-candidates
+POST {{baseUrl}}/{{movieId}}/credits/tmdb-candidates
 Accept: application/json
 
 ### Incorporar um crédito específico do TMDb
@@ -203,11 +203,11 @@ POST {{baseUrl}}/credits/sync-tmdb?limit=200
 Accept: application/json
 
 ### Filmografia TMDb de uma pessoa
-GET {{peopleBaseUrl}}/1/tmdb-filmography
+POST {{peopleBaseUrl}}/1/tmdb-filmography
 Accept: application/json
 
 ### Filmografia TMDb de series de uma pessoa
-GET {{peopleBaseUrl}}/1/tmdb-show-filmography
+POST {{peopleBaseUrl}}/1/tmdb-show-filmography
 Accept: application/json
 
 ### Adicionar termo manual

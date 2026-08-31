@@ -5,7 +5,6 @@ import dev.marcal.mediapulse.server.api.music.MusicBrainzArtistApplyRequest
 import dev.marcal.mediapulse.server.api.music.MusicBrainzArtistCreateRequest
 import dev.marcal.mediapulse.server.api.music.MusicBrainzDiscographyImportRequest
 import dev.marcal.mediapulse.server.service.musicbrainz.MusicBrainzPageEnrichmentService
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -18,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 class MusicBrainzPageEnrichmentController(
     private val service: MusicBrainzPageEnrichmentService,
 ) {
-    @GetMapping("/musicbrainz/artists/candidates")
+    @PostMapping("/musicbrainz/artists/candidates")
     suspend fun newArtistCandidates(
         @RequestParam query: String,
     ) = service.searchNewArtist(query)
@@ -28,12 +27,12 @@ class MusicBrainzPageEnrichmentController(
         @RequestBody request: MusicBrainzArtistCreateRequest,
     ) = service.createArtist(request.artistMbid)
 
-    @GetMapping("/albums/{albumId}/musicbrainz/candidates")
+    @PostMapping("/albums/{albumId}/musicbrainz/candidates")
     suspend fun albumCandidates(
         @PathVariable albumId: Long,
     ) = service.searchAlbum(albumId)
 
-    @GetMapping("/albums/{albumId}/musicbrainz/preview")
+    @PostMapping("/albums/{albumId}/musicbrainz/preview")
     suspend fun albumPreview(
         @PathVariable albumId: Long,
         @RequestParam releaseGroupMbid: String,
@@ -45,7 +44,7 @@ class MusicBrainzPageEnrichmentController(
         @RequestBody request: MusicBrainzAlbumApplyRequest,
     ) = service.applyAlbum(albumId, request.releaseGroupMbid)
 
-    @GetMapping("/artists/{artistId}/musicbrainz/candidates")
+    @PostMapping("/artists/{artistId}/musicbrainz/candidates")
     suspend fun artistCandidates(
         @PathVariable artistId: Long,
     ) = service.searchArtist(artistId)
@@ -61,7 +60,7 @@ class MusicBrainzPageEnrichmentController(
         @PathVariable artistId: Long,
     ) = service.refreshArtist(artistId)
 
-    @GetMapping("/artists/{artistId}/musicbrainz/discography")
+    @PostMapping("/artists/{artistId}/musicbrainz/discography")
     suspend fun artistDiscography(
         @PathVariable artistId: Long,
     ) = service.getArtistDiscography(artistId)

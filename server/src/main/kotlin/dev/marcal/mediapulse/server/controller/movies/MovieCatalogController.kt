@@ -35,7 +35,7 @@ class MovieCatalogController(
     private val movieCollectionMembersService: MovieCollectionMembersService,
     private val movieCompanyMembersService: MovieCompanyMembersService,
 ) {
-    @GetMapping("/catalog/suggestions")
+    @PostMapping("/catalog/suggestions")
     fun suggestCatalogEntry(
         @RequestParam q: String,
     ): MovieCatalogSuggestionsResponse = manualMovieCatalogCreateFlowService.suggest(q)
@@ -62,7 +62,7 @@ class MovieCatalogController(
         @RequestParam(defaultValue = "50") limit: Int,
     ): MovieCollectionBackfillResponse = movieCollectionBackfillService.backfill(limit)
 
-    @GetMapping("/collections/{collectionId}/tmdb-members")
+    @PostMapping("/collections/{collectionId}/tmdb-members")
     fun collectionTmdbMembers(
         @PathVariable collectionId: Long,
     ): MovieCollectionMembersResponse = movieCollectionMembersService.fetchMembers(collectionId)
@@ -70,7 +70,7 @@ class MovieCatalogController(
     @GetMapping("/collections")
     fun collections(): List<MovieCollectionSummaryDto> = repository.listMovieCollections()
 
-    @GetMapping("/companies/{companyId}/tmdb-members")
+    @PostMapping("/companies/{companyId}/tmdb-members")
     fun companyTmdbMembers(
         @PathVariable companyId: Long,
     ): MovieCompanyMembersResponse = movieCompanyMembersService.fetchMembers(companyId)

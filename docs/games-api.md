@@ -19,7 +19,7 @@ Sem credenciais, a entrada mínima continua funcionando, mas sugestões/metadado
 | `GET /api/games/search` | `q`, `limit=40` | `GamesSearchResponse` |
 | `GET /api/games/{gameId}` | `gameId` | `GameDetailsResponse` |
 | `GET /api/games/slug/{slug}` | `slug` | `GameDetailsResponse` |
-| `GET /api/games/catalog/suggestions` | `q` | `GameCatalogSuggestionsResponse` |
+| `POST /api/games/catalog/suggestions` | `q` | `GameCatalogSuggestionsResponse` |
 | `POST /api/games/catalog` | body com `title`, `year?`, `igdbId?` | `ManualGameCatalogCreateResponse` |
 | `POST /api/games/{gameId}/sessions` | body com sessão | `GameSessionCreateResponse` |
 | `PATCH /api/games/{gameId}/sessions/{sessionId}` | body com sessão | `GameSessionDto` |

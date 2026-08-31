@@ -88,6 +88,7 @@ async function search() {
   try {
     candidates.value = await $fetch('/api/music/musicbrainz/artists/candidates', {
       baseURL: config.public.apiBase,
+      method: 'POST',
       query: { query: query.value.trim() },
     })
     if (!candidates.value.length) message.value = 'Nenhum artista encontrado.'

@@ -73,6 +73,7 @@ async function load() {
   try {
     preview.value = await $fetch(`/api/music/artists/${props.artistId}/musicbrainz/discography`, {
       baseURL: config.public.apiBase,
+      method: 'POST',
     })
     if (!preview.value.items.length) message.value = 'Nenhum release group encontrado.'
   } catch {

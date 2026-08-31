@@ -40,11 +40,11 @@ No frontend atual, `/music` concentra tanto o recorte editorial quanto o arquivo
 | `GET /api/music/library/tracks` | `limit=20`, `cursor?` | `TrackLibraryPageResponse` |
 | `GET /api/music/search` | `q`, `limit=10` | `SearchResponse` |
 | `GET /api/music/albums/{albumId}` | `albumId` | `AlbumPageResponse` |
-| `GET /api/music/albums/{albumId}/musicbrainz/candidates` | `albumId` | Candidatos de release group sem alterar dados locais. |
-| `GET /api/music/albums/{albumId}/musicbrainz/preview` | `albumId`, `releaseGroupMbid` | Prévia das mudanças e campos preservados. |
+| `POST /api/music/albums/{albumId}/musicbrainz/candidates` | `albumId` | Candidatos de release group sem alterar dados locais. |
+| `POST /api/music/albums/{albumId}/musicbrainz/preview` | `albumId`, `releaseGroupMbid` | Prévia das mudanças e campos preservados. |
 | `POST /api/music/albums/{albumId}/musicbrainz` | body com `releaseGroupMbid` | Confirma o vínculo e aplica ano ausente e termos. |
 | `GET /api/music/artists/{artistId}` | `artistId` | `ArtistPageResponse` |
-| `GET /api/music/artists/{artistId}/musicbrainz/candidates` | `artistId` | Candidatos de artista sem alterar dados locais. |
+| `POST /api/music/artists/{artistId}/musicbrainz/candidates` | `artistId` | Candidatos de artista sem alterar dados locais. |
 | `POST /api/music/artists/{artistId}/musicbrainz` | body com `artistMbid` | Confirma ou troca o vínculo do artista. |
 | `POST /api/music/artists/{artistId}/musicbrainz/refresh` | `artistId` | Atualiza individualmente o snapshot MusicBrainz do artista. |
 | `POST /api/music/artists/{artistId}/genres` | body com `name`, `kind=GENRE` | Adiciona um gênero manual ao artista. |
@@ -159,10 +159,10 @@ Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, últ
 - a tracklist escolhida na mesclagem de álbuns tem prioridade; posições completas das demais edições são preservadas quando livres e ficam nulas quando conflitam
 - títulos absorvidos são preservados em `album_title_aliases`; Spotify IDs, releases e release groups MusicBrainz também continuam resolvendo para o álbum principal
 - a canonicalização de álbuns prioriza release group, release e Spotify ID; aliases de título são usados depois dos identificadores externos
-- busca e prévia MusicBrainz são read-only e toda correspondência exige confirmação do owner
+- busca e prévia MusicBrainz usam `POST` por consultarem um provedor externo, permanecem sem escrita local e toda correspondência exige confirmação do owner
 - o enriquecimento não sobrescreve título, artista, capa, tracklist ou ano já preenchido
 - `POST /api/music/musicbrainz/artists` cria ou reutiliza um artista somente após validar o MBID no MusicBrainz
-- `GET /api/music/artists/{artistId}/musicbrainz/discography` é uma prévia read-only que classifica release groups
+- `POST /api/music/artists/{artistId}/musicbrainz/discography` é uma prévia sem escrita local que classifica release groups
 - `POST /api/music/artists/{artistId}/musicbrainz/discography/import` aceita até 50 MBIDs pertencentes ao artista e cria somente itens classificados como ausentes
 - possíveis correspondências locais nunca são mescladas automaticamente durante a importação de discografia
 - confirmar ou trocar o vínculo de um artista importa automaticamente tipo, país/áreas, período, desambiguação, aliases, gêneros e links curados do MusicBrainz

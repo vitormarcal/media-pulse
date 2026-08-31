@@ -8,6 +8,7 @@ export async function fetchMovieCollectionPageData(collectionId: string): Promis
     `/api/movies/collections/${collectionId}/tmdb-members`,
     {
       baseURL: config.public.apiBase,
+      method: 'POST',
     },
   )
 

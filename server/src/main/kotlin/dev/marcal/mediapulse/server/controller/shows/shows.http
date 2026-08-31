@@ -47,7 +47,7 @@ GET {{baseUrl}}/search?q=dark&limit=10
 Accept: application/json
 
 ### Sugestoes TMDb para catalogo
-GET {{baseUrl}}/catalog/suggestions?q=severance
+POST {{baseUrl}}/catalog/suggestions?q=severance
 Accept: application/json
 
 ### Adicionar serie ao catalogo via TMDb
