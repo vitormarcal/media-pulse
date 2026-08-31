@@ -4,13 +4,9 @@ import { buildMovieCollectionPageData } from '~/utils/movies'
 export async function fetchMovieCollectionPageData(collectionId: string): Promise<MovieCollectionPageData> {
   const config = useRuntimeConfig()
 
-  const response = await $fetch<MovieCollectionMembersResponse>(
-    `/api/movies/collections/${collectionId}/tmdb-members`,
-    {
-      baseURL: config.public.apiBase,
-      method: 'POST',
-    },
-  )
+  const response = await $fetch<MovieCollectionMembersResponse>(`/api/movies/collections/${collectionId}`, {
+    baseURL: config.public.apiBase,
+  })
 
   return buildMovieCollectionPageData(response)
 }

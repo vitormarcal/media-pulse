@@ -22,6 +22,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/lists` | - | `MovieListSummaryDto[]` |
 | `GET /api/movies/lists/{slug}` | `slug` | `MovieListDetailsResponse` |
 | `GET /api/movies/collections` | - | `MovieCollectionSummaryDto[]` |
+| `GET /api/movies/collections/{collectionId}` | `collectionId` | `MovieCollectionMembersResponse` com snapshot local |
 | `GET /api/people/search` | `q`, `limit=8` | `PersonSuggestionDto[]` |
 | `GET /api/movies/terms/{kind}/{slug}` | `kind=genre|tag`, `slug` | `MovieTermDetailsResponse` |
 | `GET /api/movies/terms/search` | `q`, `kind=genre|tag`, `limit=8` | `MovieTermSuggestionDto[]` |
@@ -375,10 +376,16 @@ Filmes podem ser vinculados a uma coleção oficial do TMDb, como `The Matrix Co
 - inclui contagem de filmes e quantos já têm sessão
 - inclui preview curto de posters para páginas editoriais e cards de navegação
 
-`POST /api/movies/collections/{collectionId}/tmdb-members` busca os membros da coleção no TMDb sob demanda.
+`GET /api/movies/collections/{collectionId}` retorna o snapshot local dos membros oficiais da coleção e resolve quais filmes já estão no catálogo.
 
-- não persiste snapshot dos membros externos
-- cruza os membros retornados com `movies.tmdb_id`
+- não consulta o TMDb durante a leitura
+- coleções ainda não sincronizadas são processadas automaticamente em segundo plano
+- falhas aguardam pelo menos um dia antes de uma nova tentativa automática
+
+`POST /api/movies/collections/{collectionId}/tmdb-members` força a atualização dos membros no TMDb como mecanismo de reparo explícito.
+
+- substitui atomicamente o snapshot local dos membros externos
+- a leitura cruza o snapshot com `movies.tmdb_id`
 - cada membro informa `inCatalog`, `localMovieId`, `localSlug` e `tmdbUrl`
 - a UI usa esse payload para mostrar filmes ausentes e permitir adição explícita ao catálogo
 

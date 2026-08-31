@@ -65,7 +65,12 @@ class MovieCatalogController(
     @PostMapping("/collections/{collectionId}/tmdb-members")
     fun collectionTmdbMembers(
         @PathVariable collectionId: Long,
-    ): MovieCollectionMembersResponse = movieCollectionMembersService.fetchMembers(collectionId)
+    ): MovieCollectionMembersResponse = movieCollectionMembersService.refreshAndGetMembers(collectionId)
+
+    @GetMapping("/collections/{collectionId}")
+    fun collectionMembers(
+        @PathVariable collectionId: Long,
+    ): MovieCollectionMembersResponse = movieCollectionMembersService.getMembers(collectionId)
 
     @GetMapping("/collections")
     fun collections(): List<MovieCollectionSummaryDto> = repository.listMovieCollections()

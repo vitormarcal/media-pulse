@@ -13,6 +13,7 @@ class MovieCollectionCrudRepository(
         val name: String,
         val posterUrl: String?,
         val backdropUrl: String?,
+        val overview: String?,
     )
 
     data class MovieCollectionBackfillCandidate(
@@ -20,10 +21,26 @@ class MovieCollectionCrudRepository(
         val tmdbId: String,
     )
 
-    data class LocalMovieByTmdbId(
+    data class MovieCollectionMemberRecord(
         val tmdbId: String,
-        val movieId: Long,
-        val slug: String?,
+        val title: String,
+        val originalTitle: String?,
+        val year: Int?,
+        val overview: String?,
+        val posterUrl: String?,
+        val backdropUrl: String?,
+        val localMovieId: Long?,
+        val localSlug: String?,
+    )
+
+    data class MovieCollectionMemberSnapshot(
+        val tmdbId: String,
+        val title: String,
+        val originalTitle: String?,
+        val year: Int?,
+        val overview: String?,
+        val posterUrl: String?,
+        val backdropUrl: String?,
     )
 
     fun findCollection(collectionId: Long): MovieCollectionRecord? =
@@ -31,7 +48,7 @@ class MovieCollectionCrudRepository(
             entityManager
                 .createNativeQuery(
                     """
-                    SELECT id, tmdb_id, name, poster_url, backdrop_url
+                    SELECT id, tmdb_id, name, poster_url, backdrop_url, overview
                     FROM movie_collections
                     WHERE id = :collectionId
                     LIMIT 1
@@ -46,30 +63,139 @@ class MovieCollectionCrudRepository(
                 name = fields[2] as String,
                 posterUrl = fields[3] as String?,
                 backdropUrl = fields[4] as String?,
+                overview = fields[5] as String?,
             )
         }
 
-    fun findLocalMoviesByTmdbIds(tmdbIds: List<String>): Map<String, LocalMovieByTmdbId> {
-        val normalizedIds = tmdbIds.mapNotNull { it.trim().ifBlank { null } }.distinct()
-        if (normalizedIds.isEmpty()) return emptyMap()
-
-        return entityManager
+    fun findPendingCollectionIds(limit: Int): List<Long> =
+        entityManager
             .createNativeQuery(
                 """
-                SELECT m.tmdb_id, m.id, m.slug
-                FROM movies m
-                WHERE m.tmdb_id IN (:tmdbIds)
+                SELECT id
+                FROM movie_collections
+                WHERE members_synced_at IS NULL
+                  AND (
+                    members_sync_attempted_at IS NULL
+                    OR members_sync_attempted_at <= NOW() - INTERVAL '1 day'
+                  )
+                ORDER BY members_sync_attempted_at NULLS FIRST, id
+                LIMIT :limit
                 """.trimIndent(),
-            ).setParameter("tmdbIds", normalizedIds)
+            ).setParameter("limit", limit)
+            .resultList
+            .map { (it as Number).toLong() }
+
+    fun findMembers(collectionId: Long): List<MovieCollectionMemberRecord> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT
+                  member.tmdb_id,
+                  member.title,
+                  member.original_title,
+                  member.release_year,
+                  member.overview,
+                  member.poster_url,
+                  member.backdrop_url,
+                  movie.id,
+                  movie.slug
+                FROM movie_collection_members member
+                LEFT JOIN movies movie ON movie.tmdb_id = member.tmdb_id
+                WHERE member.collection_id = :collectionId
+                ORDER BY member.position, member.id
+                """.trimIndent(),
+            ).setParameter("collectionId", collectionId)
             .resultList
             .map { row ->
                 val fields = row as Array<*>
-                LocalMovieByTmdbId(
+                MovieCollectionMemberRecord(
                     tmdbId = fields[0] as String,
-                    movieId = (fields[1] as Number).toLong(),
-                    slug = fields[2] as String?,
+                    title = fields[1] as String,
+                    originalTitle = fields[2] as String?,
+                    year = (fields[3] as Number?)?.toInt(),
+                    overview = fields[4] as String?,
+                    posterUrl = fields[5] as String?,
+                    backdropUrl = fields[6] as String?,
+                    localMovieId = (fields[7] as Number?)?.toLong(),
+                    localSlug = fields[8] as String?,
                 )
-            }.associateBy { it.tmdbId }
+            }
+
+    fun replaceMemberSnapshot(
+        collectionId: Long,
+        name: String,
+        overview: String?,
+        posterUrl: String?,
+        backdropUrl: String?,
+        members: List<MovieCollectionMemberSnapshot>,
+    ) {
+        entityManager
+            .createNativeQuery("DELETE FROM movie_collection_members WHERE collection_id = :collectionId")
+            .setParameter("collectionId", collectionId)
+            .executeUpdate()
+
+        members.forEachIndexed { position, member ->
+            entityManager
+                .createNativeQuery(
+                    """
+                    INSERT INTO movie_collection_members(
+                      collection_id, tmdb_id, title, original_title, release_year,
+                      overview, poster_url, backdrop_url, position, updated_at
+                    ) VALUES (
+                      :collectionId, :tmdbId, :title, :originalTitle, :releaseYear,
+                      :overview, :posterUrl, :backdropUrl, :position, NOW()
+                    )
+                    """.trimIndent(),
+                ).setParameter("collectionId", collectionId)
+                .setParameter("tmdbId", member.tmdbId)
+                .setParameter("title", member.title)
+                .setParameter("originalTitle", member.originalTitle)
+                .setParameter("releaseYear", member.year)
+                .setParameter("overview", member.overview)
+                .setParameter("posterUrl", member.posterUrl)
+                .setParameter("backdropUrl", member.backdropUrl)
+                .setParameter("position", position)
+                .executeUpdate()
+        }
+
+        entityManager
+            .createNativeQuery(
+                """
+                UPDATE movie_collections
+                SET name = :name,
+                    overview = :overview,
+                    poster_url = COALESCE(:posterUrl, poster_url),
+                    backdrop_url = COALESCE(:backdropUrl, backdrop_url),
+                    members_synced_at = NOW(),
+                    members_sync_attempted_at = NOW(),
+                    members_sync_error = NULL,
+                    updated_at = NOW()
+                WHERE id = :collectionId
+                """.trimIndent(),
+            ).setParameter("collectionId", collectionId)
+            .setParameter("name", name)
+            .setParameter("overview", overview)
+            .setParameter("posterUrl", posterUrl)
+            .setParameter("backdropUrl", backdropUrl)
+            .executeUpdate()
+    }
+
+    fun markMemberSyncFailure(
+        collectionId: Long,
+        error: String,
+    ) {
+        entityManager
+            .createNativeQuery(
+                """
+                UPDATE movie_collections
+                SET members_sync_attempted_at = NOW(),
+                    members_sync_error = :error,
+                    updated_at = NOW()
+                WHERE id = :collectionId
+                """.trimIndent(),
+            ).setParameter("collectionId", collectionId)
+            .setParameter("error", error.take(500))
+            .executeUpdate()
     }
 
     fun findBackfillCandidates(limit: Int): List<MovieCollectionBackfillCandidate> =
