@@ -78,5 +78,10 @@ class MovieCatalogController(
     @PostMapping("/companies/{companyId}/tmdb-members")
     fun companyTmdbMembers(
         @PathVariable companyId: Long,
-    ): MovieCompanyMembersResponse = movieCompanyMembersService.fetchMembers(companyId)
+    ): MovieCompanyMembersResponse = movieCompanyMembersService.refreshAndGetMembers(companyId)
+
+    @GetMapping("/companies/{companyId}/members")
+    fun companyMembers(
+        @PathVariable companyId: Long,
+    ): MovieCompanyMembersResponse = movieCompanyMembersService.getMembers(companyId)
 }

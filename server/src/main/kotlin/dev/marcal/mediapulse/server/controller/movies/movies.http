@@ -86,7 +86,11 @@ Accept: application/json
 POST {{baseUrl}}/collections/1/tmdb-members
 Accept: application/json
 
-### Filmes TMDb de uma empresa
+### Snapshot local de filmes de uma empresa
+GET {{baseUrl}}/companies/12/members
+Accept: application/json
+
+### Atualizar filmes TMDb de uma empresa
 POST {{baseUrl}}/companies/12/tmdb-members
 Accept: application/json
 

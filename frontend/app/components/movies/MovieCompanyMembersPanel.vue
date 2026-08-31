@@ -120,14 +120,13 @@ async function loadMembers() {
 
   try {
     members.value = await $fetch<MovieCompanyMembersResponse>(
-      `/api/movies/companies/${props.company.companyId}/tmdb-members`,
+      `/api/movies/companies/${props.company.companyId}/members`,
       {
         baseURL: config.public.apiBase,
-        method: 'POST',
       },
     )
   } catch {
-    errorMessage.value = 'Não foi possível carregar os filmes desta empresa no TMDb.'
+    errorMessage.value = 'Não foi possível carregar os filmes desta empresa.'
   } finally {
     loading.value = false
   }

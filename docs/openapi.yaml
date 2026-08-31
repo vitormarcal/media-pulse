@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.81
+  version: 1.0.0-beta.82
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -2057,7 +2057,26 @@ paths:
 
   /api/movies/companies/{companyId}/tmdb-members:
     post:
-      summary: Fetch TMDb members for a movie company
+      summary: Refresh the persisted TMDb member snapshot for a movie company
+      tags: [Movies]
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovieCompanyMembersResponse"
+
+  /api/movies/companies/{companyId}/members:
+    get:
+      summary: Fetch the locally persisted movie company member snapshot
       tags: [Movies]
       parameters:
         - name: companyId

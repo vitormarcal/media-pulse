@@ -23,6 +23,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/lists/{slug}` | `slug` | `MovieListDetailsResponse` |
 | `GET /api/movies/collections` | - | `MovieCollectionSummaryDto[]` |
 | `GET /api/movies/collections/{collectionId}` | `collectionId` | `MovieCollectionMembersResponse` com snapshot local |
+| `GET /api/movies/companies/{companyId}/members` | `companyId` | `MovieCompanyMembersResponse` com snapshot local |
 | `GET /api/people/search` | `q`, `limit=8` | `PersonSuggestionDto[]` |
 | `GET /api/movies/terms/{kind}/{slug}` | `kind=genre|tag`, `slug` | `MovieTermDetailsResponse` |
 | `GET /api/movies/terms/search` | `q`, `kind=genre|tag`, `limit=8` | `MovieTermSuggestionDto[]` |
@@ -244,11 +245,18 @@ Persistência:
 
 - retorna a empresa e os filmes do catálogo ligados a ela
 
-`POST /api/movies/companies/{companyId}/tmdb-members` expande o catálogo da empresa no TMDb.
+Os filmes externos de uma empresa são persistidos em `movie_company_members` por um worker automático.
+
+- o worker processa empresas ainda sem snapshot e repete falhas após um dia
+- abrir a página não consulta o TMDb e não escreve no banco
+- o vínculo com o catálogo é resolvido dinamicamente pelo `tmdb_id`; nenhum filme é catalogado automaticamente
+
+`GET /api/movies/companies/{companyId}/members` retorna somente o snapshot local.
+
+`POST /api/movies/companies/{companyId}/tmdb-members` força a atualização do snapshot como mecanismo de reparo explícito.
 
 - usa `discover/movie` com `with_companies`
-- cruza o resultado com o catálogo local
-- se um filme já existir localmente, reconcilia o vínculo filme-empresa antes de responder
+- substitui atomicamente o snapshot persistido
 
 ## Listas manuais
 
