@@ -210,11 +210,19 @@ Accept: application/json
 POST {{baseUrl}}/credits/sync-tmdb?limit=200
 Accept: application/json
 
-### Filmografia TMDb de uma pessoa
+### Snapshot local da filmografia de filmes de uma pessoa
+GET {{peopleBaseUrl}}/1/filmography
+Accept: application/json
+
+### Atualizar filmografia TMDb de filmes de uma pessoa
 POST {{peopleBaseUrl}}/1/tmdb-filmography
 Accept: application/json
 
-### Filmografia TMDb de series de uma pessoa
+### Snapshot local da filmografia de series de uma pessoa
+GET {{peopleBaseUrl}}/1/show-filmography
+Accept: application/json
+
+### Atualizar filmografia TMDb de series de uma pessoa
 POST {{peopleBaseUrl}}/1/tmdb-show-filmography
 Accept: application/json
 

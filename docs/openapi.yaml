@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.82
+  version: 1.0.0-beta.83
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -2095,7 +2095,7 @@ paths:
 
   /api/people/{personId}/tmdb-filmography:
     post:
-      summary: Fetch TMDb filmography for a local person
+      summary: Refresh the persisted TMDb movie filmography snapshot
       tags: [Movies]
       parameters:
         - name: personId
@@ -2111,9 +2111,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PersonFilmographyResponse"
+
+  /api/people/{personId}/filmography:
+    get:
+      summary: Fetch the locally persisted movie filmography snapshot
+      tags: [Movies]
+      parameters:
+        - name: personId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonFilmographyResponse"
+
   /api/people/{personId}/tmdb-show-filmography:
     post:
-      summary: Fetch TMDb show filmography for a local person
+      summary: Refresh the persisted TMDb show filmography snapshot
+      tags: [Movies]
+      parameters:
+        - name: personId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonShowFilmographyResponse"
+
+  /api/people/{personId}/show-filmography:
+    get:
+      summary: Fetch the locally persisted show filmography snapshot
       tags: [Movies]
       parameters:
         - name: personId

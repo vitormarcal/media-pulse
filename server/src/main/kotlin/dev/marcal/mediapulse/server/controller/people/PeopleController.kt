@@ -37,10 +37,20 @@ class PeopleController(
     @PostMapping("/{personId}/tmdb-filmography")
     fun tmdbFilmography(
         @PathVariable personId: Long,
-    ): PersonFilmographyResponse = personFilmographyService.fetchFilmography(personId)
+    ): PersonFilmographyResponse = personFilmographyService.refreshAndGetFilmography(personId)
+
+    @GetMapping("/{personId}/filmography")
+    fun filmography(
+        @PathVariable personId: Long,
+    ): PersonFilmographyResponse = personFilmographyService.getFilmography(personId)
 
     @PostMapping("/{personId}/tmdb-show-filmography")
     fun tmdbShowFilmography(
         @PathVariable personId: Long,
-    ): PersonShowFilmographyResponse = personShowFilmographyService.fetchFilmography(personId)
+    ): PersonShowFilmographyResponse = personShowFilmographyService.refreshAndGetFilmography(personId)
+
+    @GetMapping("/{personId}/show-filmography")
+    fun showFilmography(
+        @PathVariable personId: Long,
+    ): PersonShowFilmographyResponse = personShowFilmographyService.getFilmography(personId)
 }

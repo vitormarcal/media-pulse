@@ -57,33 +57,4 @@ class MovieCreditsCrudRepository(
                 """.trimIndent(),
             ).setParameter("movieId", movieId)
             .executeUpdate()
-
-    data class LocalMovieByTmdbId(
-        val tmdbId: String,
-        val movieId: Long,
-        val slug: String?,
-    )
-
-    fun findLocalMoviesByTmdbIds(tmdbIds: List<String>): Map<String, LocalMovieByTmdbId> {
-        val normalizedIds = tmdbIds.mapNotNull { it.trim().ifBlank { null } }.distinct()
-        if (normalizedIds.isEmpty()) return emptyMap()
-
-        return entityManager
-            .createNativeQuery(
-                """
-                SELECT m.tmdb_id, m.id, m.slug
-                FROM movies m
-                WHERE m.tmdb_id IN (:tmdbIds)
-                """.trimIndent(),
-            ).setParameter("tmdbIds", normalizedIds)
-            .resultList
-            .map { row ->
-                val fields = row as Array<*>
-                LocalMovieByTmdbId(
-                    tmdbId = fields[0] as String,
-                    movieId = (fields[1] as Number).toLong(),
-                    slug = fields[2] as String?,
-                )
-            }.associateBy { it.tmdbId }
-    }
 }

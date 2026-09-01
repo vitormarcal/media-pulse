@@ -82,12 +82,12 @@ class PeopleControllerTest {
                 profileUrl = null,
                 members = emptyList(),
             )
-        every { personFilmographyService.fetchFilmography(44) } returns expected
+        every { personFilmographyService.refreshAndGetFilmography(44) } returns expected
 
         val response = controller.tmdbFilmography(44)
 
         assertEquals("138", response.tmdbId)
-        verify(exactly = 1) { personFilmographyService.fetchFilmography(44) }
+        verify(exactly = 1) { personFilmographyService.refreshAndGetFilmography(44) }
     }
 
     @Test
@@ -100,11 +100,11 @@ class PeopleControllerTest {
                 profileUrl = null,
                 members = emptyList(),
             )
-        every { personShowFilmographyService.fetchFilmography(44) } returns expected
+        every { personShowFilmographyService.refreshAndGetFilmography(44) } returns expected
 
         val response = controller.tmdbShowFilmography(44)
 
         assertEquals("138", response.tmdbId)
-        verify(exactly = 1) { personShowFilmographyService.fetchFilmography(44) }
+        verify(exactly = 1) { personShowFilmographyService.refreshAndGetFilmography(44) }
     }
 }

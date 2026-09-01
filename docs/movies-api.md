@@ -18,6 +18,8 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/{movieId}` | `movieId` | `MovieDetailsResponse` |
 | `GET /api/movies/slug/{slug}` | `slug` | `MovieDetailsResponse` |
 | `GET /api/people/{slug}` | `slug` | `PersonDetailsResponse` com snapshot local do perfil |
+| `GET /api/people/{personId}/filmography` | `personId` | `PersonFilmographyResponse` com snapshot local |
+| `GET /api/people/{personId}/show-filmography` | `personId` | `PersonShowFilmographyResponse` com snapshot local |
 | `GET /api/movies/companies/{slug}` | `slug` | `MovieCompanyDetailsResponse` |
 | `GET /api/movies/lists` | - | `MovieListSummaryDto[]` |
 | `GET /api/movies/lists/{slug}` | `slug` | `MovieListDetailsResponse` |
@@ -357,16 +359,24 @@ Persistência:
 - aceita grupos editoriais simples: `DIRECTORS`, `WRITERS`, `CAST`, `OTHER`
 - `roleLabel` é opcional em `WRITERS` e `CAST`, e obrigatório em `OTHER`
 
-`POST /api/people/{personId}/tmdb-filmography` expande a filmografia externa da pessoa.
+As filmografias de filmes e séries são persistidas localmente por um worker automático.
 
-- cruza a filmografia do TMDb com os filmes já catalogados localmente
-- quando encontra um filme já local, reaproveita essa oportunidade para persistir o vínculo `movie_credits` da pessoa com o filme
+- cada tipo possui snapshot e estado de sincronização independentes
+- falhas preservam o último snapshot e são repetidas após um dia
+- abrir ou explorar a página nunca consulta o TMDb nem grava no banco
+- a presença no catálogo é resolvida dinamicamente pelo `tmdb_id`
+- nenhum filme, série ou crédito canônico é criado pela leitura da filmografia
+
+`GET /api/people/{personId}/filmography` retorna o snapshot local de filmes.
+
+`POST /api/people/{personId}/tmdb-filmography` força a atualização desse snapshot como reparo explícito.
+
 - permite à UI mostrar o que já existe e o que ainda pode ser adicionado explicitamente
 
-`POST /api/people/{personId}/tmdb-show-filmography` faz o mesmo recorte para séries.
+`GET /api/people/{personId}/show-filmography` retorna o snapshot local de séries.
 
-- cruza `person/{id}/tv_credits` do TMDb com as séries já catalogadas localmente
-- quando encontra uma série já local, reaproveita essa oportunidade para persistir o vínculo `show_credits` da pessoa com a série
+`POST /api/people/{personId}/tmdb-show-filmography` força a atualização desse snapshot como reparo explícito.
+
 - permite à UI mostrar o que já existe e o que ainda pode ser adicionado explicitamente
 
 ## Coleções oficiais TMDb

@@ -57,33 +57,4 @@ class ShowCreditsCrudRepository(
                 """.trimIndent(),
             ).setParameter("showId", showId)
             .executeUpdate()
-
-    data class LocalShowByTmdbId(
-        val tmdbId: String,
-        val showId: Long,
-        val slug: String?,
-    )
-
-    fun findLocalShowsByTmdbIds(tmdbIds: List<String>): Map<String, LocalShowByTmdbId> {
-        val normalizedIds = tmdbIds.mapNotNull { it.trim().ifBlank { null } }.distinct()
-        if (normalizedIds.isEmpty()) return emptyMap()
-
-        return entityManager
-            .createNativeQuery(
-                """
-                SELECT s.tmdb_id, s.id, s.slug
-                FROM tv_shows s
-                WHERE s.tmdb_id IN (:tmdbIds)
-                """.trimIndent(),
-            ).setParameter("tmdbIds", normalizedIds)
-            .resultList
-            .map { row ->
-                val fields = row as Array<*>
-                LocalShowByTmdbId(
-                    tmdbId = fields[0] as String,
-                    showId = (fields[1] as Number).toLong(),
-                    slug = fields[2] as String?,
-                )
-            }.associateBy { it.tmdbId }
-    }
 }

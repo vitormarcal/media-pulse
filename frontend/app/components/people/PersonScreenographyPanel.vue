@@ -226,10 +226,9 @@ async function loadMovies() {
 
   try {
     movieFilmography.value = await $fetch<PersonFilmographyResponse>(
-      `/api/people/${props.person.personId}/tmdb-filmography`,
+      `/api/people/${props.person.personId}/filmography`,
       {
         baseURL: config.public.apiBase,
-        method: 'POST',
       },
     )
   } catch {
@@ -247,10 +246,9 @@ async function loadShows() {
 
   try {
     showFilmography.value = await $fetch<PersonShowFilmographyResponse>(
-      `/api/people/${props.person.personId}/tmdb-show-filmography`,
+      `/api/people/${props.person.personId}/show-filmography`,
       {
         baseURL: config.public.apiBase,
-        method: 'POST',
       },
     )
   } catch {

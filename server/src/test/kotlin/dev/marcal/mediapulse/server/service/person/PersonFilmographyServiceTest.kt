@@ -1,105 +1,100 @@
 package dev.marcal.mediapulse.server.service.person
 
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
-import dev.marcal.mediapulse.server.model.person.Person
-import dev.marcal.mediapulse.server.repository.crud.MovieCreditAssignmentRepository
-import dev.marcal.mediapulse.server.repository.crud.MovieCreditsCrudRepository
-import dev.marcal.mediapulse.server.repository.crud.PersonRepository
+import dev.marcal.mediapulse.server.repository.PersonFilmographyRepository
+import dev.marcal.mediapulse.server.repository.PersonFilmographyRepository.MediaType
 import dev.marcal.mediapulse.server.service.movie.ManualMovieCatalogService
+import dev.marcal.mediapulse.server.util.TxUtil
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Test
-import java.util.Optional
-import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class PersonFilmographyServiceTest {
-    private val personRepository = mockk<PersonRepository>()
-    private val movieCreditAssignmentRepository = mockk<MovieCreditAssignmentRepository>(relaxed = true)
-    private val movieCreditsCrudRepository = mockk<MovieCreditsCrudRepository>()
-    private val tmdbApiClient = mockk<TmdbApiClient>()
-    private val manualMovieCatalogService = mockk<ManualMovieCatalogService>()
+    private val repository = mockk<PersonFilmographyRepository>(relaxed = true)
+    private val tmdb = mockk<TmdbApiClient>()
+    private val catalog = mockk<ManualMovieCatalogService>(relaxed = true)
+    private val tx = mockk<TxUtil>()
+    private val service = PersonFilmographyService(repository, tmdb, catalog, tx)
 
-    private val service =
-        PersonFilmographyService(
-            personRepository = personRepository,
-            movieCreditAssignmentRepository = movieCreditAssignmentRepository,
-            movieCreditsCrudRepository = movieCreditsCrudRepository,
-            tmdbApiClient = tmdbApiClient,
-            manualMovieCatalogService = manualMovieCatalogService,
-        )
+    init {
+        every { tx.inTx<Any>(any()) } answers { firstArg<() -> Any>().invoke() }
+    }
 
     @Test
-    fun `fetch filmography should reconcile local movie credits before returning`() {
-        val person =
-            Person(
-                id = 44,
-                tmdbId = "138",
-                name = "Quentin Tarantino",
-                normalizedName = "quentin tarantino",
-                slug = "quentin-tarantino-138",
-                profileUrl = null,
-            )
+    fun `local read should not call tmdb`() {
+        every { repository.findPerson(44) } returns person()
+        every { repository.findMembers(44, MediaType.MOVIE) } returns emptyList()
 
-        every { personRepository.findById(44) } returns Optional.of(person)
-        every { tmdbApiClient.fetchPersonMovieCredits("138") } returns
+        service.getFilmography(44)
+
+        verify(exactly = 0) { tmdb.fetchPersonMovieCredits(any()) }
+    }
+
+    @Test
+    fun `refresh should persist merged movie snapshot`() {
+        val snapshot = slot<List<PersonFilmographyRepository.MemberSnapshot>>()
+        every { repository.findPerson(44) } returns person()
+        every { tmdb.fetchPersonMovieCredits("138") } returns
             TmdbApiClient.TmdbPersonMovieCredits(
                 cast =
                     listOf(
                         TmdbApiClient.TmdbPersonMovieCastCredit(
-                            tmdbId = "101",
-                            title = "Movie A",
-                            originalTitle = "Movie A",
-                            overview = null,
-                            releaseYear = 2001,
-                            posterPath = null,
-                            backdropPath = null,
-                            character = "Himself",
-                            order = 12,
+                            "101",
+                            "Movie A",
+                            "Movie A",
+                            null,
+                            2001,
+                            null,
+                            null,
+                            "Himself",
+                            12,
                         ),
                     ),
                 crew =
                     listOf(
                         TmdbApiClient.TmdbPersonMovieCrewCredit(
-                            tmdbId = "202",
-                            title = "Movie B",
-                            originalTitle = "Movie B",
-                            overview = null,
-                            releaseYear = 2004,
-                            posterPath = null,
-                            backdropPath = null,
-                            department = "Directing",
-                            job = "Director",
+                            "101",
+                            "Movie A",
+                            "Movie A",
+                            null,
+                            2001,
+                            null,
+                            null,
+                            "Directing",
+                            "Director",
                         ),
                     ),
             )
-        every { movieCreditsCrudRepository.findLocalMoviesByTmdbIds(listOf("202", "101")) } returns
-            mapOf(
-                "101" to MovieCreditsCrudRepository.LocalMovieByTmdbId(tmdbId = "101", movieId = 9, slug = "movie-a"),
-                "202" to MovieCreditsCrudRepository.LocalMovieByTmdbId(tmdbId = "202", movieId = 11, slug = "movie-b"),
-            )
+        every { repository.replaceSnapshot(44, MediaType.MOVIE, capture(snapshot)) } returns Unit
 
-        val response = service.fetchFilmography(44)
-
-        assertEquals(2, response.members.size)
-        verify(exactly = 2) { movieCreditAssignmentRepository.upsert(any()) }
-        verify {
-            movieCreditAssignmentRepository.upsert(
-                match {
-                    it.movieId == 9L &&
-                        it.personId == 44L &&
-                        it.characterName == "Himself"
-                },
-            )
-        }
-        verify {
-            movieCreditAssignmentRepository.upsert(
-                match {
-                    it.movieId == 11L &&
-                        it.personId == 44L &&
-                        it.job == "Director"
-                },
-            )
-        }
+        assertTrue(service.refreshFilmography(44))
+        assertTrue(
+            snapshot.captured
+                .single()
+                .roleLabel
+                .contains("Himself"),
+        )
+        assertTrue(
+            snapshot.captured
+                .single()
+                .roleLabel
+                .contains("Director"),
+        )
     }
+
+    @Test
+    fun `failed refresh should preserve snapshot and record attempt`() {
+        every { repository.findPerson(44) } returns person()
+        every { tmdb.fetchPersonMovieCredits("138") } returns null
+
+        assertFalse(service.refreshFilmography(44))
+        verify { repository.markFailure(44, MediaType.MOVIE, "TMDb movie filmography unavailable") }
+        verify(exactly = 0) { repository.replaceSnapshot(any(), any(), any()) }
+    }
+
+    private fun person() = PersonFilmographyRepository.PersonRecord(44, "138", "Quentin Tarantino", null)
 }
