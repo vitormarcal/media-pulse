@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.service.movie
 
+import dev.marcal.mediapulse.server.integration.tmdb.MovieTmdbResolution
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.movie.Movie
@@ -36,8 +37,8 @@ class MovieAutomaticEnrichmentServiceTest {
         val unresolved = movie(id = 10, tmdbId = null, imdbId = "tt0133093")
         val linked = unresolved.copy(tmdbId = "603")
         every { movieRepository.findById(10) } returnsMany listOf(Optional.of(unresolved), Optional.of(linked))
-        every { tmdbApiClient.findMovieTmdbIdByImdbId("tt0133093") } returns "603"
-        every { pendingRepository.markTmdbResolutionChecked(10) } returns 1
+        every { tmdbApiClient.resolveMovieByImdbId("tt0133093") } returns MovieTmdbResolution.Resolved("603")
+        every { pendingRepository.clearTmdbResolutionResult(10) } returns 1
 
         service.enrichMovie(10)
 
@@ -64,16 +65,31 @@ class MovieAutomaticEnrichmentServiceTest {
     }
 
     @Test
-    fun `should leave IMDb-only movie pending when TMDb cannot resolve it`() {
+    fun `should block IMDb-only movie when TMDb has no match`() {
         val unresolved = movie(id = 30, tmdbId = null, imdbId = "tt-missing")
         every { movieRepository.findById(30) } returns Optional.of(unresolved)
-        every { tmdbApiClient.findMovieTmdbIdByImdbId("tt-missing") } returns null
-        every { pendingRepository.markTmdbResolutionChecked(30) } returns 1
+        every { tmdbApiClient.resolveMovieByImdbId("tt-missing") } returns MovieTmdbResolution.NotFound
+        every { pendingRepository.markTmdbResolutionNotFound(30) } returns 1
 
         service.enrichMovie(30)
 
         verify(exactly = 0) { manualMovieCatalogService.linkExternalIdIfAvailable(any(), any(), any()) }
         verify(exactly = 0) { movieCreditsService.syncFromTmdbIfLinked(any()) }
+        verify { pendingRepository.markTmdbResolutionNotFound(30) }
+    }
+
+    @Test
+    fun `should schedule retry when TMDb resolution fails temporarily`() {
+        val unresolved = movie(id = 31, tmdbId = null, imdbId = "tt-temporary")
+        every { movieRepository.findById(31) } returns Optional.of(unresolved)
+        every { tmdbApiClient.resolveMovieByImdbId("tt-temporary") } returns
+            MovieTmdbResolution.Failed("provider unavailable")
+        every { pendingRepository.markTmdbResolutionFailure(31, "provider unavailable") } returns 1
+
+        service.enrichMovie(31)
+
+        verify { pendingRepository.markTmdbResolutionFailure(31, "provider unavailable") }
+        verify(exactly = 0) { manualMovieCatalogService.linkExternalIdIfAvailable(any(), any(), any()) }
     }
 
     @Test

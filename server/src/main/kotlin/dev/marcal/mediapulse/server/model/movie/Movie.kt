@@ -2,6 +2,8 @@ package dev.marcal.mediapulse.server.model.movie
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -49,6 +51,11 @@ data class Movie(
     val tmdbId: String? = null,
     @Column(name = "tmdb_resolution_checked_at")
     val tmdbResolutionCheckedAt: Instant? = null,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tmdb_resolution_state")
+    val tmdbResolutionState: MovieTmdbResolutionState? = null,
+    @Column(name = "tmdb_resolution_error")
+    val tmdbResolutionError: String? = null,
     @Column(name = "imdb_id", unique = true)
     val imdbId: String? = null,
     @Column(nullable = false, unique = true)
@@ -58,3 +65,8 @@ data class Movie(
     @Column(name = "updated_at")
     val updatedAt: Instant? = null,
 )
+
+enum class MovieTmdbResolutionState {
+    NOT_FOUND,
+    FAILED,
+}

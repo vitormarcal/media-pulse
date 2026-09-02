@@ -166,6 +166,8 @@ Filmes com apenas IMDb têm o vínculo TMDb resolvido automaticamente. A importa
 
 Cada etapa automática registra sua última tentativa e eventual erro em `movies`. Uma falha preserva os dados locais, não impede as outras etapas e só volta a ser elegível para execução automática após um dia. Uma sincronização bem-sucedida limpa o erro da etapa.
 
+Na resolução IMDb → TMDb, ausência confirmada de correspondência produz `BLOCKED` e não volta automaticamente à fila. Falhas temporárias do provedor produzem `RETRY_SCHEDULED` e são tentadas novamente depois de um dia.
+
 ## Termos de filmes
 
 Cada filme agora pode ter termos de classificação editáveis em duas famílias:

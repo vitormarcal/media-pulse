@@ -8,6 +8,18 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.reactive.function.client.bodyToMono
 
+sealed interface MovieTmdbResolution {
+    data class Resolved(
+        val tmdbId: String,
+    ) : MovieTmdbResolution
+
+    data object NotFound : MovieTmdbResolution
+
+    data class Failed(
+        val message: String,
+    ) : MovieTmdbResolution
+}
+
 data class TmdbMovieDetailsResponse(
     val title: String? = null,
     @JsonProperty("original_title")
@@ -1371,11 +1383,11 @@ class TmdbApiClient(
         return emptyList()
     }
 
-    fun findMovieTmdbIdByImdbId(imdbId: String): String? {
-        if (!tmdbProperties.enabled) return null
+    fun resolveMovieByImdbId(imdbId: String): MovieTmdbResolution {
+        if (!tmdbProperties.enabled) return MovieTmdbResolution.Failed("TMDb integration disabled")
 
         val normalizedImdbId = imdbId.trim()
-        if (normalizedImdbId.isBlank()) return null
+        if (normalizedImdbId.isBlank()) return MovieTmdbResolution.NotFound
 
         return try {
             tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
@@ -1394,17 +1406,19 @@ class TmdbApiClient(
                     }.retrieve()
                     .bodyToMono<TmdbFindMovieResponse>()
                     .block()
-                    ?: return null
+                    ?: return MovieTmdbResolution.Failed("Empty TMDb response")
 
             response.movieResults
                 .singleOrNull()
                 ?.id
                 ?.toString()
+                ?.let(MovieTmdbResolution::Resolved)
+                ?: MovieTmdbResolution.NotFound
         } catch (ex: WebClientResponseException.NotFound) {
-            null
+            MovieTmdbResolution.NotFound
         } catch (ex: Exception) {
             logger.warn("Failed to resolve TMDb movie from IMDb id={}", normalizedImdbId, ex)
-            null
+            MovieTmdbResolution.Failed(ex.message ?: ex.javaClass.simpleName)
         }
     }
 

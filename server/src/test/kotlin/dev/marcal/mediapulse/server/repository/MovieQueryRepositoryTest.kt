@@ -8,7 +8,9 @@ import jakarta.persistence.Query
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.sql.Timestamp
+import java.time.Clock
 import java.time.Instant
+import java.time.ZoneOffset
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -23,7 +25,13 @@ class MovieQueryRepositoryTest {
 
     @BeforeEach
     fun setUp() {
-        repository = MovieQueryRepository(em, mediaCommentQueryRepository, mediaRatingQueryRepository)
+        repository =
+            MovieQueryRepository(
+                em,
+                mediaCommentQueryRepository,
+                mediaRatingQueryRepository,
+                Clock.fixed(Instant.parse("2026-09-02T12:00:00Z"), ZoneOffset.UTC),
+            )
         sqls.clear()
 
         every { em.createNativeQuery(any<String>()) } answers {
@@ -125,6 +133,7 @@ class MovieQueryRepositoryTest {
                         null,
                         null,
                         null,
+                        null,
                     ),
                 ),
                 emptyList<Any>(),
@@ -157,6 +166,7 @@ class MovieQueryRepositoryTest {
                         "https://image.tmdb.org/t/p/w780/backdrop.jpg",
                         "603",
                         "tt0133093",
+                        null,
                         null,
                         null,
                         null,

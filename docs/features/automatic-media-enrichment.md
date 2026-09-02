@@ -67,7 +67,7 @@ Cada etapa deve consultar o identificador local necessário, persistir o resulta
 
 O detalhe da entidade deve expor o estado agregado e, quando útil, o estado individual por etapa. O estado não deve ser inferido apenas pela quantidade de itens retornados.
 
-Tentativas de resolução ou de uma etapa sem sucesso devem registrar quando ocorreram e o erro correspondente. Retentativas automáticas usam intervalo mínimo de um dia para evitar que identificadores inválidos ou provedores indisponíveis ocupem continuamente o início da fila. O reparo explícito pode executar a etapa sem aguardar esse intervalo.
+Tentativas de resolução ou de uma etapa sem sucesso devem registrar quando ocorreram e o erro correspondente. Ausência confirmada de correspondência IMDb → TMDb fica `BLOCKED` e sai da fila automática; indisponibilidade temporária fica `RETRY_SCHEDULED`. Retentativas automáticas usam intervalo mínimo de um dia para evitar que provedores indisponíveis ocupem continuamente o início da fila. O reparo explícito pode executar a etapa sem aguardar esse intervalo.
 
 ## Operação
 

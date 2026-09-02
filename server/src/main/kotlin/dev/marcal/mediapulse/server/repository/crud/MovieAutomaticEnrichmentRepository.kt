@@ -14,7 +14,8 @@ class MovieAutomaticEnrichmentRepository(
                 """
                 SELECT m.id
                 FROM movies m
-                WHERE (m.tmdb_id IS NULL AND m.imdb_id IS NOT NULL AND (
+                WHERE (m.tmdb_id IS NULL AND m.imdb_id IS NOT NULL
+                      AND m.tmdb_resolution_state IS DISTINCT FROM 'NOT_FOUND' AND (
                         m.tmdb_resolution_checked_at IS NULL
                         OR m.tmdb_resolution_checked_at < NOW() - INTERVAL '1 day'
                       ))
@@ -37,16 +38,47 @@ class MovieAutomaticEnrichmentRepository(
             .map { (it as Number).toLong() }
 
     @Transactional
-    fun markTmdbResolutionChecked(movieId: Long): Int =
+    fun markTmdbResolutionNotFound(movieId: Long): Int = markTmdbResolution(movieId, "NOT_FOUND", null)
+
+    @Transactional
+    fun markTmdbResolutionFailure(
+        movieId: Long,
+        error: String,
+    ): Int = markTmdbResolution(movieId, "FAILED", error)
+
+    @Transactional
+    fun clearTmdbResolutionResult(movieId: Long): Int =
         entityManager
             .createNativeQuery(
                 """
                 UPDATE movies
                 SET tmdb_resolution_checked_at = NOW(),
+                    tmdb_resolution_state = NULL,
+                    tmdb_resolution_error = NULL,
                     updated_at = NOW()
                 WHERE id = :movieId
                 """.trimIndent(),
             ).setParameter("movieId", movieId)
+            .executeUpdate()
+
+    private fun markTmdbResolution(
+        movieId: Long,
+        state: String,
+        error: String?,
+    ): Int =
+        entityManager
+            .createNativeQuery(
+                """
+                UPDATE movies
+                SET tmdb_resolution_checked_at = NOW(),
+                    tmdb_resolution_state = :state,
+                    tmdb_resolution_error = :error,
+                    updated_at = NOW()
+                WHERE id = :movieId
+                """.trimIndent(),
+            ).setParameter("movieId", movieId)
+            .setParameter("state", state)
+            .setParameter("error", error?.take(500))
             .executeUpdate()
 
     @Transactional

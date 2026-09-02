@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.service.movie
 
+import dev.marcal.mediapulse.server.integration.tmdb.MovieTmdbResolution
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.repository.crud.MovieAutomaticEnrichmentRepository
@@ -58,17 +59,27 @@ class MovieAutomaticEnrichmentService(
 
         val imdbId = movie.imdbId
         if (movie.tmdbId == null && imdbId != null) {
-            val resolvedTmdbId = tmdbApiClient.findMovieTmdbIdByImdbId(imdbId)
-            pendingRepository.markTmdbResolutionChecked(movieId)
-            if (resolvedTmdbId == null) {
-                logger.info("Movie enrichment waiting for TMDb resolution | movieId={} imdbId={}", movieId, imdbId)
-                return
-            }
-            runCatching {
-                manualMovieCatalogService.linkExternalIdIfAvailable(movieId, Provider.TMDB, resolvedTmdbId)
-            }.onFailure { ex ->
-                logger.warn("Failed to link resolved TMDb id | movieId={} tmdbId={}", movieId, resolvedTmdbId, ex)
-                return
+            when (val resolution = tmdbApiClient.resolveMovieByImdbId(imdbId)) {
+                MovieTmdbResolution.NotFound -> {
+                    pendingRepository.markTmdbResolutionNotFound(movieId)
+                    logger.info("Movie enrichment blocked without TMDb match | movieId={} imdbId={}", movieId, imdbId)
+                    return
+                }
+                is MovieTmdbResolution.Failed -> {
+                    pendingRepository.markTmdbResolutionFailure(movieId, resolution.message)
+                    logger.info("Movie enrichment waiting for TMDb resolution retry | movieId={} imdbId={}", movieId, imdbId)
+                    return
+                }
+                is MovieTmdbResolution.Resolved -> {
+                    runCatching {
+                        manualMovieCatalogService.linkExternalIdIfAvailable(movieId, Provider.TMDB, resolution.tmdbId)
+                    }.onFailure { ex ->
+                        pendingRepository.markTmdbResolutionFailure(movieId, ex.message ?: ex.javaClass.simpleName)
+                        logger.warn("Failed to link resolved TMDb id | movieId={} tmdbId={}", movieId, resolution.tmdbId, ex)
+                        return
+                    }
+                    pendingRepository.clearTmdbResolutionResult(movieId)
+                }
             }
             movie = movieRepository.findById(movieId).orElse(movie)
         }
