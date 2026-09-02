@@ -11,13 +11,13 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-@RequestMapping("/api/spotify")
+@RequestMapping("/api/admin/imports/spotify")
 @RestController
 class SpotifyImportController(
     private val importService: SpotifyImportService,
     private val backgroundExecutor: TaskExecutor,
 ) {
-    @PostMapping("/import")
+    @PostMapping
     fun import(
         @RequestBody request: SpotifyImportRequest?,
     ): ResponseEntity<SpotifyImportResponse> {

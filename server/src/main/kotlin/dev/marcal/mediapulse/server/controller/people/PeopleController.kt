@@ -10,7 +10,6 @@ import dev.marcal.mediapulse.server.service.person.PersonFilmographyService
 import dev.marcal.mediapulse.server.service.person.PersonShowFilmographyService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -34,20 +33,10 @@ class PeopleController(
         @RequestParam(defaultValue = "8") limit: Int,
     ): List<PersonSuggestionDto> = movieCreditsService.searchPeople(q, limit.coerceIn(1, 1000))
 
-    @PostMapping("/{personId}/tmdb-filmography")
-    fun tmdbFilmography(
-        @PathVariable personId: Long,
-    ): PersonFilmographyResponse = personFilmographyService.refreshAndGetFilmography(personId)
-
     @GetMapping("/{personId}/filmography")
     fun filmography(
         @PathVariable personId: Long,
     ): PersonFilmographyResponse = personFilmographyService.getFilmography(personId)
-
-    @PostMapping("/{personId}/tmdb-show-filmography")
-    fun tmdbShowFilmography(
-        @PathVariable personId: Long,
-    ): PersonShowFilmographyResponse = personShowFilmographyService.refreshAndGetFilmography(personId)
 
     @GetMapping("/{personId}/show-filmography")
     fun showFilmography(

@@ -25,7 +25,7 @@ import type { SpotifyStatusResponse } from '~/types/spotify'
 
 const route = useRoute()
 const config = useRuntimeConfig()
-const { data: spotifyStatus } = await useFetch<SpotifyStatusResponse>('/api/spotify/status', {
+const { data: spotifyStatus } = await useFetch<SpotifyStatusResponse>('/api/admin/spotify/status', {
   baseURL: config.public.apiBase,
 })
 const searchOpen = ref(false)

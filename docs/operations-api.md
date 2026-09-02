@@ -1,10 +1,12 @@
 # Operations API
 
+Todas as operações desta página vivem sob `/api/admin/**`. Esse namespace é reservado a imports, backfills, reprocessamentos, drains, reparos provider-specific e manutenção do catálogo; leituras públicas e edições cotidianas permanecem nos namespaces dos recursos. As rotas operacionais anteriores foram removidas, sem aliases de compatibilidade.
+
 Este documento cobre endpoints operacionais de ingestão, webhook, OAuth e manutenção que não pertencem às APIs read-only por domínio.
 
 ## Spotify
 
-### `POST /api/spotify/import`
+### `POST /api/admin/imports/spotify`
 
 Dispara importação assíncrona de plays recentes do Spotify.
 
@@ -19,13 +21,13 @@ Body opcional:
 
 Resposta: `202 Accepted` com `resetCursor`.
 
-### `POST /api/spotify/extended/import`
+### `POST /api/admin/imports/spotify/extended`
 
 Recebe `multipart/form-data` com a parte `file` e importa histórico estendido exportado.
 
 Resposta: `200 OK`.
 
-### `POST /api/spotify/backfill-album-tracks`
+### `POST /api/admin/spotify/backfills/album-tracks`
 
 Dispara backfill assíncrono de tracklists de álbuns já conhecidos.
 
@@ -44,7 +46,7 @@ Resposta body:
 }
 ```
 
-### `GET /api/spotify/status`
+### `GET /api/admin/spotify/status`
 
 Retorna o estado operacional da importação do Spotify. Os estados possíveis são:
 
@@ -93,7 +95,7 @@ Recebe `multipart/form-data` com:
 
 O payload é salvo em `event_sources` e processado em seguida.
 
-### `POST /api/plex/music/import`
+### `POST /api/admin/imports/plex/music`
 
 Executa importação de biblioteca musical do Plex.
 
@@ -110,13 +112,13 @@ Resposta: `200 OK` com `sectionKey` e `stats`.
 
 ## Event sources
 
-### `POST /event-sources/reprocess`
+### `POST /api/admin/event-sources/reprocess`
 
 Reprocessa em lote eventos salvos em `event_sources` conforme os filtros enviados em `ReprocessRequest`.
 
 Resposta: `ApiResult<ReprocessCounter>`.
 
-### `POST /event-sources/{id}/reprocess`
+### `POST /api/admin/event-sources/{id}/reprocess`
 
 Reprocessa um evento específico pelo `id`.
 
@@ -191,7 +193,7 @@ Remove a nota da mídia.
 
 ## MusicBrainz
 
-### `POST /api/musicbrainz/enrich-album-genres`
+### `POST /api/admin/musicbrainz/enrich-album-genres`
 
 Dispara enriquecimento assíncrono de gêneros em lote.
 
@@ -199,7 +201,7 @@ Query params:
 
 - `limit=200`
 
-### `POST /api/musicbrainz/enrich-album-genres/drain`
+### `POST /api/admin/musicbrainz/enrich-album-genres/drain`
 
 Dispara processamento assíncrono contínuo até esgotar o backlog ou atingir o teto informado.
 

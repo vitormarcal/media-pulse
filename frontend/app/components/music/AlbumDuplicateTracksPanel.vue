@@ -247,7 +247,7 @@ async function loadGroups() {
     const items: DuplicateTrackGroupResponse[] = []
     let cursor: string | null = null
     do {
-      const page = await $fetch<DuplicateTrackReviewPageResponse>('/api/music/admin/track-duplicates', {
+      const page = await $fetch<DuplicateTrackReviewPageResponse>('/api/admin/music/track-duplicates', {
         baseURL: config.public.apiBase,
         query: {
           limit: 100,
@@ -332,7 +332,7 @@ async function toggleIgnored(group: DuplicateTrackGroupResponse) {
   busyGroupId.value = key
   feedback.value = null
   try {
-    await $fetch('/api/music/admin/track-duplicates/ignore', {
+    await $fetch('/api/admin/music/track-duplicates/ignore', {
       baseURL: config.public.apiBase,
       method: 'POST',
       body: { albumId: props.albumId, groupKey: group.groupKey, ignored: !group.ignored },
@@ -407,7 +407,7 @@ async function confirmMerge() {
 
   busyBatch.value = true
   try {
-    const response = await $fetch<DuplicateTrackBatchMergeResponse>('/api/music/admin/track-duplicates/merge-batch', {
+    const response = await $fetch<DuplicateTrackBatchMergeResponse>('/api/admin/music/track-duplicates/merge-batch', {
       baseURL: config.public.apiBase,
       method: 'POST',
       body: { merges: selectedGroups.map(mergeRequest) },
@@ -428,7 +428,7 @@ async function mergeManualSelection() {
   busyBatch.value = true
   feedback.value = null
   try {
-    const response = await $fetch<DuplicateTrackMergeResponse>('/api/music/admin/track-duplicates/manual-merge', {
+    const response = await $fetch<DuplicateTrackMergeResponse>('/api/admin/music/track-duplicates/manual-merge', {
       baseURL: config.public.apiBase,
       method: 'POST',
       body: {
@@ -453,7 +453,7 @@ async function mergeOne(group: DuplicateTrackGroupResponse) {
   const key = groupKey(group)
   busyGroupId.value = key
   try {
-    const response = await $fetch<DuplicateTrackMergeResponse>('/api/music/admin/track-duplicates/merge', {
+    const response = await $fetch<DuplicateTrackMergeResponse>('/api/admin/music/track-duplicates/merge', {
       baseURL: config.public.apiBase,
       method: 'POST',
       body: mergeRequest(group),

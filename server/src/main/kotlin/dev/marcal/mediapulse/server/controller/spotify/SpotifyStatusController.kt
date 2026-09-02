@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-@RequestMapping("/api/spotify")
+@RequestMapping("/api/admin/spotify")
 @RestController
 class SpotifyStatusController(
     private val statusService: SpotifyStatusService,

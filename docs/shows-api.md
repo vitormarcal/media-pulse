@@ -25,8 +25,8 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 | `GET /api/shows/stats` | - | `ShowsStatsResponse` |
 | `GET /api/shows/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `ShowsByYearResponse` |
 | `POST /api/shows/catalog/suggestions` | `q` | `ShowCatalogSuggestionsResponse` |
-| `POST /api/shows/credits/sync-tmdb` | `limit=100` | `ShowCreditsBatchSyncResponse` |
-| `POST /api/shows/{showId}/credits/sync-tmdb` | `showId` | `ShowCreditsSyncResponse` |
+| `POST /api/admin/shows/credits/sync-tmdb` | `limit=100` | `ShowCreditsBatchSyncResponse` |
+| `POST /api/admin/shows/{showId}/credits/sync-tmdb` | `showId` | `ShowCreditsSyncResponse` |
 | `POST /api/shows/catalog` | body com `title`, `year?`, `tmdbId?`, `tvdbId?`, `importEpisodes=true` | `ManualShowCatalogCreateResponse` |
 | `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview` | body com `tmdbId?` | `ShowSeasonEnrichmentPreviewResponse` |
 | `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/apply` | body com `tmdbId?`, `mode`, `seasonFields`, `episodeFields` | `ShowSeasonEnrichmentApplyResponse` |
@@ -89,7 +89,7 @@ Campos aceitos:
 
 ## Pessoas e créditos
 
-`POST /api/shows/{showId}/credits/sync-tmdb` sincroniza as pessoas principais da série a partir do TMDb.
+`POST /api/admin/shows/{showId}/credits/sync-tmdb` sincroniza as pessoas principais da série a partir do TMDb.
 
 - exige vínculo `TMDB` salvo na série
 - traz o recorte principal de elenco e equipe relevante
@@ -98,7 +98,7 @@ Campos aceitos:
 - a página da pessoa agrega esses créditos de série ao lado dos créditos de filme
 - funciona como reparo explícito; a página da série não dispara esta operação
 
-Um worker executa esse sync automaticamente para séries pendentes. `POST /api/shows/credits/sync-tmdb?limit=100` mantém o mesmo processamento disponível para reparo em lote.
+Um worker executa esse sync automaticamente para séries pendentes. `POST /api/admin/shows/credits/sync-tmdb?limit=100` mantém o mesmo processamento disponível para reparo em lote.
 
 - considera apenas séries com vínculo `TMDB`
 - considera apenas pendentes (`tv_shows.credits_synced_at IS NULL`)

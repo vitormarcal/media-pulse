@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/music/admin/album-duplicates")
+@RequestMapping("/api/admin/music/album-duplicates")
 class MusicAlbumDuplicateReviewController(
     private val service: DuplicateAlbumReviewService,
 ) {

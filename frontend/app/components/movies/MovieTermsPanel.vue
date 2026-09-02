@@ -196,7 +196,7 @@ async function syncFromTmdb() {
   feedback.value = null
 
   try {
-    const response = await $fetch<MovieTermsSyncResponse>(`/api/movies/${props.movieId}/terms/sync-tmdb`, {
+    const response = await $fetch<MovieTermsSyncResponse>(`/api/admin/movies/${props.movieId}/terms/sync-tmdb`, {
       baseURL: config.public.apiBase,
       method: 'POST',
     })

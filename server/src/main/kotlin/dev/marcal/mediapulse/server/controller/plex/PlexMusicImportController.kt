@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/plex/music")
+@RequestMapping("/api/admin/imports/plex/music")
 class PlexMusicImportController(
     private val plexMusicImportService: PlexMusicImportService,
 ) {
@@ -21,7 +21,7 @@ class PlexMusicImportController(
         val stats: PlexMusicImportService.ImportStats,
     )
 
-    @PostMapping("/import")
+    @PostMapping
     suspend fun importMusic(
         @RequestBody req: MusicImportRequest,
     ): MusicImportResponse {

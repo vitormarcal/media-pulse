@@ -10,12 +10,12 @@ import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 
-@RequestMapping("/api/spotify/extended")
+@RequestMapping("/api/admin/imports/spotify/extended")
 @RestController
 class SpotifyExtendedImportController(
     private val importService: SpotifyExtendedImportService,
 ) {
-    @PostMapping("/import", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     suspend fun import(
         @RequestPart("file") file: MultipartFile,
     ): ResponseEntity<SpotifyImportResponse> {

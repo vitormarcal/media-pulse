@@ -212,7 +212,7 @@ async function loadSuggestions() {
   error.value = ''
   try {
     suggestions.value = (
-      await $fetch<DuplicateArtistReviewResponse>('/api/music/admin/artist-duplicates', {
+      await $fetch<DuplicateArtistReviewResponse>('/api/admin/music/artist-duplicates', {
         params: { artist: artistFilter.value || undefined },
       })
     ).items
@@ -230,7 +230,7 @@ async function searchCatalog() {
   error.value = ''
   try {
     catalog.value = (
-      await $fetch<ArtistMergeCatalogResponse>('/api/music/admin/artist-duplicates/catalog', {
+      await $fetch<ArtistMergeCatalogResponse>('/api/admin/music/artist-duplicates/catalog', {
         params: { q: catalogQuery.value },
       })
     ).artists
@@ -257,7 +257,7 @@ async function safelyOpenPreview(ids: number[], targetId: number, resetChoices =
   }
 }
 async function openPreview(ids: number[], targetId: number, resetChoices: boolean) {
-  const data = await $fetch<ArtistMergePreviewResponse>('/api/music/admin/artist-duplicates/preview', {
+  const data = await $fetch<ArtistMergePreviewResponse>('/api/admin/music/artist-duplicates/preview', {
     method: 'POST',
     body: { targetArtistId: targetId, sourceArtistIds: ids.filter((id) => id !== targetId) },
   })
@@ -295,7 +295,7 @@ async function confirmMerge() {
   mergePending.value = true
   error.value = ''
   try {
-    const response = await $fetch<ArtistMergeResponse>('/api/music/admin/artist-duplicates/merge', {
+    const response = await $fetch<ArtistMergeResponse>('/api/admin/music/artist-duplicates/merge', {
       method: 'POST',
       body: {
         ...form,

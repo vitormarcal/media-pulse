@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-@RequestMapping("/event-sources")
+@RequestMapping("/api/admin/event-sources")
 @RestController
 class EventSourceController(
     private val reprocessEventSource: ReprocessEventSource,

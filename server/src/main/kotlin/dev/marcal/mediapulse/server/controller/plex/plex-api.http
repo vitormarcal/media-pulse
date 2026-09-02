@@ -1,7 +1,7 @@
-@baseUrl = {{host}}/api/plex/music
+@baseUrl = {{host}}/api/admin/imports/plex/music
 
 ### Importar tudo (descobre seções de música automaticamente)
-POST {{baseUrl}}/import
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
@@ -9,7 +9,7 @@ Content-Type: application/json
 }
 
 ### Importar apenas uma seção (ex: key=4)
-POST {{baseUrl}}/import
+POST {{baseUrl}}
 Content-Type: application/json
 
 {

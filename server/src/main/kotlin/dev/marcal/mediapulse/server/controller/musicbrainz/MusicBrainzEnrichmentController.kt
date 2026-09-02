@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/musicbrainz")
+@RequestMapping("/api/admin/musicbrainz")
 class MusicBrainzEnrichmentController(
     private val service: MusicBrainzAlbumGenreEnrichmentService,
 ) {

@@ -233,7 +233,7 @@ async function loadSuggestions() {
   suggestionsPending.value = true
   suggestionsError.value = ''
   try {
-    const response = await $fetch<DuplicateAlbumReviewResponse>('/api/music/admin/album-duplicates', {
+    const response = await $fetch<DuplicateAlbumReviewResponse>('/api/admin/music/album-duplicates', {
       baseURL: config.public.apiBase,
       query: { artist: artistFilter.value || undefined, album: albumFilter.value || undefined },
     })
@@ -247,7 +247,7 @@ async function loadSuggestions() {
 
 async function searchCatalog() {
   if (catalogQuery.value.trim().length < 2) return
-  const response = await $fetch<AlbumMergeCatalogResponse>('/api/music/admin/album-duplicates/catalog', {
+  const response = await $fetch<AlbumMergeCatalogResponse>('/api/admin/music/album-duplicates/catalog', {
     baseURL: config.public.apiBase,
     query: { q: catalogQuery.value.trim() },
   })
@@ -283,7 +283,7 @@ async function prepareMerge(albums: AlbumMergeCandidateResponse[], targetId: num
 }
 
 async function fetchPreview(allIds: number[]) {
-  preview.value = await $fetch<AlbumMergePreviewResponse>('/api/music/admin/album-duplicates/preview', {
+  preview.value = await $fetch<AlbumMergePreviewResponse>('/api/admin/music/album-duplicates/preview', {
     baseURL: config.public.apiBase,
     method: 'POST',
     body: {
@@ -303,7 +303,7 @@ async function confirmMerge() {
   mergePending.value = true
   try {
     const allIds = preview.value.candidates.map((album) => album.albumId)
-    const response = await $fetch<AlbumMergeResponse>('/api/music/admin/album-duplicates/merge', {
+    const response = await $fetch<AlbumMergeResponse>('/api/admin/music/album-duplicates/merge', {
       baseURL: config.public.apiBase,
       method: 'POST',
       body: {

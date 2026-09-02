@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
-@RequestMapping("/api/spotify")
+@RequestMapping("/api/admin/spotify/backfills")
 @RestController
 class SpotifyBackfillController(
     private val service: SpotifyAlbumTracklistBackfillService,
@@ -23,7 +23,7 @@ class SpotifyBackfillController(
         val accepted: Boolean,
     )
 
-    @PostMapping("/backfill-album-tracks")
+    @PostMapping("/album-tracks")
     fun backfillAlbumTracks(
         @RequestParam(required = false, defaultValue = "50") limit: Int,
     ): ResponseEntity<BackfillResponse> {

@@ -55,19 +55,19 @@ No frontend atual, `/music` concentra tanto o recorte editorial quanto o arquivo
 | `POST /api/music/albums/{albumId}/terms` | body com `name`, `kind=GENRE|TAG` | `AlbumTermDto` |
 | `POST /api/music/albums/{albumId}/terms/{termId}/visibility` | body com `hidden` | `AlbumTermDto` |
 | `POST /api/music/terms/{termId}/visibility` | body com `hidden` | `AlbumTermDto` |
-| `GET /api/music/admin/track-duplicates` | `limit=20`, `cursor?`, `includeIgnored=false`, `artist?`, `album?` | `DuplicateTrackReviewPageResponse` |
-| `POST /api/music/admin/track-duplicates/ignore` | body com `albumId`, `groupKey`, `ignored=true` | vazio |
-| `POST /api/music/admin/track-duplicates/merge` | body com `albumId`, `groupKey`, `targetTrackId`, `sourceTrackIds[]` | `DuplicateTrackMergeResponse` |
-| `POST /api/music/admin/track-duplicates/manual-merge` | body com `albumId`, `targetTrackId`, `sourceTrackIds[]` | Mescla faixas escolhidas manualmente após validar que todas pertencem ao álbum. |
-| `POST /api/music/admin/track-duplicates/merge-batch` | body com `merges[]` | `DuplicateTrackBatchMergeResponse` |
-| `GET /api/music/admin/album-duplicates` | `limit=50`, `artist?`, `album?` | Sugestões de álbuns do mesmo artista por título ou sobreposição de faixas. |
-| `GET /api/music/admin/album-duplicates/catalog` | `q`, `limit=100` | Catálogo agrupado por artista para mesclagem manual. |
-| `POST /api/music/admin/album-duplicates/preview` | body com `targetAlbumId`, `sourceAlbumIds[]`, `trackOrderFromAlbumId?` | Prévia, posições preservadas, conflitos e avisos da mesclagem definitiva. |
-| `POST /api/music/admin/album-duplicates/merge` | body com principal, fontes e origem de título/capa/ano/avaliação/ordem das faixas | Consolida os álbuns no principal. |
-| `GET /api/music/admin/artist-duplicates` | `limit=50`, `artist?` | Sugere artistas por nome normalizado. |
-| `GET /api/music/admin/artist-duplicates/catalog` | `q`, `limit=100` | Busca artistas para uma seleção manual. |
-| `POST /api/music/admin/artist-duplicates/preview` | body com `targetArtistId` e `sourceArtistIds[]` | Mostra candidatos, totais e avisos antes do merge definitivo. |
-| `POST /api/music/admin/artist-duplicates/merge` | body com principal, fontes, origem de nome/foto/MusicBrainz/avaliação e aliases preservados | Consolida artistas no principal. |
+| `GET /api/admin/music/track-duplicates` | `limit=20`, `cursor?`, `includeIgnored=false`, `artist?`, `album?` | `DuplicateTrackReviewPageResponse` |
+| `POST /api/admin/music/track-duplicates/ignore` | body com `albumId`, `groupKey`, `ignored=true` | vazio |
+| `POST /api/admin/music/track-duplicates/merge` | body com `albumId`, `groupKey`, `targetTrackId`, `sourceTrackIds[]` | `DuplicateTrackMergeResponse` |
+| `POST /api/admin/music/track-duplicates/manual-merge` | body com `albumId`, `targetTrackId`, `sourceTrackIds[]` | Mescla faixas escolhidas manualmente após validar que todas pertencem ao álbum. |
+| `POST /api/admin/music/track-duplicates/merge-batch` | body com `merges[]` | `DuplicateTrackBatchMergeResponse` |
+| `GET /api/admin/music/album-duplicates` | `limit=50`, `artist?`, `album?` | Sugestões de álbuns do mesmo artista por título ou sobreposição de faixas. |
+| `GET /api/admin/music/album-duplicates/catalog` | `q`, `limit=100` | Catálogo agrupado por artista para mesclagem manual. |
+| `POST /api/admin/music/album-duplicates/preview` | body com `targetAlbumId`, `sourceAlbumIds[]`, `trackOrderFromAlbumId?` | Prévia, posições preservadas, conflitos e avisos da mesclagem definitiva. |
+| `POST /api/admin/music/album-duplicates/merge` | body com principal, fontes e origem de título/capa/ano/avaliação/ordem das faixas | Consolida os álbuns no principal. |
+| `GET /api/admin/music/artist-duplicates` | `limit=50`, `artist?` | Sugere artistas por nome normalizado. |
+| `GET /api/admin/music/artist-duplicates/catalog` | `q`, `limit=100` | Busca artistas para uma seleção manual. |
+| `POST /api/admin/music/artist-duplicates/preview` | body com `targetArtistId` e `sourceArtistIds[]` | Mostra candidatos, totais e avisos antes do merge definitivo. |
+| `POST /api/admin/music/artist-duplicates/merge` | body com principal, fontes, origem de nome/foto/MusicBrainz/avaliação e aliases preservados | Consolida artistas no principal. |
 | `GET /api/music/tops/artists` | `start`, `end`, `limit=20` | lista de artistas |
 | `GET /api/music/tops/albums` | `start`, `end`, `limit=20` | lista de álbuns |
 | `GET /api/music/tops/tracks` | `start`, `end`, `limit=20` | lista de faixas |
@@ -88,7 +88,7 @@ Os endpoints abaixo usam paginação por cursor retornado no payload:
 - `GET /api/music/library/artists`
 - `GET /api/music/library/albums`
 - `GET /api/music/library/tracks`
-- `GET /api/music/admin/track-duplicates`
+- `GET /api/admin/music/track-duplicates`
 
 Trate `cursor` como opaco e envie exatamente o `nextCursor` retornado.
 

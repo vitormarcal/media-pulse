@@ -34,10 +34,10 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/stats` | - | `MoviesStatsResponse` |
 | `GET /api/movies/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `MoviesByYearResponse` |
 | `POST /api/movies/catalog/suggestions` | `q` | `MovieCatalogSuggestionsResponse` |
-| `POST /api/movies/collections/{collectionId}/tmdb-members` | `collectionId` | `MovieCollectionMembersResponse` |
-| `POST /api/movies/companies/{companyId}/tmdb-members` | `companyId` | `MovieCompanyMembersResponse` |
+| `POST /api/admin/movies/collections/{collectionId}/tmdb-members` | `collectionId` | `MovieCollectionMembersResponse` |
+| `POST /api/admin/movies/companies/{companyId}/tmdb-members` | `companyId` | `MovieCompanyMembersResponse` |
 | `POST /api/movies/catalog` | body com `title`, `year?`, `tmdbId?`, `imdbId?` | `ManualMovieCatalogCreateResponse` |
-| `POST /api/movies/collections/backfill` | `limit=50` | `MovieCollectionBackfillResponse` |
+| `POST /api/admin/movies/collections/backfill` | `limit=50` | `MovieCollectionBackfillResponse` |
 | `POST /api/movies/{movieId}/watches` | body com `watchedAt` | `ManualMovieWatchCreateResponse` |
 | `DELETE /api/movies/{movieId}/watches/{watchId}` | `movieId`, `watchId` | vazio |
 | `POST /api/movies/lists` | body com `name`, `description?` | `MovieListSummaryDto` |
@@ -45,22 +45,22 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `DELETE /api/movies/{movieId}/lists/{listId}` | `movieId`, `listId` | vazio |
 | `POST /api/movies/lists/{listId}/order` | `listId`, body com `movieIds[]` | vazio |
 | `PATCH /api/movies/lists/{listId}/cover` | `listId`, body com `coverMovieId?` | `MovieListSummaryDto` |
-| `POST /api/movies/{movieId}/companies/sync-tmdb` | `movieId` | `MovieCompaniesSyncResponse` |
-| `POST /api/movies/companies/sync-tmdb` | `limit=100` | `MovieCompaniesBatchSyncResponse` |
-| `POST /api/movies/{movieId}/credits/sync-tmdb` | `movieId` | `MovieCreditsSyncResponse` |
-| `POST /api/movies/credits/sync-tmdb` | `limit=100` | `MovieCreditsBatchSyncResponse` |
+| `POST /api/admin/movies/{movieId}/companies/sync-tmdb` | `movieId` | `MovieCompaniesSyncResponse` |
+| `POST /api/admin/movies/companies/sync-tmdb` | `limit=100` | `MovieCompaniesBatchSyncResponse` |
+| `POST /api/admin/movies/{movieId}/credits/sync-tmdb` | `movieId` | `MovieCreditsSyncResponse` |
+| `POST /api/admin/movies/credits/sync-tmdb` | `limit=100` | `MovieCreditsBatchSyncResponse` |
 | `POST /api/movies/{movieId}/credits/tmdb-candidates` | `movieId` | `MovieTmdbCreditCandidatesResponse` |
 | `POST /api/movies/{movieId}/credits/from-tmdb` | body com `personTmdbId`, `creditType`, `department?`, `job?`, `characterName?`, `billingOrder?` | `PersonCreditDto` |
 | `POST /api/movies/{movieId}/people` | body com `personId`, `group`, `roleLabel?` | `PersonCreditDto` |
-| `POST /api/movies/{movieId}/terms/sync-tmdb` | `movieId` | `MovieTermsSyncResponse` |
-| `POST /api/movies/terms/sync-tmdb` | `limit=100` | `MovieTermsBatchSyncResponse` |
+| `POST /api/admin/movies/{movieId}/terms/sync-tmdb` | `movieId` | `MovieTermsSyncResponse` |
+| `POST /api/admin/movies/terms/sync-tmdb` | `limit=100` | `MovieTermsBatchSyncResponse` |
 | `POST /api/movies/{movieId}/terms` | body com `name`, `kind=GENRE|TAG` | `MovieTermDto` |
 | `POST /api/movies/{movieId}/terms/{termId}/visibility` | body com `hidden` | `MovieTermDto` |
 | `POST /api/movies/terms/{termId}/visibility` | body com `hidden` | `MovieTermDto` |
 | `POST /api/movies/{movieId}/enrichment/preview` | body com `tmdbId?` | `MovieEnrichmentPreviewResponse` |
 | `POST /api/movies/{movieId}/enrichment/apply` | body com `tmdbId?`, `mode`, `fields[]` | `MovieEnrichmentApplyResponse` |
-| `POST /api/people/{personId}/tmdb-filmography` | `personId` | `PersonFilmographyResponse` |
-| `POST /api/people/{personId}/tmdb-show-filmography` | `personId` | `PersonShowFilmographyResponse` |
+| `POST /api/admin/people/{personId}/tmdb-filmography` | `personId` | `PersonFilmographyResponse` |
+| `POST /api/admin/people/{personId}/tmdb-show-filmography` | `personId` | `PersonShowFilmographyResponse` |
 
 ## Paginação e limites
 
@@ -186,14 +186,14 @@ Visibilidade:
 - `hidden` em `movie_term_assignments` oculta só naquele filme
 - termos ocultos continuam persistidos e podem ser reativados depois
 
-`POST /api/movies/{movieId}/terms/sync-tmdb` sincroniza termos do TMDb para o filme.
+`POST /api/admin/movies/{movieId}/terms/sync-tmdb` sincroniza termos do TMDb para o filme.
 
 - exige `movies.tmdb_id` já preenchido
 - reaproveita termos existentes por `(kind, normalized_name)`
 - reativa termos/vínculos que estavam ocultos
 - importa `genres` como `GENRE` e `keywords` como `TAG`
 
-`POST /api/movies/terms/sync-tmdb` sincroniza termos do TMDb em lote.
+`POST /api/admin/movies/terms/sync-tmdb` sincroniza termos do TMDb em lote.
 
 - processa apenas filmes com vínculo `TMDB`
 - considera filmes ainda pendentes e elegíveis para tentativa (`movies.terms_synced_at IS NULL`)
@@ -232,13 +232,13 @@ Persistência:
 - `movie_companies` guarda a empresa local com `tmdb_id`, `name`, `slug`, `logo_url` e `origin_country`
 - `movie_company_assignments` guarda o vínculo filme-empresa com `company_type`
 
-`POST /api/movies/{movieId}/companies/sync-tmdb` sincroniza empresas de um filme.
+`POST /api/admin/movies/{movieId}/companies/sync-tmdb` sincroniza empresas de um filme.
 
 - exige vínculo `TMDB` no filme
 - substitui o recorte local de empresas pelo snapshot atual do TMDb
 - marca `movies.companies_synced_at` ao concluir com sucesso
 
-`POST /api/movies/companies/sync-tmdb` sincroniza empresas em lote.
+`POST /api/admin/movies/companies/sync-tmdb` sincroniza empresas em lote.
 
 - processa apenas filmes com vínculo `TMDB`
 - considera apenas pendentes elegíveis para tentativa (`movies.companies_synced_at IS NULL`)
@@ -257,7 +257,7 @@ Os filmes externos de uma empresa são persistidos em `movie_company_members` po
 
 `GET /api/movies/companies/{companyId}/members` retorna somente o snapshot local.
 
-`POST /api/movies/companies/{companyId}/tmdb-members` força a atualização do snapshot como mecanismo de reparo explícito.
+`POST /api/admin/movies/companies/{companyId}/tmdb-members` força a atualização do snapshot como mecanismo de reparo explícito.
 
 - usa `discover/movie` com `with_companies`
 - substitui atomicamente o snapshot persistido
@@ -318,13 +318,13 @@ Persistência:
 - `people` guarda a pessoa local com `tmdb_id`, `name`, `slug` e `profile_url`
 - `movie_credits` guarda os vínculos filme-pessoa com `credit_type`, `job`, `department`, `character_name` e `billing_order`
 
-`POST /api/movies/{movieId}/credits/sync-tmdb` sincroniza créditos de um filme.
+`POST /api/admin/movies/{movieId}/credits/sync-tmdb` sincroniza créditos de um filme.
 
 - exige vínculo `TMDB` no filme
 - substitui o recorte local de créditos pelo snapshot atual do TMDb
 - marca `movies.credits_synced_at` ao concluir com sucesso
 
-`POST /api/movies/credits/sync-tmdb` sincroniza créditos em lote.
+`POST /api/admin/movies/credits/sync-tmdb` sincroniza créditos em lote.
 
 - processa apenas filmes com vínculo `TMDB`
 - considera apenas pendentes elegíveis para tentativa (`movies.credits_synced_at IS NULL`)
@@ -371,13 +371,13 @@ As filmografias de filmes e séries são persistidas localmente por um worker au
 
 `GET /api/people/{personId}/filmography` retorna o snapshot local de filmes.
 
-`POST /api/people/{personId}/tmdb-filmography` força a atualização desse snapshot como reparo explícito.
+`POST /api/admin/people/{personId}/tmdb-filmography` força a atualização desse snapshot como reparo explícito.
 
 - permite à UI mostrar o que já existe e o que ainda pode ser adicionado explicitamente
 
 `GET /api/people/{personId}/show-filmography` retorna o snapshot local de séries.
 
-`POST /api/people/{personId}/tmdb-show-filmography` força a atualização desse snapshot como reparo explícito.
+`POST /api/admin/people/{personId}/tmdb-show-filmography` força a atualização desse snapshot como reparo explícito.
 
 - permite à UI mostrar o que já existe e o que ainda pode ser adicionado explicitamente
 
@@ -403,14 +403,14 @@ Filmes podem ser vinculados a uma coleção oficial do TMDb, como `The Matrix Co
 - coleções ainda não sincronizadas são processadas automaticamente em segundo plano
 - falhas aguardam pelo menos um dia antes de uma nova tentativa automática
 
-`POST /api/movies/collections/{collectionId}/tmdb-members` força a atualização dos membros no TMDb como mecanismo de reparo explícito.
+`POST /api/admin/movies/collections/{collectionId}/tmdb-members` força a atualização dos membros no TMDb como mecanismo de reparo explícito.
 
 - substitui atomicamente o snapshot local dos membros externos
 - a leitura cruza o snapshot com `movies.tmdb_id`
 - cada membro informa `inCatalog`, `localMovieId`, `localSlug` e `tmdbUrl`
 - a UI usa esse payload para mostrar filmes ausentes e permitir adição explícita ao catálogo
 
-`POST /api/movies/collections/backfill` atualiza filmes existentes em lote.
+`POST /api/admin/movies/collections/backfill` atualiza filmes existentes em lote.
 
 - seleciona filmes com identificador `TMDB` e sem `collection_id`
 - marca filmes sem `belongs_to_collection` como verificados para não repetir o mesmo candidato indefinidamente

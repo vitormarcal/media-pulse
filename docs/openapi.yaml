@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.84
+  version: 1.0.0-beta.85
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -1165,7 +1165,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TopGenreBySourceResponse"
-  /api/music/admin/track-duplicates:
+  /api/admin/music/track-duplicates:
     get:
       summary: Review duplicate tracks
       tags: [Music]
@@ -1204,7 +1204,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DuplicateTrackReviewPageResponse"
-  /api/music/admin/track-duplicates/ignore:
+  /api/admin/music/track-duplicates/ignore:
     post:
       summary: Ignore or restore duplicate track group
       tags: [Music]
@@ -1217,7 +1217,7 @@ paths:
       responses:
         "200":
           description: OK
-  /api/music/admin/track-duplicates/merge:
+  /api/admin/music/track-duplicates/merge:
     post:
       summary: Merge one duplicate track group
       tags: [Music]
@@ -1234,7 +1234,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DuplicateTrackMergeResponse"
-  /api/music/admin/track-duplicates/merge-batch:
+  /api/admin/music/track-duplicates/merge-batch:
     post:
       summary: Merge duplicate track groups in batch
       tags: [Music]
@@ -1251,7 +1251,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DuplicateTrackBatchMergeResponse"
-  /api/music/admin/track-duplicates/manual-merge:
+  /api/admin/music/track-duplicates/manual-merge:
     post:
       summary: Merge manually selected tracks from the same album
       tags: [Music]
@@ -1269,7 +1269,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DuplicateTrackMergeResponse"
 
-  /api/music/admin/album-duplicates:
+  /api/admin/music/album-duplicates:
     get:
       summary: Suggest duplicate albums for owner review
       tags: [Music]
@@ -1283,7 +1283,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/DuplicateAlbumReviewResponse" }
-  /api/music/admin/album-duplicates/catalog:
+  /api/admin/music/album-duplicates/catalog:
     get:
       summary: Search albums grouped by artist for a manual merge
       tags: [Music]
@@ -1296,7 +1296,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AlbumMergeCatalogResponse" }
-  /api/music/admin/album-duplicates/preview:
+  /api/admin/music/album-duplicates/preview:
     post:
       summary: Preview a definitive album merge
       tags: [Music]
@@ -1311,7 +1311,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AlbumMergePreviewResponse" }
-  /api/music/admin/album-duplicates/merge:
+  /api/admin/music/album-duplicates/merge:
     post:
       summary: Merge albums into an owner-selected canonical album
       tags: [Music]
@@ -1327,7 +1327,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AlbumMergeResponse" }
 
-  /api/music/admin/artist-duplicates:
+  /api/admin/music/artist-duplicates:
     get:
       summary: Suggest duplicate artists by normalized name for owner review
       tags: [Music]
@@ -1340,7 +1340,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/DuplicateArtistReviewResponse" }
-  /api/music/admin/artist-duplicates/catalog:
+  /api/admin/music/artist-duplicates/catalog:
     get:
       summary: Search artists for a manual merge
       tags: [Music]
@@ -1353,7 +1353,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ArtistMergeCatalogResponse" }
-  /api/music/admin/artist-duplicates/preview:
+  /api/admin/music/artist-duplicates/preview:
     post:
       summary: Preview a definitive artist merge
       tags: [Music]
@@ -1368,7 +1368,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ArtistMergePreviewResponse" }
-  /api/music/admin/artist-duplicates/merge:
+  /api/admin/music/artist-duplicates/merge:
     post:
       summary: Merge artists into an owner-selected canonical artist
       tags: [Music]
@@ -1384,7 +1384,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ArtistMergeResponse" }
 
-  /api/spotify/import:
+  /api/admin/imports/spotify:
     post:
       summary: Spotify import
       tags: [Spotify]
@@ -1401,7 +1401,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SpotifyImportResponse"
-  /api/spotify/backfill-album-tracks:
+  /api/admin/spotify/backfills/album-tracks:
     post:
       summary: Spotify backfill album tracks
       tags: [Spotify]
@@ -1419,7 +1419,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SpotifyBackfillResponse"
-  /api/spotify/extended/import:
+  /api/admin/imports/spotify/extended:
     post:
       summary: Spotify extended import
       tags: [Spotify]
@@ -1442,7 +1442,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SpotifyImportResponse"
 
-  /api/spotify/status:
+  /api/admin/spotify/status:
     get:
       summary: Spotify operational status
       tags: [Spotify]
@@ -1537,7 +1537,7 @@ paths:
         "200":
           description: OK
 
-  /api/plex/music/import:
+  /api/admin/imports/plex/music:
     post:
       summary: Plex music import
       tags: [Plex]
@@ -1998,7 +1998,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ManualMovieCatalogCreateResponse"
 
-  /api/movies/collections/backfill:
+  /api/admin/movies/collections/backfill:
     post:
       summary: Backfill official TMDb movie collections
       tags: [Movies]
@@ -2017,7 +2017,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieCollectionBackfillResponse"
 
-  /api/movies/collections/{collectionId}/tmdb-members:
+  /api/admin/movies/collections/{collectionId}/tmdb-members:
     post:
       summary: Fetch official TMDb movie collection members
       tags: [Movies]
@@ -2055,7 +2055,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieCollectionMembersResponse"
 
-  /api/movies/companies/{companyId}/tmdb-members:
+  /api/admin/movies/companies/{companyId}/tmdb-members:
     post:
       summary: Refresh the persisted TMDb member snapshot for a movie company
       tags: [Movies]
@@ -2093,7 +2093,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieCompanyMembersResponse"
 
-  /api/people/{personId}/tmdb-filmography:
+  /api/admin/people/{personId}/tmdb-filmography:
     post:
       summary: Refresh the persisted TMDb movie filmography snapshot
       tags: [Movies]
@@ -2131,7 +2131,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/PersonFilmographyResponse"
 
-  /api/people/{personId}/tmdb-show-filmography:
+  /api/admin/people/{personId}/tmdb-show-filmography:
     post:
       summary: Refresh the persisted TMDb show filmography snapshot
       tags: [Movies]
@@ -2169,7 +2169,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/PersonShowFilmographyResponse"
 
-  /api/movies/{movieId}/terms/sync-tmdb:
+  /api/admin/movies/{movieId}/terms/sync-tmdb:
     post:
       summary: Sync movie terms from TMDb
       tags: [Movies]
@@ -2188,7 +2188,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieTermsSyncResponse"
 
-  /api/movies/terms/sync-tmdb:
+  /api/admin/movies/terms/sync-tmdb:
     post:
       summary: Batch sync movie terms from TMDb
       tags: [Movies]
@@ -2207,7 +2207,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieTermsBatchSyncResponse"
 
-  /api/movies/{movieId}/companies/sync-tmdb:
+  /api/admin/movies/{movieId}/companies/sync-tmdb:
     post:
       summary: Sync movie companies from TMDb
       tags: [Movies]
@@ -2226,7 +2226,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieCompaniesSyncResponse"
 
-  /api/movies/companies/sync-tmdb:
+  /api/admin/movies/companies/sync-tmdb:
     post:
       summary: Batch sync movie companies from TMDb
       tags: [Movies]
@@ -2245,7 +2245,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieCompaniesBatchSyncResponse"
 
-  /api/movies/{movieId}/credits/sync-tmdb:
+  /api/admin/movies/{movieId}/credits/sync-tmdb:
     post:
       summary: Sync movie credits from TMDb
       tags: [Movies]
@@ -2264,7 +2264,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieCreditsSyncResponse"
 
-  /api/movies/credits/sync-tmdb:
+  /api/admin/movies/credits/sync-tmdb:
     post:
       summary: Batch sync movie credits from TMDb
       tags: [Movies]
@@ -2728,7 +2728,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ShowSeasonDetailsResponse"
 
-  /api/shows/credits/sync-tmdb:
+  /api/admin/shows/credits/sync-tmdb:
     post:
       summary: Repair pending show credit synchronization in batch
       tags: [Shows]
@@ -2747,7 +2747,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ShowCreditsBatchSyncResponse"
 
-  /api/shows/{showId}/credits/sync-tmdb:
+  /api/admin/shows/{showId}/credits/sync-tmdb:
     post:
       summary: Explicitly refresh show credits from TMDb
       tags: [Shows]
@@ -3003,7 +3003,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ManualShowWatchCreateResponse"
 
-  /event-sources/reprocess:
+  /api/admin/event-sources/reprocess:
     post:
       summary: Reprocess event sources
       tags: [EventSources]
@@ -3020,7 +3020,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiResultReprocessCounter"
-  /event-sources/{id}/reprocess:
+  /api/admin/event-sources/{id}/reprocess:
     post:
       summary: Reprocess event source by id
       tags: [EventSources]
@@ -3039,7 +3039,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiResultUnit"
 
-  /api/musicbrainz/enrich-album-genres:
+  /api/admin/musicbrainz/enrich-album-genres:
     post:
       summary: Enrich album genres
       tags: [MusicBrainz]
@@ -3053,7 +3053,7 @@ paths:
       responses:
         "202":
           description: Accepted
-  /api/musicbrainz/enrich-album-genres/drain:
+  /api/admin/musicbrainz/enrich-album-genres/drain:
     post:
       summary: Enrich album genres (drain)
       tags: [MusicBrainz]

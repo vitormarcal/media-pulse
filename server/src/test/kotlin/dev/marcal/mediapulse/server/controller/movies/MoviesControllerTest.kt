@@ -1,9 +1,7 @@
 package dev.marcal.mediapulse.server.controller.movies
 
-import dev.marcal.mediapulse.server.api.movies.MovieCompaniesBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCompanyDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCompanyTypeDto
-import dev.marcal.mediapulse.server.api.movies.MovieCreditsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCoverUpdateRequest
@@ -15,7 +13,6 @@ import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermKindDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermSourceDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermSuggestionDto
-import dev.marcal.mediapulse.server.api.movies.MovieTermsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditCandidatesResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditImportRequest
 import dev.marcal.mediapulse.server.api.movies.MovieYearUnwatchedDto
@@ -31,7 +28,6 @@ import dev.marcal.mediapulse.server.api.movies.PersonLinkRequest
 import dev.marcal.mediapulse.server.api.movies.RangeDto
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
-import dev.marcal.mediapulse.server.service.movie.MovieCompaniesService
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.service.movie.MovieListsService
 import dev.marcal.mediapulse.server.service.movie.MovieTermsService
@@ -50,7 +46,6 @@ class MoviesControllerTest {
     private val existingMovieWatchCreateFlowService = mockk<ExistingMovieWatchCreateFlowService>(relaxed = true)
     private val movieWatchRemovalService = mockk<MovieWatchRemovalService>(relaxed = true)
     private val movieTermsService = mockk<MovieTermsService>(relaxed = true)
-    private val movieCompaniesService = mockk<MovieCompaniesService>(relaxed = true)
     private val movieCreditsService = mockk<MovieCreditsService>(relaxed = true)
     private val movieListsService = mockk<MovieListsService>(relaxed = true)
     private val controller =
@@ -59,7 +54,6 @@ class MoviesControllerTest {
             existingMovieWatchCreateFlowService,
             movieWatchRemovalService,
             movieTermsService,
-            movieCompaniesService,
             movieCreditsService,
             movieListsService,
         )
@@ -224,39 +218,6 @@ class MoviesControllerTest {
         assertEquals(1, response.size)
         assertEquals("Vampiros", response.first().name)
         verify(exactly = 1) { repository.searchMovieTerms("vamp", "TAG", 1000) }
-    }
-
-    @Test
-    fun `sync all terms should delegate to service with normalized limit`() {
-        val expected = MovieTermsBatchSyncResponse(requestedLimit = 1000, candidates = 1000, processed = 1000, synced = 998, failed = 2)
-        every { movieTermsService.syncAllFromTmdb(1000) } returns expected
-
-        val response = controller.syncAllTermsFromTmdb(limit = 5000)
-
-        assertEquals(998, response.synced)
-        verify(exactly = 1) { movieTermsService.syncAllFromTmdb(1000) }
-    }
-
-    @Test
-    fun `sync all companies should delegate to service with normalized limit`() {
-        val expected = MovieCompaniesBatchSyncResponse(requestedLimit = 1000, candidates = 1000, processed = 1000, synced = 995, failed = 5)
-        every { movieCompaniesService.syncAllFromTmdb(1000) } returns expected
-
-        val response = controller.syncAllCompaniesFromTmdb(limit = 5000)
-
-        assertEquals(995, response.synced)
-        verify(exactly = 1) { movieCompaniesService.syncAllFromTmdb(1000) }
-    }
-
-    @Test
-    fun `sync all credits should delegate to service with normalized limit`() {
-        val expected = MovieCreditsBatchSyncResponse(requestedLimit = 1000, candidates = 1000, processed = 1000, synced = 996, failed = 4)
-        every { movieCreditsService.syncAllFromTmdb(1000) } returns expected
-
-        val response = controller.syncAllCreditsFromTmdb(limit = 5000)
-
-        assertEquals(996, response.synced)
-        verify(exactly = 1) { movieCreditsService.syncAllFromTmdb(1000) }
     }
 
     @Test

@@ -336,7 +336,7 @@ watch([artistFilterInput, albumFilterInput], () => {
 const { data, error, status } = await useAsyncData(
   'music-duplicate-review-page',
   () =>
-    $fetch<DuplicateTrackReviewPageResponse>('/api/music/admin/track-duplicates', {
+    $fetch<DuplicateTrackReviewPageResponse>('/api/admin/music/track-duplicates', {
       baseURL: config.public.apiBase,
       query: {
         limit: 20,
@@ -477,7 +477,7 @@ async function toggleIgnored(group: DuplicateTrackGroupResponse) {
   feedback.value = null
 
   try {
-    await $fetch('/api/music/admin/track-duplicates/ignore', {
+    await $fetch('/api/admin/music/track-duplicates/ignore', {
       method: 'POST',
       baseURL: config.public.apiBase,
       body: {
@@ -517,7 +517,7 @@ async function mergeGroup(group: DuplicateTrackGroupResponse) {
   feedback.value = null
 
   try {
-    const response = await $fetch<DuplicateTrackMergeResponse>('/api/music/admin/track-duplicates/merge', {
+    const response = await $fetch<DuplicateTrackMergeResponse>('/api/admin/music/track-duplicates/merge', {
       method: 'POST',
       baseURL: config.public.apiBase,
       body: {
@@ -552,7 +552,7 @@ async function mergeSelectedGroups() {
   feedback.value = null
 
   try {
-    const response = await $fetch<DuplicateTrackBatchMergeResponse>('/api/music/admin/track-duplicates/merge-batch', {
+    const response = await $fetch<DuplicateTrackBatchMergeResponse>('/api/admin/music/track-duplicates/merge-batch', {
       method: 'POST',
       baseURL: config.public.apiBase,
       body: {
@@ -620,7 +620,7 @@ async function mergeAllFilteredGroups() {
       })
       .filter((merge) => merge.sourceTrackIds.length > 0)
 
-    const response = await $fetch<DuplicateTrackBatchMergeResponse>('/api/music/admin/track-duplicates/merge-batch', {
+    const response = await $fetch<DuplicateTrackBatchMergeResponse>('/api/admin/music/track-duplicates/merge-batch', {
       method: 'POST',
       baseURL: config.public.apiBase,
       body: { merges },
@@ -698,7 +698,7 @@ async function loadMore() {
   feedback.value = null
 
   try {
-    const page = await $fetch<DuplicateTrackReviewPageResponse>('/api/music/admin/track-duplicates', {
+    const page = await $fetch<DuplicateTrackReviewPageResponse>('/api/admin/music/track-duplicates', {
       baseURL: config.public.apiBase,
       query: {
         limit: 20,
@@ -727,7 +727,7 @@ async function fetchAllFilteredGroups() {
   let cursor: string | null = null
 
   do {
-    const page = await $fetch<DuplicateTrackReviewPageResponse>('/api/music/admin/track-duplicates', {
+    const page = await $fetch<DuplicateTrackReviewPageResponse>('/api/admin/music/track-duplicates', {
       baseURL: config.public.apiBase,
       query: {
         limit: 100,

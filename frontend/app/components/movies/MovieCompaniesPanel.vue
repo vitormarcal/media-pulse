@@ -60,10 +60,13 @@ async function syncFromTmdb() {
   feedback.value = null
 
   try {
-    const response = await $fetch<MovieCompaniesSyncResponse>(`/api/movies/${props.movieId}/companies/sync-tmdb`, {
-      baseURL: config.public.apiBase,
-      method: 'POST',
-    })
+    const response = await $fetch<MovieCompaniesSyncResponse>(
+      `/api/admin/movies/${props.movieId}/companies/sync-tmdb`,
+      {
+        baseURL: config.public.apiBase,
+        method: 'POST',
+      },
+    )
     feedback.value = `${response.syncedCount} empresas vindas do TMDb foram atualizadas.`
     emit('changed')
   } catch {

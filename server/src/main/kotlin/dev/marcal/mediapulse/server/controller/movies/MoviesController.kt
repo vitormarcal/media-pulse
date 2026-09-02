@@ -2,11 +2,7 @@ package dev.marcal.mediapulse.server.controller.movies
 
 import dev.marcal.mediapulse.server.api.movies.ExistingMovieWatchCreateRequest
 import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateResponse
-import dev.marcal.mediapulse.server.api.movies.MovieCompaniesBatchSyncResponse
-import dev.marcal.mediapulse.server.api.movies.MovieCompaniesSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCompanyDetailsResponse
-import dev.marcal.mediapulse.server.api.movies.MovieCreditsBatchSyncResponse
-import dev.marcal.mediapulse.server.api.movies.MovieCreditsSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCoverUpdateRequest
@@ -19,8 +15,6 @@ import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTermDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermSuggestionDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermVisibilityRequest
-import dev.marcal.mediapulse.server.api.movies.MovieTermsBatchSyncResponse
-import dev.marcal.mediapulse.server.api.movies.MovieTermsSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditCandidatesResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditImportRequest
 import dev.marcal.mediapulse.server.api.movies.MoviesByYearResponse
@@ -33,7 +27,6 @@ import dev.marcal.mediapulse.server.api.movies.PersonCreditDto
 import dev.marcal.mediapulse.server.api.movies.PersonLinkRequest
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ExistingMovieWatchCreateFlowService
-import dev.marcal.mediapulse.server.service.movie.MovieCompaniesService
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.service.movie.MovieListsService
 import dev.marcal.mediapulse.server.service.movie.MovieTermsService
@@ -62,7 +55,6 @@ class MoviesController(
     private val existingMovieWatchCreateFlowService: ExistingMovieWatchCreateFlowService,
     private val movieWatchRemovalService: MovieWatchRemovalService,
     private val movieTermsService: MovieTermsService,
-    private val movieCompaniesService: MovieCompaniesService,
     private val movieCreditsService: MovieCreditsService,
     private val movieListsService: MovieListsService,
 ) {
@@ -126,36 +118,6 @@ class MoviesController(
         }
         return repository.searchMovieTerms(q, normalizedKind, normalizeLimit("limit", limit))
     }
-
-    @PostMapping("/{movieId}/terms/sync-tmdb")
-    fun syncTermsFromTmdb(
-        @PathVariable movieId: Long,
-    ): MovieTermsSyncResponse = movieTermsService.syncFromTmdb(movieId)
-
-    @PostMapping("/terms/sync-tmdb")
-    fun syncAllTermsFromTmdb(
-        @RequestParam(defaultValue = "100") limit: Int,
-    ): MovieTermsBatchSyncResponse = movieTermsService.syncAllFromTmdb(normalizeLimit("limit", limit))
-
-    @PostMapping("/{movieId}/companies/sync-tmdb")
-    fun syncCompaniesFromTmdb(
-        @PathVariable movieId: Long,
-    ): MovieCompaniesSyncResponse = movieCompaniesService.syncFromTmdb(movieId)
-
-    @PostMapping("/companies/sync-tmdb")
-    fun syncAllCompaniesFromTmdb(
-        @RequestParam(defaultValue = "100") limit: Int,
-    ): MovieCompaniesBatchSyncResponse = movieCompaniesService.syncAllFromTmdb(normalizeLimit("limit", limit))
-
-    @PostMapping("/{movieId}/credits/sync-tmdb")
-    fun syncCreditsFromTmdb(
-        @PathVariable movieId: Long,
-    ): MovieCreditsSyncResponse = movieCreditsService.syncFromTmdb(movieId)
-
-    @PostMapping("/credits/sync-tmdb")
-    fun syncAllCreditsFromTmdb(
-        @RequestParam(defaultValue = "100") limit: Int,
-    ): MovieCreditsBatchSyncResponse = movieCreditsService.syncAllFromTmdb(normalizeLimit("limit", limit))
 
     @PostMapping("/{movieId}/credits/tmdb-candidates")
     fun movieTmdbCreditCandidates(

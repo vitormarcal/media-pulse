@@ -1,6 +1,7 @@
 ### Variables
 @baseUrl = {{host}}/api/movies
 @peopleBaseUrl = {{host}}/api/people
+@adminBaseUrl = {{host}}/api/admin
 @movieId = 1
 @year = 2026
 @start = 2026-01-01T00:00:00Z
@@ -75,7 +76,7 @@ GET {{baseUrl}}/year/{{year}}?limitWatched=200&limitUnwatched=200
 Accept: application/json
 
 ### Backfill de colecoes oficiais TMDb
-POST {{baseUrl}}/collections/backfill?limit=100000
+POST {{adminBaseUrl}}/movies/collections/backfill?limit=100000
 Accept: application/json
 
 ### Snapshot local de membros de uma colecao
@@ -83,7 +84,7 @@ GET {{baseUrl}}/collections/1
 Accept: application/json
 
 ### Atualizar membros TMDb de uma colecao
-POST {{baseUrl}}/collections/1/tmdb-members
+POST {{adminBaseUrl}}/movies/collections/1/tmdb-members
 Accept: application/json
 
 ### Snapshot local de filmes de uma empresa
@@ -91,19 +92,19 @@ GET {{baseUrl}}/companies/12/members
 Accept: application/json
 
 ### Atualizar filmes TMDb de uma empresa
-POST {{baseUrl}}/companies/12/tmdb-members
+POST {{adminBaseUrl}}/movies/companies/12/tmdb-members
 Accept: application/json
 
 ### Sincronizar termos do TMDb para um filme
-POST {{baseUrl}}/{{movieId}}/terms/sync-tmdb
+POST {{adminBaseUrl}}/movies/{{movieId}}/terms/sync-tmdb
 Accept: application/json
 
 ### Sincronizar empresas do TMDb para um filme
-POST {{baseUrl}}/{{movieId}}/companies/sync-tmdb
+POST {{adminBaseUrl}}/movies/{{movieId}}/companies/sync-tmdb
 Accept: application/json
 
 ### Sincronizar créditos do TMDb para um filme
-POST {{baseUrl}}/{{movieId}}/credits/sync-tmdb
+POST {{adminBaseUrl}}/movies/{{movieId}}/credits/sync-tmdb
 Accept: application/json
 
 ### Trazer pessoas extras do TMDb para um filme
@@ -199,15 +200,15 @@ Accept: application/json
 }
 
 ### Sincronizar termos do TMDb em lote
-POST {{baseUrl}}/terms/sync-tmdb?limit=200
+POST {{adminBaseUrl}}/movies/terms/sync-tmdb?limit=200
 Accept: application/json
 
 ### Sincronizar empresas do TMDb em lote
-POST {{baseUrl}}/companies/sync-tmdb?limit=200
+POST {{adminBaseUrl}}/movies/companies/sync-tmdb?limit=200
 Accept: application/json
 
 ### Sincronizar créditos do TMDb em lote
-POST {{baseUrl}}/credits/sync-tmdb?limit=200
+POST {{adminBaseUrl}}/movies/credits/sync-tmdb?limit=200
 Accept: application/json
 
 ### Snapshot local da filmografia de filmes de uma pessoa
@@ -215,7 +216,7 @@ GET {{peopleBaseUrl}}/1/filmography
 Accept: application/json
 
 ### Atualizar filmografia TMDb de filmes de uma pessoa
-POST {{peopleBaseUrl}}/1/tmdb-filmography
+POST {{adminBaseUrl}}/people/1/tmdb-filmography
 Accept: application/json
 
 ### Snapshot local da filmografia de series de uma pessoa
@@ -223,7 +224,7 @@ GET {{peopleBaseUrl}}/1/show-filmography
 Accept: application/json
 
 ### Atualizar filmografia TMDb de series de uma pessoa
-POST {{peopleBaseUrl}}/1/tmdb-show-filmography
+POST {{adminBaseUrl}}/people/1/tmdb-show-filmography
 Accept: application/json
 
 ### Adicionar termo manual

@@ -3,7 +3,6 @@ package dev.marcal.mediapulse.server.controller.movies
 import dev.marcal.mediapulse.server.api.movies.ManualMovieCatalogCreateRequest
 import dev.marcal.mediapulse.server.api.movies.ManualMovieCatalogCreateResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCatalogSuggestionsResponse
-import dev.marcal.mediapulse.server.api.movies.MovieCollectionBackfillResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionMembersResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionSummaryDto
 import dev.marcal.mediapulse.server.api.movies.MovieCompanyMembersResponse
@@ -13,7 +12,6 @@ import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentPreviewRequest
 import dev.marcal.mediapulse.server.api.movies.MovieEnrichmentPreviewResponse
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.service.movie.ManualMovieCatalogCreateFlowService
-import dev.marcal.mediapulse.server.service.movie.MovieCollectionBackfillService
 import dev.marcal.mediapulse.server.service.movie.MovieCollectionMembersService
 import dev.marcal.mediapulse.server.service.movie.MovieCompanyMembersService
 import dev.marcal.mediapulse.server.service.movie.MovieMetadataEnrichmentService
@@ -31,7 +29,6 @@ class MovieCatalogController(
     private val repository: MovieQueryRepository,
     private val manualMovieCatalogCreateFlowService: ManualMovieCatalogCreateFlowService,
     private val movieMetadataEnrichmentService: MovieMetadataEnrichmentService,
-    private val movieCollectionBackfillService: MovieCollectionBackfillService,
     private val movieCollectionMembersService: MovieCollectionMembersService,
     private val movieCompanyMembersService: MovieCompanyMembersService,
 ) {
@@ -57,16 +54,6 @@ class MovieCatalogController(
         @RequestBody request: MovieEnrichmentApplyRequest,
     ): MovieEnrichmentApplyResponse = movieMetadataEnrichmentService.apply(movieId, request)
 
-    @PostMapping("/collections/backfill")
-    fun backfillCollections(
-        @RequestParam(defaultValue = "50") limit: Int,
-    ): MovieCollectionBackfillResponse = movieCollectionBackfillService.backfill(limit)
-
-    @PostMapping("/collections/{collectionId}/tmdb-members")
-    fun collectionTmdbMembers(
-        @PathVariable collectionId: Long,
-    ): MovieCollectionMembersResponse = movieCollectionMembersService.refreshAndGetMembers(collectionId)
-
     @GetMapping("/collections/{collectionId}")
     fun collectionMembers(
         @PathVariable collectionId: Long,
@@ -74,11 +61,6 @@ class MovieCatalogController(
 
     @GetMapping("/collections")
     fun collections(): List<MovieCollectionSummaryDto> = repository.listMovieCollections()
-
-    @PostMapping("/companies/{companyId}/tmdb-members")
-    fun companyTmdbMembers(
-        @PathVariable companyId: Long,
-    ): MovieCompanyMembersResponse = movieCompanyMembersService.refreshAndGetMembers(companyId)
 
     @GetMapping("/companies/{companyId}/members")
     fun companyMembers(

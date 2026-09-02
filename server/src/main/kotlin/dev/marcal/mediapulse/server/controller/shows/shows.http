@@ -1,5 +1,6 @@
 ### Variables
 @baseUrl = {{host}}/api/shows
+@adminBaseUrl = {{host}}/api/admin/shows
 @showId = 1
 @seasonNumber = 1
 @year = 2026
@@ -35,11 +36,11 @@ GET {{baseUrl}}/slug/severance/seasons/{{seasonNumber}}
 Accept: application/json
 
 ### Sync de pessoas TMDb em lote
-POST {{baseUrl}}/credits/sync-tmdb?limit=200
+POST {{adminBaseUrl}}/credits/sync-tmdb?limit=200
 Accept: application/json
 
 ### Sync de pessoas TMDb por serie
-POST {{baseUrl}}/{{showId}}/credits/sync-tmdb
+POST {{adminBaseUrl}}/{{showId}}/credits/sync-tmdb
 Accept: application/json
 
 ### Busca de series

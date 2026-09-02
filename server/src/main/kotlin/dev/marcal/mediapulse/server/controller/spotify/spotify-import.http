@@ -1,13 +1,13 @@
-@baseUrl = {{host}}/api/spotify
+@baseUrl = {{host}}/api/admin/imports/spotify
 
 ### Import incremental normal (usa cursor)
-POST {{baseUrl}}/import
+POST {{baseUrl}}
 Content-Type: application/json
 
 {}
 
 ### Import incremental limitando páginas (debug)
-POST {{baseUrl}}/import
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
@@ -15,7 +15,7 @@ Content-Type: application/json
 }
 
 ### Import resetando cursor (reimporta tudo que a API ainda retorna)
-POST {{baseUrl}}/import
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
@@ -23,7 +23,7 @@ Content-Type: application/json
 }
 
 ### Reset + limite (debug controlado)
-POST {{baseUrl}}/import
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
@@ -32,4 +32,4 @@ Content-Type: application/json
 }
 
 ### Backfill de tracklist de álbuns (Spotify)
-POST {{baseUrl}}/backfill-album-tracks?limit=50
+POST {{host}}/api/admin/spotify/backfills/album-tracks?limit=50

@@ -1,10 +1,11 @@
 package dev.marcal.mediapulse.server.controller
 
+import dev.marcal.mediapulse.server.controller.admin.MovieAdminController
+import dev.marcal.mediapulse.server.controller.admin.PeopleAdminController
 import dev.marcal.mediapulse.server.controller.games.GameCatalogController
 import dev.marcal.mediapulse.server.controller.movies.MovieCatalogController
 import dev.marcal.mediapulse.server.controller.movies.MoviesController
 import dev.marcal.mediapulse.server.controller.music.MusicBrainzPageEnrichmentController
-import dev.marcal.mediapulse.server.controller.people.PeopleController
 import dev.marcal.mediapulse.server.controller.shows.ShowCatalogController
 import org.junit.jupiter.api.Test
 import org.springframework.web.bind.annotation.GetMapping
@@ -20,16 +21,16 @@ class ExternalActionHttpMethodContractTest {
                 GameCatalogController::class.java to "suggestions",
                 ShowCatalogController::class.java to "suggestCatalogEntry",
                 MovieCatalogController::class.java to "suggestCatalogEntry",
-                MovieCatalogController::class.java to "collectionTmdbMembers",
-                MovieCatalogController::class.java to "companyTmdbMembers",
+                MovieAdminController::class.java to "refreshCollection",
+                MovieAdminController::class.java to "refreshCompany",
                 MoviesController::class.java to "movieTmdbCreditCandidates",
                 MusicBrainzPageEnrichmentController::class.java to "newArtistCandidates",
                 MusicBrainzPageEnrichmentController::class.java to "albumCandidates",
                 MusicBrainzPageEnrichmentController::class.java to "albumPreview",
                 MusicBrainzPageEnrichmentController::class.java to "artistCandidates",
                 MusicBrainzPageEnrichmentController::class.java to "artistDiscography",
-                PeopleController::class.java to "tmdbFilmography",
-                PeopleController::class.java to "tmdbShowFilmography",
+                PeopleAdminController::class.java to "refreshMovieFilmography",
+                PeopleAdminController::class.java to "refreshShowFilmography",
             )
 
         actions.forEach { (controller, methodName) ->
