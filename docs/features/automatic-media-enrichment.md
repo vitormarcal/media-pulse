@@ -89,6 +89,8 @@ Cada domínio deve documentar endpoints de leitura do estado, endpoints de repar
 
 Os endpoints `sync-tmdb` existentes podem continuar disponíveis para curadoria e backfill, mas não devem ser o fluxo principal da UI quando o worker automático estiver ativo.
 
+A renovação automática de snapshots já concluídos permanece como evolução futura e está especificada em [`periodic-external-snapshot-refresh.md`](periodic-external-snapshot-refresh.md). Ela não bloqueia a implementação de autenticação e autorização.
+
 Detalhes específicos permanecem em [`movies-api.md`](../movies-api.md), [`shows-api.md`](../shows-api.md), [`plex-movie-ingestion.md`](../plex-movie-ingestion.md) e [`plex-show-ingestion.md`](../plex-show-ingestion.md).
 
 ## Non-goals
