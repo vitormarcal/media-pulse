@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.83
+  version: 1.0.0-beta.84
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -2730,7 +2730,7 @@ paths:
 
   /api/shows/credits/sync-tmdb:
     post:
-      summary: Batch sync show people from TMDb
+      summary: Repair pending show credit synchronization in batch
       tags: [Shows]
       parameters:
         - name: limit
@@ -2749,7 +2749,7 @@ paths:
 
   /api/shows/{showId}/credits/sync-tmdb:
     post:
-      summary: Sync show people from TMDb
+      summary: Explicitly refresh show credits from TMDb
       tags: [Shows]
       parameters:
         - name: showId

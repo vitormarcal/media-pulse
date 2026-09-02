@@ -83,6 +83,12 @@ class ShowCreditsService(
                 synced++
             }.onFailure { ex ->
                 failed++
+                transactionTemplate.execute {
+                    showCreditsCrudRepository.markCreditsSyncFailure(
+                        candidate.showId,
+                        ex.message ?: ex.javaClass.simpleName,
+                    )
+                }
                 logger.warn(
                     "Failed to sync show credits from TMDb in batch | showId={} tmdbId={}",
                     candidate.showId,

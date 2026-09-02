@@ -18,7 +18,7 @@
         :hero-meta="data.heroMeta"
       />
 
-      <ShowPeoplePanel :show-id="data.showId" :people="data.people" @changed="handlePeopleChanged" />
+      <ShowPeoplePanel :people="data.people" />
 
       <ShowProgressPanel :progress="data.progress" :seasons="data.seasons" />
 
@@ -87,10 +87,6 @@ useHead(() => ({
 }))
 
 async function handleWatchCreated(_response: ManualShowWatchCreateResponse) {
-  await refresh()
-}
-
-async function handlePeopleChanged() {
   await refresh()
 }
 </script>

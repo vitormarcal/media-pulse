@@ -6,13 +6,7 @@
         <h2>Direção, roteiro e elenco</h2>
       </div>
 
-      <div class="head-meta">
-        <span class="summary-pill">{{ people.visibleCount }} pessoas</span>
-
-        <button type="button" class="secondary-button" :disabled="syncing" @click="syncFromTmdb">
-          {{ syncing ? 'Sincronizando...' : 'Sincronizar base TMDb' }}
-        </button>
-      </div>
+      <span class="summary-pill">{{ people.visibleCount }} pessoas</span>
     </div>
 
     <div class="people-groups">
@@ -35,48 +29,17 @@
       </section>
 
       <p v-if="!people.groups.length" class="empty-copy">Nenhum crédito disponível.</p>
-
-      <p v-if="feedback" class="feedback">{{ feedback }}</p>
     </div>
   </article>
 </template>
 
 <script setup lang="ts">
-import type { ShowCreditsSyncResponse, ShowPageData } from '~/types/shows'
+import type { ShowPageData } from '~/types/shows'
 
-const props = defineProps<{
-  showId: number
+defineProps<{
   people: ShowPageData['people']
 }>()
-
-const emit = defineEmits<{
-  changed: []
-}>()
-
-const config = useRuntimeConfig()
 const { resolveMediaUrl } = useMediaUrl()
-const syncing = ref(false)
-const feedback = ref<string | null>(null)
-
-async function syncFromTmdb() {
-  if (syncing.value) return
-
-  syncing.value = true
-  feedback.value = null
-
-  try {
-    const response = await $fetch<ShowCreditsSyncResponse>(`/api/shows/${props.showId}/credits/sync-tmdb`, {
-      baseURL: config.public.apiBase,
-      method: 'POST',
-    })
-    feedback.value = `${response.syncedCount} créditos locais atualizados a partir do TMDb.`
-    emit('changed')
-  } catch {
-    feedback.value = 'Não foi possível sincronizar as pessoas desta série.'
-  } finally {
-    syncing.value = false
-  }
-}
 </script>
 
 <style scoped>
@@ -114,8 +77,7 @@ async function syncFromTmdb() {
 }
 
 h2,
-.empty-copy,
-.feedback {
+.empty-copy {
   margin: 0;
 }
 
@@ -125,30 +87,12 @@ h2,
   letter-spacing: -0.04em;
 }
 
-.head-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: flex-end;
-}
-
 .summary-pill {
   padding: 8px 12px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--base-color-surface-wash) 76%, white);
   color: var(--base-color-text-primary);
   font-size: 0.78rem;
-}
-
-.secondary-button {
-  border: none;
-  cursor: pointer;
-  font: inherit;
-  padding: 10px 14px;
-  border-radius: 16px;
-  background: var(--base-color-surface-warm);
-  color: var(--base-color-text-primary);
 }
 
 .chip-list {
@@ -209,20 +153,13 @@ h2,
   line-height: 1.2;
 }
 
-.empty-copy,
-.feedback {
+.empty-copy {
   color: var(--base-color-text-secondary);
 }
 
 @media (max-width: 900px) {
   .people-head {
     display: grid;
-  }
-}
-
-@media (max-width: 620px) {
-  .head-meta {
-    justify-content: flex-start;
   }
 }
 </style>

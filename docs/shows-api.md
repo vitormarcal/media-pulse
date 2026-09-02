@@ -96,11 +96,13 @@ Campos aceitos:
 - persiste os vínculos em `show_credits`, reutilizando `people` por `tmdb_id`
 - a página da série passa a navegar para `/people/{slug}`
 - a página da pessoa agrega esses créditos de série ao lado dos créditos de filme
+- funciona como reparo explícito; a página da série não dispara esta operação
 
-`POST /api/shows/credits/sync-tmdb?limit=100` faz o backfill em lote para séries já existentes.
+Um worker executa esse sync automaticamente para séries pendentes. `POST /api/shows/credits/sync-tmdb?limit=100` mantém o mesmo processamento disponível para reparo em lote.
 
 - considera apenas séries com vínculo `TMDB`
 - considera apenas pendentes (`tv_shows.credits_synced_at IS NULL`)
+- falhas registram `credits_sync_attempted_at` e `credits_sync_error`, preservam os créditos locais e são repetidas após um dia
 - processa no máximo `limit`, truncado em `1000`
 - executa cada série em transação isolada, contabilizando `synced` e `failed`
 - marca `tv_shows.credits_synced_at` ao concluir com sucesso
