@@ -83,10 +83,19 @@ class ShowCreditsService(
                 synced++
             }.onFailure { ex ->
                 failed++
-                transactionTemplate.execute {
-                    showCreditsCrudRepository.markCreditsSyncFailure(
+                runCatching {
+                    transactionTemplate.execute {
+                        showCreditsCrudRepository.markCreditsSyncFailure(
+                            candidate.showId,
+                            ex.message ?: ex.javaClass.simpleName,
+                        )
+                    }
+                }.onFailure { persistenceError ->
+                    logger.error(
+                        "Failed to persist show credits TMDb sync failure | showId={} tmdbId={}",
                         candidate.showId,
-                        ex.message ?: ex.javaClass.simpleName,
+                        candidate.tmdbId,
+                        persistenceError,
                     )
                 }
                 logger.warn(

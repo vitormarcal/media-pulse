@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.service.tv
 
+import dev.marcal.mediapulse.server.api.shows.ShowCreditsSyncResponse
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
 import dev.marcal.mediapulse.server.repository.crud.PersonRepository
@@ -50,6 +51,36 @@ class ShowCreditsServiceTest {
         val result = service.syncAllFromTmdb(25)
 
         assertEquals(1, result.failed)
+        verify { creditsRepository.markCreditsSyncFailure(9, "provider unavailable") }
+    }
+
+    @Test
+    fun `automatic batch should continue when recording a failure also fails`() {
+        val failedCandidate = ShowCreditsCrudRepository.ShowCreditsSyncCandidate(9, "909")
+        val successfulCandidate = ShowCreditsCrudRepository.ShowCreditsSyncCandidate(10, "1010")
+        var transactionCalls = 0
+        every { creditsRepository.countPendingTmdbSyncCandidates() } returns 2
+        every { creditsRepository.findTmdbSyncCandidates(25) } returns listOf(failedCandidate, successfulCandidate)
+        every { creditsRepository.markCreditsSyncFailure(9, "provider unavailable") } throws
+            IllegalStateException("database unavailable")
+        every { transactions.execute<Any?>(any()) } answers {
+            transactionCalls++
+            when (transactionCalls) {
+                1 -> throw IllegalStateException("provider unavailable")
+                2 -> {
+                    val callback = arg<org.springframework.transaction.support.TransactionCallback<Any?>>(0)
+                    callback.doInTransaction(mockk(relaxed = true))
+                }
+                else -> mockk<ShowCreditsSyncResponse>()
+            }
+        }
+
+        val result = service.syncAllFromTmdb(25)
+
+        assertEquals(2, result.processed)
+        assertEquals(1, result.synced)
+        assertEquals(1, result.failed)
+        assertEquals(3, transactionCalls)
         verify { creditsRepository.markCreditsSyncFailure(9, "provider unavailable") }
     }
 }
