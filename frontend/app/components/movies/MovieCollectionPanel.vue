@@ -119,7 +119,7 @@ const showLoadButton = computed(() => !membersResponse.value || membersError.val
 const membersCatalogSummary = computed(() => {
   const members = membersResponse.value?.members ?? []
   const catalogued = members.filter((member) => member.inCatalog).length
-  return members.length ? `${catalogued}/${members.length} no catálogo` : 'Nenhum membro retornado pelo TMDb'
+  return members.length ? `${catalogued}/${members.length} no catálogo` : 'Nenhum filme no snapshot da coleção'
 })
 
 const collectionItems = computed<CollectionDisplayItem[]>(() => {
@@ -174,10 +174,9 @@ async function loadMembers() {
 
   try {
     membersResponse.value = await $fetch<MovieCollectionMembersResponse>(
-      `/api/movies/collections/${props.collection.id}/tmdb-members`,
+      `/api/movies/collections/${props.collection.id}`,
       {
         baseURL: config.public.apiBase,
-        method: 'POST',
       },
     )
   } catch {

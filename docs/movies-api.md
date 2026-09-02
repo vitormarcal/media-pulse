@@ -397,6 +397,7 @@ Filmes podem ser vinculados a uma coleção oficial do TMDb, como `The Matrix Co
 `GET /api/movies/collections/{collectionId}` retorna o snapshot local dos membros oficiais da coleção e resolve quais filmes já estão no catálogo.
 
 - não consulta o TMDb durante a leitura
+- o painel embutido na página de filme também usa este GET ao expandir a coleção
 - coleções ainda não sincronizadas são processadas automaticamente em segundo plano
 - falhas aguardam pelo menos um dia antes de uma nova tentativa automática
 
