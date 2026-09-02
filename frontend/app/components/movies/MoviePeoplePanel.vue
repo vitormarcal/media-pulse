@@ -31,7 +31,13 @@
       </section>
 
       <p v-if="!people.groups.length" class="empty-copy">
-        {{ enrichmentStatus === 'PENDING' ? 'Completando créditos…' : 'Nenhum crédito disponível.' }}
+        {{
+          enrichmentStatus?.status === 'PENDING'
+            ? 'Completando créditos…'
+            : enrichmentStatus?.status === 'RETRY_SCHEDULED'
+              ? 'Não foi possível atualizar os créditos. Tentaremos novamente mais tarde.'
+              : 'Nenhum crédito disponível.'
+        }}
       </p>
 
       <div v-if="editingEnabled" class="editor-shell">

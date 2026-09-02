@@ -45,6 +45,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
 import org.springframework.web.server.ResponseStatusException
 import java.sql.Timestamp
+import java.time.Duration
 import java.time.Instant
 
 @Repository
@@ -264,7 +265,10 @@ class MovieQueryRepository(
                       m.terms_synced_at,
                       m.credits_synced_at,
                       m.companies_synced_at,
-                      m.tmdb_resolution_checked_at
+                      m.tmdb_resolution_checked_at,
+                      m.terms_sync_attempted_at,
+                      m.credits_sync_attempted_at,
+                      m.companies_sync_attempted_at
                     FROM movies m
                     LEFT JOIN movie_collections mc ON mc.id = m.collection_id
                     WHERE m.id = :movieId
@@ -323,17 +327,20 @@ class MovieQueryRepository(
 
         val hasTmdb = base[12] != null
         val hasImdb = base[13] != null
-        val termsStatus = enrichmentStepStatus(hasTmdb, base[14] != null)
-        val creditsStatus = enrichmentStepStatus(hasTmdb, base[15] != null)
-        val companiesStatus = enrichmentStepStatus(hasTmdb, base[16] != null)
+        val tmdbResolution = tmdbResolutionStep(hasTmdb, hasImdb, asInstant(base[17]))
+        val termsStatus = enrichmentStep(hasTmdb, base[14] != null, asInstant(base[18]))
+        val creditsStatus = enrichmentStep(hasTmdb, base[15] != null, asInstant(base[19]))
+        val companiesStatus = enrichmentStep(hasTmdb, base[16] != null, asInstant(base[20]))
+        val steps = listOf(tmdbResolution, termsStatus, creditsStatus, companiesStatus)
         val enrichmentStatus =
             when {
-                !hasTmdb && (!hasImdb || base[17] != null) -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.BLOCKED
-                termsStatus == dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE &&
-                    creditsStatus == dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE &&
-                    companiesStatus == dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE ->
+                steps.all { it.status == dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE } ->
                     dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE
-                else -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.PENDING
+                steps.any { it.status == dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.PENDING } ->
+                    dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.PENDING
+                steps.any { it.status == dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.RETRY_SCHEDULED } ->
+                    dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.RETRY_SCHEDULED
+                else -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.BLOCKED
             }
 
         val lists = getMovieLists(movieId)
@@ -419,7 +426,7 @@ class MovieQueryRepository(
             enrichment =
                 dev.marcal.mediapulse.server.api.movies.MovieAutomaticEnrichmentDto(
                     status = enrichmentStatus,
-                    tmdbResolutionPending = !hasTmdb && hasImdb && base[17] == null,
+                    tmdbResolution = tmdbResolution,
                     terms = termsStatus,
                     credits = creditsStatus,
                     companies = companiesStatus,
@@ -427,15 +434,50 @@ class MovieQueryRepository(
         )
     }
 
-    private fun enrichmentStepStatus(
+    private fun enrichmentStep(
         hasTmdb: Boolean,
         synced: Boolean,
-    ): dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus =
-        when {
-            synced -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE
-            hasTmdb -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.PENDING
-            else -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.BLOCKED
-        }
+        attemptedAt: Instant?,
+    ): dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStepDto {
+        val retryAfter = attemptedAt?.plus(Duration.ofDays(1))
+        val status =
+            when {
+                synced -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE
+                !hasTmdb -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.BLOCKED
+                retryAfter == null || !retryAfter.isAfter(Instant.now()) ->
+                    dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.PENDING
+                else -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.RETRY_SCHEDULED
+            }
+        return enrichmentStep(status, attemptedAt)
+    }
+
+    private fun tmdbResolutionStep(
+        hasTmdb: Boolean,
+        hasImdb: Boolean,
+        attemptedAt: Instant?,
+    ): dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStepDto {
+        val retryAfter = attemptedAt?.plus(Duration.ofDays(1))
+        val status =
+            when {
+                hasTmdb -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.COMPLETE
+                !hasImdb -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.BLOCKED
+                retryAfter == null || !retryAfter.isAfter(Instant.now()) ->
+                    dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.PENDING
+                else -> dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.RETRY_SCHEDULED
+            }
+        return enrichmentStep(status, attemptedAt)
+    }
+
+    private fun enrichmentStep(
+        status: dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus,
+        attemptedAt: Instant?,
+    ) = dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStepDto(
+        status = status,
+        lastAttemptAt = attemptedAt,
+        retryAfter = attemptedAt?.plus(Duration.ofDays(1))?.takeIf {
+            status == dev.marcal.mediapulse.server.api.movies.MovieEnrichmentStatus.RETRY_SCHEDULED
+        },
+    )
 
     fun getMovieLists(movieId: Long): List<MovieListSummaryDto> =
         entityManager

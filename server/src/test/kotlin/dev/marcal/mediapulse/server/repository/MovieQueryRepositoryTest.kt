@@ -121,6 +121,9 @@ class MovieQueryRepositoryTest {
                         null,
                         null,
                         null,
+                        Timestamp.from(Instant.parse("2026-09-02T10:00:00Z")),
+                        null,
+                        null,
                         null,
                     ),
                 ),
@@ -158,6 +161,9 @@ class MovieQueryRepositoryTest {
                         null,
                         null,
                         null,
+                        Timestamp.from(Instant.parse("2026-09-02T10:00:00Z")),
+                        null,
+                        null,
                     ),
                 ),
                 emptyList<Any>(),
@@ -177,6 +183,8 @@ class MovieQueryRepositoryTest {
         assertEquals("The Matrix Collection", response.collection?.name)
         assertEquals("2344", response.collection?.tmdbId)
         assertEquals(2, response.collection?.movies?.size)
+        assertEquals("RETRY_SCHEDULED", response.enrichment.terms.status.name)
+        assertEquals(Instant.parse("2026-09-03T10:00:00Z"), response.enrichment.terms.retryAfter)
         assertTrue(
             response.collection!!
                 .movies

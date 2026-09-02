@@ -54,7 +54,7 @@ paths:
           required: true
           schema: { type: string, minLength: 2 }
       responses:
-        '200': { description: Read-only artist candidate list }
+        "200": { description: Read-only artist candidate list }
   /api/music/musicbrainz/artists:
     post:
       tags: [Music]
@@ -69,8 +69,8 @@ paths:
               properties:
                 artistMbid: { type: string }
       responses:
-        '200': { description: Artist created or reused }
-        '409': { description: MBID already belongs to another local entity }
+        "200": { description: Artist created or reused }
+        "409": { description: MBID already belongs to another local entity }
   /api/music/artists/{artistId}/musicbrainz/discography:
     post:
       tags: [Music]
@@ -81,8 +81,13 @@ paths:
           required: true
           schema: { type: integer, format: int64 }
       responses:
-        '200': { description: Items classified as LINKED, POSSIBLE_MATCH, or MISSING }
-        '409': { description: Artist is not linked to MusicBrainz }
+        "200":
+          {
+            description: Items classified as LINKED,
+            POSSIBLE_MATCH,
+            or MISSING,
+          }
+        "409": { description: Artist is not linked to MusicBrainz }
   /api/music/artists/{artistId}/musicbrainz/discography/import:
     post:
       tags: [Music]
@@ -105,7 +110,10 @@ paths:
                   maxItems: 50
                   items: { type: string }
       responses:
-        '200': { description: Missing albums created; linked or possible matches skipped }
+        "200":
+          {
+            description: Missing albums created; linked or possible matches skipped,
+          }
   /api/music/albums/{albumId}/musicbrainz/candidates:
     post:
       tags: [Music]
@@ -116,7 +124,7 @@ paths:
           required: true
           schema: { type: integer, format: int64 }
       responses:
-        '200': { description: Candidate list; no local data is changed }
+        "200": { description: Candidate list; no local data is changed }
   /api/music/albums/{albumId}/musicbrainz/preview:
     post:
       tags: [Music]
@@ -131,7 +139,7 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        '200': { description: Read-only enrichment preview }
+        "200": { description: Read-only enrichment preview }
   /api/music/albums/{albumId}/musicbrainz:
     post:
       tags: [Music]
@@ -151,7 +159,7 @@ paths:
               properties:
                 releaseGroupMbid: { type: string }
       responses:
-        '200': { description: Enrichment applied }
+        "200": { description: Enrichment applied }
   /api/music/artists/{artistId}/musicbrainz/candidates:
     post:
       tags: [Music]
@@ -162,7 +170,7 @@ paths:
           required: true
           schema: { type: integer, format: int64 }
       responses:
-        '200': { description: Candidate list; no local data is changed }
+        "200": { description: Candidate list; no local data is changed }
   /api/music/artists/{artistId}/musicbrainz:
     post:
       tags: [Music]
@@ -182,7 +190,7 @@ paths:
               properties:
                 artistMbid: { type: string }
       responses:
-        '200': { description: Artist link applied }
+        "200": { description: Artist link applied }
   /api/music/artists/{artistId}/musicbrainz/refresh:
     post:
       tags: [Music]
@@ -193,8 +201,8 @@ paths:
           required: true
           schema: { type: integer, format: int64 }
       responses:
-        '200': { description: Local artist snapshot refreshed }
-        '409': { description: Artist is not linked to MusicBrainz }
+        "200": { description: Local artist snapshot refreshed }
+        "409": { description: Artist is not linked to MusicBrainz }
   /api/music/artists/{artistId}/genres:
     post:
       tags: [Music]
@@ -215,7 +223,7 @@ paths:
                 name: { type: string }
                 kind: { type: string, enum: [GENRE] }
       responses:
-        '200': { description: Artist genre added }
+        "200": { description: Artist genre added }
   /api/music/artists/{artistId}/genres/{termId}/visibility:
     post:
       tags: [Music]
@@ -239,7 +247,7 @@ paths:
               properties:
                 hidden: { type: boolean }
       responses:
-        '200': { description: Artist genre visibility updated }
+        "200": { description: Artist genre visibility updated }
   /api/music/lists:
     get:
       summary: List album lists
@@ -1282,7 +1290,8 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/DuplicateAlbumReviewResponse" }
+              schema:
+                { $ref: "#/components/schemas/DuplicateAlbumReviewResponse" }
   /api/admin/music/album-duplicates/catalog:
     get:
       summary: Search albums grouped by artist for a manual merge
@@ -1339,7 +1348,8 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/DuplicateArtistReviewResponse" }
+              schema:
+                { $ref: "#/components/schemas/DuplicateArtistReviewResponse" }
   /api/admin/music/artist-duplicates/catalog:
     get:
       summary: Search artists for a manual merge
@@ -1352,7 +1362,8 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ArtistMergeCatalogResponse" }
+              schema:
+                { $ref: "#/components/schemas/ArtistMergeCatalogResponse" }
   /api/admin/music/artist-duplicates/preview:
     post:
       summary: Preview a definitive artist merge
@@ -1367,7 +1378,8 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ArtistMergePreviewResponse" }
+              schema:
+                { $ref: "#/components/schemas/ArtistMergePreviewResponse" }
   /api/admin/music/artist-duplicates/merge:
     post:
       summary: Merge artists into an owner-selected canonical artist
@@ -3232,7 +3244,8 @@ components:
           nullable: true
     AlbumListSummary:
       type: object
-      required: [listId, name, slug, itemCount, listenedCount, coverUrls, updatedAt]
+      required:
+        [listId, name, slug, itemCount, listenedCount, coverUrls, updatedAt]
       properties:
         listId:
           type: integer
@@ -3367,7 +3380,8 @@ components:
       required: [rating]
     BookReadStatus:
       type: string
-      enum: [READ, CURRENTLY_READING, WANT_TO_READ, DID_NOT_FINISH, PAUSED, UNKNOWN]
+      enum:
+        [READ, CURRENTLY_READING, WANT_TO_READ, DID_NOT_FINISH, PAUSED, UNKNOWN]
     AuthorDto:
       type: object
       properties:
@@ -3797,7 +3811,8 @@ components:
         uniqueTracksCount:
           type: integer
           format: int64
-      required: [playsCount, uniqueArtistsCount, uniqueAlbumsCount, uniqueTracksCount]
+      required:
+        [playsCount, uniqueArtistsCount, uniqueAlbumsCount, uniqueTracksCount]
     MusicYearStatsDto:
       type: object
       properties:
@@ -3815,7 +3830,14 @@ components:
         uniqueTracksCount:
           type: integer
           format: int64
-      required: [year, playsCount, uniqueArtistsCount, uniqueAlbumsCount, uniqueTracksCount]
+      required:
+        [
+          year,
+          playsCount,
+          uniqueArtistsCount,
+          uniqueAlbumsCount,
+          uniqueTracksCount,
+        ]
     MusicByYearResponse:
       type: object
       properties:
@@ -3853,7 +3875,8 @@ components:
         uniqueTracksCount:
           type: integer
           format: int64
-      required: [playsCount, uniqueArtistsCount, uniqueAlbumsCount, uniqueTracksCount]
+      required:
+        [playsCount, uniqueArtistsCount, uniqueAlbumsCount, uniqueTracksCount]
     ArtistLibraryRow:
       type: object
       properties:
@@ -3922,7 +3945,16 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [albumId, albumTitle, artistId, artistName, totalTracks, playedTracks, playCount]
+      required:
+        [
+          albumId,
+          albumTitle,
+          artistId,
+          artistName,
+          totalTracks,
+          playedTracks,
+          playCount,
+        ]
     AlbumLibraryPageResponse:
       type: object
       properties:
@@ -4012,7 +4044,8 @@ components:
         playCount:
           type: integer
           format: int64
-      required: [albumId, albumTitle, artistId, artistName, lastPlayed, playCount]
+      required:
+        [albumId, albumTitle, artistId, artistName, lastPlayed, playCount]
     RediscoveredAlbumResponse:
       type: object
       properties:
@@ -4121,7 +4154,8 @@ components:
         playCount:
           type: integer
           format: int64
-      required: [trackId, title, albumId, albumTitle, artistId, artistName, playCount]
+      required:
+        [trackId, title, albumId, albumTitle, artistId, artistName, playCount]
     TopGenreResponse:
       type: object
       properties:
@@ -4253,7 +4287,8 @@ components:
         coveragePercent:
           type: number
           format: double
-      required: [artistId, artistName, totalTracks, playedTracks, coveragePercent]
+      required:
+        [artistId, artistName, totalTracks, playedTracks, coveragePercent]
     AlbumCoverageResponse:
       type: object
       properties:
@@ -4276,7 +4311,16 @@ components:
         coveragePercent:
           type: number
           format: double
-      required: [albumId, artistId, albumTitle, artistName, totalTracks, playedTracks, coveragePercent]
+      required:
+        [
+          albumId,
+          artistId,
+          albumTitle,
+          artistName,
+          totalTracks,
+          playedTracks,
+          coveragePercent,
+        ]
     AlbumPageResponse:
       type: object
       properties:
@@ -4319,7 +4363,17 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MediaCommentDto"
-      required: [albumId, albumTitle, artistId, artistName, totalPlays, tracks, playsByDay, comments]
+      required:
+        [
+          albumId,
+          albumTitle,
+          artistId,
+          artistName,
+          totalPlays,
+          tracks,
+          playsByDay,
+          comments,
+        ]
     ArtistPageResponse:
       type: object
       properties:
@@ -4376,7 +4430,19 @@ components:
               hiddenForAlbum: { type: boolean }
               active: { type: boolean }
       required:
-        [artistId, artistName, totalPlays, uniqueTracksPlayed, uniqueAlbumsPlayed, libraryAlbumsCount, libraryTracksCount, albums, topTracks, playsByDay, genres]
+        [
+          artistId,
+          artistName,
+          totalPlays,
+          uniqueTracksPlayed,
+          uniqueAlbumsPlayed,
+          libraryAlbumsCount,
+          libraryTracksCount,
+          albums,
+          topTracks,
+          playsByDay,
+          genres,
+        ]
     ArtistMusicBrainzProfile:
       type: object
       properties:
@@ -4403,7 +4469,8 @@ components:
           items:
             type: object
             properties:
-              type: { type: string, enum: [OFFICIAL, WIKIPEDIA, DISCOGS, BANDCAMP] }
+              type:
+                { type: string, enum: [OFFICIAL, WIKIPEDIA, DISCOGS, BANDCAMP] }
               url: { type: string, format: uri }
         syncedAt: { type: string, format: date-time, nullable: true }
         syncError: { type: string, nullable: true }
@@ -4513,7 +4580,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TrackPlayRow"
-      required: [trackId, title, artistId, artistName, totalPlays, albums, recentPlays]
+      required:
+        [trackId, title, artistId, artistName, totalPlays, albums, recentPlays]
     TrackAlbumRow:
       type: object
       properties:
@@ -4604,7 +4672,19 @@ components:
           items:
             $ref: "#/components/schemas/DuplicateTrackCandidateResponse"
       required:
-        [albumId, albumTitle, artistId, artistName, groupKey, normalizedTitle, ignored, confidence, suggestionReason, suggestedTargetTrackId, candidates]
+        [
+          albumId,
+          albumTitle,
+          artistId,
+          artistName,
+          groupKey,
+          normalizedTitle,
+          ignored,
+          confidence,
+          suggestionReason,
+          suggestedTargetTrackId,
+          candidates,
+        ]
     DuplicateTrackCandidateResponse:
       type: object
       properties:
@@ -4637,7 +4717,15 @@ components:
           type: array
           items:
             type: string
-      required: [trackId, title, playbackCount, hasMusicBrainz, hasSpotify, externalIdentifiers]
+      required:
+        [
+          trackId,
+          title,
+          playbackCount,
+          hasMusicBrainz,
+          hasSpotify,
+          externalIdentifiers,
+        ]
     DuplicateTrackIgnoreRequest:
       type: object
       properties:
@@ -4715,7 +4803,16 @@ components:
         migratedAlbumLinks:
           type: integer
       required:
-        [albumId, groupKey, targetTrackId, mergedTrackIds, deletedDuplicatePlaybacks, movedPlaybacks, linkedExternalIdentifiers, migratedAlbumLinks]
+        [
+          albumId,
+          groupKey,
+          targetTrackId,
+          mergedTrackIds,
+          deletedDuplicatePlaybacks,
+          movedPlaybacks,
+          linkedExternalIdentifiers,
+          migratedAlbumLinks,
+        ]
     DuplicateTrackBatchMergeResponse:
       type: object
       properties:
@@ -4740,7 +4837,15 @@ components:
         musicBrainzReleaseIds: { type: array, items: { type: string } }
         musicBrainzReleaseGroupId: { type: string, nullable: true }
         rating: { type: integer, nullable: true }
-      required: [albumId, title, trackCount, playbackCount, spotifyIds, musicBrainzReleaseIds]
+      required:
+        [
+          albumId,
+          title,
+          trackCount,
+          playbackCount,
+          spotifyIds,
+          musicBrainzReleaseIds,
+        ]
     DuplicateAlbumSuggestionResponse:
       type: object
       properties:
@@ -4752,13 +4857,22 @@ components:
         candidates:
           type: array
           items: { $ref: "#/components/schemas/AlbumMergeCandidateResponse" }
-      required: [artistId, artistName, reason, confidence, suggestedTargetAlbumId, candidates]
+      required:
+        [
+          artistId,
+          artistName,
+          reason,
+          confidence,
+          suggestedTargetAlbumId,
+          candidates,
+        ]
     DuplicateAlbumReviewResponse:
       type: object
       properties:
         items:
           type: array
-          items: { $ref: "#/components/schemas/DuplicateAlbumSuggestionResponse" }
+          items:
+            { $ref: "#/components/schemas/DuplicateAlbumSuggestionResponse" }
       required: [items]
     AlbumMergeArtistResponse:
       type: object
@@ -4781,7 +4895,12 @@ components:
       properties:
         targetAlbumId: { type: integer, format: int64 }
         sourceAlbumIds: { type: array, items: { type: integer, format: int64 } }
-        trackOrderFromAlbumId: { type: integer, format: int64, description: Album whose track positions take priority; defaults to targetAlbumId }
+        trackOrderFromAlbumId:
+          {
+            type: integer,
+            format: int64,
+            description: Album whose track positions take priority; defaults to targetAlbumId,
+          }
       required: [targetAlbumId, sourceAlbumIds]
     AlbumTrackOrderPreviewResponse:
       type: object
@@ -4790,19 +4909,40 @@ components:
         positionedTrackCount: { type: integer }
         unpositionedTrackCount: { type: integer }
         conflictedTrackCount: { type: integer }
-      required: [fromAlbumId, positionedTrackCount, unpositionedTrackCount, conflictedTrackCount]
+      required:
+        [
+          fromAlbumId,
+          positionedTrackCount,
+          unpositionedTrackCount,
+          conflictedTrackCount,
+        ]
     AlbumMergePreviewResponse:
       type: object
       properties:
         artistId: { type: integer, format: int64 }
         artistName: { type: string }
         targetAlbumId: { type: integer, format: int64 }
-        candidates: { type: array, items: { $ref: "#/components/schemas/AlbumMergeCandidateResponse" } }
+        candidates:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/AlbumMergeCandidateResponse" },
+          }
         totalTracks: { type: integer, format: int64 }
         totalPlaybacks: { type: integer, format: int64 }
-        trackOrder: { $ref: "#/components/schemas/AlbumTrackOrderPreviewResponse" }
+        trackOrder:
+          { $ref: "#/components/schemas/AlbumTrackOrderPreviewResponse" }
         warnings: { type: array, items: { type: string } }
-      required: [artistId, artistName, targetAlbumId, candidates, totalTracks, totalPlaybacks, trackOrder, warnings]
+      required:
+        [
+          artistId,
+          artistName,
+          targetAlbumId,
+          candidates,
+          totalTracks,
+          totalPlaybacks,
+          trackOrder,
+          warnings,
+        ]
     AlbumMergeRequest:
       type: object
       properties:
@@ -4812,7 +4952,12 @@ components:
         coverFromAlbumId: { type: integer, format: int64 }
         yearFromAlbumId: { type: integer, format: int64 }
         ratingFromAlbumId: { type: integer, format: int64, nullable: true }
-        trackOrderFromAlbumId: { type: integer, format: int64, description: Album whose track positions take priority; defaults to targetAlbumId }
+        trackOrderFromAlbumId:
+          {
+            type: integer,
+            format: int64,
+            description: Album whose track positions take priority; defaults to targetAlbumId,
+          }
       required: [targetAlbumId, sourceAlbumIds]
     AlbumMergeResponse:
       type: object
@@ -4823,7 +4968,15 @@ components:
         migratedTrackLinks: { type: integer }
         linkedExternalIdentifiers: { type: integer }
         storedTitleAliases: { type: integer }
-      required: [albumId, mergedAlbumIds, movedPlaybacks, migratedTrackLinks, linkedExternalIdentifiers, storedTitleAliases]
+      required:
+        [
+          albumId,
+          mergedAlbumIds,
+          movedPlaybacks,
+          migratedTrackLinks,
+          linkedExternalIdentifiers,
+          storedTitleAliases,
+        ]
     ArtistMergeCandidateResponse:
       type: object
       properties:
@@ -4848,56 +5001,99 @@ components:
         reason: { type: string }
         confidence: { type: string, enum: [HIGH, MEDIUM] }
         suggestedTargetArtistId: { type: integer, format: int64 }
-        candidates: { type: array, items: { $ref: "#/components/schemas/ArtistMergeCandidateResponse" } }
+        candidates:
+          {
+            type: array,
+            items:
+              { $ref: "#/components/schemas/ArtistMergeCandidateResponse" },
+          }
       required: [reason, confidence, suggestedTargetArtistId, candidates]
     DuplicateArtistReviewResponse:
       type: object
       properties:
-        items: { type: array, items: { $ref: "#/components/schemas/DuplicateArtistSuggestionResponse" } }
+        items:
+          {
+            type: array,
+            items:
+              {
+                $ref: "#/components/schemas/DuplicateArtistSuggestionResponse",
+              },
+          }
       required: [items]
     ArtistMergeCatalogResponse:
       type: object
       properties:
-        artists: { type: array, items: { $ref: "#/components/schemas/ArtistMergeCandidateResponse" } }
+        artists:
+          {
+            type: array,
+            items:
+              { $ref: "#/components/schemas/ArtistMergeCandidateResponse" },
+          }
       required: [artists]
     ArtistMergePreviewRequest:
       type: object
       properties:
         targetArtistId: { type: integer, format: int64 }
-        sourceArtistIds: { type: array, items: { type: integer, format: int64 } }
+        sourceArtistIds:
+          { type: array, items: { type: integer, format: int64 } }
       required: [targetArtistId, sourceArtistIds]
     ArtistMergePreviewResponse:
       type: object
       properties:
         targetArtistId: { type: integer, format: int64 }
-        candidates: { type: array, items: { $ref: "#/components/schemas/ArtistMergeCandidateResponse" } }
+        candidates:
+          {
+            type: array,
+            items:
+              { $ref: "#/components/schemas/ArtistMergeCandidateResponse" },
+          }
         totalAlbums: { type: integer, format: int64 }
         totalTracks: { type: integer, format: int64 }
         totalPlaybacks: { type: integer, format: int64 }
         warnings: { type: array, items: { type: string } }
-      required: [targetArtistId, candidates, totalAlbums, totalTracks, totalPlaybacks, warnings]
+      required:
+        [
+          targetArtistId,
+          candidates,
+          totalAlbums,
+          totalTracks,
+          totalPlaybacks,
+          warnings,
+        ]
     ArtistMergeRequest:
       type: object
       properties:
         targetArtistId: { type: integer, format: int64 }
-        sourceArtistIds: { type: array, items: { type: integer, format: int64 } }
+        sourceArtistIds:
+          { type: array, items: { type: integer, format: int64 } }
         nameFromArtistId: { type: integer, format: int64 }
         imageFromArtistId: { type: integer, format: int64 }
         musicBrainzFromArtistId: { type: integer, format: int64 }
         ratingFromArtistId: { type: integer, format: int64, nullable: true }
-        preserveAliasArtistIds: { type: array, items: { type: integer, format: int64 } }
+        preserveAliasArtistIds:
+          { type: array, items: { type: integer, format: int64 } }
       required: [targetArtistId, sourceArtistIds]
     ArtistMergeResponse:
       type: object
       properties:
         artistId: { type: integer, format: int64 }
-        mergedArtistIds: { type: array, items: { type: integer, format: int64 } }
+        mergedArtistIds:
+          { type: array, items: { type: integer, format: int64 } }
         movedAlbums: { type: integer }
         movedTracks: { type: integer }
         movedComments: { type: integer }
         mergedGenres: { type: integer }
         storedNameAliases: { type: integer }
-      required: [artistId, mergedArtistIds, movedAlbums, movedTracks, movedComments, mergedGenres, storedNameAliases]
+      required:
+        [
+          artistId,
+          mergedArtistIds,
+          movedAlbums,
+          movedTracks,
+          movedComments,
+          mergedGenres,
+          storedNameAliases,
+        ]
     AlbumTrackRow:
       type: object
       properties:
@@ -5014,7 +5210,15 @@ components:
           type: integer
         tracksUpserted:
           type: integer
-      required: [artistsSeen, artistsUpserted, albumsSeen, albumsUpserted, tracksSeen, tracksUpserted]
+      required:
+        [
+          artistsSeen,
+          artistsUpserted,
+          albumsSeen,
+          albumsUpserted,
+          tracksSeen,
+          tracksUpserted,
+        ]
 
     MovieCardDto:
       type: object
@@ -5157,7 +5361,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MovieCollectionPreviewMovieDto"
-      required: [id, tmdbId, name, movieCount, watchedMoviesCount, previewMovies]
+      required:
+        [id, tmdbId, name, movieCount, watchedMoviesCount, previewMovies]
     MovieCreditTypeDto:
       type: string
       enum: [CAST, CREW]
@@ -5253,7 +5458,8 @@ components:
           type: boolean
         active:
           type: boolean
-      required: [id, name, slug, kind, source, hiddenGlobally, hiddenForMovie, active]
+      required:
+        [id, name, slug, kind, source, hiddenGlobally, hiddenForMovie, active]
     MovieTermCreateRequest:
       type: object
       properties:
@@ -5444,24 +5650,52 @@ components:
             $ref: "#/components/schemas/MediaCommentDto"
         enrichment:
           $ref: "#/components/schemas/MovieAutomaticEnrichmentDto"
-      required: [movieId, title, originalTitle, images, watches, externalIds, lists, companies, people, terms, comments, enrichment]
+      required:
+        [
+          movieId,
+          title,
+          originalTitle,
+          images,
+          watches,
+          externalIds,
+          lists,
+          companies,
+          people,
+          terms,
+          comments,
+          enrichment,
+        ]
     MovieEnrichmentStatus:
       type: string
-      enum: [PENDING, COMPLETE, BLOCKED]
+      enum: [PENDING, RETRY_SCHEDULED, COMPLETE, BLOCKED]
+    MovieEnrichmentStepDto:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/MovieEnrichmentStatus"
+        lastAttemptAt:
+          type: string
+          format: date-time
+          nullable: true
+        retryAfter:
+          type: string
+          format: date-time
+          nullable: true
+      required: [status]
     MovieAutomaticEnrichmentDto:
       type: object
       properties:
         status:
           $ref: "#/components/schemas/MovieEnrichmentStatus"
-        tmdbResolutionPending:
-          type: boolean
+        tmdbResolution:
+          $ref: "#/components/schemas/MovieEnrichmentStepDto"
         terms:
-          $ref: "#/components/schemas/MovieEnrichmentStatus"
+          $ref: "#/components/schemas/MovieEnrichmentStepDto"
         credits:
-          $ref: "#/components/schemas/MovieEnrichmentStatus"
+          $ref: "#/components/schemas/MovieEnrichmentStepDto"
         companies:
-          $ref: "#/components/schemas/MovieEnrichmentStatus"
-      required: [status, tmdbResolutionPending, terms, credits, companies]
+          $ref: "#/components/schemas/MovieEnrichmentStepDto"
+      required: [status, tmdbResolution, terms, credits, companies]
     PersonSuggestionDto:
       type: object
       properties:
@@ -5515,7 +5749,17 @@ components:
           allOf:
             - $ref: "#/components/schemas/PersonTmdbProfileDto"
           nullable: true
-      required: [personId, tmdbId, name, slug, roles, movieCount, watchedMoviesCount, movies]
+      required:
+        [
+          personId,
+          tmdbId,
+          name,
+          slug,
+          roles,
+          movieCount,
+          watchedMoviesCount,
+          movies,
+        ]
     PersonTmdbProfileDto:
       type: object
       properties:
@@ -5582,7 +5826,17 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MovieLibraryCardDto"
-      required: [companyId, tmdbId, name, slug, companyType, movieCount, watchedMoviesCount, movies]
+      required:
+        [
+          companyId,
+          tmdbId,
+          name,
+          slug,
+          companyType,
+          movieCount,
+          watchedMoviesCount,
+          movies,
+        ]
     MovieTermSuggestionDto:
       type: object
       properties:
@@ -5624,7 +5878,17 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MovieLibraryCardDto"
-      required: [termId, name, slug, kind, source, movieCount, watchedMoviesCount, movies]
+      required:
+        [
+          termId,
+          name,
+          slug,
+          kind,
+          source,
+          movieCount,
+          watchedMoviesCount,
+          movies,
+        ]
     ManualMovieCatalogCreateRequest:
       type: object
       properties:
@@ -5818,7 +6082,15 @@ components:
           type: integer
         failed:
           type: integer
-      required: [requestedLimit, candidates, processed, linked, withoutCollection, failed]
+      required:
+        [
+          requestedLimit,
+          candidates,
+          processed,
+          linked,
+          withoutCollection,
+          failed,
+        ]
     MovieCollectionMemberDto:
       type: object
       properties:
@@ -6324,7 +6596,15 @@ components:
         lastWatchedAt:
           type: string
           format: date-time
-      required: [movieId, title, originalTitle, watchCountInYear, firstWatchedAt, lastWatchedAt]
+      required:
+        [
+          movieId,
+          title,
+          originalTitle,
+          watchCountInYear,
+          firstWatchedAt,
+          lastWatchedAt,
+        ]
     MovieYearUnwatchedDto:
       type: object
       properties:
@@ -6569,7 +6849,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShowSeasonEpisodeDto"
-      required: [showId, showTitle, showOriginalTitle, episodesCount, watchedEpisodesCount, completed, episodes]
+      required:
+        [
+          showId,
+          showTitle,
+          showOriginalTitle,
+          episodesCount,
+          watchedEpisodesCount,
+          completed,
+          episodes,
+        ]
     ShowProgressDto:
       type: object
       properties:
@@ -6589,7 +6878,15 @@ components:
           type: boolean
         inProgress:
           type: boolean
-      required: [episodesCount, watchedEpisodesCount, seasonsCount, completedSeasonsCount, completed, inProgress]
+      required:
+        [
+          episodesCount,
+          watchedEpisodesCount,
+          seasonsCount,
+          completedSeasonsCount,
+          completed,
+          inProgress,
+        ]
     ShowExternalIdDto:
       type: object
       properties:
@@ -6683,7 +6980,17 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MediaCommentDto"
-      required: [showId, title, originalTitle, images, watches, externalIds, people, comments]
+      required:
+        [
+          showId,
+          title,
+          originalTitle,
+          images,
+          watches,
+          externalIds,
+          people,
+          comments,
+        ]
     ShowCreditsSyncResponse:
       type: object
       properties:
@@ -6738,7 +7045,8 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [showId, title, originalTitle, watchedEpisodesCount, episodesCount]
+      required:
+        [showId, title, originalTitle, watchedEpisodesCount, episodesCount]
     ShowsLibraryResponse:
       type: object
       properties:
@@ -6857,7 +7165,15 @@ components:
         lastWatchedAt:
           type: string
           format: date-time
-      required: [showId, title, originalTitle, watchCountInYear, firstWatchedAt, lastWatchedAt]
+      required:
+        [
+          showId,
+          title,
+          originalTitle,
+          watchCountInYear,
+          firstWatchedAt,
+          lastWatchedAt,
+        ]
     ShowYearUnwatchedDto:
       type: object
       properties:
@@ -7076,10 +7392,26 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ManualShowExternalIdView"
-      required: [showId, title, createdShow, coverAssigned, seasonsImported, episodesImported, externalIds]
+      required:
+        [
+          showId,
+          title,
+          createdShow,
+          coverAssigned,
+          seasonsImported,
+          episodesImported,
+          externalIds,
+        ]
     ShowSeasonEnrichmentField:
       type: string
-      enum: [SEASON_TITLE, EPISODE_TITLE, EPISODE_SUMMARY, EPISODE_DURATION, EPISODE_AIR_DATE]
+      enum:
+        [
+          SEASON_TITLE,
+          EPISODE_TITLE,
+          EPISODE_SUMMARY,
+          EPISODE_DURATION,
+          EPISODE_AIR_DATE,
+        ]
     ShowSeasonEnrichmentApplyMode:
       type: string
       enum: [MISSING, SELECTED]
@@ -7162,7 +7494,18 @@ components:
           type: integer
         missingTmdbEpisodesCount:
           type: integer
-      required: [showId, seasonNumber, resolvedTmdbId, showTitle, seasonFields, episodes, changedEpisodesCount, selectedFieldsCount, missingTmdbEpisodesCount]
+      required:
+        [
+          showId,
+          seasonNumber,
+          resolvedTmdbId,
+          showTitle,
+          seasonFields,
+          episodes,
+          changedEpisodesCount,
+          selectedFieldsCount,
+          missingTmdbEpisodesCount,
+        ]
     ShowSeasonEpisodeEnrichmentSelection:
       type: object
       properties:
@@ -7204,7 +7547,14 @@ components:
           type: integer
         appliedFieldsCount:
           type: integer
-      required: [showId, seasonNumber, resolvedTmdbId, updatedEpisodesCount, appliedFieldsCount]
+      required:
+        [
+          showId,
+          seasonNumber,
+          resolvedTmdbId,
+          updatedEpisodesCount,
+          appliedFieldsCount,
+        ]
     ManualShowWatchCreateResponse:
       type: object
       properties:
@@ -7247,7 +7597,20 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ManualShowExternalIdView"
-      required: [showId, title, episodeId, episodeTitle, watchedAt, source, createdShow, createdEpisode, watchInserted, coverAssigned, externalIds]
+      required:
+        [
+          showId,
+          title,
+          episodeId,
+          episodeTitle,
+          watchedAt,
+          source,
+          createdShow,
+          createdEpisode,
+          watchInserted,
+          coverAssigned,
+          externalIds,
+        ]
 
     ReprocessRequest:
       type: object

@@ -60,7 +60,8 @@ Cada etapa deve consultar o identificador local necessário, persistir o resulta
 
 ## Estados
 
-- `PENDING`: há etapa aguardando processamento ou retentativa;
+- `PENDING`: há etapa ainda não tentada e elegível para processamento;
+- `RETRY_SCHEDULED`: houve falha e a etapa aguarda o fim do intervalo de retentativa;
 - `COMPLETE`: todas as etapas aplicáveis foram concluídas, inclusive quando uma fonte retornou lista vazia;
 - `BLOCKED`: não há identidade suficiente ou a resolução automática não encontrou correspondência.
 

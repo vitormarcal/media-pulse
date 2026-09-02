@@ -21,7 +21,13 @@
     </div>
 
     <p v-else class="empty-copy">
-      {{ enrichmentStatus === 'PENDING' ? 'Completando empresas…' : 'Nenhuma empresa encontrada.' }}
+      {{
+        enrichmentStatus?.status === 'PENDING'
+          ? 'Completando empresas…'
+          : enrichmentStatus?.status === 'RETRY_SCHEDULED'
+            ? 'Não foi possível atualizar as empresas. Tentaremos novamente mais tarde.'
+            : 'Nenhuma empresa encontrada.'
+      }}
     </p>
 
     <div v-if="editingEnabled" class="editor-toolbar">

@@ -155,9 +155,12 @@ Campos suportados no MVP:
 
 O detalhe do filme também retorna `enrichment`, com o estado automático agregado e os estados individuais de termos, créditos e empresas:
 
-- `PENDING`: há trabalho aguardando processamento ou nova tentativa
+- `PENDING`: há trabalho ainda não tentado, elegível para o próximo ciclo automático
+- `RETRY_SCHEDULED`: a última tentativa falhou e uma nova tentativa ocorrerá após `retryAfter`
 - `COMPLETE`: a etapa foi concluída, inclusive quando o TMDb retornou uma lista vazia
 - `BLOCKED`: o filme ainda não possui um vínculo que permita consultar o TMDb
+
+`tmdbResolution`, `terms`, `credits` e `companies` retornam individualmente `status`, `lastAttemptAt` e `retryAfter`. O frontend só mantém polling enquanto o estado agregado for `PENDING`.
 
 Filmes com apenas IMDb têm o vínculo TMDb resolvido automaticamente. A importação e o registro de sessões não são revertidos quando o provedor está indisponível.
 

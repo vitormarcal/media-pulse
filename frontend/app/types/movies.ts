@@ -302,14 +302,20 @@ export interface MovieDetailsResponse {
   enrichment: MovieAutomaticEnrichment
 }
 
-export type MovieEnrichmentStatus = 'PENDING' | 'COMPLETE' | 'BLOCKED'
+export type MovieEnrichmentStatus = 'PENDING' | 'RETRY_SCHEDULED' | 'COMPLETE' | 'BLOCKED'
+
+export interface MovieEnrichmentStep {
+  status: MovieEnrichmentStatus
+  lastAttemptAt: string | null
+  retryAfter: string | null
+}
 
 export interface MovieAutomaticEnrichment {
   status: MovieEnrichmentStatus
-  tmdbResolutionPending: boolean
-  terms: MovieEnrichmentStatus
-  credits: MovieEnrichmentStatus
-  companies: MovieEnrichmentStatus
+  tmdbResolution: MovieEnrichmentStep
+  terms: MovieEnrichmentStep
+  credits: MovieEnrichmentStep
+  companies: MovieEnrichmentStep
 }
 
 export interface MovieTermCreateRequest {

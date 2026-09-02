@@ -316,16 +316,23 @@ enum class MovieEnrichmentApplyMode {
 
 enum class MovieEnrichmentStatus {
     PENDING,
+    RETRY_SCHEDULED,
     COMPLETE,
     BLOCKED,
 }
 
+data class MovieEnrichmentStepDto(
+    val status: MovieEnrichmentStatus,
+    val lastAttemptAt: Instant? = null,
+    val retryAfter: Instant? = null,
+)
+
 data class MovieAutomaticEnrichmentDto(
     val status: MovieEnrichmentStatus,
-    val tmdbResolutionPending: Boolean,
-    val terms: MovieEnrichmentStatus,
-    val credits: MovieEnrichmentStatus,
-    val companies: MovieEnrichmentStatus,
+    val tmdbResolution: MovieEnrichmentStepDto,
+    val terms: MovieEnrichmentStepDto,
+    val credits: MovieEnrichmentStepDto,
+    val companies: MovieEnrichmentStepDto,
 )
 
 data class MovieDetailsResponse(
@@ -349,10 +356,10 @@ data class MovieDetailsResponse(
     val enrichment: MovieAutomaticEnrichmentDto =
         MovieAutomaticEnrichmentDto(
             status = MovieEnrichmentStatus.BLOCKED,
-            tmdbResolutionPending = false,
-            terms = MovieEnrichmentStatus.BLOCKED,
-            credits = MovieEnrichmentStatus.BLOCKED,
-            companies = MovieEnrichmentStatus.BLOCKED,
+            tmdbResolution = MovieEnrichmentStepDto(MovieEnrichmentStatus.BLOCKED),
+            terms = MovieEnrichmentStepDto(MovieEnrichmentStatus.BLOCKED),
+            credits = MovieEnrichmentStepDto(MovieEnrichmentStatus.BLOCKED),
+            companies = MovieEnrichmentStepDto(MovieEnrichmentStatus.BLOCKED),
         ),
 )
 

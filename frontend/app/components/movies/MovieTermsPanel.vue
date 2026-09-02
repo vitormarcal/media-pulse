@@ -52,7 +52,11 @@
 
       <p v-if="!visibleGroups.length" class="empty-copy">
         {{
-          enrichmentStatus === 'PENDING' ? 'Completando marcações…' : 'Ainda não há marcações ativas para este filme.'
+          enrichmentStatus?.status === 'PENDING'
+            ? 'Completando marcações…'
+            : enrichmentStatus?.status === 'RETRY_SCHEDULED'
+              ? 'Não foi possível atualizar as marcações. Tentaremos novamente mais tarde.'
+              : 'Ainda não há marcações ativas para este filme.'
         }}
       </p>
     </div>

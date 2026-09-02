@@ -13,8 +13,14 @@
       <div v-if="data.enrichment.status === 'PENDING'" class="enrichment-state" role="status">
         <span class="enrichment-dot" aria-hidden="true" />
         <span>{{
-          data.enrichment.tmdbResolutionPending ? 'Localizando este filme no TMDb…' : 'Completando informações…'
+          data.enrichment.tmdbResolution.status === 'PENDING'
+            ? 'Localizando este filme no TMDb…'
+            : 'Completando informações…'
         }}</span>
+      </div>
+
+      <div v-else-if="data.enrichment.status === 'RETRY_SCHEDULED'" class="enrichment-state blocked" role="status">
+        <span>Algumas informações não puderam ser atualizadas. Tentaremos novamente mais tarde.</span>
       </div>
 
       <div v-else-if="data.enrichment.status === 'BLOCKED' && activeAction" class="enrichment-state blocked">
