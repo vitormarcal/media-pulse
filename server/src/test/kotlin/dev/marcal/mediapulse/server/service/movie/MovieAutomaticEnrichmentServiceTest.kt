@@ -76,6 +76,35 @@ class MovieAutomaticEnrichmentServiceTest {
         verify(exactly = 0) { movieCreditsService.syncFromTmdbIfLinked(any()) }
     }
 
+    @Test
+    fun `should record failed step and continue remaining enrichment`() {
+        val linked = movie(id = 40, tmdbId = "603", imdbId = null)
+        every { movieRepository.findById(40) } returns Optional.of(linked)
+        every { movieTermsService.syncFromTmdbIfLinked(40) } throws IllegalStateException("terms unavailable")
+        every { pendingRepository.markTermsFailure(40, "terms unavailable") } returns 1
+
+        service.enrichMovie(40)
+
+        verify { pendingRepository.markTermsFailure(40, "terms unavailable") }
+        verify { movieCreditsService.syncFromTmdbIfLinked(40) }
+        verify { movieCompaniesService.syncFromTmdbIfLinked(40) }
+    }
+
+    @Test
+    fun `should not retry a recently failed step`() {
+        val linked =
+            movie(id = 50, tmdbId = "603", imdbId = null).copy(
+                termsSyncAttemptedAt = Instant.now(),
+                creditsSyncedAt = Instant.now(),
+                companiesSyncedAt = Instant.now(),
+            )
+        every { movieRepository.findById(50) } returns Optional.of(linked)
+
+        service.enrichMovie(50)
+
+        verify(exactly = 0) { movieTermsService.syncFromTmdbIfLinked(any()) }
+    }
+
     private fun movie(
         id: Long,
         tmdbId: String?,

@@ -20,7 +20,8 @@ class MovieCompaniesCrudRepository(
                 FROM movies m
                 WHERE m.companies_synced_at IS NULL
                   AND m.tmdb_id IS NOT NULL
-                ORDER BY m.id ASC
+                  AND (m.companies_sync_attempted_at IS NULL OR m.companies_sync_attempted_at <= NOW() - INTERVAL '1 day')
+                ORDER BY m.companies_sync_attempted_at NULLS FIRST, m.id ASC
                 LIMIT :limit
                 """.trimIndent(),
             ).setParameter("limit", limit.coerceAtLeast(1))
@@ -42,6 +43,7 @@ class MovieCompaniesCrudRepository(
                     FROM movies m
                     WHERE m.companies_synced_at IS NULL
                       AND m.tmdb_id IS NOT NULL
+                      AND (m.companies_sync_attempted_at IS NULL OR m.companies_sync_attempted_at <= NOW() - INTERVAL '1 day')
                     """.trimIndent(),
                 ).singleResult as Number
         ).toInt()
@@ -52,6 +54,8 @@ class MovieCompaniesCrudRepository(
                 """
                 UPDATE movies
                 SET companies_synced_at = NOW(),
+                    companies_sync_attempted_at = NOW(),
+                    companies_sync_error = NULL,
                     updated_at = NOW()
                 WHERE id = :movieId
                 """.trimIndent(),

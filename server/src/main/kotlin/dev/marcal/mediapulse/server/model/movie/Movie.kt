@@ -29,10 +29,22 @@ data class Movie(
     val collectionCheckedAt: Instant? = null,
     @Column(name = "terms_synced_at")
     val termsSyncedAt: Instant? = null,
+    @Column(name = "terms_sync_attempted_at")
+    val termsSyncAttemptedAt: Instant? = null,
+    @Column(name = "terms_sync_error")
+    val termsSyncError: String? = null,
     @Column(name = "credits_synced_at")
     val creditsSyncedAt: Instant? = null,
+    @Column(name = "credits_sync_attempted_at")
+    val creditsSyncAttemptedAt: Instant? = null,
+    @Column(name = "credits_sync_error")
+    val creditsSyncError: String? = null,
     @Column(name = "companies_synced_at")
     val companiesSyncedAt: Instant? = null,
+    @Column(name = "companies_sync_attempted_at")
+    val companiesSyncAttemptedAt: Instant? = null,
+    @Column(name = "companies_sync_error")
+    val companiesSyncError: String? = null,
     @Column(name = "tmdb_id", unique = true)
     val tmdbId: String? = null,
     @Column(name = "tmdb_resolution_checked_at")

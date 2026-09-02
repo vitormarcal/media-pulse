@@ -66,7 +66,7 @@ Cada etapa deve consultar o identificador local necessário, persistir o resulta
 
 O detalhe da entidade deve expor o estado agregado e, quando útil, o estado individual por etapa. O estado não deve ser inferido apenas pela quantidade de itens retornados.
 
-Tentativas de resolução sem correspondência devem registrar quando ocorreram. Retentativas usam intervalo controlado para evitar que identificadores inválidos ocupem continuamente o início da fila.
+Tentativas de resolução ou de uma etapa sem sucesso devem registrar quando ocorreram e o erro correspondente. Retentativas automáticas usam intervalo mínimo de um dia para evitar que identificadores inválidos ou provedores indisponíveis ocupem continuamente o início da fila. O reparo explícito pode executar a etapa sem aguardar esse intervalo.
 
 ## Operação
 

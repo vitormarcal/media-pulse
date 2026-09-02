@@ -6,6 +6,8 @@ import dev.marcal.mediapulse.server.repository.crud.MovieAutomaticEnrichmentRepo
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Service
@@ -73,24 +75,49 @@ class MovieAutomaticEnrichmentService(
 
         if (movie.tmdbId == null) return
 
-        if (movie.termsSyncedAt == null) {
-            runStep(movieId, "terms") { movieTermsService.syncFromTmdbIfLinked(movieId) }
+        if (shouldAttempt(movie.termsSyncedAt, movie.termsSyncAttemptedAt)) {
+            runStep(movieId, "terms", pendingRepository::markTermsFailure) {
+                movieTermsService.syncFromTmdbIfLinked(movieId)
+            }
         }
-        if (movie.creditsSyncedAt == null) {
-            runStep(movieId, "credits") { movieCreditsService.syncFromTmdbIfLinked(movieId) }
+        if (shouldAttempt(movie.creditsSyncedAt, movie.creditsSyncAttemptedAt)) {
+            runStep(movieId, "credits", pendingRepository::markCreditsFailure) {
+                movieCreditsService.syncFromTmdbIfLinked(movieId)
+            }
         }
-        if (movie.companiesSyncedAt == null) {
-            runStep(movieId, "companies") { movieCompaniesService.syncFromTmdbIfLinked(movieId) }
+        if (shouldAttempt(movie.companiesSyncedAt, movie.companiesSyncAttemptedAt)) {
+            runStep(movieId, "companies", pendingRepository::markCompaniesFailure) {
+                movieCompaniesService.syncFromTmdbIfLinked(movieId)
+            }
         }
     }
 
     private fun runStep(
         movieId: Long,
         step: String,
+        markFailure: (Long, String) -> Int,
         action: () -> Unit,
     ) {
         runCatching(action).onFailure { ex ->
+            runCatching { markFailure(movieId, ex.message ?: ex.javaClass.simpleName) }
+                .onFailure { persistenceError ->
+                    logger.warn(
+                        "Failed to record automatic movie enrichment error | movieId={} step={}",
+                        movieId,
+                        step,
+                        persistenceError,
+                    )
+                }
             logger.warn("Automatic movie enrichment step failed | movieId={} step={}", movieId, step, ex)
         }
+    }
+
+    private fun shouldAttempt(
+        syncedAt: Instant?,
+        attemptedAt: Instant?,
+    ): Boolean = syncedAt == null && (attemptedAt == null || attemptedAt <= Instant.now().minus(RETRY_DELAY))
+
+    private companion object {
+        val RETRY_DELAY: Duration = Duration.ofDays(1)
     }
 }

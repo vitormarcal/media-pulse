@@ -161,6 +161,8 @@ O detalhe do filme também retorna `enrichment`, com o estado automático agrega
 
 Filmes com apenas IMDb têm o vínculo TMDb resolvido automaticamente. A importação e o registro de sessões não são revertidos quando o provedor está indisponível.
 
+Cada etapa automática registra sua última tentativa e eventual erro em `movies`. Uma falha preserva os dados locais, não impede as outras etapas e só volta a ser elegível para execução automática após um dia. Uma sincronização bem-sucedida limpa o erro da etapa.
+
 ## Termos de filmes
 
 Cada filme agora pode ter termos de classificação editáveis em duas famílias:
@@ -194,7 +196,7 @@ Visibilidade:
 `POST /api/movies/terms/sync-tmdb` sincroniza termos do TMDb em lote.
 
 - processa apenas filmes com vínculo `TMDB`
-- considera apenas filmes ainda pendentes de sync em lote (`movies.terms_synced_at IS NULL`)
+- considera filmes ainda pendentes e elegíveis para tentativa (`movies.terms_synced_at IS NULL`)
 - `limit` é normalizado entre `1` e `1000`
 - cada filme roda isoladamente; falha de um item não interrompe o lote
 - a resposta retorna `candidates`, `processed`, `synced` e `failed`
@@ -239,7 +241,7 @@ Persistência:
 `POST /api/movies/companies/sync-tmdb` sincroniza empresas em lote.
 
 - processa apenas filmes com vínculo `TMDB`
-- considera apenas pendentes (`movies.companies_synced_at IS NULL`)
+- considera apenas pendentes elegíveis para tentativa (`movies.companies_synced_at IS NULL`)
 - `limit` é normalizado entre `1` e `1000`
 - falhas individuais não interrompem o lote
 
@@ -325,7 +327,7 @@ Persistência:
 `POST /api/movies/credits/sync-tmdb` sincroniza créditos em lote.
 
 - processa apenas filmes com vínculo `TMDB`
-- considera apenas pendentes (`movies.credits_synced_at IS NULL`)
+- considera apenas pendentes elegíveis para tentativa (`movies.credits_synced_at IS NULL`)
 - `limit` é normalizado entre `1` e `1000`
 - falhas individuais não interrompem o lote
 
