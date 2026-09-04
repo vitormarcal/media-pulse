@@ -3658,6 +3658,95 @@ components:
           items:
             $ref: "#/components/schemas/AuthorDto"
       required: [bookId, slug, title, authors]
+    BookLibraryCardDto:
+      type: object
+      properties:
+        bookId:
+          type: integer
+          format: int64
+        slug:
+          type: string
+        title:
+          type: string
+        coverUrl:
+          type: string
+          nullable: true
+        authors:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthorDto"
+        readsCount:
+          type: integer
+          format: int64
+        completedCount:
+          type: integer
+          format: int64
+        currentStatus:
+          allOf:
+            - $ref: "#/components/schemas/BookReadStatus"
+          nullable: true
+        activeProgressPct:
+          type: number
+          format: double
+          nullable: true
+        lastActivityAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        [bookId, slug, title, authors, readsCount, completedCount]
+    BooksLibraryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookLibraryCardDto"
+        nextCursor:
+          type: string
+          nullable: true
+      required: [items]
+    AuthorDetailsResponse:
+      type: object
+      properties:
+        authorId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        booksCount:
+          type: integer
+          format: int64
+        readsCount:
+          type: integer
+          format: int64
+        finishedCount:
+          type: integer
+          format: int64
+        currentlyReadingCount:
+          type: integer
+          format: int64
+        lastFinishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        books:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookCardDto"
+        recentReads:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadCardDto"
+      required:
+        - authorId
+        - name
+        - booksCount
+        - readsCount
+        - finishedCount
+        - currentlyReadingCount
+        - books
+        - recentReads
     ReadCardDto:
       type: object
       description: Consolidated reading session card; independent from provider event ids.
@@ -6693,6 +6782,44 @@ components:
         externalId:
           type: string
       required: [provider, externalId]
+    ManualMovieWatchCreateResponse:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        year:
+          type: integer
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        watchedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+        createdMovie:
+          type: boolean
+        watchInserted:
+          type: boolean
+        coverAssigned:
+          type: boolean
+        externalIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManualMovieExternalIdView"
+      required:
+        - movieId
+        - title
+        - watchedAt
+        - source
+        - createdMovie
+        - watchInserted
+        - coverAssigned
+        - externalIds
     MoviesSearchResponse:
       type: object
       properties:
