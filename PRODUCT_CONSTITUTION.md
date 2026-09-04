@@ -170,7 +170,7 @@ Current foundation:
 
 - Plex watch import
 - TMDb enrichment
-- shows, seasons, episodes, people, watches, ratings, comments, and images
+- shows, seasons, episodes, people, terms, watches, ratings, comments, and images
 - show library, detail, season, progress, and timeline views
 
 Future direction:

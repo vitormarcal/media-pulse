@@ -12,6 +12,7 @@ import dev.marcal.mediapulse.server.service.movie.MovieTermsService
 import dev.marcal.mediapulse.server.service.person.PersonFilmographyService
 import dev.marcal.mediapulse.server.service.person.PersonShowFilmographyService
 import dev.marcal.mediapulse.server.service.tv.ShowCreditsService
+import dev.marcal.mediapulse.server.service.tv.ShowTermsService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -43,7 +44,7 @@ class OperationalAdminControllerTest {
     @Test
     fun `show batch repair should preserve limit normalization`() {
         val credits = mockk<ShowCreditsService>()
-        val controller = ShowAdminController(credits)
+        val controller = ShowAdminController(credits, mockk<ShowTermsService>())
         every { credits.syncAllFromTmdb(1000) } returns
             ShowCreditsBatchSyncResponse(1000, 10, 10, 8, 2)
 

@@ -33,9 +33,9 @@ O enriquecimento automático pode incluir resolução IMDb → TMDb, metadados b
 
 ### Séries
 
-O primeiro recorte deve incluir resolução IMDb → TMDb quando houver suporte, metadados básicos, pessoas e créditos principais, temporadas e episódios conforme as regras existentes.
+O enriquecimento inclui resolução IMDb → TMDb quando houver suporte, metadados básicos, pessoas e créditos principais, gêneros e tags, temporadas e episódios conforme as regras existentes.
 
-Empresas, termos e outros recortes só devem ser adicionados quando houver modelo, regra de negócio e experiência de UI definidos para séries. A implementação não deve copiar automaticamente o escopo de filmes.
+Gêneros e keywords do TMDb são persistidos como termos locais de séries e podem ser corrigidos ou ocultados pelo owner. Empresas e outros recortes só devem ser adicionados quando houver modelo, regra de negócio e experiência de UI definidos para séries. A implementação não deve copiar automaticamente o escopo de filmes.
 
 ## Fluxo de processamento
 

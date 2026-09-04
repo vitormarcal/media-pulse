@@ -63,6 +63,35 @@ export interface ShowExternalIdDto {
 }
 
 export type ShowCreditType = 'CAST' | 'CREW'
+export type ShowTermKind = 'GENRE' | 'TAG'
+export type ShowTermSource = 'TMDB' | 'USER'
+export type ShowEnrichmentStatus = 'PENDING' | 'RETRY_SCHEDULED' | 'COMPLETE' | 'BLOCKED'
+
+export interface ShowTermDto {
+  id: number
+  name: string
+  slug: string
+  kind: ShowTermKind
+  source: ShowTermSource
+  hiddenGlobally: boolean
+  hiddenForShow: boolean
+  active: boolean
+}
+
+export interface ShowTermSuggestionDto {
+  id: number
+  name: string
+  slug: string
+  kind: ShowTermKind
+  source: ShowTermSource
+  hiddenGlobally: boolean
+}
+
+export interface ShowEnrichmentStepDto {
+  status: ShowEnrichmentStatus
+  lastAttemptAt: string | null
+  retryAfter: string | null
+}
 
 export interface ShowPersonCreditDto {
   personId: number
@@ -91,8 +120,16 @@ export interface ShowDetailsResponse {
   watches: ShowWatchDto[]
   externalIds: ShowExternalIdDto[]
   people: ShowPersonCreditDto[]
+  terms: ShowTermDto[]
   rating: MediaRatingDto | null
   comments: MediaCommentDto[]
+  enrichment: { terms: ShowEnrichmentStepDto }
+}
+
+export interface ShowTermsSyncResponse {
+  showId: number
+  syncedCount: number
+  visibleCount: number
 }
 
 export interface ShowCreditsSyncResponse {
@@ -157,6 +194,58 @@ export interface ShowCatalogSuggestionsResponse {
     overview: string | null
     posterUrl: string | null
   }>
+}
+
+export type ShowMetadataEnrichmentField = 'TITLE' | 'YEAR' | 'DESCRIPTION' | 'TMDB_ID' | 'IMAGES'
+export type ShowMetadataEnrichmentApplyMode = 'MISSING' | 'SELECTED'
+
+export interface ShowMetadataEnrichmentPreviewResponse {
+  showId: number
+  resolvedTmdbId: string
+  title: string
+  fields: Array<{
+    field: ShowMetadataEnrichmentField
+    label: string
+    currentValue: string | null
+    suggestedValue: string | null
+    available: boolean
+    missing: boolean
+    changed: boolean
+    selectedByDefault: boolean
+  }>
+  images: {
+    currentCoverUrl: string | null
+    suggestedPosterUrl: string | null
+    suggestedBackdropUrl: string | null
+    candidates: Array<{
+      key: string
+      label: string
+      imageUrl: string
+      kind: string
+      selectedByDefault: boolean
+      suggestedAsPrimary: boolean
+    }>
+    available: boolean
+    missing: boolean
+    changed: boolean
+    selectedByDefault: boolean
+  }
+}
+
+export interface ShowMetadataEnrichmentApplyRequest {
+  tmdbId: string | null
+  mode: ShowMetadataEnrichmentApplyMode
+  fields: ShowMetadataEnrichmentField[]
+  imageSelection?: { selectedKeys: string[]; primaryKey: string | null } | null
+}
+
+export interface ShowMetadataEnrichmentApplyResponse {
+  showId: number
+  slug: string | null
+  title: string
+  appliedFields: ShowMetadataEnrichmentField[]
+  coverAssigned: boolean
+  externalIds: ShowExternalIdDto[]
 }
 
 export type ShowSeasonEnrichmentField =
@@ -254,6 +343,7 @@ export interface ShowPageData {
   description: string | null
   coverUrl: string | null
   gallery: string[]
+  externalIds: ShowExternalIdDto[]
   progress: {
     watchedEpisodes: number
     totalEpisodes: number
@@ -264,6 +354,26 @@ export interface ShowPageData {
   }
   rating: MediaRatingDto | null
   heroMeta: string[]
+  enrichment: ShowDetailsResponse['enrichment']
+  terms: {
+    visibleCount: number
+    hiddenCount: number
+    groups: Array<{
+      id: string
+      title: string
+      items: Array<{
+        id: string
+        termId: number
+        name: string
+        kind: ShowTermKind
+        source: ShowTermSource
+        hiddenGlobally: boolean
+        hiddenForShow: boolean
+        active: boolean
+        stateLabel: string
+      }>
+    }>
+  }
   people: {
     summary: string
     visibleCount: number

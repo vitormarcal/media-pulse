@@ -2778,6 +2778,149 @@ paths:
               schema:
                 $ref: "#/components/schemas/ShowCreditsSyncResponse"
 
+  /api/admin/shows/{showId}/terms/sync-tmdb:
+    post:
+      summary: Explicitly refresh show genres and tags from TMDb
+      tags: [Shows]
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShowTermsSyncResponse" }
+
+  /api/admin/shows/terms/sync-tmdb:
+    post:
+      summary: Repair pending show term synchronization in batch
+      tags: [Shows]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShowTermsBatchSyncResponse" }
+
+  /api/shows/terms/search:
+    get:
+      summary: Search existing show terms
+      tags: [Shows]
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+        - { name: kind, in: query, required: true, schema: { type: string, enum: [GENRE, TAG] } }
+        - { name: limit, in: query, required: false, schema: { type: integer, default: 8 } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ShowTermSuggestionDto" }
+
+  /api/shows/{showId}/terms:
+    post:
+      summary: Add a manual term to a show
+      tags: [Shows]
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ShowTermCreateRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShowTermDto" }
+
+  /api/shows/{showId}/terms/{termId}/visibility:
+    post:
+      summary: Change term visibility for one show
+      tags: [Shows]
+      parameters:
+        - { name: showId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: termId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ShowTermVisibilityRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShowTermDto" }
+
+  /api/shows/terms/{termId}/visibility:
+    post:
+      summary: Change global show term visibility
+      tags: [Shows]
+      parameters:
+        - { name: termId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ShowTermVisibilityRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShowTermDto" }
+
+  /api/shows/{showId}/enrichment/preview:
+    post:
+      summary: Preview show metadata enrichment from TMDb
+      tags: [Shows]
+      parameters:
+        - { name: showId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ShowMetadataEnrichmentPreviewRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShowMetadataEnrichmentPreviewResponse" }
+
+  /api/shows/{showId}/enrichment/apply:
+    post:
+      summary: Apply selected show metadata from TMDb
+      tags: [Shows]
+      parameters:
+        - { name: showId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ShowMetadataEnrichmentApplyRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShowMetadataEnrichmentApplyResponse" }
+
   /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview:
     post:
       summary: Preview show season enrichment from TMDb
@@ -6972,6 +7115,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShowPersonCreditDto"
+        terms:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShowTermDto"
         rating:
           allOf:
             - $ref: "#/components/schemas/MediaRatingDto"
@@ -6980,6 +7127,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MediaCommentDto"
+        enrichment:
+          $ref: "#/components/schemas/ShowAutomaticEnrichmentDto"
       required:
         [
           showId,
@@ -6989,8 +7138,156 @@ components:
           watches,
           externalIds,
           people,
+          terms,
           comments,
+          enrichment,
         ]
+    ShowTermDto:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        slug: { type: string }
+        kind: { type: string, enum: [GENRE, TAG] }
+        source: { type: string, enum: [TMDB, USER] }
+        hiddenGlobally: { type: boolean }
+        hiddenForShow: { type: boolean }
+        active: { type: boolean }
+      required: [id, name, slug, kind, source, hiddenGlobally, hiddenForShow, active]
+    ShowTermSuggestionDto:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        slug: { type: string }
+        kind: { type: string, enum: [GENRE, TAG] }
+        source: { type: string, enum: [TMDB, USER] }
+        hiddenGlobally: { type: boolean }
+      required: [id, name, slug, kind, source, hiddenGlobally]
+    ShowTermCreateRequest:
+      type: object
+      properties:
+        name: { type: string }
+        kind: { type: string, enum: [GENRE, TAG] }
+      required: [name, kind]
+    ShowTermVisibilityRequest:
+      type: object
+      properties:
+        hidden: { type: boolean }
+      required: [hidden]
+    ShowEnrichmentStatus:
+      type: string
+      enum: [PENDING, RETRY_SCHEDULED, COMPLETE, BLOCKED]
+    ShowEnrichmentStepDto:
+      type: object
+      properties:
+        status: { $ref: "#/components/schemas/ShowEnrichmentStatus" }
+        lastAttemptAt: { type: string, format: date-time, nullable: true }
+        retryAfter: { type: string, format: date-time, nullable: true }
+      required: [status]
+    ShowAutomaticEnrichmentDto:
+      type: object
+      properties:
+        terms: { $ref: "#/components/schemas/ShowEnrichmentStepDto" }
+      required: [terms]
+    ShowMetadataEnrichmentField:
+      type: string
+      enum: [TITLE, YEAR, DESCRIPTION, TMDB_ID, IMAGES]
+    ShowMetadataEnrichmentPreviewRequest:
+      type: object
+      properties:
+        tmdbId: { type: string, nullable: true }
+    ShowMetadataEnrichmentFieldPreview:
+      type: object
+      properties:
+        field: { $ref: "#/components/schemas/ShowMetadataEnrichmentField" }
+        label: { type: string }
+        currentValue: { type: string, nullable: true }
+        suggestedValue: { type: string, nullable: true }
+        available: { type: boolean }
+        missing: { type: boolean }
+        changed: { type: boolean }
+        selectedByDefault: { type: boolean }
+      required: [field, label, available, missing, changed, selectedByDefault]
+    ShowMetadataEnrichmentImageCandidatePreview:
+      type: object
+      properties:
+        key: { type: string }
+        label: { type: string }
+        imageUrl: { type: string }
+        kind: { type: string }
+        selectedByDefault: { type: boolean }
+        suggestedAsPrimary: { type: boolean }
+      required: [key, label, imageUrl, kind, selectedByDefault, suggestedAsPrimary]
+    ShowMetadataEnrichmentImagePreview:
+      type: object
+      properties:
+        currentCoverUrl: { type: string, nullable: true }
+        suggestedPosterUrl: { type: string, nullable: true }
+        suggestedBackdropUrl: { type: string, nullable: true }
+        candidates:
+          type: array
+          items: { $ref: "#/components/schemas/ShowMetadataEnrichmentImageCandidatePreview" }
+        available: { type: boolean }
+        missing: { type: boolean }
+        changed: { type: boolean }
+        selectedByDefault: { type: boolean }
+      required: [candidates, available, missing, changed, selectedByDefault]
+    ShowMetadataEnrichmentPreviewResponse:
+      type: object
+      properties:
+        showId: { type: integer, format: int64 }
+        resolvedTmdbId: { type: string }
+        title: { type: string }
+        fields:
+          type: array
+          items: { $ref: "#/components/schemas/ShowMetadataEnrichmentFieldPreview" }
+        images: { $ref: "#/components/schemas/ShowMetadataEnrichmentImagePreview" }
+      required: [showId, resolvedTmdbId, title, fields, images]
+    ShowMetadataEnrichmentImageSelectionRequest:
+      type: object
+      properties:
+        selectedKeys: { type: array, items: { type: string } }
+        primaryKey: { type: string, nullable: true }
+    ShowMetadataEnrichmentApplyRequest:
+      type: object
+      properties:
+        tmdbId: { type: string, nullable: true }
+        mode: { type: string, enum: [MISSING, SELECTED], default: MISSING }
+        fields:
+          type: array
+          items: { $ref: "#/components/schemas/ShowMetadataEnrichmentField" }
+        imageSelection: { $ref: "#/components/schemas/ShowMetadataEnrichmentImageSelectionRequest" }
+    ShowMetadataEnrichmentApplyResponse:
+      type: object
+      properties:
+        showId: { type: integer, format: int64 }
+        slug: { type: string, nullable: true }
+        title: { type: string }
+        appliedFields:
+          type: array
+          items: { $ref: "#/components/schemas/ShowMetadataEnrichmentField" }
+        coverAssigned: { type: boolean }
+        externalIds:
+          type: array
+          items: { $ref: "#/components/schemas/ShowExternalIdDto" }
+      required: [showId, title, appliedFields, coverAssigned, externalIds]
+    ShowTermsSyncResponse:
+      type: object
+      properties:
+        showId: { type: integer, format: int64 }
+        syncedCount: { type: integer }
+        visibleCount: { type: integer }
+      required: [showId, syncedCount, visibleCount]
+    ShowTermsBatchSyncResponse:
+      type: object
+      properties:
+        requestedLimit: { type: integer }
+        candidates: { type: integer }
+        processed: { type: integer }
+        synced: { type: integer }
+        failed: { type: integer }
+      required: [requestedLimit, candidates, processed, synced, failed]
     ShowCreditsSyncResponse:
       type: object
       properties:

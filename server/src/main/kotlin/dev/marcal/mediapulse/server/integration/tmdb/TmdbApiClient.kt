@@ -280,6 +280,12 @@ data class TmdbShowDetailsResponse(
     @JsonProperty("backdrop_path")
     val backdropPath: String? = null,
     val seasons: List<TmdbShowSeasonSummaryResponse> = emptyList(),
+    val genres: List<TmdbNamedItemResponse> = emptyList(),
+)
+
+data class TmdbShowKeywordsResponse(
+    val id: Long? = null,
+    val results: List<TmdbNamedItemResponse> = emptyList(),
 )
 
 data class TmdbShowCreditsResponse(
@@ -392,6 +398,8 @@ class TmdbApiClient(
         val posterPath: String?,
         val backdropPath: String?,
         val seasons: List<TmdbShowSeasonSummary>,
+        val genres: List<String> = emptyList(),
+        val keywords: List<String> = emptyList(),
     )
 
     data class TmdbShowSeasonSummary(
@@ -1122,6 +1130,7 @@ class TmdbApiClient(
                         .bodyToMono<TmdbShowDetailsResponse>()
                         .block() ?: return null
 
+                val keywords = fetchShowKeywords(tmdbId)
                 return TmdbShowDetails(
                     title = response.name?.trim()?.ifBlank { null },
                     originalTitle = response.originalName?.trim()?.ifBlank { null },
@@ -1140,6 +1149,8 @@ class TmdbApiClient(
                                 posterPath = season.posterPath?.trim()?.ifBlank { null },
                             )
                         },
+                    genres = response.genres.mapNotNull { it.name?.trim()?.ifBlank { null } }.distinct(),
+                    keywords = keywords,
                 )
             } catch (ex: WebClientResponseException.NotFound) {
                 return null
@@ -1161,6 +1172,31 @@ class TmdbApiClient(
         }
 
         return null
+    }
+
+    private fun fetchShowKeywords(tmdbId: String): List<String> {
+        tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
+        return try {
+            val response =
+                tmdbWebClient
+                    .get()
+                    .uri { uriBuilder ->
+                        val builder = uriBuilder.path("/tv/{id}/keywords")
+                        if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
+                            builder.queryParam("api_key", tmdbProperties.apiKey)
+                        }
+                        builder.build(tmdbId)
+                    }.retrieve()
+                    .bodyToMono<TmdbShowKeywordsResponse>()
+                    .block()
+                    ?: return emptyList()
+            response.results.mapNotNull { it.name?.trim()?.ifBlank { null } }.distinct()
+        } catch (ex: WebClientResponseException.NotFound) {
+            emptyList()
+        } catch (ex: Exception) {
+            logger.warn("Failed to fetch TMDb show keywords for id={}", tmdbId, ex)
+            emptyList()
+        }
     }
 
     fun fetchShowCredits(tmdbShowId: String): TmdbShowCredits? {

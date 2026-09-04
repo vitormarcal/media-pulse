@@ -2,11 +2,19 @@ package dev.marcal.mediapulse.server.controller.shows
 
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowMetadataEnrichmentApplyRequest
+import dev.marcal.mediapulse.server.api.shows.ShowMetadataEnrichmentApplyResponse
+import dev.marcal.mediapulse.server.api.shows.ShowMetadataEnrichmentPreviewRequest
+import dev.marcal.mediapulse.server.api.shows.ShowMetadataEnrichmentPreviewResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentApplyRequest
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentApplyResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentPreviewRequest
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentPreviewResponse
+import dev.marcal.mediapulse.server.api.shows.ShowTermCreateRequest
+import dev.marcal.mediapulse.server.api.shows.ShowTermDto
+import dev.marcal.mediapulse.server.api.shows.ShowTermSuggestionDto
+import dev.marcal.mediapulse.server.api.shows.ShowTermVisibilityRequest
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsLibraryResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsRecentResponse
@@ -14,7 +22,9 @@ import dev.marcal.mediapulse.server.api.shows.ShowsSearchResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsStatsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
+import dev.marcal.mediapulse.server.service.tv.ShowMetadataEnrichmentService
 import dev.marcal.mediapulse.server.service.tv.ShowSeasonMetadataEnrichmentService
+import dev.marcal.mediapulse.server.service.tv.ShowTermsService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -35,6 +45,8 @@ import kotlin.math.min
 class ShowsController(
     private val repository: TvShowQueryRepository,
     private val showSeasonMetadataEnrichmentService: ShowSeasonMetadataEnrichmentService,
+    private val showTermsService: ShowTermsService,
+    private val showMetadataEnrichmentService: ShowMetadataEnrichmentService,
 ) {
     @GetMapping("/library")
     fun library(
@@ -69,6 +81,50 @@ class ShowsController(
     fun detailsBySlug(
         @PathVariable slug: String,
     ): ShowDetailsResponse = repository.getShowDetailsBySlug(slug)
+
+    @PostMapping("/{showId}/enrichment/preview")
+    fun previewMetadataEnrichment(
+        @PathVariable showId: Long,
+        @RequestBody request: ShowMetadataEnrichmentPreviewRequest,
+    ): ShowMetadataEnrichmentPreviewResponse = showMetadataEnrichmentService.preview(showId, request)
+
+    @PostMapping("/{showId}/enrichment/apply")
+    fun applyMetadataEnrichment(
+        @PathVariable showId: Long,
+        @RequestBody request: ShowMetadataEnrichmentApplyRequest,
+    ): ShowMetadataEnrichmentApplyResponse = showMetadataEnrichmentService.apply(showId, request)
+
+    @GetMapping("/terms/search")
+    fun searchTerms(
+        @RequestParam q: String,
+        @RequestParam kind: String,
+        @RequestParam(defaultValue = "8") limit: Int,
+    ): List<ShowTermSuggestionDto> {
+        val normalizedKind = kind.trim().uppercase()
+        if (normalizedKind !in setOf("GENRE", "TAG")) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "kind inválido")
+        }
+        return repository.searchShowTerms(q, normalizedKind, normalizeLimit("limit", limit))
+    }
+
+    @PostMapping("/{showId}/terms")
+    fun addTerm(
+        @PathVariable showId: Long,
+        @RequestBody request: ShowTermCreateRequest,
+    ): ShowTermDto = showTermsService.addTerm(showId, request)
+
+    @PostMapping("/{showId}/terms/{termId}/visibility")
+    fun updateShowTermVisibility(
+        @PathVariable showId: Long,
+        @PathVariable termId: Long,
+        @RequestBody request: ShowTermVisibilityRequest,
+    ): ShowTermDto = showTermsService.updateShowVisibility(showId, termId, request.hidden)
+
+    @PostMapping("/terms/{termId}/visibility")
+    fun updateGlobalTermVisibility(
+        @PathVariable termId: Long,
+        @RequestBody request: ShowTermVisibilityRequest,
+    ): ShowTermDto = showTermsService.updateGlobalVisibility(termId, request.hidden)
 
     @GetMapping("/slug/{slug}/seasons/{seasonNumber}")
     fun seasonDetailsBySlug(

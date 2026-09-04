@@ -318,6 +318,25 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
     (person) => person.creditType === 'CREW' && ['Writer', 'Screenplay', 'Story Editor'].includes(person.job ?? ''),
   )
   const cast = show.people.filter((person) => person.creditType === 'CAST')
+  const visibleTerms = show.terms.filter((term) => term.active)
+  const hiddenTerms = show.terms.filter((term) => !term.active)
+  const mapTerm = (term: ShowDetailsResponse['terms'][number]) => ({
+    id: `show-term-${term.id}`,
+    termId: term.id,
+    name: term.name,
+    kind: term.kind,
+    source: term.source,
+    hiddenGlobally: term.hiddenGlobally,
+    hiddenForShow: term.hiddenForShow,
+    active: term.active,
+    stateLabel: term.active
+      ? term.source === 'TMDB'
+        ? 'TMDb'
+        : 'Manual'
+      : term.hiddenGlobally
+        ? 'Oculto globalmente'
+        : 'Oculto nesta série',
+  })
 
   return {
     showId: show.showId,
@@ -330,7 +349,17 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
     gallery: [...(show.coverUrl ? [show.coverUrl] : []), ...show.images.map((image) => image.url)]
       .filter((value, index, array) => array.indexOf(value) === index)
       .slice(0, 4),
+    externalIds: show.externalIds,
     rating: show.rating,
+    enrichment: show.enrichment,
+    terms: {
+      visibleCount: visibleTerms.length,
+      hiddenCount: hiddenTerms.length,
+      groups: [
+        { id: 'genre', title: 'Gêneros', items: show.terms.filter((term) => term.kind === 'GENRE').map(mapTerm) },
+        { id: 'tag', title: 'Tags', items: show.terms.filter((term) => term.kind === 'TAG').map(mapTerm) },
+      ],
+    },
     progress: {
       watchedEpisodes: progress.watchedEpisodesCount,
       totalEpisodes: progress.episodesCount,

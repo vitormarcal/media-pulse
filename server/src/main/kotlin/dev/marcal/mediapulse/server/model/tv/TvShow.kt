@@ -35,6 +35,12 @@ data class TvShow(
     val creditsSyncAttemptedAt: Instant? = null,
     @Column(name = "credits_sync_error")
     val creditsSyncError: String? = null,
+    @Column(name = "terms_synced_at")
+    val termsSyncedAt: Instant? = null,
+    @Column(name = "terms_sync_attempted_at")
+    val termsSyncAttemptedAt: Instant? = null,
+    @Column(name = "terms_sync_error")
+    val termsSyncError: String? = null,
     @Column(name = "tmdb_id", unique = true)
     val tmdbId: String? = null,
     @Column(name = "tvdb_id", unique = true)

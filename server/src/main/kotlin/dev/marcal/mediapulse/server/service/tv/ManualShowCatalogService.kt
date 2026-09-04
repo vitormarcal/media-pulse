@@ -33,6 +33,35 @@ class ManualShowCatalogService(
     private val imageStorageService: ImageStorageService,
     private val tmdbProperties: TmdbProperties,
 ) {
+    data class TmdbShowSnapshot(
+        val tmdbId: String,
+        val title: String?,
+        val originalTitle: String?,
+        val overview: String?,
+        val firstAirYear: Int?,
+        val posterPath: String?,
+        val backdropPath: String?,
+        val posterUrl: String?,
+        val backdropUrl: String?,
+    )
+
+    data class TmdbImageCandidate(
+        val key: String,
+        val label: String,
+        val imageUrl: String,
+        val suggestedAsPrimary: Boolean,
+    )
+
+    data class TmdbImageSelection(
+        val selectedKeys: Set<String>,
+        val primaryKey: String? = null,
+    )
+
+    data class TmdbImageAssignmentResult(
+        val insertedCount: Int,
+        val primaryImageUrl: String? = null,
+    )
+
     data class ShowCatalogResult(
         val show: TvShow,
         val createdShow: Boolean,
@@ -174,6 +203,82 @@ class ManualShowCatalogService(
         val normalizedPath = if (path.startsWith('/')) path else "/$path"
         val normalizedImageBaseUrl = tmdbProperties.imageBaseUrl.trimEnd('/')
         return "$normalizedImageBaseUrl/t/p/w780$normalizedPath"
+    }
+
+    fun fetchTmdbShowSnapshot(tmdbId: String): TmdbShowSnapshot? {
+        val normalizedTmdbId = tmdbId.trim().ifBlank { return null }
+        val details = tmdbApiClient.fetchShowDetails(normalizedTmdbId) ?: return null
+        return TmdbShowSnapshot(
+            tmdbId = normalizedTmdbId,
+            title = details.title,
+            originalTitle = details.originalTitle,
+            overview = details.overview,
+            firstAirYear = details.firstAirYear,
+            posterPath = details.posterPath,
+            backdropPath = details.backdropPath,
+            posterUrl = details.posterPath?.let(::buildTmdbImageUrl),
+            backdropUrl = details.backdropPath?.let(::buildTmdbImageUrl),
+        )
+    }
+
+    fun addShowTitle(
+        showId: Long,
+        title: String,
+    ) {
+        tvShowTitleCrudRepository.insertIgnore(showId, title, null, TvShowTitleSource.MANUAL.name, false)
+    }
+
+    fun linkExternalIdIfAvailable(
+        show: TvShow,
+        provider: Provider,
+        externalId: String,
+    ): TvShow = linkShowExternalId(show, provider, externalId.trim())
+
+    fun resolveShowSlug(title: String): String? = resolveSlug(title)
+
+    fun buildTmdbImageCandidates(snapshot: TmdbShowSnapshot): List<TmdbImageCandidate> =
+        buildList {
+            snapshot.posterPath?.let { add(TmdbImageCandidate("poster", "Poster", buildTmdbImageUrl(it), true)) }
+            snapshot.backdropPath?.let { add(TmdbImageCandidate("backdrop", "Backdrop", buildTmdbImageUrl(it), false)) }
+        }.distinctBy { it.imageUrl }
+
+    fun assignSelectedTmdbImages(
+        show: TvShow,
+        snapshot: TmdbShowSnapshot,
+        selection: TmdbImageSelection?,
+    ): TmdbImageAssignmentResult {
+        val allCandidates = buildTmdbImageCandidates(snapshot)
+        val candidates =
+            if (selection == null || selection.selectedKeys.isEmpty()) {
+                allCandidates
+            } else {
+                allCandidates.filter { it.key in selection.selectedKeys }
+            }
+        if (candidates.isEmpty()) return TmdbImageAssignmentResult(0)
+
+        val savedImages =
+            candidates.mapNotNull { candidate ->
+                runCatching {
+                    val image = tmdbImageClient.downloadImage(candidate.imageUrl)
+                    val fileHint = "${show.originalTitle}_${DigestUtils.sha1Hex(candidate.imageUrl).take(12)}"
+                    imageStorageService.saveImageForTvShow(image, "TMDB", show.id, fileHint) to candidate
+                }.getOrNull()
+            }
+        if (savedImages.isEmpty()) return TmdbImageAssignmentResult(0)
+
+        val primaryPath =
+            selection?.primaryKey?.let { key -> savedImages.firstOrNull { it.second.key == key }?.first }
+                ?: savedImages.firstOrNull { it.second.suggestedAsPrimary }?.first
+                ?: savedImages.first().first
+        savedImages.forEach { (path, _) -> tvShowImageCrudRepository.insertIgnore(show.id, path, false) }
+        val promote = selection?.primaryKey != null || !tvShowImageCrudRepository.existsByShowIdAndIsPrimaryTrue(show.id)
+        if (promote) {
+            tvShowImageCrudRepository.lockShowRowForPrimaryUpdate(show.id)
+            tvShowImageCrudRepository.clearPrimaryForShow(show.id)
+            tvShowImageCrudRepository.markPrimaryForShow(show.id, primaryPath)
+            tvShowRepository.save(show.copy(coverUrl = primaryPath, updatedAt = Instant.now()))
+        }
+        return TmdbImageAssignmentResult(savedImages.size, if (promote) primaryPath else null)
     }
 
     private data class ShowUpsertResult(

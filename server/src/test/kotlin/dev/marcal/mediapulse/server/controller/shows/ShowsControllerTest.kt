@@ -16,7 +16,9 @@ import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsTotalStatsDto
 import dev.marcal.mediapulse.server.api.shows.ShowsYearStatsDto
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
+import dev.marcal.mediapulse.server.service.tv.ShowMetadataEnrichmentService
 import dev.marcal.mediapulse.server.service.tv.ShowSeasonMetadataEnrichmentService
+import dev.marcal.mediapulse.server.service.tv.ShowTermsService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -30,7 +32,13 @@ import kotlin.test.assertFailsWith
 class ShowsControllerTest {
     private val repository = mockk<TvShowQueryRepository>(relaxed = true)
     private val showSeasonMetadataEnrichmentService = mockk<ShowSeasonMetadataEnrichmentService>(relaxed = true)
-    private val controller = ShowsController(repository, showSeasonMetadataEnrichmentService)
+    private val controller =
+        ShowsController(
+            repository,
+            showSeasonMetadataEnrichmentService,
+            mockk<ShowTermsService>(),
+            mockk<ShowMetadataEnrichmentService>(),
+        )
 
     @Test
     fun `recent should delegate to repository`() {

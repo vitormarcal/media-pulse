@@ -27,8 +27,16 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 | `POST /api/shows/catalog/suggestions` | `q` | `ShowCatalogSuggestionsResponse` |
 | `POST /api/admin/shows/credits/sync-tmdb` | `limit=100` | `ShowCreditsBatchSyncResponse` |
 | `POST /api/admin/shows/{showId}/credits/sync-tmdb` | `showId` | `ShowCreditsSyncResponse` |
+| `POST /api/admin/shows/{showId}/terms/sync-tmdb` | `showId` | `ShowTermsSyncResponse` |
+| `POST /api/admin/shows/terms/sync-tmdb` | `limit=100` | `ShowTermsBatchSyncResponse` |
+| `GET /api/shows/terms/search` | `q`, `kind=GENRE|TAG`, `limit=8` | lista de `ShowTermSuggestionDto` |
+| `POST /api/shows/{showId}/terms` | body com `name`, `kind=GENRE|TAG` | `ShowTermDto` |
+| `POST /api/shows/{showId}/terms/{termId}/visibility` | body com `hidden` | `ShowTermDto` |
+| `POST /api/shows/terms/{termId}/visibility` | body com `hidden` | `ShowTermDto` |
 | `POST /api/shows/catalog` | body com `title`, `year?`, `tmdbId?`, `tvdbId?`, `importEpisodes=true` | `ManualShowCatalogCreateResponse` |
 | `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview` | body com `tmdbId?` | `ShowSeasonEnrichmentPreviewResponse` |
+| `POST /api/shows/{showId}/enrichment/preview` | body com `tmdbId?` | prévia dos metadados sugeridos pelo TMDb |
+| `POST /api/shows/{showId}/enrichment/apply` | body com `tmdbId?`, `mode`, `fields[]` e seleção de imagens | aplica metadados selecionados |
 | `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/apply` | body com `tmdbId?`, `mode`, `seasonFields`, `episodeFields` | `ShowSeasonEnrichmentApplyResponse` |
 | `POST /api/shows/{showId}/watches` | body com `watchedAt`, `episodeTitle`, `seasonNumber?`, `episodeNumber?`, `originallyAvailableAt?` | `ManualShowWatchCreateResponse` |
 | `POST /api/shows/watches` | body com `watchedAt`, `showTitle`, `episodeTitle`, `seasonNumber?`, `episodeNumber?`, `year?`, `tmdbId?`, `tvdbId?` | `ManualShowWatchCreateResponse` |
@@ -66,6 +74,8 @@ O range anual é:
 ## Enriquecimento de temporada
 
 `POST /api/shows/{showId}/seasons/{seasonNumber}/enrichment/preview` compara os episódios existentes da temporada com o TMDb.
+
+`POST /api/shows/{showId}/enrichment/preview` compara título, ano, descrição, vínculo e imagens da série com o TMDb. A aplicação aceita `MISSING` para preencher lacunas ou `SELECTED` para substituir somente os campos escolhidos. Depois de aplicar, gêneros, tags e créditos são sincronizados a partir do vínculo TMDb.
 
 - usa o vínculo `TMDB` salvo na série ou o `tmdbId` enviado no body
 - não cria episódios ou temporadas faltantes
@@ -106,6 +116,16 @@ Um worker executa esse sync automaticamente para séries pendentes. `POST /api/a
 - processa no máximo `limit`, truncado em `1000`
 - executa cada série em transação isolada, contabilizando `synced` e `failed`
 - marca `tv_shows.credits_synced_at` ao concluir com sucesso
+
+## Gêneros e tags
+
+Séries possuem termos locais editáveis em duas famílias: gêneros (`GENRE`) e tags (`TAG`). O worker importa `genres` e `keywords` do TMDb para séries vinculadas e repete falhas após um dia.
+
+- `show_terms` mantém nome, tipo, origem (`TMDB` ou `USER`) e ocultação global
+- `show_term_assignments` mantém o vínculo e a ocultação específica da série
+- termos manuais são preservados durante novas sincronizações
+- termos ocultos continuam armazenados e podem ser restaurados
+- a sincronização manual é um mecanismo de curadoria e reparo; o fluxo normal é automático
 
 ## Catálogo manual
 

@@ -2,9 +2,12 @@ package dev.marcal.mediapulse.server.repository
 
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.RangeDto
+import dev.marcal.mediapulse.server.api.shows.ShowAutomaticEnrichmentDto
 import dev.marcal.mediapulse.server.api.shows.ShowCardDto
 import dev.marcal.mediapulse.server.api.shows.ShowCreditTypeDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowEnrichmentStatus
+import dev.marcal.mediapulse.server.api.shows.ShowEnrichmentStepDto
 import dev.marcal.mediapulse.server.api.shows.ShowExternalIdDto
 import dev.marcal.mediapulse.server.api.shows.ShowImageDto
 import dev.marcal.mediapulse.server.api.shows.ShowLibraryCardDto
@@ -13,6 +16,10 @@ import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDto
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEpisodeDto
+import dev.marcal.mediapulse.server.api.shows.ShowTermDto
+import dev.marcal.mediapulse.server.api.shows.ShowTermKindDto
+import dev.marcal.mediapulse.server.api.shows.ShowTermSourceDto
+import dev.marcal.mediapulse.server.api.shows.ShowTermSuggestionDto
 import dev.marcal.mediapulse.server.api.shows.ShowWatchDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearWatchedDto
@@ -31,6 +38,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
 import org.springframework.web.server.ResponseStatusException
 import java.sql.Timestamp
+import java.time.Duration
 import java.time.Instant
 
 @Repository
@@ -85,6 +93,64 @@ class TvShowQueryRepository(
                     billingOrder = (fields[9] as Number?)?.toInt(),
                 )
             }
+
+    fun getShowTerms(showId: Long): List<ShowTermDto> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT st.id, st.name, st.slug, st.kind, sta.source, st.hidden, sta.hidden
+                FROM show_term_assignments sta JOIN show_terms st ON st.id = sta.term_id
+                WHERE sta.show_id = :showId
+                ORDER BY CASE st.kind WHEN 'GENRE' THEN 0 ELSE 1 END,
+                  CASE WHEN st.hidden OR sta.hidden THEN 1 ELSE 0 END, st.name, st.id
+                """.trimIndent(),
+            ).setParameter("showId", showId)
+            .resultList
+            .map { toShowTermDto(it as Array<*>) }
+
+    fun findShowTerm(termId: Long): ShowTermDto? =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT id, name, slug, kind, source, hidden, FALSE FROM show_terms WHERE id = :termId
+                """.trimIndent(),
+            ).setParameter("termId", termId)
+            .resultList
+            .firstOrNull()
+            ?.let { toShowTermDto(it as Array<*>) }
+
+    fun searchShowTerms(
+        query: String,
+        kind: String,
+        limit: Int,
+    ): List<ShowTermSuggestionDto> {
+        val normalized = query.trim().lowercase()
+        if (normalized.isBlank()) return emptyList()
+        return entityManager
+            .createNativeQuery(
+                """
+                SELECT id, name, slug, kind, source, hidden FROM show_terms
+                WHERE kind = :kind AND normalized_name LIKE :query
+                ORDER BY CASE WHEN normalized_name = :exact THEN 0 ELSE 1 END, hidden, name, id
+                LIMIT :limit
+                """.trimIndent(),
+            ).setParameter("kind", kind)
+            .setParameter("query", "%$normalized%")
+            .setParameter("exact", normalized)
+            .setParameter("limit", limit)
+            .resultList
+            .map { row ->
+                val fields = row as Array<*>
+                ShowTermSuggestionDto(
+                    id = (fields[0] as Number).toLong(),
+                    name = fields[1] as String,
+                    slug = fields[2] as String,
+                    kind = ShowTermKindDto.valueOf(fields[3] as String),
+                    source = ShowTermSourceDto.valueOf(fields[4] as String),
+                    hiddenGlobally = fields[5] as Boolean,
+                )
+            }
+    }
 
     fun library(
         limit: Int,
@@ -376,7 +442,10 @@ class TvShowQueryRepository(
                       s.cover_url,
                       s.tmdb_id,
                       s.tvdb_id,
-                      s.imdb_id
+                      s.imdb_id,
+                      s.terms_synced_at,
+                      s.terms_sync_attempted_at,
+                      s.terms_sync_error
                     FROM tv_shows s
                     WHERE s.id = :showId
                     """.trimIndent(),
@@ -480,6 +549,7 @@ class TvShowQueryRepository(
             )
 
         val people = getShowPeople(showId)
+        val terms = getShowTerms(showId)
         val comments = mediaCommentQueryRepository.findByEntity(EntityType.SHOW, showId)
         val rating = mediaRatingQueryRepository.findByEntity(EntityType.SHOW, showId)
 
@@ -522,8 +592,44 @@ class TvShowQueryRepository(
             watches = watches,
             externalIds = externalIds,
             people = people,
+            terms = terms,
             rating = rating,
             comments = comments,
+            enrichment = ShowAutomaticEnrichmentDto(terms = termsEnrichment(base)),
+        )
+    }
+
+    private fun termsEnrichment(base: Array<*>): ShowEnrichmentStepDto {
+        val tmdbId = base[7] as String?
+        val syncedAt = asInstant(base.getOrNull(10))
+        val attemptedAt = asInstant(base.getOrNull(11))
+        val error = base.getOrNull(12) as String?
+        val status =
+            when {
+                tmdbId == null -> ShowEnrichmentStatus.BLOCKED
+                syncedAt != null -> ShowEnrichmentStatus.COMPLETE
+                error != null -> ShowEnrichmentStatus.RETRY_SCHEDULED
+                else -> ShowEnrichmentStatus.PENDING
+            }
+        return ShowEnrichmentStepDto(
+            status = status,
+            lastAttemptAt = attemptedAt,
+            retryAfter = if (status == ShowEnrichmentStatus.RETRY_SCHEDULED) attemptedAt?.plus(Duration.ofDays(1)) else null,
+        )
+    }
+
+    private fun toShowTermDto(fields: Array<*>): ShowTermDto {
+        val hiddenGlobally = fields[5] as Boolean
+        val hiddenForShow = fields[6] as Boolean
+        return ShowTermDto(
+            id = (fields[0] as Number).toLong(),
+            name = fields[1] as String,
+            slug = fields[2] as String,
+            kind = ShowTermKindDto.valueOf(fields[3] as String),
+            source = ShowTermSourceDto.valueOf(fields[4] as String),
+            hiddenGlobally = hiddenGlobally,
+            hiddenForShow = hiddenForShow,
+            active = !hiddenGlobally && !hiddenForShow,
         )
     }
 

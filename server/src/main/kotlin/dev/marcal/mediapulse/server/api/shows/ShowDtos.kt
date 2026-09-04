@@ -10,6 +10,46 @@ enum class ShowCreditTypeDto {
     CREW,
 }
 
+enum class ShowTermKindDto { GENRE, TAG }
+
+enum class ShowTermSourceDto { TMDB, USER }
+
+enum class ShowEnrichmentStatus { PENDING, RETRY_SCHEDULED, COMPLETE, BLOCKED }
+
+enum class ShowMetadataEnrichmentField { TITLE, YEAR, DESCRIPTION, TMDB_ID, IMAGES }
+
+enum class ShowMetadataEnrichmentApplyMode { MISSING, SELECTED }
+
+data class ShowTermDto(
+    val id: Long,
+    val name: String,
+    val slug: String,
+    val kind: ShowTermKindDto,
+    val source: ShowTermSourceDto,
+    val hiddenGlobally: Boolean,
+    val hiddenForShow: Boolean,
+    val active: Boolean,
+)
+
+data class ShowTermSuggestionDto(
+    val id: Long,
+    val name: String,
+    val slug: String,
+    val kind: ShowTermKindDto,
+    val source: ShowTermSourceDto,
+    val hiddenGlobally: Boolean,
+)
+
+data class ShowEnrichmentStepDto(
+    val status: ShowEnrichmentStatus,
+    val lastAttemptAt: Instant? = null,
+    val retryAfter: Instant? = null,
+)
+
+data class ShowAutomaticEnrichmentDto(
+    val terms: ShowEnrichmentStepDto,
+)
+
 data class ShowCardDto(
     val showId: Long,
     val title: String,
@@ -116,8 +156,98 @@ data class ShowDetailsResponse(
     val watches: List<ShowWatchDto>,
     val externalIds: List<ShowExternalIdDto>,
     val people: List<ShowPersonCreditDto> = emptyList(),
+    val terms: List<ShowTermDto> = emptyList(),
     val rating: MediaRatingDto? = null,
     val comments: List<MediaCommentDto> = emptyList(),
+    val enrichment: ShowAutomaticEnrichmentDto =
+        ShowAutomaticEnrichmentDto(ShowEnrichmentStepDto(ShowEnrichmentStatus.BLOCKED)),
+)
+
+data class ShowTermCreateRequest(
+    val name: String,
+    val kind: ShowTermKindDto,
+)
+
+data class ShowTermVisibilityRequest(
+    val hidden: Boolean,
+)
+
+data class ShowTermsSyncResponse(
+    val showId: Long,
+    val syncedCount: Int,
+    val visibleCount: Int,
+)
+
+data class ShowTermsBatchSyncResponse(
+    val requestedLimit: Int,
+    val candidates: Int,
+    val processed: Int,
+    val synced: Int,
+    val failed: Int,
+)
+
+data class ShowMetadataEnrichmentPreviewRequest(
+    val tmdbId: String? = null,
+)
+
+data class ShowMetadataEnrichmentFieldPreview(
+    val field: ShowMetadataEnrichmentField,
+    val label: String,
+    val currentValue: String?,
+    val suggestedValue: String?,
+    val available: Boolean,
+    val missing: Boolean,
+    val changed: Boolean,
+    val selectedByDefault: Boolean,
+)
+
+data class ShowMetadataEnrichmentImageCandidatePreview(
+    val key: String,
+    val label: String,
+    val imageUrl: String,
+    val kind: String,
+    val selectedByDefault: Boolean,
+    val suggestedAsPrimary: Boolean,
+)
+
+data class ShowMetadataEnrichmentImagePreview(
+    val currentCoverUrl: String?,
+    val suggestedPosterUrl: String?,
+    val suggestedBackdropUrl: String?,
+    val candidates: List<ShowMetadataEnrichmentImageCandidatePreview>,
+    val available: Boolean,
+    val missing: Boolean,
+    val changed: Boolean,
+    val selectedByDefault: Boolean,
+)
+
+data class ShowMetadataEnrichmentPreviewResponse(
+    val showId: Long,
+    val resolvedTmdbId: String,
+    val title: String,
+    val fields: List<ShowMetadataEnrichmentFieldPreview>,
+    val images: ShowMetadataEnrichmentImagePreview,
+)
+
+data class ShowMetadataEnrichmentImageSelectionRequest(
+    val selectedKeys: List<String> = emptyList(),
+    val primaryKey: String? = null,
+)
+
+data class ShowMetadataEnrichmentApplyRequest(
+    val tmdbId: String? = null,
+    val mode: ShowMetadataEnrichmentApplyMode = ShowMetadataEnrichmentApplyMode.MISSING,
+    val fields: List<ShowMetadataEnrichmentField> = emptyList(),
+    val imageSelection: ShowMetadataEnrichmentImageSelectionRequest? = null,
+)
+
+data class ShowMetadataEnrichmentApplyResponse(
+    val showId: Long,
+    val slug: String?,
+    val title: String,
+    val appliedFields: List<ShowMetadataEnrichmentField>,
+    val coverAssigned: Boolean,
+    val externalIds: List<ShowExternalIdDto>,
 )
 
 data class ShowCreditsSyncResponse(

@@ -12,6 +12,15 @@
         <div class="meta-list">
           <span v-for="item in heroMeta" :key="item" class="meta-pill">{{ item }}</span>
         </div>
+
+        <ShowTermsPanel
+          v-if="terms.visibleCount || editingTerms"
+          :show-id="showId"
+          :terms="terms"
+          :editing="editingTerms"
+          :enrichment-status="enrichment.terms"
+          @changed="$emit('termsChanged')"
+        />
       </div>
 
       <div class="gallery">
@@ -24,13 +33,22 @@
 </template>
 
 <script setup lang="ts">
+import ShowTermsPanel from '~/components/shows/ShowTermsPanel.vue'
+import type { ShowPageData } from '~/types/shows'
+
 const props = defineProps<{
+  showId: number
+  editingTerms: boolean
   title: string
   subtitle: string | null
   description: string | null
   gallery: string[]
   heroMeta: string[]
+  terms: ShowPageData['terms']
+  enrichment: ShowPageData['enrichment']
 }>()
+
+defineEmits<{ termsChanged: [] }>()
 
 const { resolveMediaUrl } = useMediaUrl()
 const heroImageUrl = computed(() => props.gallery.map((image) => resolveMediaUrl(image)).find(Boolean) ?? null)
