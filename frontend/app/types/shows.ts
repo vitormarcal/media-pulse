@@ -130,6 +130,17 @@ export interface ShowTermSuggestionDto {
   hiddenGlobally: boolean
 }
 
+export interface ShowTermDetailsResponse {
+  termId: number
+  name: string
+  slug: string
+  kind: ShowTermKind
+  source: ShowTermSource
+  showCount: number
+  watchedShowsCount: number
+  shows: ShowLibraryCardDto[]
+}
+
 export interface ShowEnrichmentStepDto {
   status: ShowEnrichmentStatus
   lastAttemptAt: string | null
@@ -410,6 +421,7 @@ export interface ShowPageData {
         id: string
         termId: number
         name: string
+        href: string
         kind: ShowTermKind
         source: ShowTermSource
         hiddenGlobally: boolean
@@ -601,6 +613,18 @@ export interface ShowLibraryCardModel {
   activityLabel: string
   aside: string
   isDormant?: boolean
+}
+
+export interface ShowTermPageData {
+  kind: ShowTermKind
+  name: string
+  slug: string
+  heroMeta: string[]
+  stats: {
+    showCount: number
+    watchedShowsCount: number
+  }
+  shows: ShowLibraryCardModel[]
 }
 
 export interface ShowLibraryPageData {

@@ -12,6 +12,7 @@ class SpaForwardController {
         "/shows",
         "/shows/{slug}",
         "/shows/{slug}/seasons/{seasonNumber}",
+        "/shows/terms/{kind}/{termId}/{slug}",
         "/movies",
         "/movies/lists",
         "/movies/collections",

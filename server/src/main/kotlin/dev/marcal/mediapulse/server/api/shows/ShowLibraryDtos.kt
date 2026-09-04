@@ -18,3 +18,14 @@ data class ShowsLibraryResponse(
     val items: List<ShowLibraryCardDto>,
     val nextCursor: String?,
 )
+
+data class ShowTermDetailsResponse(
+    val termId: Long,
+    val name: String,
+    val slug: String,
+    val kind: ShowTermKindDto,
+    val source: ShowTermSourceDto,
+    val showCount: Long,
+    val watchedShowsCount: Long,
+    val shows: List<ShowLibraryCardDto>,
+)

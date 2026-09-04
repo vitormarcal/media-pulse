@@ -132,6 +132,55 @@ class TvShowQueryRepositoryTest {
     }
 
     @Test
+    fun `term details should map active shows ordered by personal activity`() {
+        every { query.resultList } returnsMany
+            listOf(
+                listOf(arrayOf(7L, "Ficção científica", "ficcao-cientifica", "GENRE", "TMDB", 2L, 1L)),
+                listOf(
+                    arrayOf(
+                        10L,
+                        "Ruptura",
+                        "Severance",
+                        "severance",
+                        2022,
+                        "/covers/show.jpg",
+                        4L,
+                        6L,
+                        Timestamp.from(Instant.parse("2026-04-03T23:02:53Z")),
+                    ),
+                ),
+            )
+
+        val result = repository.getShowTermDetails(7L, "GENRE", "ficcao-cientifica")
+
+        assertEquals(7L, result.termId)
+        assertEquals(2L, result.showCount)
+        assertEquals(1L, result.watchedShowsCount)
+        assertEquals("Ruptura", result.shows.single().title)
+        assertEquals(4L, result.shows.single().watchedEpisodesCount)
+        assertTrue(sqls.first().contains("COUNT(sta.show_id) AS show_count"))
+        assertTrue(sqls.first().contains("WHERE st.id = :termId"))
+        assertTrue(sqls.first().contains("st.hidden = FALSE"))
+        assertTrue(sqls.first().contains("sta.hidden = FALSE"))
+        assertTrue(sqls.last().contains("last_watched_at"))
+        verify { query.setParameter("termId", 7L) }
+    }
+
+    @Test
+    fun `term details should return not found when no visible assignment exists`() {
+        every { query.resultList } returns emptyList<Any>()
+
+        val error =
+            kotlin.test.assertFailsWith<org.springframework.web.server.ResponseStatusException> {
+                repository.getShowTermDetails(8L, "TAG", "viagem-no-tempo")
+            }
+
+        assertEquals(404, error.statusCode.value())
+        assertTrue(sqls.single().contains("st.hidden = FALSE"))
+        assertTrue(sqls.single().contains("sta.hidden = FALSE"))
+    }
+
+    @Test
     fun `details by slug should resolve id and delegate to details query`() {
         every { query.resultList } returnsMany
             listOf(

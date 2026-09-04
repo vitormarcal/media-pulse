@@ -10,6 +10,8 @@ import type {
   ShowSeasonCardModel,
   ShowSeasonDetailsResponse,
   ShowSeasonPageData,
+  ShowTermDetailsResponse,
+  ShowTermPageData,
   ShowWatchDto,
   ShowWatchEntryModel,
   ShowsByYearResponse,
@@ -174,6 +176,21 @@ export function buildShowLibraryCards(items: ShowLibraryCardDto[]): ShowLibraryC
   return items.map(buildLibraryCardModel)
 }
 
+export function buildShowTermPageData(term: ShowTermDetailsResponse): ShowTermPageData {
+  return {
+    kind: term.kind,
+    name: term.name,
+    slug: term.slug,
+    heroMeta: [
+      term.kind === 'GENRE' ? 'Gênero' : 'Tag',
+      `${term.showCount} séries`,
+      `${term.watchedShowsCount} com episódios assistidos`,
+    ],
+    stats: { showCount: term.showCount, watchedShowsCount: term.watchedShowsCount },
+    shows: term.shows.map(buildLibraryCardModel),
+  }
+}
+
 function buildSearchCardModel(show: ShowsSearchResponse['shows'][number]): ShowLibraryCardModel {
   return {
     id: `search-${show.showId}`,
@@ -324,6 +341,7 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
     id: `show-term-${term.id}`,
     termId: term.id,
     name: term.name,
+    href: `/shows/terms/${term.kind.toLowerCase()}/${term.id}/${term.slug}`,
     kind: term.kind,
     source: term.source,
     hiddenGlobally: term.hiddenGlobally,

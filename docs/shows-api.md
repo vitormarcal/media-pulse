@@ -38,6 +38,7 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 | `POST /api/admin/shows/{showId}/terms/sync-tmdb` | `showId` | `ShowTermsSyncResponse` |
 | `POST /api/admin/shows/terms/sync-tmdb` | `limit=100` | `ShowTermsBatchSyncResponse` |
 | `GET /api/shows/terms/search` | `q`, `kind=GENRE|TAG`, `limit=8` | lista de `ShowTermSuggestionDto` |
+| `GET /api/shows/terms/{kind}/{termId}/{slug}` | `kind=GENRE|TAG`, `termId`, `slug` | `ShowTermDetailsResponse` |
 | `POST /api/shows/{showId}/terms` | body com `name`, `kind=GENRE|TAG` | `ShowTermDto` |
 | `POST /api/shows/{showId}/terms/{termId}/visibility` | body com `hidden` | `ShowTermDto` |
 | `POST /api/shows/terms/{termId}/visibility` | body com `hidden` | `ShowTermDto` |
@@ -150,6 +151,13 @@ Séries possuem termos locais editáveis em duas famílias: gêneros (`GENRE`) e
 - termos manuais são preservados durante novas sincronizações
 - termos ocultos continuam armazenados e podem ser restaurados
 - a sincronização manual é um mecanismo de curadoria e reparo; o fluxo normal é automático
+
+Termos visíveis são pontos de exploração do catálogo. `GET /api/shows/terms/{kind}/{termId}/{slug}` valida conjuntamente a identidade, o tipo e o slug do termo, então retorna suas séries priorizando atividade pessoal recente e usando título como desempate estável.
+
+- termos ocultos globalmente, tipos inválidos, identidade divergente e termos inexistentes retornam `404`
+- associações ocultas são omitidas; quando nenhuma associação visível resta, o recorte retorna `404`
+- a página `/shows/terms/{kind}/{termId}/{slug}` reutiliza o grid visual da biblioteca de séries
+- os chips visíveis da página da série navegam para esse recorte; o modo de edição preserva suas ações de curadoria
 
 ## Catálogo manual
 

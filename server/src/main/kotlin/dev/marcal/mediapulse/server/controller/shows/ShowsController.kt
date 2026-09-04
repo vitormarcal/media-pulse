@@ -18,6 +18,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentApplyResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentPreviewRequest
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEnrichmentPreviewResponse
 import dev.marcal.mediapulse.server.api.shows.ShowTermCreateRequest
+import dev.marcal.mediapulse.server.api.shows.ShowTermDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowTermDto
 import dev.marcal.mediapulse.server.api.shows.ShowTermSuggestionDto
 import dev.marcal.mediapulse.server.api.shows.ShowTermVisibilityRequest
@@ -159,6 +160,19 @@ class ShowsController(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "kind inválido")
         }
         return repository.searchShowTerms(q, normalizedKind, normalizeLimit("limit", limit))
+    }
+
+    @GetMapping("/terms/{kind}/{termId}/{slug}")
+    fun termDetails(
+        @PathVariable kind: String,
+        @PathVariable termId: Long,
+        @PathVariable slug: String,
+    ): ShowTermDetailsResponse {
+        val normalizedKind = kind.trim().uppercase()
+        if (normalizedKind !in setOf("GENRE", "TAG")) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Show term not found")
+        }
+        return repository.getShowTermDetails(termId, normalizedKind, slug)
     }
 
     @PostMapping("/{showId}/terms")

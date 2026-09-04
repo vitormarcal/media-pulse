@@ -6,6 +6,9 @@ import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEpisodeDto
+import dev.marcal.mediapulse.server.api.shows.ShowTermDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowTermKindDto
+import dev.marcal.mediapulse.server.api.shows.ShowTermSourceDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearUnwatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowYearWatchedDto
 import dev.marcal.mediapulse.server.api.shows.ShowsByYearResponse
@@ -129,6 +132,43 @@ class ShowsControllerTest {
 
         assertEquals(10, response.showId)
         verify(exactly = 1) { repository.getShowDetailsBySlug("severance") }
+    }
+
+    @Test
+    fun `term details should normalize kind and delegate`() {
+        val expected =
+            ShowTermDetailsResponse(
+                termId = 7,
+                name = "Drama",
+                slug = "drama",
+                kind = ShowTermKindDto.GENRE,
+                source = ShowTermSourceDto.TMDB,
+                showCount = 0,
+                watchedShowsCount = 0,
+                shows = emptyList(),
+            )
+        every { repository.getShowTermDetails(7L, "GENRE", "drama") } returns expected
+
+        val response = controller.termDetails("genre", 7L, "drama")
+
+        assertEquals(expected, response)
+        verify(exactly = 1) { repository.getShowTermDetails(7L, "GENRE", "drama") }
+    }
+
+    @Test
+    fun `term details should hide invalid kinds behind not found`() {
+        val error = assertFailsWith<ResponseStatusException> { controller.termDetails("mood", 7L, "drama") }
+
+        assertEquals(404, error.statusCode.value())
+    }
+
+    @Test
+    fun `term details should accept tag kind`() {
+        every { repository.getShowTermDetails(8L, "TAG", "viagem-no-tempo") } returns mockk()
+
+        controller.termDetails("tag", 8L, "viagem-no-tempo")
+
+        verify(exactly = 1) { repository.getShowTermDetails(8L, "TAG", "viagem-no-tempo") }
     }
 
     @Test

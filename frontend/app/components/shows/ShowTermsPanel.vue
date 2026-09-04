@@ -8,7 +8,23 @@
     <section v-for="group in visibleGroups" :key="group.id" class="term-group">
       <p class="group-label">{{ group.title }}</p>
       <div class="chip-list">
-        <article v-for="item in group.items" :key="item.id" class="term-pill" :class="item.kind.toLowerCase()">
+        <NuxtLink
+          v-for="item in group.items"
+          v-show="!editing"
+          :key="`${item.id}-link`"
+          class="term-pill term-link"
+          :class="item.kind.toLowerCase()"
+          :to="item.href"
+        >
+          <span>{{ item.name }}</span>
+        </NuxtLink>
+        <article
+          v-for="item in group.items"
+          v-show="editing"
+          :key="`${item.id}-editor`"
+          class="term-pill"
+          :class="item.kind.toLowerCase()"
+        >
           <span>{{ item.name }}</span>
           <small v-if="editing">{{ item.source === 'TMDB' ? 'TMDb' : 'Manual' }}</small>
           <div v-if="editing" class="pill-actions">
@@ -325,6 +341,13 @@ onBeforeUnmount(() => {
 }
 .term-pill.tag {
   background: rgba(229, 229, 224, 0.96);
+}
+.term-link:hover {
+  color: var(--base-color-brand-red);
+}
+.term-link:focus-visible {
+  outline: 2px solid var(--base-color-focus, #435ee5);
+  outline-offset: 2px;
 }
 .term-pill small,
 .feedback,

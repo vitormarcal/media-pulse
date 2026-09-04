@@ -16,6 +16,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDto
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEpisodeDto
+import dev.marcal.mediapulse.server.api.shows.ShowTermDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowTermDto
 import dev.marcal.mediapulse.server.api.shows.ShowTermKindDto
 import dev.marcal.mediapulse.server.api.shows.ShowTermSourceDto
@@ -150,6 +151,116 @@ class TvShowQueryRepository(
                     hiddenGlobally = fields[5] as Boolean,
                 )
             }
+    }
+
+    fun getShowTermDetails(
+        termId: Long,
+        kind: String,
+        slug: String,
+    ): ShowTermDetailsResponse {
+        val base =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT
+                      st.id,
+                      st.name,
+                      st.slug,
+                      st.kind,
+                      st.source,
+                      COUNT(sta.show_id) AS show_count,
+                      COUNT(CASE WHEN EXISTS (
+                        SELECT 1
+                        FROM tv_episodes te
+                        JOIN tv_episode_watches tew ON tew.episode_id = te.id
+                        WHERE te.show_id = sta.show_id
+                      ) THEN 1 END) AS watched_shows_count
+                    FROM show_terms st
+                    JOIN show_term_assignments sta ON sta.term_id = st.id
+                    WHERE st.id = :termId
+                      AND st.kind = :kind
+                      AND st.slug = :slug
+                      AND st.hidden = FALSE
+                      AND sta.hidden = FALSE
+                    GROUP BY st.id, st.name, st.slug, st.kind, st.source
+                    LIMIT 1
+                    """.trimIndent(),
+                ).setParameter("termId", termId)
+                .setParameter("kind", kind)
+                .setParameter("slug", slug.trim())
+                .resultList
+                .firstOrNull() as Array<*>?
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Show term not found")
+
+        val shows =
+            entityManager
+                .createNativeQuery(
+                    """
+                    WITH show_rollup AS (
+                      SELECT
+                        s.id AS show_id,
+                        COALESCE((
+                          SELECT stt.title
+                          FROM tv_show_titles stt
+                          WHERE stt.show_id = s.id
+                          ORDER BY stt.is_primary ASC, stt.id ASC
+                          LIMIT 1
+                        ), s.original_title) AS title,
+                        s.original_title,
+                        s.slug,
+                        s.year,
+                        s.cover_url,
+                        COUNT(DISTINCT CASE WHEN tew.id IS NOT NULL THEN te.id END) AS watched_episodes_count,
+                        COUNT(DISTINCT te.id) AS episodes_count,
+                        MAX(tew.watched_at) AS last_watched_at
+                      FROM show_term_assignments sta
+                      JOIN tv_shows s ON s.id = sta.show_id
+                      LEFT JOIN tv_episodes te ON te.show_id = s.id
+                      LEFT JOIN tv_episode_watches tew ON tew.episode_id = te.id
+                      WHERE sta.term_id = :termId
+                        AND sta.hidden = FALSE
+                      GROUP BY s.id, s.original_title, s.slug, s.year, s.cover_url
+                    )
+                    SELECT
+                      show_id,
+                      title,
+                      original_title,
+                      slug,
+                      year,
+                      cover_url,
+                      watched_episodes_count,
+                      episodes_count,
+                      last_watched_at
+                    FROM show_rollup
+                    ORDER BY COALESCE(last_watched_at, TIMESTAMP '1970-01-01 00:00:00') DESC, title ASC, show_id ASC
+                    """.trimIndent(),
+                ).setParameter("termId", termId)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    ShowLibraryCardDto(
+                        showId = (fields[0] as Number).toLong(),
+                        title = fields[1] as String,
+                        originalTitle = fields[2] as String,
+                        slug = fields[3] as String?,
+                        year = (fields[4] as Number?)?.toInt(),
+                        coverUrl = fields[5] as String?,
+                        watchedEpisodesCount = (fields[6] as Number).toLong(),
+                        episodesCount = (fields[7] as Number).toLong(),
+                        lastWatchedAt = asInstant(fields[8]),
+                    )
+                }
+
+        return ShowTermDetailsResponse(
+            termId = termId,
+            name = base[1] as String,
+            slug = base[2] as String,
+            kind = ShowTermKindDto.valueOf(base[3] as String),
+            source = ShowTermSourceDto.valueOf(base[4] as String),
+            showCount = (base[5] as Number).toLong(),
+            watchedShowsCount = (base[6] as Number).toLong(),
+            shows = shows,
+        )
     }
 
     fun library(

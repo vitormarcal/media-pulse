@@ -2827,6 +2827,32 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/ShowTermSuggestionDto" }
 
+  /api/shows/terms/{kind}/{termId}/{slug}:
+    get:
+      summary: Show term details by kind and slug
+      tags: [Shows]
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema: { type: string, enum: [genre, tag, GENRE, TAG] }
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+        - name: termId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShowTermDetailsResponse" }
+        "404":
+          description: Term not found, hidden, or invalid kind
+
   /api/shows/{showId}/terms:
     post:
       summary: Add a manual term to a show
@@ -7612,6 +7638,20 @@ components:
           type: string
           nullable: true
       required: [items]
+    ShowTermDetailsResponse:
+      type: object
+      properties:
+        termId: { type: integer, format: int64 }
+        name: { type: string }
+        slug: { type: string }
+        kind: { type: string, enum: [GENRE, TAG] }
+        source: { type: string, enum: [TMDB, USER] }
+        showCount: { type: integer, format: int64 }
+        watchedShowsCount: { type: integer, format: int64 }
+        shows:
+          type: array
+          items: { $ref: "#/components/schemas/ShowLibraryCardDto" }
+      required: [termId, name, slug, kind, source, showCount, watchedShowsCount, shows]
     ShowsSearchResponse:
       type: object
       properties:
