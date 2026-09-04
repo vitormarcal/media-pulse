@@ -2885,6 +2885,69 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ShowTermDto" }
 
+  /api/shows/lists:
+    get:
+      summary: List manual show lists
+      tags: [Shows]
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/ShowListSummaryDto" } } } }
+    post:
+      summary: Create a manual show list
+      tags: [Shows]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ShowListCreateRequest" } } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/ShowListSummaryDto" } } } }
+
+  /api/shows/lists/{slug}:
+    get:
+      summary: Get a manual show list
+      tags: [Shows]
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/ShowListDetailsResponse" } } } }
+    delete:
+      summary: Delete a manual show list
+      tags: [Shows]
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: OK } }
+
+  /api/shows/{showId}/lists:
+    post:
+      summary: Add a show to a list
+      tags: [Shows]
+      parameters: [{ name: showId, in: path, required: true, schema: { type: integer, format: int64 } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ShowListAttachRequest" } } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/ShowListSummaryDto" } } } }
+
+  /api/shows/{showId}/lists/{listId}:
+    delete:
+      summary: Remove a show from a list
+      tags: [Shows]
+      parameters:
+        - { name: showId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: listId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses: { "200": { description: OK } }
+
+  /api/shows/lists/{listId}/order:
+    post:
+      summary: Update manual show list order
+      tags: [Shows]
+      parameters: [{ name: listId, in: path, required: true, schema: { type: integer, format: int64 } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ShowListOrderUpdateRequest" } } } }
+      responses: { "200": { description: OK } }
+
+  /api/shows/lists/{listId}/cover:
+    patch:
+      summary: Update manual show list cover
+      tags: [Shows]
+      parameters: [{ name: listId, in: path, required: true, schema: { type: integer, format: int64 } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ShowListCoverUpdateRequest" } } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/ShowListSummaryDto" } } } }
+
   /api/shows/{showId}/enrichment/preview:
     post:
       summary: Preview show metadata enrichment from TMDb
@@ -7119,6 +7182,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShowTermDto"
+        lists:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShowListSummaryDto"
         rating:
           allOf:
             - $ref: "#/components/schemas/MediaRatingDto"
@@ -7139,9 +7206,72 @@ components:
           externalIds,
           people,
           terms,
+          lists,
           comments,
           enrichment,
         ]
+    ShowListPreviewShowDto:
+      type: object
+      properties:
+        showId: { type: integer, format: int64 }
+        title: { type: string }
+        slug: { type: string, nullable: true }
+        coverUrl: { type: string, nullable: true }
+      required: [showId, title]
+    ShowListSummaryDto:
+      type: object
+      properties:
+        listId: { type: integer, format: int64 }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string, nullable: true }
+        itemCount: { type: integer, format: int64 }
+        coverShowId: { type: integer, format: int64, nullable: true }
+        coverUrl: { type: string, nullable: true }
+        previewShows: { type: array, items: { $ref: "#/components/schemas/ShowListPreviewShowDto" } }
+      required: [listId, name, slug, itemCount, previewShows]
+    ShowListItemDto:
+      type: object
+      properties:
+        showId: { type: integer, format: int64 }
+        title: { type: string }
+        originalTitle: { type: string }
+        slug: { type: string, nullable: true }
+        year: { type: integer, nullable: true }
+        coverUrl: { type: string, nullable: true }
+        episodesCount: { type: integer, format: int64 }
+        watchedEpisodesCount: { type: integer, format: int64 }
+      required: [showId, title, originalTitle, episodesCount, watchedEpisodesCount]
+    ShowListDetailsResponse:
+      type: object
+      properties:
+        listId: { type: integer, format: int64 }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string, nullable: true }
+        coverShowId: { type: integer, format: int64, nullable: true }
+        coverUrl: { type: string, nullable: true }
+        showCount: { type: integer, format: int64 }
+        watchedShowsCount: { type: integer, format: int64 }
+        shows: { type: array, items: { $ref: "#/components/schemas/ShowListItemDto" } }
+      required: [listId, name, slug, showCount, watchedShowsCount, shows]
+    ShowListCreateRequest:
+      type: object
+      properties: { name: { type: string }, description: { type: string, nullable: true } }
+      required: [name]
+    ShowListAttachRequest:
+      type: object
+      properties:
+        listId: { type: integer, format: int64, nullable: true }
+        name: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+    ShowListOrderUpdateRequest:
+      type: object
+      properties: { showIds: { type: array, items: { type: integer, format: int64 } } }
+      required: [showIds]
+    ShowListCoverUpdateRequest:
+      type: object
+      properties: { coverShowId: { type: integer, format: int64, nullable: true } }
     ShowTermDto:
       type: object
       properties:

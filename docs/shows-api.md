@@ -19,12 +19,20 @@ A Shows API expõe consulta read-only da biblioteca e do histórico agregado de 
 | `GET /api/shows/currently-watching` | `limit=20`, `activeWithinDays=90` | lista de `CurrentlyWatchingShowDto` |
 | `GET /api/shows/{showId}` | `showId` | `ShowDetailsResponse` |
 | `GET /api/shows/slug/{slug}` | `slug` | `ShowDetailsResponse` |
+| `GET /api/shows/lists` | - | `ShowListSummaryDto[]` |
+| `GET /api/shows/lists/{slug}` | `slug` | `ShowListDetailsResponse` |
 | `GET /api/shows/slug/{slug}/seasons/{seasonNumber}` | `slug`, `seasonNumber` | `ShowSeasonDetailsResponse` |
 | `GET /api/shows/search` | `q`, `limit=10` | `ShowsSearchResponse` |
 | `GET /api/shows/summary` | `range=month|year|custom`, `start?`, `end?` | `ShowsSummaryResponse` |
 | `GET /api/shows/stats` | - | `ShowsStatsResponse` |
 | `GET /api/shows/year/{year}` | `limitWatched=200`, `limitUnwatched=200` | `ShowsByYearResponse` |
 | `POST /api/shows/catalog/suggestions` | `q` | `ShowCatalogSuggestionsResponse` |
+| `POST /api/shows/lists` | body com `name`, `description?` | `ShowListSummaryDto` |
+| `POST /api/shows/{showId}/lists` | body com `listId?`, `name?`, `description?` | `ShowListSummaryDto` |
+| `DELETE /api/shows/{showId}/lists/{listId}` | `showId`, `listId` | vazio |
+| `POST /api/shows/lists/{listId}/order` | body com todos os `showIds[]` | vazio |
+| `PATCH /api/shows/lists/{listId}/cover` | body com `coverShowId?` | `ShowListSummaryDto` |
+| `DELETE /api/shows/lists/{slug}` | `slug` | vazio |
 | `POST /api/admin/shows/credits/sync-tmdb` | `limit=100` | `ShowCreditsBatchSyncResponse` |
 | `POST /api/admin/shows/{showId}/credits/sync-tmdb` | `showId` | `ShowCreditsSyncResponse` |
 | `POST /api/admin/shows/{showId}/terms/sync-tmdb` | `showId` | `ShowTermsSyncResponse` |
@@ -96,6 +104,22 @@ Campos aceitos:
 - `EPISODE_SUMMARY`
 - `EPISODE_DURATION`
 - `EPISODE_AIR_DATE`
+
+## Listas manuais
+
+Listas de séries são recortes exclusivos deste domínio e não misturam filmes ou outras mídias.
+
+- `show_lists` guarda nome, nome normalizado único, slug, descrição e capa manual opcional
+- `show_list_items` associa cada série uma única vez e persiste sua posição explícita
+- criar uma lista com o mesmo nome normalizado reutiliza a lista existente
+- adicionar novamente a mesma série é idempotente e não altera sua posição
+- a atualização de ordem exige exatamente todos os IDs atualmente pertencentes à lista
+- `coverShowId` deve pertencer à lista; `null` remove a escolha manual
+- ao remover a série usada como capa, a escolha manual também é removida
+- sem capa manual, a UI usa a primeira imagem disponível do recorte
+- remover uma associação ou excluir a lista nunca exclui a série
+
+A UI está disponível em `/shows/lists`, `/shows/lists/{slug}` e no bloco `Organizar em listas` da página da série.
 
 ## Pessoas e créditos
 

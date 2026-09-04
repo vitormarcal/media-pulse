@@ -2,6 +2,12 @@ package dev.marcal.mediapulse.server.controller.shows
 
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowListAttachRequest
+import dev.marcal.mediapulse.server.api.shows.ShowListCoverUpdateRequest
+import dev.marcal.mediapulse.server.api.shows.ShowListCreateRequest
+import dev.marcal.mediapulse.server.api.shows.ShowListDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowListOrderUpdateRequest
+import dev.marcal.mediapulse.server.api.shows.ShowListSummaryDto
 import dev.marcal.mediapulse.server.api.shows.ShowMetadataEnrichmentApplyRequest
 import dev.marcal.mediapulse.server.api.shows.ShowMetadataEnrichmentApplyResponse
 import dev.marcal.mediapulse.server.api.shows.ShowMetadataEnrichmentPreviewRequest
@@ -21,12 +27,16 @@ import dev.marcal.mediapulse.server.api.shows.ShowsRecentResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSearchResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsStatsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
+import dev.marcal.mediapulse.server.repository.ShowListQueryRepository
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
+import dev.marcal.mediapulse.server.service.tv.ShowListsService
 import dev.marcal.mediapulse.server.service.tv.ShowMetadataEnrichmentService
 import dev.marcal.mediapulse.server.service.tv.ShowSeasonMetadataEnrichmentService
 import dev.marcal.mediapulse.server.service.tv.ShowTermsService
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -47,6 +57,8 @@ class ShowsController(
     private val showSeasonMetadataEnrichmentService: ShowSeasonMetadataEnrichmentService,
     private val showTermsService: ShowTermsService,
     private val showMetadataEnrichmentService: ShowMetadataEnrichmentService,
+    private val showListsService: ShowListsService,
+    private val showListQueryRepository: ShowListQueryRepository,
 ) {
     @GetMapping("/library")
     fun library(
@@ -75,12 +87,54 @@ class ShowsController(
     @GetMapping("/{showId}")
     fun details(
         @PathVariable showId: Long,
-    ): ShowDetailsResponse = repository.getShowDetails(showId)
+    ): ShowDetailsResponse = repository.getShowDetails(showId).copy(lists = showListQueryRepository.forShow(showId))
 
     @GetMapping("/slug/{slug}")
     fun detailsBySlug(
         @PathVariable slug: String,
-    ): ShowDetailsResponse = repository.getShowDetailsBySlug(slug)
+    ): ShowDetailsResponse = repository.getShowDetailsBySlug(slug).let { it.copy(lists = showListQueryRepository.forShow(it.showId)) }
+
+    @GetMapping("/lists")
+    fun lists(): List<ShowListSummaryDto> = showListsService.listAll()
+
+    @GetMapping("/lists/{slug}")
+    fun listDetails(
+        @PathVariable slug: String,
+    ): ShowListDetailsResponse = showListQueryRepository.details(slug)
+
+    @PostMapping("/lists")
+    fun createList(
+        @RequestBody request: ShowListCreateRequest,
+    ): ShowListSummaryDto = showListsService.create(request)
+
+    @PostMapping("/{showId}/lists")
+    fun attachToList(
+        @PathVariable showId: Long,
+        @RequestBody request: ShowListAttachRequest,
+    ): ShowListSummaryDto = showListsService.attach(showId, request)
+
+    @DeleteMapping("/{showId}/lists/{listId}")
+    fun removeFromList(
+        @PathVariable showId: Long,
+        @PathVariable listId: Long,
+    ) = showListsService.remove(showId, listId)
+
+    @PostMapping("/lists/{listId}/order")
+    fun updateListOrder(
+        @PathVariable listId: Long,
+        @RequestBody request: ShowListOrderUpdateRequest,
+    ) = showListsService.updateOrder(listId, request)
+
+    @PatchMapping("/lists/{listId}/cover")
+    fun updateListCover(
+        @PathVariable listId: Long,
+        @RequestBody request: ShowListCoverUpdateRequest,
+    ): ShowListSummaryDto = showListsService.updateCover(listId, request)
+
+    @DeleteMapping("/lists/{slug}")
+    fun deleteList(
+        @PathVariable slug: String,
+    ) = showListsService.delete(slug)
 
     @PostMapping("/{showId}/enrichment/preview")
     fun previewMetadataEnrichment(

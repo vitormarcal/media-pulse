@@ -62,6 +62,49 @@ export interface ShowExternalIdDto {
   externalId: string
 }
 
+export interface ShowListPreviewShowDto {
+  showId: number
+  title: string
+  slug: string | null
+  coverUrl: string | null
+}
+export interface ShowListSummaryDto {
+  listId: number
+  name: string
+  slug: string
+  description: string | null
+  itemCount: number
+  coverShowId: number | null
+  coverUrl: string | null
+  previewShows: ShowListPreviewShowDto[]
+}
+export interface ShowListItemDto {
+  showId: number
+  title: string
+  originalTitle: string
+  slug: string | null
+  year: number | null
+  coverUrl: string | null
+  episodesCount: number
+  watchedEpisodesCount: number
+}
+export interface ShowListDetailsResponse {
+  listId: number
+  name: string
+  slug: string
+  description: string | null
+  coverShowId: number | null
+  coverUrl: string | null
+  showCount: number
+  watchedShowsCount: number
+  shows: ShowListItemDto[]
+}
+export interface ShowListAttachRequest {
+  listId?: number | null
+  name?: string | null
+  description?: string | null
+}
+
 export type ShowCreditType = 'CAST' | 'CREW'
 export type ShowTermKind = 'GENRE' | 'TAG'
 export type ShowTermSource = 'TMDB' | 'USER'
@@ -121,6 +164,7 @@ export interface ShowDetailsResponse {
   externalIds: ShowExternalIdDto[]
   people: ShowPersonCreditDto[]
   terms: ShowTermDto[]
+  lists: ShowListSummaryDto[]
   rating: MediaRatingDto | null
   comments: MediaCommentDto[]
   enrichment: { terms: ShowEnrichmentStepDto }
@@ -169,6 +213,7 @@ export interface ManualShowWatchCreateResponse {
   watchInserted: boolean
   coverAssigned: boolean
   externalIds: ShowExternalIdDto[]
+  lists: ShowListSummaryDto[]
 }
 
 export interface ManualShowCatalogCreateResponse {

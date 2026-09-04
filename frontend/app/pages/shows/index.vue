@@ -20,6 +20,11 @@
           accent-label="Adicionar série"
         />
 
+        <NuxtLink class="lists-entry" to="/shows/lists">
+          <span><small>Curadoria</small><strong>Listas de séries</strong></span>
+          <span>Organizar recortes →</span>
+        </NuxtLink>
+
         <section class="shows-section">
           <SectionHeading eyebrow="Em curso" title="Abertas agora" />
 
@@ -275,6 +280,28 @@ useHead(() => ({
 .strip-grid {
   display: grid;
   gap: 24px;
+}
+
+.lists-entry {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 22px;
+  border: 1px solid var(--base-color-border);
+  border-radius: 20px;
+  background: var(--base-color-surface-soft);
+}
+
+.lists-entry span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.lists-entry small {
+  color: var(--base-color-brand-red);
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .strip-grid {

@@ -350,6 +350,7 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
       .filter((value, index, array) => array.indexOf(value) === index)
       .slice(0, 4),
     externalIds: show.externalIds,
+    lists: show.lists,
     rating: show.rating,
     enrichment: show.enrichment,
     terms: {

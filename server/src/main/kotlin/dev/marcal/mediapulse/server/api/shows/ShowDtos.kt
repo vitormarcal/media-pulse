@@ -66,6 +66,66 @@ data class ShowImageDto(
     val isPrimary: Boolean,
 )
 
+data class ShowListPreviewShowDto(
+    val showId: Long,
+    val title: String,
+    val slug: String?,
+    val coverUrl: String?,
+)
+
+data class ShowListSummaryDto(
+    val listId: Long,
+    val name: String,
+    val slug: String,
+    val description: String?,
+    val itemCount: Long,
+    val coverShowId: Long? = null,
+    val coverUrl: String? = null,
+    val previewShows: List<ShowListPreviewShowDto> = emptyList(),
+)
+
+data class ShowListItemDto(
+    val showId: Long,
+    val title: String,
+    val originalTitle: String,
+    val slug: String?,
+    val year: Int?,
+    val coverUrl: String?,
+    val episodesCount: Long,
+    val watchedEpisodesCount: Long,
+)
+
+data class ShowListDetailsResponse(
+    val listId: Long,
+    val name: String,
+    val slug: String,
+    val description: String?,
+    val coverShowId: Long? = null,
+    val coverUrl: String? = null,
+    val showCount: Long,
+    val watchedShowsCount: Long,
+    val shows: List<ShowListItemDto>,
+)
+
+data class ShowListCreateRequest(
+    val name: String,
+    val description: String? = null,
+)
+
+data class ShowListAttachRequest(
+    val listId: Long? = null,
+    val name: String? = null,
+    val description: String? = null,
+)
+
+data class ShowListOrderUpdateRequest(
+    val showIds: List<Long>,
+)
+
+data class ShowListCoverUpdateRequest(
+    val coverShowId: Long? = null,
+)
+
 data class ShowWatchDto(
     val watchId: Long,
     val episodeId: Long,
@@ -157,6 +217,7 @@ data class ShowDetailsResponse(
     val externalIds: List<ShowExternalIdDto>,
     val people: List<ShowPersonCreditDto> = emptyList(),
     val terms: List<ShowTermDto> = emptyList(),
+    val lists: List<ShowListSummaryDto> = emptyList(),
     val rating: MediaRatingDto? = null,
     val comments: List<MediaCommentDto> = emptyList(),
     val enrichment: ShowAutomaticEnrichmentDto =

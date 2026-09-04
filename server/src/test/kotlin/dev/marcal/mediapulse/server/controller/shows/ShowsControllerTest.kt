@@ -15,7 +15,9 @@ import dev.marcal.mediapulse.server.api.shows.ShowsStatsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsTotalStatsDto
 import dev.marcal.mediapulse.server.api.shows.ShowsYearStatsDto
+import dev.marcal.mediapulse.server.repository.ShowListQueryRepository
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
+import dev.marcal.mediapulse.server.service.tv.ShowListsService
 import dev.marcal.mediapulse.server.service.tv.ShowMetadataEnrichmentService
 import dev.marcal.mediapulse.server.service.tv.ShowSeasonMetadataEnrichmentService
 import dev.marcal.mediapulse.server.service.tv.ShowTermsService
@@ -38,6 +40,8 @@ class ShowsControllerTest {
             showSeasonMetadataEnrichmentService,
             mockk<ShowTermsService>(),
             mockk<ShowMetadataEnrichmentService>(),
+            mockk<ShowListsService>(),
+            mockk<ShowListQueryRepository>(relaxed = true),
         )
 
     @Test
