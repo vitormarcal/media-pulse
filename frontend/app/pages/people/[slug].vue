@@ -12,9 +12,12 @@
     <template v-else-if="data">
       <section class="person-hero" :style="heroShellStyle">
         <div class="copy">
-          <NuxtLink class="back-link" to="/movies"> Voltar ao catálogo </NuxtLink>
+          <nav class="catalog-links" aria-label="Explorar o catálogo audiovisual">
+            <NuxtLink class="catalog-link" to="/movies">Ver filmes</NuxtLink>
+            <NuxtLink class="catalog-link" to="/shows">Ver séries</NuxtLink>
+          </nav>
 
-          <p class="eyebrow">Pessoa</p>
+          <p class="eyebrow">Pessoa no catálogo audiovisual</p>
           <h1>{{ data.name }}</h1>
           <p class="intro">{{ heroIntro }}</p>
 
@@ -32,7 +35,7 @@
 
         <div class="portrait-card">
           <div class="portrait-frame">
-            <img v-if="resolveMediaUrl(data.profileUrl)" :src="resolveMediaUrl(data.profileUrl)" :alt="data.name" />
+            <img v-if="heroImageUrl" :src="heroImageUrl" :alt="data.name" />
             <div v-else class="portrait-fallback">{{ data.name.slice(0, 1) }}</div>
           </div>
         </div>
@@ -71,7 +74,7 @@
       </section>
 
       <MoviesLibraryGrid
-        eyebrow="Catálogo local"
+        eyebrow="Filmes locais"
         :title="gridTitle"
         :description="gridDescription"
         :summary="gridSummary"
@@ -83,7 +86,7 @@
       <ShowsLibraryGrid
         eyebrow="Séries locais"
         :title="showsTitle"
-        :description="''"
+        :description="showsDescription"
         :summary="showsSummary"
         :items="data.shows"
         empty-message="Nenhuma série local apareceu ligada a esta pessoa."
@@ -107,9 +110,7 @@ const slug = computed(() => String(route.params.slug))
 
 const { data, error, status, refresh } = await usePersonPageData(slug.value)
 const heroImageUrl = computed(() =>
-  resolveMediaUrl(
-    data.value?.movies[0]?.imageUrl ?? data.value?.tmdbProfile?.profileUrl ?? data.value?.profileUrl ?? null,
-  ),
+  resolveMediaUrl(data.value?.tmdbProfile?.profileUrl ?? data.value?.profileUrl ?? null),
 )
 const heroShellStyle = computed(() =>
   heroImageUrl.value
@@ -129,7 +130,7 @@ const heroIntro = computed(() => {
 })
 
 const gridTitle = computed(() => (data.value ? `Os filmes locais ligados a ${data.value.name}` : 'Filmes desta pessoa'))
-const gridDescription = computed(() => '')
+const gridDescription = computed(() => 'A presença desta pessoa no arquivo pessoal de filmes.')
 const gridSummary = computed(() =>
   data.value
     ? `${data.value.stats.movieCount} filmes locais e ${data.value.stats.watchedMoviesCount} com sessão registrada.`
@@ -138,6 +139,7 @@ const gridSummary = computed(() =>
 const showsTitle = computed(() =>
   data.value ? `As séries locais ligadas a ${data.value.name}` : 'Séries desta pessoa',
 )
+const showsDescription = computed(() => 'A presença desta pessoa no arquivo pessoal de séries.')
 const showsSummary = computed(() =>
   data.value
     ? `${data.value.stats.showCount} séries locais e ${data.value.stats.watchedShowsCount} com watch registrado.`
@@ -247,13 +249,28 @@ pre {
   align-content: end;
 }
 
-.back-link {
+.catalog-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   width: fit-content;
+}
+
+.catalog-link {
   padding: 8px 14px;
   border-radius: 16px;
   background: var(--base-color-surface-warm);
   color: var(--base-color-text-primary);
   font-size: 0.8rem;
+}
+
+.catalog-link:hover {
+  background: color-mix(in srgb, var(--base-color-surface-warm) 78%, var(--base-color-border));
+}
+
+.catalog-link:focus-visible {
+  outline: 2px solid var(--base-color-focus, #435ee5);
+  outline-offset: 2px;
 }
 
 .eyebrow {

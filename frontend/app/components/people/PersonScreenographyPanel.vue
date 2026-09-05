@@ -1,9 +1,9 @@
 <template>
   <section class="screenography-panel">
     <SectionHeading
-      eyebrow="Filmografia TMDb"
-      title="Importar filmografia"
-      description="Compare o TMDb com o catálogo local antes de importar títulos ausentes."
+      eyebrow="Filmografia audiovisual"
+      title="Explorar filmes e séries"
+      description="Compare a filmografia do TMDb com o catálogo local e escolha o que deseja adicionar."
       :summary="panelSummary"
     />
 
@@ -15,6 +15,8 @@
           type="button"
           class="mode-button"
           :class="{ active: activeKind === mode.id }"
+          role="tab"
+          :aria-selected="activeKind === mode.id"
           @click="activeKind = mode.id"
         >
           <span>{{ mode.label }}</span>
@@ -482,8 +484,17 @@ async function addMember(item: ScreenographyMemberViewModel) {
 }
 
 .add-button {
-  background: color-mix(in srgb, var(--base-color-brand-red) 12%, white);
+  background: var(--base-color-brand-red);
   color: var(--base-color-text-primary);
+}
+
+.mode-button:focus-visible,
+.load-button:focus-visible,
+.add-button:focus-visible,
+.tmdb-link:focus-visible,
+.poster-link:focus-visible {
+  outline: 2px solid var(--base-color-focus, #435ee5);
+  outline-offset: 2px;
 }
 
 .empty-card {
