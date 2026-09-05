@@ -354,6 +354,8 @@ Persistência:
 - quando o enriquecimento automático terminou, inclui em `tmdbProfile` o snapshot local de biografia, datas, origem, aliases e links
 - pessoas com `tmdb_id` e sem snapshot são processadas em segundo plano; falhas são registradas e repetidas com intervalo mínimo de um dia
 - a leitura da página nunca consulta o TMDb
+- a UI trata a pessoa como entidade audiovisual: usa seu retrato no hero, oferece acesso equivalente aos catálogos de filmes e séries e mantém os dois recortes locais em seções separadas
+- a filmografia audiovisual preserva abas independentes para filmes e séries; carregar uma aba lê seu snapshot local, enquanto adicionar um título ausente continua sendo uma ação explícita do proprietário
 
 `GET /api/people/search` busca pessoas já persistidas localmente.
 
