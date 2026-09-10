@@ -34,39 +34,44 @@
 
     <p v-if="currentError" class="panel-error">{{ currentError }}</p>
 
-    <div v-if="currentMembers.length" class="cards-grid">
-      <article v-for="item in currentMembers" :key="`${activeKind}:${item.tmdbId}`" class="filmography-card">
-        <component
-          :is="item.localSlug ? NuxtLink : 'div'"
-          class="poster-link"
-          :to="item.localSlug ? `${item.kind === 'movies' ? '/movies' : '/shows'}/${item.localSlug}` : undefined"
-        >
-          <div class="poster-shell">
-            <img v-if="resolveMediaUrl(item.posterUrl)" :src="resolveMediaUrl(item.posterUrl)" :alt="item.title" />
-            <div v-else class="poster-fallback">{{ item.title.slice(0, 1) }}</div>
-          </div>
-        </component>
+    <div v-if="currentMembers.length" class="member-groups">
+      <section v-for="group in currentGroups" :key="group.id" class="member-group">
+        <h3>{{ group.label }}</h3>
+        <div class="cards-grid">
+          <article v-for="item in group.items" :key="`${activeKind}:${item.tmdbId}`" class="filmography-card">
+            <component
+              :is="item.localSlug ? NuxtLink : 'div'"
+              class="poster-link"
+              :to="item.localSlug ? `${item.kind === 'movies' ? '/movies' : '/shows'}/${item.localSlug}` : undefined"
+            >
+              <div class="poster-shell">
+                <img v-if="resolveMediaUrl(item.posterUrl)" :src="resolveMediaUrl(item.posterUrl)" :alt="item.title" />
+                <div v-else class="poster-fallback">{{ item.title.slice(0, 1) }}</div>
+              </div>
+            </component>
 
-        <div class="card-copy">
-          <span class="card-tag">{{ item.inCatalog ? 'Catálogo' : 'Sugestão TMDb' }}</span>
-          <strong>{{ item.title }}</strong>
-          <p class="card-meta">{{ item.year ? String(item.year) : 'Sem ano' }}</p>
-          <p class="card-meta">{{ item.roleLabel }}</p>
-        </div>
+            <div class="card-copy">
+              <span class="card-tag">{{ statusLabel(item.watchStatus) }}</span>
+              <strong>{{ item.title }}</strong>
+              <p class="card-meta">{{ item.year ? String(item.year) : 'Sem ano' }}</p>
+              <p class="card-meta">{{ item.roleLabel }}</p>
+            </div>
 
-        <div class="card-actions">
-          <a v-if="item.tmdbUrl" class="tmdb-link" :href="item.tmdbUrl" target="_blank" rel="noreferrer">TMDb</a>
-          <button
-            v-if="!item.inCatalog"
-            type="button"
-            class="add-button"
-            :disabled="addingKey === `${item.kind}:${item.tmdbId}`"
-            @click="addMember(item)"
-          >
-            {{ addingKey === `${item.kind}:${item.tmdbId}` ? 'Adicionando...' : 'Adicionar' }}
-          </button>
+            <div class="card-actions">
+              <a v-if="item.tmdbUrl" class="tmdb-link" :href="item.tmdbUrl" target="_blank" rel="noreferrer">TMDb</a>
+              <button
+                v-if="!item.inCatalog"
+                type="button"
+                class="add-button"
+                :disabled="addingKey === `${item.kind}:${item.tmdbId}`"
+                @click="addMember(item)"
+              >
+                {{ addingKey === `${item.kind}:${item.tmdbId}` ? 'Adicionando...' : 'Adicionar' }}
+              </button>
+            </div>
+          </article>
         </div>
-      </article>
+      </section>
     </div>
 
     <div v-else-if="currentLoaded" class="empty-card">
@@ -97,6 +102,7 @@ type ScreenographyMemberViewModel = {
   localSlug: string | null
   inCatalog: boolean
   roleLabel: string
+  watchStatus: string
 }
 
 const NuxtLink = resolveComponent('NuxtLink')
@@ -142,8 +148,27 @@ const currentLoaded = computed(() =>
 const currentMembers = computed<ScreenographyMemberViewModel[]>(() => {
   if (activeKind.value === 'movies') {
     return (
-      movieFilmography.value?.members.map((item) => ({
-        kind: 'movies' as const,
+      movieFilmography.value?.members
+        .map((item) => ({
+          kind: 'movies' as const,
+          tmdbId: item.tmdbId,
+          title: item.title,
+          year: item.year,
+          posterUrl: item.posterUrl,
+          tmdbUrl: item.tmdbUrl,
+          localSlug: item.localSlug,
+          inCatalog: item.inCatalog,
+          roleLabel: item.roleLabel,
+          watchStatus: item.watchStatus,
+        }))
+        .sort(compareWatchStatus) ?? []
+    )
+  }
+
+  return (
+    showFilmography.value?.members
+      .map((item) => ({
+        kind: 'shows' as const,
         tmdbId: item.tmdbId,
         title: item.title,
         year: item.year,
@@ -152,23 +177,40 @@ const currentMembers = computed<ScreenographyMemberViewModel[]>(() => {
         localSlug: item.localSlug,
         inCatalog: item.inCatalog,
         roleLabel: item.roleLabel,
-      })) ?? []
-    )
-  }
-
-  return (
-    showFilmography.value?.members.map((item) => ({
-      kind: 'shows' as const,
-      tmdbId: item.tmdbId,
-      title: item.title,
-      year: item.year,
-      posterUrl: item.posterUrl,
-      tmdbUrl: item.tmdbUrl,
-      localSlug: item.localSlug,
-      inCatalog: item.inCatalog,
-      roleLabel: item.roleLabel,
-    })) ?? []
+        watchStatus: item.watchStatus,
+      }))
+      .sort(compareWatchStatus) ?? []
   )
+})
+
+function compareWatchStatus(a: ScreenographyMemberViewModel, b: ScreenographyMemberViewModel) {
+  const order = ['UNWATCHED', 'NOT_STARTED', 'IN_PROGRESS', 'OUTSIDE_CATALOG', 'WATCHED']
+  return order.indexOf(a.watchStatus) - order.indexOf(b.watchStatus)
+}
+
+function statusLabel(status: string) {
+  return (
+    {
+      UNWATCHED: 'No catálogo · ainda não assistido',
+      NOT_STARTED: 'No catálogo · não iniciada',
+      IN_PROGRESS: 'No catálogo · em andamento',
+      OUTSIDE_CATALOG: 'Fora do catálogo',
+      WATCHED: 'Assistido',
+    }[status] ?? 'Filmografia'
+  )
+}
+
+const currentGroups = computed(() => {
+  const labels: Record<string, string> = {
+    UNWATCHED: 'No catálogo, ainda não assistidos',
+    NOT_STARTED: 'Não iniciadas',
+    IN_PROGRESS: 'Em andamento',
+    OUTSIDE_CATALOG: 'Fora do catálogo',
+    WATCHED: 'Assistidos',
+  }
+  return ['UNWATCHED', 'NOT_STARTED', 'IN_PROGRESS', 'OUTSIDE_CATALOG', 'WATCHED']
+    .map((id) => ({ id, label: labels[id], items: currentMembers.value.filter((item) => item.watchStatus === id) }))
+    .filter((group) => group.items.length)
 })
 
 const showLoadButton = computed(() => !currentLoaded.value || currentError.value != null)
@@ -405,6 +447,17 @@ async function addMember(item: ScreenographyMemberViewModel) {
 
 .panel-error {
   color: #7a1414;
+}
+
+.member-groups,
+.member-group {
+  display: grid;
+  gap: 18px;
+}
+
+.member-group h3 {
+  margin: 0;
+  font-size: 1rem;
 }
 
 .cards-grid {

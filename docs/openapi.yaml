@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.85
+  version: 1.0.0-beta.96
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -10,6 +10,8 @@ tags:
     description: Read-only books endpoints.
   - name: Movies
     description: Movie library, curation, enrichment, and watch endpoints.
+  - name: People
+    description: Cross-domain audiovisual people, favorites, and filmography endpoints.
   - name: Shows
     description: Show library, catalog, enrichment, and watch endpoints.
   - name: Games
@@ -1663,7 +1665,7 @@ paths:
   /api/people/{slug}:
     get:
       summary: Person details by slug
-      tags: [Movies]
+      tags: [People]
       parameters:
         - name: slug
           in: path
@@ -1677,6 +1679,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PersonDetailsResponse"
+
+  /api/people/favorites:
+    get:
+      summary: List favorite local people
+      tags: [People]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PersonFavoriteDto"
+
+  /api/people/{personId}/favorite:
+    post:
+      summary: Favorite a local person
+      tags: [People]
+      parameters:
+        - { name: personId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        "204": { description: Favorite saved }
+    delete:
+      summary: Remove a local person from favorites
+      tags: [People]
+      parameters:
+        - { name: personId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        "204": { description: Favorite removed }
 
   /api/movies/companies/{slug}:
     get:
@@ -1839,7 +1871,7 @@ paths:
   /api/people/search:
     get:
       summary: Search local people
-      tags: [Movies]
+      tags: [People]
       parameters:
         - name: q
           in: query
@@ -2108,7 +2140,7 @@ paths:
   /api/admin/people/{personId}/tmdb-filmography:
     post:
       summary: Refresh the persisted TMDb movie filmography snapshot
-      tags: [Movies]
+      tags: [People]
       parameters:
         - name: personId
           in: path
@@ -2127,7 +2159,7 @@ paths:
   /api/people/{personId}/filmography:
     get:
       summary: Fetch the locally persisted movie filmography snapshot
-      tags: [Movies]
+      tags: [People]
       parameters:
         - name: personId
           in: path
@@ -2146,7 +2178,7 @@ paths:
   /api/admin/people/{personId}/tmdb-show-filmography:
     post:
       summary: Refresh the persisted TMDb show filmography snapshot
-      tags: [Movies]
+      tags: [People]
       parameters:
         - name: personId
           in: path
@@ -2165,7 +2197,7 @@ paths:
   /api/people/{personId}/show-filmography:
     get:
       summary: Fetch the locally persisted show filmography snapshot
-      tags: [Movies]
+      tags: [People]
       parameters:
         - name: personId
           in: path
@@ -6036,7 +6068,21 @@ components:
           type: array
           items:
             type: string
-      required: [personId, tmdbId, name, slug, roles]
+        favorite:
+          type: boolean
+      required: [personId, tmdbId, name, slug, roles, favorite]
+    PersonFavoriteDto:
+      type: object
+      properties:
+        personId: { type: integer, format: int64 }
+        name: { type: string }
+        slug: { type: string }
+        profileUrl: { type: string, nullable: true }
+        roles: { type: array, items: { type: string } }
+        watchedMoviesCount: { type: integer, format: int64 }
+        watchedShowsCount: { type: integer, format: int64 }
+        favoritedAt: { type: string, format: date-time }
+      required: [personId, name, slug, roles, watchedMoviesCount, watchedShowsCount, favoritedAt]
     PersonDetailsResponse:
       type: object
       properties:
@@ -6070,6 +6116,8 @@ components:
           allOf:
             - $ref: "#/components/schemas/PersonTmdbProfileDto"
           nullable: true
+        favorite:
+          type: boolean
       required:
         [
           personId,
@@ -6080,6 +6128,7 @@ components:
           movieCount,
           watchedMoviesCount,
           movies,
+          favorite,
         ]
     PersonTmdbProfileDto:
       type: object
@@ -6560,7 +6609,10 @@ components:
           type: boolean
         roleLabel:
           type: string
-      required: [tmdbId, title, tmdbUrl, inCatalog, roleLabel]
+        watchStatus:
+          type: string
+          enum: [OUTSIDE_CATALOG, UNWATCHED, WATCHED]
+      required: [tmdbId, title, tmdbUrl, inCatalog, roleLabel, watchStatus]
     PersonFilmographyResponse:
       type: object
       properties:
@@ -6614,7 +6666,10 @@ components:
           type: boolean
         roleLabel:
           type: string
-      required: [tmdbId, title, tmdbUrl, inCatalog, roleLabel]
+        watchStatus:
+          type: string
+          enum: [OUTSIDE_CATALOG, NOT_STARTED, IN_PROGRESS, WATCHED]
+      required: [tmdbId, title, tmdbUrl, inCatalog, roleLabel, watchStatus]
     PersonShowFilmographyResponse:
       type: object
       properties:

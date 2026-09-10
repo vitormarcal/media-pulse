@@ -29,6 +29,7 @@ const items = [
   { label: 'Filmes', href: '/movies' },
   { label: 'Livros', href: '/books' },
   { label: 'Games', href: '/games' },
+  { label: 'Pessoas', href: '/people' },
 ]
 </script>
 

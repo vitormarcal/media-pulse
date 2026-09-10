@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.movies.PersonDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.PersonSuggestionDto
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.service.person.PersonDetailsService
+import dev.marcal.mediapulse.server.service.person.PersonFavoritesService
 import dev.marcal.mediapulse.server.service.person.PersonFilmographyService
 import dev.marcal.mediapulse.server.service.person.PersonShowFilmographyService
 import io.mockk.every
@@ -17,12 +18,14 @@ class PeopleControllerTest {
     private val movieCreditsService = mockk<MovieCreditsService>()
     private val personFilmographyService = mockk<PersonFilmographyService>()
     private val personShowFilmographyService = mockk<PersonShowFilmographyService>()
+    private val personFavoritesService = mockk<PersonFavoritesService>()
     private val controller =
         PeopleController(
             personDetailsService = personDetailsService,
             movieCreditsService = movieCreditsService,
             personFilmographyService = personFilmographyService,
             personShowFilmographyService = personShowFilmographyService,
+            personFavoritesService = personFavoritesService,
         )
 
     @Test

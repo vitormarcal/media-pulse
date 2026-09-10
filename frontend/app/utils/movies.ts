@@ -899,6 +899,7 @@ export function buildPersonPageData(person: PersonDetailsResponse): import('~/ty
     heroMeta,
     roles: person.roles,
     tmdbProfile: person.tmdbProfile,
+    favorite: person.favorite,
     stats: {
       movieCount: person.movieCount,
       watchedMoviesCount: person.watchedMoviesCount,

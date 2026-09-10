@@ -17,16 +17,12 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `GET /api/movies/recent` | `limit=20`, `cursor?` | `MoviesRecentResponse` |
 | `GET /api/movies/{movieId}` | `movieId` | `MovieDetailsResponse` |
 | `GET /api/movies/slug/{slug}` | `slug` | `MovieDetailsResponse` |
-| `GET /api/people/{slug}` | `slug` | `PersonDetailsResponse` com snapshot local do perfil |
-| `GET /api/people/{personId}/filmography` | `personId` | `PersonFilmographyResponse` com snapshot local |
-| `GET /api/people/{personId}/show-filmography` | `personId` | `PersonShowFilmographyResponse` com snapshot local |
 | `GET /api/movies/companies/{slug}` | `slug` | `MovieCompanyDetailsResponse` |
 | `GET /api/movies/lists` | - | `MovieListSummaryDto[]` |
 | `GET /api/movies/lists/{slug}` | `slug` | `MovieListDetailsResponse` |
 | `GET /api/movies/collections` | - | `MovieCollectionSummaryDto[]` |
 | `GET /api/movies/collections/{collectionId}` | `collectionId` | `MovieCollectionMembersResponse` com snapshot local |
 | `GET /api/movies/companies/{companyId}/members` | `companyId` | `MovieCompanyMembersResponse` com snapshot local |
-| `GET /api/people/search` | `q`, `limit=8` | `PersonSuggestionDto[]` |
 | `GET /api/movies/terms/{kind}/{slug}` | `kind=genre|tag`, `slug` | `MovieTermDetailsResponse` |
 | `GET /api/movies/terms/search` | `q`, `kind=genre|tag`, `limit=8` | `MovieTermSuggestionDto[]` |
 | `GET /api/movies/search` | `q`, `limit=10` | `MoviesSearchResponse` |
@@ -59,8 +55,6 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/movies/terms/{termId}/visibility` | body com `hidden` | `MovieTermDto` |
 | `POST /api/movies/{movieId}/enrichment/preview` | body com `tmdbId?` | `MovieEnrichmentPreviewResponse` |
 | `POST /api/movies/{movieId}/enrichment/apply` | body com `tmdbId?`, `mode`, `fields[]` | `MovieEnrichmentApplyResponse` |
-| `POST /api/admin/people/{personId}/tmdb-filmography` | `personId` | `PersonFilmographyResponse` |
-| `POST /api/admin/people/{personId}/tmdb-show-filmography` | `personId` | `PersonShowFilmographyResponse` |
 
 ## Paginação e limites
 
@@ -348,45 +342,13 @@ Persistência:
 - cria a pessoa se ela ainda não estiver persistida
 - salva o vínculo filme-pessoa sem precisar rerodar o sync completo
 
-`GET /api/people/{slug}` abre a página local da pessoa sem consultar provedores externos.
-
-- retorna a pessoa, os papéis locais agregados e os filmes e séries ligados a ela
-- quando o enriquecimento automático terminou, inclui em `tmdbProfile` o snapshot local de biografia, datas, origem, aliases e links
-- pessoas com `tmdb_id` e sem snapshot são processadas em segundo plano; falhas são registradas e repetidas com intervalo mínimo de um dia
-- a leitura da página nunca consulta o TMDb
-- a UI trata a pessoa como entidade audiovisual: usa seu retrato no hero, oferece acesso equivalente aos catálogos de filmes e séries e mantém os dois recortes locais em seções separadas
-- a filmografia audiovisual preserva abas independentes para filmes e séries; carregar uma aba lê seu snapshot local, enquanto adicionar um título ausente continua sendo uma ação explícita do proprietário
-
-`GET /api/people/search` busca pessoas já persistidas localmente.
-
-- usa `people.normalized_name`
-- serve para reaproveitar uma pessoa existente antes de criar ou importar novos créditos
+Perfil, busca, favoritos e filmografias audiovisuais estão documentados em [`people-api.md`](people-api.md).
 
 `POST /api/movies/{movieId}/people` vincula uma pessoa já existente ao filme.
 
 - reaproveita `people` local
 - aceita grupos editoriais simples: `DIRECTORS`, `WRITERS`, `CAST`, `OTHER`
 - `roleLabel` é opcional em `WRITERS` e `CAST`, e obrigatório em `OTHER`
-
-As filmografias de filmes e séries são persistidas localmente por um worker automático.
-
-- cada tipo possui snapshot e estado de sincronização independentes
-- falhas preservam o último snapshot e são repetidas após um dia
-- abrir ou explorar a página nunca consulta o TMDb nem grava no banco
-- a presença no catálogo é resolvida dinamicamente pelo `tmdb_id`
-- nenhum filme, série ou crédito canônico é criado pela leitura da filmografia
-
-`GET /api/people/{personId}/filmography` retorna o snapshot local de filmes.
-
-`POST /api/admin/people/{personId}/tmdb-filmography` força a atualização desse snapshot como reparo explícito.
-
-- permite à UI mostrar o que já existe e o que ainda pode ser adicionado explicitamente
-
-`GET /api/people/{personId}/show-filmography` retorna o snapshot local de séries.
-
-`POST /api/admin/people/{personId}/tmdb-show-filmography` força a atualização desse snapshot como reparo explícito.
-
-- permite à UI mostrar o que já existe e o que ainda pode ser adicionado explicitamente
 
 ## Coleções oficiais TMDb
 

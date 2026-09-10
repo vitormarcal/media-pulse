@@ -41,6 +41,8 @@ data class Person(
     val tmdbSyncAttemptedAt: Instant? = null,
     @Column(name = "tmdb_sync_error")
     val tmdbSyncError: String? = null,
+    @Column(name = "favorited_at")
+    val favoritedAt: Instant? = null,
     @Column(name = "created_at")
     val createdAt: Instant = Instant.now(),
     @Column(name = "updated_at")

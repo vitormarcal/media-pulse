@@ -798,7 +798,8 @@ class MovieQueryRepository(
                       mp.homepage,
                       mp.imdb_id,
                       mp.popularity,
-                      mp.tmdb_synced_at
+                      mp.tmdb_synced_at,
+                      mp.favorited_at
                     FROM people mp
                     LEFT JOIN movie_credits mc ON mc.person_id = mp.id
                     LEFT JOIN show_credits sc ON sc.person_id = mp.id
@@ -817,7 +818,8 @@ class MovieQueryRepository(
                       mp.homepage,
                       mp.imdb_id,
                       mp.popularity,
-                      mp.tmdb_synced_at
+                      mp.tmdb_synced_at,
+                      mp.favorited_at
                     LIMIT 1
                     """.trimIndent(),
                 ).setParameter("slug", slug.trim())
@@ -994,6 +996,7 @@ class MovieQueryRepository(
             showCount = (base[7] as Number).toLong(),
             watchedShowsCount = (base[8] as Number).toLong(),
             shows = shows,
+            favorite = base[18] != null,
             tmdbProfile =
                 if (base[17] != null) {
                     PersonTmdbProfileDto(
@@ -1220,7 +1223,8 @@ class MovieQueryRepository(
                   mp.name,
                   mp.slug,
                   mp.profile_url,
-                  ARRAY_REMOVE(ARRAY_AGG(DISTINCT role_rollup.role_label), NULL) AS role_labels
+                  ARRAY_REMOVE(ARRAY_AGG(DISTINCT role_rollup.role_label), NULL) AS role_labels,
+                  mp.favorited_at
                 FROM people mp
                 LEFT JOIN (
                   SELECT
@@ -1246,7 +1250,9 @@ class MovieQueryRepository(
                   FROM show_credits sc
                 ) role_rollup ON role_rollup.person_id = mp.id
                 WHERE mp.normalized_name LIKE :query
-                GROUP BY mp.id, mp.tmdb_id, mp.name, mp.slug, mp.profile_url
+                  AND (EXISTS (SELECT 1 FROM movie_credits linked_movie WHERE linked_movie.person_id = mp.id)
+                    OR EXISTS (SELECT 1 FROM show_credits linked_show WHERE linked_show.person_id = mp.id))
+                GROUP BY mp.id, mp.tmdb_id, mp.name, mp.slug, mp.profile_url, mp.favorited_at
                 ORDER BY
                   CASE WHEN mp.normalized_name = :exactQuery THEN 0 ELSE 1 END,
                   mp.name ASC,
@@ -1259,17 +1265,25 @@ class MovieQueryRepository(
             .resultList
             .map { row ->
                 val fields = row as Array<*>
-                val roleArray = fields[5] as java.sql.Array?
                 PersonSuggestionDto(
                     personId = (fields[0] as Number).toLong(),
                     tmdbId = fields[1] as String,
                     name = fields[2] as String,
                     slug = fields[3] as String,
                     profileUrl = fields[4] as String?,
-                    roles = ((roleArray?.array as Array<*>?) ?: emptyArray<Any>()).mapNotNull { it as String? }.distinct(),
+                    roles = toStringList(fields[5]),
+                    favorite = fields[6] != null,
                 )
             }
     }
+
+    private fun toStringList(value: Any?): List<String> =
+        when (value) {
+            is java.sql.Array -> (value.array as? Array<*>)?.mapNotNull { it as? String }.orEmpty()
+            is Array<*> -> value.mapNotNull { it as? String }
+            is Collection<*> -> value.mapNotNull { it as? String }
+            else -> emptyList()
+        }.distinct()
 
     fun getMovieTermDetails(
         kind: String,

@@ -31,6 +31,8 @@ class PersonFilmographyRepository(
         val snapshot: MemberSnapshot,
         val localId: Long?,
         val localSlug: String?,
+        val watchedCount: Long,
+        val totalCount: Long,
     )
 
     fun findPerson(personId: Long): PersonRecord? =
@@ -76,7 +78,9 @@ class PersonFilmographyRepository(
                 """
                 SELECT member.tmdb_id, member.title, member.original_title, member.release_year,
                        member.overview, member.poster_url, member.backdrop_url, member.role_label,
-                       local.id, local.slug
+                       local.id, local.slug,
+                       ${if (mediaType == MediaType.MOVIE) "(SELECT COUNT(*) FROM movie_watches watch WHERE watch.movie_id = local.id)" else "(SELECT COUNT(DISTINCT watch.episode_id) FROM tv_episodes episode JOIN tv_episode_watches watch ON watch.episode_id = episode.id WHERE episode.show_id = local.id)"},
+                       ${if (mediaType == MediaType.MOVIE) "0" else "(SELECT COUNT(*) FROM tv_episodes episode WHERE episode.show_id = local.id)"}
                 FROM person_filmography_members member
                 LEFT JOIN $localTable local ON local.tmdb_id = member.tmdb_id
                 WHERE member.person_id = :personId AND member.media_type = :mediaType
@@ -100,6 +104,8 @@ class PersonFilmographyRepository(
                     ),
                     (fields[8] as Number?)?.toLong(),
                     fields[9] as String?,
+                    (fields[10] as Number).toLong(),
+                    (fields[11] as Number).toLong(),
                 )
             }
     }

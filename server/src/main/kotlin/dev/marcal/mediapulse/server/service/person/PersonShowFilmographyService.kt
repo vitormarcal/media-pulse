@@ -72,6 +72,12 @@ class PersonShowFilmographyService(
                     member.localSlug,
                     member.localId != null,
                     item.roleLabel,
+                    when {
+                        member.localId == null -> "OUTSIDE_CATALOG"
+                        member.watchedCount == 0L -> "NOT_STARTED"
+                        member.totalCount > 0 && member.watchedCount >= member.totalCount -> "WATCHED"
+                        else -> "IN_PROGRESS"
+                    },
                 )
             },
         )

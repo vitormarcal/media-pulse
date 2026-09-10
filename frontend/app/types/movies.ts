@@ -138,6 +138,18 @@ export interface PersonSuggestionDto {
   slug: string
   profileUrl: string | null
   roles: string[]
+  favorite: boolean
+}
+
+export interface PersonFavoriteDto {
+  personId: number
+  name: string
+  slug: string
+  profileUrl: string | null
+  roles: string[]
+  watchedMoviesCount: number
+  watchedShowsCount: number
+  favoritedAt: string
 }
 
 export interface PersonLinkRequest {
@@ -194,6 +206,7 @@ export interface PersonDetailsResponse {
   watchedShowsCount: number
   shows: ShowLibraryCardDto[]
   tmdbProfile: PersonTmdbProfileDto | null
+  favorite: boolean
 }
 
 export interface PersonTmdbProfileDto {
@@ -418,6 +431,7 @@ export interface PersonFilmographyMember {
   localSlug: string | null
   inCatalog: boolean
   roleLabel: string
+  watchStatus: 'OUTSIDE_CATALOG' | 'UNWATCHED' | 'WATCHED'
 }
 
 export interface PersonShowFilmographyResponse {
@@ -441,6 +455,7 @@ export interface PersonShowFilmographyMember {
   localSlug: string | null
   inCatalog: boolean
   roleLabel: string
+  watchStatus: 'OUTSIDE_CATALOG' | 'NOT_STARTED' | 'IN_PROGRESS' | 'WATCHED'
 }
 
 export interface MovieCompanyMembersResponse {
@@ -667,6 +682,7 @@ export interface PersonPageData {
   heroMeta: string[]
   roles: string[]
   tmdbProfile: PersonTmdbProfileDto | null
+  favorite: boolean
   stats: {
     movieCount: number
     watchedMoviesCount: number

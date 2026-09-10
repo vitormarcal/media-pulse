@@ -106,6 +106,18 @@ class MovieQueryRepositoryTest {
     }
 
     @Test
+    fun `people search should accept postgres arrays materialized by hibernate`() {
+        every { query.resultList } returns
+            listOf(
+                arrayOf(44L, "138", "Quentin Tarantino", "quentin-tarantino-138", null, arrayOf("Direção", "Roteiro"), null),
+            )
+
+        val response = repository.searchPeople("quentin", 8)
+
+        assertEquals(listOf("Direção", "Roteiro"), response.single().roles)
+    }
+
+    @Test
     fun `details by slug should resolve id and delegate to details query`() {
         every { query.resultList } returnsMany
             listOf(

@@ -73,6 +73,11 @@ class PersonFilmographyService(
                     member.localSlug,
                     member.localId != null,
                     item.roleLabel,
+                    when {
+                        member.localId == null -> "OUTSIDE_CATALOG"
+                        member.watchedCount > 0 -> "WATCHED"
+                        else -> "UNWATCHED"
+                    },
                 )
             },
         )

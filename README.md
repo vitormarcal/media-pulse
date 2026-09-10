@@ -43,7 +43,7 @@ Integrações, pipeline, storage, CORS e limites HTTP possuem defaults e opçõe
 
 ## Documentação
 
-- APIs de domínio: `docs/books-api.md`, `docs/music-api.md`, `docs/movies-api.md`, `docs/shows-api.md` e `docs/games-api.md`
+- APIs de domínio: `docs/books-api.md`, `docs/music-api.md`, `docs/movies-api.md`, `docs/shows-api.md`, `docs/games-api.md` e `docs/people-api.md`
 - Operações e integrações: `docs/operations-api.md`, `docs/plex-movie-ingestion.md` e `docs/plex-show-ingestion.md`
 - Contrato HTTP publicado: `docs/openapi.yaml`
 - Descoberta de novas features: `docs/feature-discovery.md`

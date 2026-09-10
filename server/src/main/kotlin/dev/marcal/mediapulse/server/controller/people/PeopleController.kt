@@ -1,17 +1,23 @@
 package dev.marcal.mediapulse.server.controller.people
 
 import dev.marcal.mediapulse.server.api.movies.PersonDetailsResponse
+import dev.marcal.mediapulse.server.api.movies.PersonFavoriteDto
 import dev.marcal.mediapulse.server.api.movies.PersonFilmographyResponse
 import dev.marcal.mediapulse.server.api.movies.PersonShowFilmographyResponse
 import dev.marcal.mediapulse.server.api.movies.PersonSuggestionDto
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.service.person.PersonDetailsService
+import dev.marcal.mediapulse.server.service.person.PersonFavoritesService
 import dev.marcal.mediapulse.server.service.person.PersonFilmographyService
 import dev.marcal.mediapulse.server.service.person.PersonShowFilmographyService
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -21,7 +27,23 @@ class PeopleController(
     private val movieCreditsService: MovieCreditsService,
     private val personFilmographyService: PersonFilmographyService,
     private val personShowFilmographyService: PersonShowFilmographyService,
+    private val personFavoritesService: PersonFavoritesService,
 ) {
+    @GetMapping("/favorites")
+    fun favorites(): List<PersonFavoriteDto> = personFavoritesService.list()
+
+    @PostMapping("/{personId}/favorite")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun favorite(
+        @PathVariable personId: Long,
+    ) = personFavoritesService.favorite(personId)
+
+    @DeleteMapping("/{personId}/favorite")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun unfavorite(
+        @PathVariable personId: Long,
+    ) = personFavoritesService.unfavorite(personId)
+
     @GetMapping("/{slug}")
     fun details(
         @PathVariable slug: String,

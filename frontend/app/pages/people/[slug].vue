@@ -19,6 +19,9 @@
 
           <p class="eyebrow">Pessoa no catálogo audiovisual</p>
           <h1>{{ data.name }}</h1>
+          <button class="favorite-button" type="button" :disabled="favoritePending" @click="toggleFavorite">
+            {{ data.favorite ? '★ Favorita' : '☆ Favoritar' }}
+          </button>
           <p class="intro">{{ heroIntro }}</p>
 
           <div class="meta-list">
@@ -109,6 +112,23 @@ const { resolveMediaUrl } = useMediaUrl()
 const slug = computed(() => String(route.params.slug))
 
 const { data, error, status, refresh } = await usePersonPageData(slug.value)
+const config = useRuntimeConfig()
+const favoritePending = ref(false)
+
+async function toggleFavorite() {
+  if (!data.value || favoritePending.value) return
+  favoritePending.value = true
+  const next = !data.value.favorite
+  try {
+    await $fetch(`/api/people/${data.value.personId}/favorite`, {
+      baseURL: config.public.apiBase,
+      method: next ? 'POST' : 'DELETE',
+    })
+    data.value.favorite = next
+  } finally {
+    favoritePending.value = false
+  }
+}
 const heroImageUrl = computed(() =>
   resolveMediaUrl(data.value?.tmdbProfile?.profileUrl ?? data.value?.profileUrl ?? null),
 )
@@ -247,6 +267,23 @@ pre {
   display: grid;
   gap: 12px;
   align-content: end;
+}
+
+.favorite-button {
+  width: fit-content;
+  padding: 9px 15px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--base-color-brand-red);
+  color: white;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.favorite-button:disabled {
+  opacity: 0.6;
 }
 
 .catalog-links {

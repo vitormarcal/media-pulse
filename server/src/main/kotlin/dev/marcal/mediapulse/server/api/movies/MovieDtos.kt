@@ -157,6 +157,18 @@ data class PersonSuggestionDto(
     val slug: String,
     val profileUrl: String?,
     val roles: List<String>,
+    val favorite: Boolean = false,
+)
+
+data class PersonFavoriteDto(
+    val personId: Long,
+    val name: String,
+    val slug: String,
+    val profileUrl: String?,
+    val roles: List<String>,
+    val watchedMoviesCount: Long,
+    val watchedShowsCount: Long,
+    val favoritedAt: java.time.Instant,
 )
 
 data class PersonLinkRequest(
@@ -213,6 +225,7 @@ data class PersonDetailsResponse(
     val watchedShowsCount: Long = 0,
     val shows: List<ShowLibraryCardDto> = emptyList(),
     val tmdbProfile: PersonTmdbProfileDto? = null,
+    val favorite: Boolean = false,
 )
 
 data class PersonTmdbProfileDto(
@@ -547,6 +560,7 @@ data class PersonFilmographyMemberDto(
     val localSlug: String?,
     val inCatalog: Boolean,
     val roleLabel: String,
+    val watchStatus: String,
 )
 
 data class PersonShowFilmographyResponse(
@@ -570,6 +584,7 @@ data class PersonShowFilmographyMemberDto(
     val localSlug: String?,
     val inCatalog: Boolean,
     val roleLabel: String,
+    val watchStatus: String,
 )
 
 data class MovieCompanyMembersResponse(
