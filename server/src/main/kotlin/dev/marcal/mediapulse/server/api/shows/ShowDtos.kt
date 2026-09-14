@@ -216,6 +216,7 @@ data class ShowDetailsResponse(
     val watches: List<ShowWatchDto>,
     val externalIds: List<ShowExternalIdDto>,
     val people: List<ShowPersonCreditDto> = emptyList(),
+    val creditsCurated: Boolean = false,
     val terms: List<ShowTermDto> = emptyList(),
     val lists: List<ShowListSummaryDto> = emptyList(),
     val rating: MediaRatingDto? = null,
@@ -315,6 +316,40 @@ data class ShowCreditsSyncResponse(
     val showId: Long,
     val syncedCount: Int,
     val visibleCount: Int,
+    val curated: Boolean = false,
+)
+
+data class ShowTmdbCreditCandidateDto(
+    val personTmdbId: String,
+    val name: String,
+    val profileUrl: String?,
+    val creditType: ShowCreditTypeDto,
+    val department: String?,
+    val job: String?,
+    val characterName: String?,
+    val billingOrder: Int?,
+    val roleLabel: String,
+)
+
+data class ShowTmdbCreditCandidateGroupDto(
+    val id: String,
+    val title: String,
+    val items: List<ShowTmdbCreditCandidateDto>,
+)
+
+data class ShowTmdbCreditCandidatesResponse(
+    val showId: Long,
+    val candidateCount: Int,
+    val groups: List<ShowTmdbCreditCandidateGroupDto>,
+)
+
+data class ShowTmdbCreditImportRequest(
+    val personTmdbId: String,
+    val creditType: ShowCreditTypeDto,
+    val department: String? = null,
+    val job: String? = null,
+    val characterName: String? = null,
+    val billingOrder: Int? = null,
 )
 
 data class ShowCreditsBatchSyncResponse(

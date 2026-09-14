@@ -174,6 +174,7 @@ export interface ShowDetailsResponse {
   watches: ShowWatchDto[]
   externalIds: ShowExternalIdDto[]
   people: ShowPersonCreditDto[]
+  creditsCurated: boolean
   terms: ShowTermDto[]
   lists: ShowListSummaryDto[]
   rating: MediaRatingDto | null
@@ -191,6 +192,25 @@ export interface ShowCreditsSyncResponse {
   showId: number
   syncedCount: number
   visibleCount: number
+  curated: boolean
+}
+
+export interface ShowTmdbCreditCandidate {
+  personTmdbId: string
+  name: string
+  profileUrl: string | null
+  creditType: ShowCreditType
+  department: string | null
+  job: string | null
+  characterName: string | null
+  billingOrder: number | null
+  roleLabel: string
+}
+
+export interface ShowTmdbCreditCandidatesResponse {
+  showId: number
+  candidateCount: number
+  groups: Array<{ id: string; title: string; items: ShowTmdbCreditCandidate[] }>
 }
 
 export interface ExistingShowWatchCreateRequest {
@@ -432,6 +452,7 @@ export interface ShowPageData {
     }>
   }
   people: {
+    curated: boolean
     summary: string
     visibleCount: number
     groups: Array<{

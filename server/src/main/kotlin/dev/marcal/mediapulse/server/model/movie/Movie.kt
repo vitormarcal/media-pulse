@@ -41,6 +41,8 @@ data class Movie(
     val creditsSyncAttemptedAt: Instant? = null,
     @Column(name = "credits_sync_error")
     val creditsSyncError: String? = null,
+    @Column(name = "credits_curated_at")
+    val creditsCuratedAt: Instant? = null,
     @Column(name = "companies_synced_at")
     val companiesSyncedAt: Instant? = null,
     @Column(name = "companies_sync_attempted_at")

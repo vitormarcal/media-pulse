@@ -8,6 +8,7 @@ import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.person.Person
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
+import dev.marcal.mediapulse.server.repository.PersonCleanupRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieCreditAssignmentRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieCreditsCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
@@ -26,10 +27,11 @@ class MovieCreditsServiceTest {
     private val movieQueryRepository = mockk<MovieQueryRepository>()
     private val personRepository = mockk<PersonRepository>(relaxed = true)
     private val movieCreditAssignmentRepository = mockk<MovieCreditAssignmentRepository>(relaxed = true)
-    private val movieCreditsCrudRepository = mockk<MovieCreditsCrudRepository>()
+    private val movieCreditsCrudRepository = mockk<MovieCreditsCrudRepository>(relaxed = true)
     private val tmdbApiClient = mockk<TmdbApiClient>()
     private val manualMovieCatalogService = mockk<ManualMovieCatalogService>()
     private val transactionTemplate = mockk<TransactionTemplate>()
+    private val personCleanupRepository = mockk<PersonCleanupRepository>(relaxed = true)
 
     private val service =
         MovieCreditsService(
@@ -41,7 +43,38 @@ class MovieCreditsServiceTest {
             tmdbApiClient = tmdbApiClient,
             manualMovieCatalogService = manualMovieCatalogService,
             transactionTemplate = transactionTemplate,
+            personCleanupRepository = personCleanupRepository,
         )
+
+    @Test
+    fun `removing a category should curate movie and clean orphan person`() {
+        every { movieRepository.findById(7) } returns Optional.of(Movie(id = 7, originalTitle = "Movie 7", fingerprint = "fp7"))
+        every { movieCreditAssignmentRepository.deleteCategory(7, 70, "CAST") } returns 2
+
+        service.removeCredit(7, 70, "cast")
+
+        verify { movieCreditsCrudRepository.markCurated(7) }
+        verify { personCleanupRepository.deleteIfOrphanAndNotFavorite(70) }
+    }
+
+    @Test
+    fun `automatic sync should preserve curated movie credits`() {
+        every { movieRepository.findById(6) } returns
+            Optional.of(
+                Movie(
+                    id = 6,
+                    originalTitle = "Movie 6",
+                    fingerprint = "fp6",
+                    tmdbId = "606",
+                    creditsCuratedAt = java.time.Instant.parse("2026-09-14T12:00:00Z"),
+                ),
+            )
+
+        service.syncFromTmdbIfLinked(6)
+
+        verify(exactly = 0) { tmdbApiClient.fetchMovieCredits(any()) }
+        verify(exactly = 0) { movieCreditAssignmentRepository.replaceForMovie(any(), any()) }
+    }
 
     @Test
     fun `batch sync should continue after failures`() {
@@ -83,7 +116,7 @@ class MovieCreditsServiceTest {
     }
 
     @Test
-    fun `sync should keep person outside cast cut when person already exists locally`() {
+    fun `sync should keep the first twelve cast people`() {
         val movie = Movie(id = 9, originalTitle = "Movie 9", fingerprint = "fp9")
         val capturedCredits = slot<List<MovieCreditAssignmentRepository.UpsertMovieCreditRequest>>()
 
@@ -129,7 +162,7 @@ class MovieCreditsServiceTest {
     }
 
     @Test
-    fun `fetch tmdb candidates should reconcile known local extras and return unresolved ones`() {
+    fun `fetch tmdb candidates should not persist known local people`() {
         val movie = Movie(id = 12, originalTitle = "Movie 12", fingerprint = "fp12")
 
         every { movieRepository.findById(12) } returns Optional.of(movie)
@@ -202,26 +235,18 @@ class MovieCreditsServiceTest {
 
         val response = service.fetchTmdbCandidates(12)
 
-        assertEquals(1, response.reconciledCount)
-        assertEquals(1, response.candidateCount)
+        assertEquals(0, response.reconciledCount)
+        assertEquals(2, response.candidateCount)
         assertEquals(listOf("cast"), response.groups.map { it.id })
         assertEquals(
-            "Fresh Extra",
+            "Known Extra",
             response.groups
                 .first()
                 .items
                 .first()
                 .name,
         )
-        verify(exactly = 1) {
-            movieCreditAssignmentRepository.upsert(
-                withArg {
-                    assertEquals(12, it.movieId)
-                    assertEquals(2011L, it.personId)
-                    assertEquals("Professor", it.characterName)
-                },
-            )
-        }
+        verify(exactly = 0) { movieCreditAssignmentRepository.upsert(any()) }
     }
 
     @Test

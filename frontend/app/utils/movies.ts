@@ -754,6 +754,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
       })),
     },
     people: {
+      curated: movie.creditsCurated,
       summary: uniquePeople.length
         ? `${uniquePeople.length} pessoas locais entre direção, roteiro e elenco principal.`
         : 'Ainda não há créditos locais puxados do TMDb para este filme.',

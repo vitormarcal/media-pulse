@@ -86,6 +86,12 @@ Séries usam os episódios locais conhecidos:
 - a leitura continuará usando snapshots locais e nunca disparará atualização externa
 - frequência, retentativa e observabilidade devem ser definidas antes da implementação
 
+### Retenção dos snapshots de filmografia
+
+- investigar uma política de retenção/compactação para `person_filmography_members` antes de ampliar atualizações periódicas
+- medição real em setembro de 2026: cerca de 305 mil vínculos e 240 MB, muito acima das tabelas de créditos locais
+- preservar favoritos e a navegação útil do owner, evitando guardar filmografias integrais de pessoas sem relevância local
+
 ## Non-goals
 
 - diretório irrestrito de todas as pessoas persistidas

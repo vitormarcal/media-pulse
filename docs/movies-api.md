@@ -309,8 +309,8 @@ Cada filme agora pode carregar um recorte controlado de pessoas vindas do TMDb.
 
 Escopo do sync:
 
-- `CAST`: só top billed, limitado aos primeiros nomes por `order`
-- `CREW`: somente direção e roteiro: `Director`, `Writer`, `Screenplay` e `Story`
+- `CAST`: até 12 pessoas, priorizadas por `order`
+- `CREW`: até 6 pessoas em direção e 6 em roteiro (`Director`, `Writer`, `Screenplay` e `Story`)
 
 Persistência:
 
@@ -321,20 +321,21 @@ Persistência:
 
 - exige vínculo `TMDB` no filme
 - substitui o recorte local de créditos pelo snapshot atual do TMDb
+- funciona como restauração explícita: limpa a curadoria manual anterior
 - marca `movies.credits_synced_at` ao concluir com sucesso
 
 `POST /api/admin/movies/credits/sync-tmdb` sincroniza créditos em lote.
 
 - processa apenas filmes com vínculo `TMDB`
-- considera apenas pendentes elegíveis para tentativa (`movies.credits_synced_at IS NULL`)
+- considera apenas pendentes sem curadoria manual (`movies.credits_synced_at IS NULL` e `credits_curated_at IS NULL`)
 - `limit` é normalizado entre `1` e `1000`
 - falhas individuais não interrompem o lote
 
-`POST /api/movies/{movieId}/credits/tmdb-candidates` expande o elenco do TMDb além do recorte principal para a página do filme.
+`POST /api/movies/{movieId}/credits/tmdb-candidates` consulta candidatos de elenco, direção e roteiro.
 
-- olha além do recorte principal já usado no sync automático
-- tenta reconciliar automaticamente pessoas que já existem localmente
-- retorna apenas os créditos que ainda exigem decisão explícita da UI
+- é somente leitura e não cria pessoas nem vínculos, mesmo quando a pessoa já existe localmente
+- a UI mostra 12 por grupo e permite carregar mais
+- retorna apenas categorias ainda não vinculadas para a pessoa
 
 `POST /api/movies/{movieId}/credits/from-tmdb` incorpora um crédito específico mostrado nessa expansão.
 
@@ -342,6 +343,9 @@ Persistência:
 - cria a pessoa se ela ainda não estiver persistida
 - salva o vínculo filme-pessoa sem precisar rerodar o sync completo
 - rejeita créditos de equipe fora de direção e roteiro
+- marca o filme como curado manualmente, impedindo substituição pelo worker
+
+`DELETE /api/movies/{movieId}/people/{personId}?category=CAST|DIRECTING|WRITING` remove fisicamente os vínculos da categoria. Se a pessoa ficar sem créditos audiovisuais e não for favorita, sua identidade e dados dependentes também são removidos. A remoção congela o conjunto do filme até a restauração explícita pelo TMDb.
 
 Perfil, busca, favoritos e filmografias audiovisuais estão documentados em [`people-api.md`](people-api.md).
 

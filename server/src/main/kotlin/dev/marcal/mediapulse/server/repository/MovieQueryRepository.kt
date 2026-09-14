@@ -271,7 +271,8 @@ class MovieQueryRepository(
                       m.tmdb_resolution_state,
                       m.terms_sync_attempted_at,
                       m.credits_sync_attempted_at,
-                      m.companies_sync_attempted_at
+                      m.companies_sync_attempted_at,
+                      m.credits_curated_at
                     FROM movies m
                     LEFT JOIN movie_collections mc ON mc.id = m.collection_id
                     WHERE m.id = :movieId
@@ -422,6 +423,7 @@ class MovieQueryRepository(
             lists = lists,
             companies = companies,
             people = people,
+            creditsCurated = base.getOrNull(22) != null,
             terms = terms,
             collection = collection,
             rating = rating,

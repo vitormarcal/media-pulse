@@ -389,6 +389,7 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
     },
     heroMeta,
     people: {
+      curated: show.creditsCurated,
       summary: uniquePeople.length
         ? `${uniquePeople.length} pessoas locais entre criação, direção e elenco principal.`
         : 'Ainda não há pessoas locais ligadas a esta série.',

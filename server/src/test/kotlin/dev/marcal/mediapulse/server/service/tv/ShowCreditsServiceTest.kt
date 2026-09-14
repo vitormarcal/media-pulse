@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowCreditsSyncResponse
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.model.person.Person
 import dev.marcal.mediapulse.server.model.tv.TvShow
+import dev.marcal.mediapulse.server.repository.PersonCleanupRepository
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
 import dev.marcal.mediapulse.server.repository.crud.PersonRepository
 import dev.marcal.mediapulse.server.repository.crud.ShowCreditAssignmentRepository
@@ -27,6 +28,7 @@ class ShowCreditsServiceTest {
     private val tmdb = mockk<TmdbApiClient>()
     private val catalog = mockk<ManualShowCatalogService>()
     private val transactions = mockk<TransactionTemplate>()
+    private val personCleanupRepository = mockk<PersonCleanupRepository>(relaxed = true)
     private val service =
         ShowCreditsService(
             showRepository,
@@ -37,7 +39,38 @@ class ShowCreditsServiceTest {
             tmdb,
             catalog,
             transactions,
+            personCleanupRepository,
         )
+
+    @Test
+    fun `removing a category should curate show and clean orphan person`() {
+        every { showRepository.findById(8) } returns Optional.of(TvShow(id = 8, originalTitle = "Show 8", fingerprint = "show-8"))
+        every { assignments.deleteCategory(8, 80, "WRITING") } returns 1
+
+        service.removeCredit(8, 80, "writing")
+
+        verify { creditsRepository.markCurated(8) }
+        verify { personCleanupRepository.deleteIfOrphanAndNotFavorite(80) }
+    }
+
+    @Test
+    fun `automatic sync should preserve curated show credits`() {
+        every { showRepository.findById(6) } returns
+            Optional.of(
+                TvShow(
+                    id = 6,
+                    originalTitle = "Show 6",
+                    fingerprint = "show-6",
+                    tmdbId = "606",
+                    creditsCuratedAt = java.time.Instant.parse("2026-09-14T12:00:00Z"),
+                ),
+            )
+
+        service.syncFromTmdbIfLinked(6)
+
+        verify(exactly = 0) { tmdb.fetchShowCredits(any()) }
+        verify(exactly = 0) { assignments.replaceForShow(any(), any()) }
+    }
 
     @Test
     fun `automatic batch should record failure and continue`() {

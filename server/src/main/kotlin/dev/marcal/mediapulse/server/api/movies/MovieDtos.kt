@@ -270,6 +270,7 @@ data class MovieCreditsSyncResponse(
     val movieId: Long,
     val syncedCount: Int,
     val visibleCount: Int,
+    val curated: Boolean = false,
 )
 
 data class MovieCreditsBatchSyncResponse(
@@ -362,6 +363,7 @@ data class MovieDetailsResponse(
     val lists: List<MovieListSummaryDto> = emptyList(),
     val companies: List<MovieCompanyDto> = emptyList(),
     val people: List<PersonCreditDto> = emptyList(),
+    val creditsCurated: Boolean = false,
     val terms: List<MovieTermDto> = emptyList(),
     val collection: MovieCollectionDto? = null,
     val rating: MediaRatingDto? = null,

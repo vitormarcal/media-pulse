@@ -6,7 +6,10 @@
         <h2>Direção, roteiro e elenco</h2>
       </div>
 
-      <span class="summary-pill">{{ people.visibleCount }} pessoas</span>
+      <div class="head-meta">
+        <span v-if="people.curated" class="curation-badge">Curadoria manual</span>
+        <span class="summary-pill">{{ people.visibleCount }} pessoas</span>
+      </div>
     </div>
 
     <div class="people-groups">
@@ -14,17 +17,27 @@
         <p class="group-label">{{ group.title }}</p>
 
         <div class="chip-list">
-          <NuxtLink v-for="item in group.items" :key="item.id" :to="item.href" class="person-pill">
+          <div v-for="item in group.items" :key="item.id" class="person-pill">
             <div class="person-avatar">
               <img v-if="resolveMediaUrl(item.profileUrl)" :src="resolveMediaUrl(item.profileUrl)" :alt="item.name" />
               <div v-else class="avatar-fallback">{{ item.name.slice(0, 1) }}</div>
             </div>
 
             <div class="person-copy">
-              <span class="person-name">{{ item.name }}</span>
+              <NuxtLink :to="item.href" class="person-name">{{ item.name }}</NuxtLink>
               <small class="person-role">{{ item.roleLabel }}</small>
             </div>
-          </NuxtLink>
+            <button
+              v-if="editing"
+              type="button"
+              class="remove-button"
+              :disabled="removingKey === `${group.id}:${item.personId}`"
+              :aria-label="`Remover ${item.name} de ${group.title}`"
+              @click="removeCredit(group.id, item.personId, item.name)"
+            >
+              ×
+            </button>
+          </div>
         </div>
       </section>
 
@@ -34,6 +47,57 @@
         <button type="button" class="secondary-button" :disabled="syncing" @click="syncFromTmdb">
           {{ syncing ? 'Sincronizando...' : 'Sincronizar base TMDb' }}
         </button>
+        <button type="button" class="secondary-button" :disabled="loadingCandidates" @click="toggleCandidates">
+          {{ candidatesVisible ? 'Ocultar opções' : loadingCandidates ? 'Buscando...' : 'Trazer mais do TMDb' }}
+        </button>
+      </div>
+
+      <div v-if="candidatesVisible" class="candidate-panel">
+        <p v-if="loadingCandidates" class="empty-copy">Buscando pessoas no TMDb...</p>
+        <template v-else-if="candidates">
+          <section v-for="group in candidates.groups" :key="group.id" class="group-row">
+            <p class="group-label">{{ group.title }}</p>
+            <div class="candidate-list">
+              <div
+                v-for="item in group.items.slice(0, visibleCounts[group.id] ?? 12)"
+                :key="candidateKey(item)"
+                class="candidate-card"
+              >
+                <div class="candidate-identity">
+                  <div class="person-avatar">
+                    <img
+                      v-if="resolveMediaUrl(item.profileUrl)"
+                      :src="resolveMediaUrl(item.profileUrl)"
+                      :alt="item.name"
+                    />
+                    <div v-else class="avatar-fallback">{{ item.name.slice(0, 1) }}</div>
+                  </div>
+                  <div class="person-copy">
+                    <span class="person-name">{{ item.name }}</span
+                    ><small class="person-role">{{ item.roleLabel }}</small>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="mini-button"
+                  :disabled="importingKey === candidateKey(item)"
+                  @click="importCandidate(item)"
+                >
+                  {{ importingKey === candidateKey(item) ? 'Salvando...' : 'Adicionar' }}
+                </button>
+              </div>
+            </div>
+            <button
+              v-if="group.items.length > (visibleCounts[group.id] ?? 12)"
+              type="button"
+              class="secondary-button load-more"
+              @click="showMore(group.id)"
+            >
+              Carregar mais
+            </button>
+          </section>
+          <p v-if="!candidates.candidateCount" class="empty-copy">Não restaram pessoas do TMDb para adicionar.</p>
+        </template>
       </div>
 
       <p v-if="feedback" class="feedback" role="status">{{ feedback }}</p>
@@ -42,7 +106,12 @@
 </template>
 
 <script setup lang="ts">
-import type { ShowCreditsSyncResponse, ShowPageData } from '~/types/shows'
+import type {
+  ShowCreditsSyncResponse,
+  ShowPageData,
+  ShowTmdbCreditCandidate,
+  ShowTmdbCreditCandidatesResponse,
+} from '~/types/shows'
 
 const props = defineProps<{
   showId: number
@@ -58,8 +127,15 @@ const config = useRuntimeConfig()
 const { resolveMediaUrl } = useMediaUrl()
 const syncing = ref(false)
 const feedback = ref<string | null>(null)
+const candidatesVisible = ref(false)
+const loadingCandidates = ref(false)
+const candidates = ref<ShowTmdbCreditCandidatesResponse | null>(null)
+const importingKey = ref<string | null>(null)
+const removingKey = ref<string | null>(null)
+const visibleCounts = reactive<Record<string, number>>({})
 
 async function syncFromTmdb() {
+  if (props.people.curated && !window.confirm('Restaurar o recorte do TMDb e substituir sua curadoria manual?')) return
   syncing.value = true
   feedback.value = null
 
@@ -75,6 +151,76 @@ async function syncFromTmdb() {
   } finally {
     syncing.value = false
   }
+}
+
+function candidateKey(item: ShowTmdbCreditCandidate) {
+  return [item.personTmdbId, item.creditType, item.job ?? '', item.characterName ?? ''].join('|')
+}
+
+async function toggleCandidates() {
+  if (candidatesVisible.value) {
+    candidatesVisible.value = false
+    return
+  }
+  candidatesVisible.value = true
+  loadingCandidates.value = true
+  try {
+    candidates.value = await $fetch<ShowTmdbCreditCandidatesResponse>(
+      `/api/shows/${props.showId}/credits/tmdb-candidates`,
+      {
+        baseURL: config.public.apiBase,
+        method: 'POST',
+      },
+    )
+  } catch {
+    feedback.value = 'Não foi possível buscar pessoas no TMDb.'
+  } finally {
+    loadingCandidates.value = false
+  }
+}
+
+async function importCandidate(item: ShowTmdbCreditCandidate) {
+  importingKey.value = candidateKey(item)
+  try {
+    await $fetch(`/api/shows/${props.showId}/credits/from-tmdb`, {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+      body: item,
+    })
+    feedback.value = `${item.name} foi adicionado aos créditos.`
+    emit('changed')
+    candidates.value = null
+    candidatesVisible.value = false
+  } catch {
+    feedback.value = `Não foi possível adicionar ${item.name}.`
+  } finally {
+    importingKey.value = null
+  }
+}
+
+function categoryForGroup(groupId: string) {
+  return groupId === 'directors' ? 'DIRECTING' : groupId === 'writers' ? 'WRITING' : 'CAST'
+}
+
+async function removeCredit(groupId: string, personId: number, name: string) {
+  removingKey.value = `${groupId}:${personId}`
+  try {
+    await $fetch(`/api/shows/${props.showId}/people/${personId}`, {
+      baseURL: config.public.apiBase,
+      method: 'DELETE',
+      query: { category: categoryForGroup(groupId) },
+    })
+    feedback.value = `${name} foi removido deste grupo.`
+    emit('changed')
+  } catch {
+    feedback.value = `Não foi possível remover ${name}.`
+  } finally {
+    removingKey.value = null
+  }
+}
+
+function showMore(groupId: string) {
+  visibleCounts[groupId] = (visibleCounts[groupId] ?? 12) + 12
 }
 </script>
 
@@ -129,6 +275,22 @@ h2,
   background: color-mix(in srgb, var(--base-color-surface-wash) 76%, white);
   color: var(--base-color-text-primary);
   font-size: 0.78rem;
+}
+
+.head-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.curation-badge {
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--base-color-brand-red) 9%, white);
+  color: var(--base-color-text-primary);
+  font-size: 0.74rem;
+  font-weight: 700;
 }
 
 .chip-list {
@@ -195,7 +357,68 @@ h2,
 
 .editor-actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   padding-top: 4px;
+}
+
+.candidate-panel,
+.candidate-list {
+  display: grid;
+  gap: 10px;
+}
+
+.candidate-card,
+.candidate-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.candidate-identity {
+  min-width: 0;
+}
+
+.candidate-card {
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--base-color-surface-wash) 72%, white);
+}
+
+.person-name {
+  color: inherit;
+  text-decoration: none;
+}
+
+.mini-button,
+.remove-button {
+  border: 0;
+  cursor: pointer;
+}
+
+.mini-button {
+  padding: 9px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--base-color-brand-red) 10%, white);
+}
+
+.remove-button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  place-items: center;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-secondary);
+}
+
+.remove-button:hover {
+  color: var(--base-color-brand-red);
+}
+
+.load-more {
+  justify-self: start;
 }
 
 .secondary-button {
@@ -233,6 +456,21 @@ h2,
 @media (max-width: 900px) {
   .people-head {
     display: grid;
+  }
+
+  .head-meta {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .candidate-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mini-button {
+    align-self: flex-start;
   }
 }
 </style>

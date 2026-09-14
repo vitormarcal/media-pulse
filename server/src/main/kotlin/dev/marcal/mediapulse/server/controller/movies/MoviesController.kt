@@ -136,6 +136,13 @@ class MoviesController(
         @RequestBody request: PersonLinkRequest,
     ): PersonCreditDto = movieCreditsService.linkExistingPerson(movieId, request)
 
+    @DeleteMapping("/{movieId}/people/{personId}")
+    fun removePersonCredit(
+        @PathVariable movieId: Long,
+        @PathVariable personId: Long,
+        @RequestParam category: String,
+    ) = movieCreditsService.removeCredit(movieId, personId, category)
+
     @PostMapping("/lists")
     fun createList(
         @RequestBody request: MovieListCreateRequest,

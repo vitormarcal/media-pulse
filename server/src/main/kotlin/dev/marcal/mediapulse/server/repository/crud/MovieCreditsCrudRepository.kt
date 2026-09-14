@@ -19,6 +19,7 @@ class MovieCreditsCrudRepository(
                 SELECT m.id, m.tmdb_id
                 FROM movies m
                 WHERE m.credits_synced_at IS NULL
+                  AND m.credits_curated_at IS NULL
                   AND m.tmdb_id IS NOT NULL
                   AND (m.credits_sync_attempted_at IS NULL OR m.credits_sync_attempted_at <= NOW() - INTERVAL '1 day')
                 ORDER BY m.credits_sync_attempted_at NULLS FIRST, m.id ASC
@@ -42,6 +43,7 @@ class MovieCreditsCrudRepository(
                     SELECT COUNT(*)
                     FROM movies m
                     WHERE m.credits_synced_at IS NULL
+                      AND m.credits_curated_at IS NULL
                       AND m.tmdb_id IS NOT NULL
                       AND (m.credits_sync_attempted_at IS NULL OR m.credits_sync_attempted_at <= NOW() - INTERVAL '1 day')
                     """.trimIndent(),
@@ -59,6 +61,20 @@ class MovieCreditsCrudRepository(
                     updated_at = NOW()
                 WHERE id = :movieId
                 """.trimIndent(),
+            ).setParameter("movieId", movieId)
+            .executeUpdate()
+
+    fun markCurated(movieId: Long): Int =
+        entityManager
+            .createNativeQuery(
+                "UPDATE movies SET credits_curated_at = NOW(), updated_at = NOW() WHERE id = :movieId",
+            ).setParameter("movieId", movieId)
+            .executeUpdate()
+
+    fun clearCurated(movieId: Long): Int =
+        entityManager
+            .createNativeQuery(
+                "UPDATE movies SET credits_curated_at = NULL, updated_at = NOW() WHERE id = :movieId",
             ).setParameter("movieId", movieId)
             .executeUpdate()
 }

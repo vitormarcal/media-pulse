@@ -127,16 +127,22 @@ A UI está disponível em `/shows/lists`, `/shows/lists/{slug}` e no bloco `Orga
 `POST /api/admin/shows/{showId}/credits/sync-tmdb` sincroniza as pessoas principais da série a partir do TMDb.
 
 - exige vínculo `TMDB` salvo na série
-- traz o recorte principal de elenco, direção e roteiro
+- usa `/tv/{id}/aggregate_credits`, cobrindo todas as temporadas
+- traz até 12 pessoas de elenco, 6 de direção e 6 de roteiro, priorizando quantidade de episódios
 - persiste os vínculos em `show_credits`, reutilizando `people` por `tmdb_id`
 - a página da série passa a navegar para `/people/{slug}`
 - a página da pessoa agrega esses créditos de série ao lado dos créditos de filme
 - funciona como reparo explícito pela ação `Gerenciar pessoas` da página da série
+- restaura o recorte do TMDb e limpa a curadoria manual anterior
+
+Na mesma ação, `POST /api/shows/{showId}/credits/tmdb-candidates` consulta outras pessoas sem persistir nada. `POST /api/shows/{showId}/credits/from-tmdb` grava somente a escolha explícita. A UI exibe 12 opções por grupo e permite carregar mais.
+
+`DELETE /api/shows/{showId}/people/{personId}?category=CAST|DIRECTING|WRITING` remove fisicamente os vínculos da categoria. Adições e remoções marcam a série como curada; o worker não substitui esses créditos. Uma pessoa sem qualquer crédito audiovisual é apagada com seus dados dependentes, exceto quando favorita.
 
 Um worker executa esse sync automaticamente para séries pendentes. `POST /api/admin/shows/credits/sync-tmdb?limit=100` mantém o mesmo processamento disponível para reparo em lote.
 
 - considera apenas séries com vínculo `TMDB`
-- considera apenas pendentes (`tv_shows.credits_synced_at IS NULL`)
+- considera apenas pendentes sem curadoria manual (`tv_shows.credits_synced_at IS NULL` e `credits_curated_at IS NULL`)
 - falhas registram `credits_sync_attempted_at` e `credits_sync_error`, preservam os créditos locais e são repetidas após um dia
 - processa no máximo `limit`, truncado em `1000`
 - executa cada série em transação isolada, contabilizando `synced` e `failed`

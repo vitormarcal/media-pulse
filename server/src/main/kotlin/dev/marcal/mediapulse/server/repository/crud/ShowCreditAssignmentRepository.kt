@@ -72,4 +72,25 @@ class ShowCreditAssignmentRepository(
             .setParameter("billingOrder", credit.billingOrder)
             .executeUpdate()
     }
+
+    @Transactional
+    fun deleteCategory(
+        showId: Long,
+        personId: Long,
+        category: String,
+    ): Int {
+        val predicate =
+            when (category) {
+                "CAST" -> "credit_type = 'CAST'"
+                "DIRECTING" -> "credit_type = 'CREW' AND job = 'Director'"
+                "WRITING" -> "credit_type = 'CREW' AND job IN ('Writer', 'Screenplay', 'Story Editor')"
+                else -> return 0
+            }
+        return entityManager
+            .createNativeQuery(
+                "DELETE FROM show_credits WHERE show_id = :showId AND person_id = :personId AND $predicate",
+            ).setParameter("showId", showId)
+            .setParameter("personId", personId)
+            .executeUpdate()
+    }
 }

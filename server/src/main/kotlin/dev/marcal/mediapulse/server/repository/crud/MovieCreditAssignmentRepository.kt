@@ -65,6 +65,21 @@ class MovieCreditAssignmentRepository(
         )
     }
 
+    fun deleteCategory(
+        movieId: Long,
+        personId: Long,
+        category: String,
+    ): Int {
+        val predicate =
+            when (category) {
+                "CAST" -> "credit_type = 'CAST'"
+                "DIRECTING" -> "credit_type = 'CREW' AND job = 'Director'"
+                "WRITING" -> "credit_type = 'CREW' AND job IN ('Writer', 'Screenplay', 'Story')"
+                else -> return 0
+            }
+        return jdbc.update("DELETE FROM movie_credits WHERE movie_id = ? AND person_id = ? AND $predicate", movieId, personId)
+    }
+
     private fun insert(credit: UpsertMovieCreditRequest) {
         jdbc.update(
             """

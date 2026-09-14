@@ -7,6 +7,7 @@
       </div>
 
       <div class="head-meta">
+        <span v-if="people.curated" class="curation-badge">Curadoria manual</span>
         <span class="summary-pill">{{ people.visibleCount }} pessoas</span>
       </div>
     </div>
@@ -16,17 +17,27 @@
         <p class="group-label">{{ group.title }}</p>
 
         <div class="chip-list">
-          <NuxtLink v-for="item in group.items" :key="item.id" :to="item.href" class="person-pill">
+          <div v-for="item in group.items" :key="item.id" class="person-pill">
             <div class="person-avatar">
               <img v-if="resolveMediaUrl(item.profileUrl)" :src="resolveMediaUrl(item.profileUrl)" :alt="item.name" />
               <div v-else class="avatar-fallback">{{ item.name.slice(0, 1) }}</div>
             </div>
 
             <div class="person-copy">
-              <span class="person-name">{{ item.name }}</span>
+              <NuxtLink :to="item.href" class="person-name">{{ item.name }}</NuxtLink>
               <small class="person-role">{{ item.roleLabel }}</small>
             </div>
-          </NuxtLink>
+            <button
+              v-if="editingEnabled"
+              type="button"
+              class="remove-button"
+              :disabled="removingKey === `${group.id}:${item.personId}`"
+              :aria-label="`Remover ${item.name} de ${group.title}`"
+              @click="removeCredit(group.id, item.personId, item.name)"
+            >
+              ×
+            </button>
+          </div>
         </div>
       </section>
 
@@ -61,21 +72,16 @@
           <p v-if="loadingTmdbCandidates" class="tmdb-state">Buscando créditos extras no TMDb...</p>
 
           <template v-else-if="tmdbCandidates">
-            <p v-if="tmdbCandidates.reconciledCount" class="tmdb-state">
-              {{ tmdbCandidates.reconciledCount }} pessoa<span v-if="tmdbCandidates.reconciledCount > 1">s</span> já
-              existia<span v-if="tmdbCandidates.reconciledCount > 1">m</span> na base e foi vinculada<span
-                v-if="tmdbCandidates.reconciledCount > 1"
-                >s</span
-              >
-              automaticamente.
-            </p>
-
             <div v-if="tmdbCandidates.candidateCount" class="tmdb-groups">
               <section v-for="group in tmdbCandidates.groups" :key="group.id" class="tmdb-group">
                 <p class="group-label">{{ group.title }}</p>
 
                 <div class="candidate-list">
-                  <div v-for="item in group.items" :key="candidateKey(item)" class="candidate-card">
+                  <div
+                    v-for="item in group.items.slice(0, visibleCandidateCounts[group.id] ?? 12)"
+                    :key="candidateKey(item)"
+                    class="candidate-card"
+                  >
                     <div class="candidate-identity">
                       <div class="person-avatar candidate-avatar">
                         <img
@@ -102,6 +108,14 @@
                     </button>
                   </div>
                 </div>
+                <button
+                  v-if="group.items.length > (visibleCandidateCounts[group.id] ?? 12)"
+                  type="button"
+                  class="ghost-button load-more"
+                  @click="showMore(group.id)"
+                >
+                  Carregar mais
+                </button>
               </section>
             </div>
 
@@ -205,6 +219,8 @@ const tmdbCandidatesVisible = ref(false)
 const tmdbCandidates = ref<MovieTmdbCreditCandidatesResponse | null>(null)
 const linkingPersonId = ref<number | null>(null)
 const importingCandidateKey = ref<string | null>(null)
+const removingKey = ref<string | null>(null)
+const visibleCandidateCounts = reactive<Record<string, number>>({})
 const feedback = ref<string | null>(null)
 const searchQuery = ref('')
 const linkGroup = ref<'DIRECTORS' | 'WRITERS' | 'CAST'>('DIRECTORS')
@@ -223,6 +239,7 @@ const assignedPeople = computed(() => {
 })
 
 async function syncFromTmdb() {
+  if (props.people.curated && !window.confirm('Restaurar o recorte do TMDb e substituir sua curadoria manual?')) return
   syncing.value = true
   feedback.value = null
 
@@ -251,14 +268,39 @@ async function fetchTmdbCandidates() {
         method: 'POST',
       },
     )
-    if (tmdbCandidates.value.reconciledCount) {
-      emit('changed')
-    }
   } catch {
     feedback.value = 'Não foi possível buscar pessoas extras do TMDb.'
     tmdbCandidates.value = null
   } finally {
     loadingTmdbCandidates.value = false
+  }
+}
+
+function showMore(groupId: string) {
+  visibleCandidateCounts[groupId] = (visibleCandidateCounts[groupId] ?? 12) + 12
+}
+
+function categoryForGroup(groupId: string) {
+  if (groupId === 'directors') return 'DIRECTING'
+  if (groupId === 'writers') return 'WRITING'
+  return 'CAST'
+}
+
+async function removeCredit(groupId: string, personId: number, name: string) {
+  const key = `${groupId}:${personId}`
+  removingKey.value = key
+  try {
+    await $fetch(`/api/movies/${props.movieId}/people/${personId}`, {
+      baseURL: config.public.apiBase,
+      method: 'DELETE',
+      query: { category: categoryForGroup(groupId) },
+    })
+    feedback.value = `${name} foi removido deste grupo.`
+    emit('changed')
+  } catch {
+    feedback.value = `Não foi possível remover ${name}.`
+  } finally {
+    removingKey.value = null
   }
 }
 
@@ -489,6 +531,15 @@ h2 {
   font-size: 0.78rem;
 }
 
+.curation-badge {
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--base-color-brand-red) 9%, white);
+  color: var(--base-color-text-primary);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
 .secondary-button,
 .ghost-button,
 .mini-button {
@@ -537,6 +588,32 @@ h2 {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.84);
   color: #211922;
+}
+
+.person-name {
+  color: inherit;
+  text-decoration: none;
+}
+
+.remove-button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  margin-left: 2px;
+  border: 0;
+  border-radius: 50%;
+  place-items: center;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-secondary);
+  cursor: pointer;
+}
+
+.remove-button:hover {
+  color: var(--base-color-brand-red);
+}
+
+.load-more {
+  justify-self: start;
 }
 
 .candidate-card {

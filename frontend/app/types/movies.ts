@@ -308,6 +308,7 @@ export interface MovieDetailsResponse {
   lists: MovieListSummaryDto[]
   companies: MovieCompanyDto[]
   people: PersonCreditDto[]
+  creditsCurated: boolean
   terms: MovieTermDto[]
   collection: MovieCollectionDto | null
   rating: MediaRatingDto | null
@@ -603,6 +604,7 @@ export interface MoviePageData {
     }>
   }
   people: {
+    curated: boolean
     summary: string
     visibleCount: number
     groups: Array<{

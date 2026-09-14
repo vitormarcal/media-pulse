@@ -288,27 +288,41 @@ data class TmdbShowKeywordsResponse(
     val results: List<TmdbNamedItemResponse> = emptyList(),
 )
 
-data class TmdbShowCreditsResponse(
-    val cast: List<TmdbShowCastCreditResponse> = emptyList(),
-    val crew: List<TmdbShowCrewCreditResponse> = emptyList(),
+data class TmdbShowAggregateCreditsResponse(
+    val cast: List<TmdbShowAggregateCastCreditResponse> = emptyList(),
+    val crew: List<TmdbShowAggregateCrewCreditResponse> = emptyList(),
 )
 
-data class TmdbShowCastCreditResponse(
+data class TmdbShowAggregateCastCreditResponse(
     val id: Long? = null,
     val name: String? = null,
-    val character: String? = null,
     val order: Int? = null,
     @JsonProperty("profile_path")
     val profilePath: String? = null,
+    @JsonProperty("total_episode_count")
+    val totalEpisodeCount: Int? = null,
+    val roles: List<TmdbShowAggregateRoleResponse> = emptyList(),
 )
 
-data class TmdbShowCrewCreditResponse(
+data class TmdbShowAggregateRoleResponse(
+    val character: String? = null,
+    @JsonProperty("episode_count")
+    val episodeCount: Int? = null,
+)
+
+data class TmdbShowAggregateCrewCreditResponse(
     val id: Long? = null,
     val name: String? = null,
     val department: String? = null,
-    val job: String? = null,
     @JsonProperty("profile_path")
     val profilePath: String? = null,
+    val jobs: List<TmdbShowAggregateJobResponse> = emptyList(),
+)
+
+data class TmdbShowAggregateJobResponse(
+    val job: String? = null,
+    @JsonProperty("episode_count")
+    val episodeCount: Int? = null,
 )
 
 data class TmdbShowSeasonEpisodeResponse(
@@ -441,6 +455,7 @@ class TmdbApiClient(
         val character: String?,
         val order: Int?,
         val profilePath: String?,
+        val episodeCount: Int = 0,
     )
 
     data class TmdbShowCrewCredit(
@@ -449,6 +464,7 @@ class TmdbApiClient(
         val department: String?,
         val job: String?,
         val profilePath: String?,
+        val episodeCount: Int = 0,
     )
 
     data class TmdbMovieSearchItem(
@@ -1217,13 +1233,13 @@ class TmdbApiClient(
                     tmdbWebClient
                         .get()
                         .uri { uriBuilder ->
-                            val builder = uriBuilder.path("/tv/{id}/credits")
+                            val builder = uriBuilder.path("/tv/{id}/aggregate_credits")
                             if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
                                 builder.queryParam("api_key", tmdbProperties.apiKey)
                             }
                             builder.build(normalizedTmdbShowId)
                         }.retrieve()
-                        .bodyToMono<TmdbShowCreditsResponse>()
+                        .bodyToMono<TmdbShowAggregateCreditsResponse>()
                         .block()
                         ?: return null
 
@@ -1235,23 +1251,34 @@ class TmdbApiClient(
                             TmdbShowCastCredit(
                                 tmdbId = personId,
                                 name = name,
-                                character = item.character?.trim()?.ifBlank { null },
+                                character =
+                                    item.roles
+                                        .maxByOrNull { it.episodeCount ?: 0 }
+                                        ?.character
+                                        ?.trim()
+                                        ?.ifBlank { null },
                                 order = item.order,
                                 profilePath = item.profilePath?.trim()?.ifBlank { null },
+                                episodeCount = item.totalEpisodeCount ?: item.roles.sumOf { it.episodeCount ?: 0 },
                             )
                         },
                     crew =
-                        response.crew.mapNotNull { item ->
-                            val personId = item.id?.toString() ?: return@mapNotNull null
-                            val name = item.name?.trim()?.ifBlank { null } ?: return@mapNotNull null
-                            TmdbShowCrewCredit(
-                                tmdbId = personId,
-                                name = name,
-                                department = item.department?.trim()?.ifBlank { null },
-                                job = item.job?.trim()?.ifBlank { null },
-                                profilePath = item.profilePath?.trim()?.ifBlank { null },
-                            )
-                        },
+                        response.crew
+                            .mapNotNull { item ->
+                                val personId = item.id?.toString() ?: return@mapNotNull null
+                                val name = item.name?.trim()?.ifBlank { null } ?: return@mapNotNull null
+                                item.jobs.mapNotNull jobs@{ job ->
+                                    val jobName = job.job?.trim()?.ifBlank { null } ?: return@jobs null
+                                    TmdbShowCrewCredit(
+                                        tmdbId = personId,
+                                        name = name,
+                                        department = item.department?.trim()?.ifBlank { null },
+                                        job = jobName,
+                                        profilePath = item.profilePath?.trim()?.ifBlank { null },
+                                        episodeCount = job.episodeCount ?: 0,
+                                    )
+                                }
+                            }.flatten(),
                 )
             } catch (ex: WebClientResponseException.NotFound) {
                 return null

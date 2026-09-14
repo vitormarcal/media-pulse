@@ -556,7 +556,8 @@ class TvShowQueryRepository(
                       s.imdb_id,
                       s.terms_synced_at,
                       s.terms_sync_attempted_at,
-                      s.terms_sync_error
+                      s.terms_sync_error,
+                      s.credits_curated_at
                     FROM tv_shows s
                     WHERE s.id = :showId
                     """.trimIndent(),
@@ -703,6 +704,7 @@ class TvShowQueryRepository(
             watches = watches,
             externalIds = externalIds,
             people = people,
+            creditsCurated = base.getOrNull(13) != null,
             terms = terms,
             rating = rating,
             comments = comments,

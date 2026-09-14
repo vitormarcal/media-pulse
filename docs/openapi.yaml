@@ -2420,6 +2420,17 @@ paths:
               schema:
                 $ref: "#/components/schemas/PersonCreditDto"
 
+  /api/movies/{movieId}/people/{personId}:
+    delete:
+      summary: Remove a movie credit category and freeze manual curation
+      tags: [Movies]
+      parameters:
+        - { name: movieId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: personId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: category, in: query, required: true, schema: { type: string, enum: [CAST, DIRECTING, WRITING] } }
+      responses:
+        "200": { description: Removed }
+
   /api/movies/{movieId}/terms:
     post:
       summary: Create manual movie term
@@ -2833,6 +2844,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ShowCreditsSyncResponse"
+
+  /api/shows/{showId}/credits/tmdb-candidates:
+    post:
+      summary: Fetch TMDb credit candidates without persisting them
+      tags: [Shows]
+      parameters:
+        - { name: showId, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { $ref: "#/components/schemas/ShowTmdbCreditCandidatesResponse" } } }
+
+  /api/shows/{showId}/credits/from-tmdb:
+    post:
+      summary: Persist one selected TMDb show credit
+      tags: [Shows]
+      parameters:
+        - { name: showId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ShowTmdbCreditImportRequest" } } }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { $ref: "#/components/schemas/ShowPersonCreditDto" } } }
+
+  /api/shows/{showId}/people/{personId}:
+    delete:
+      summary: Remove a show credit category and freeze manual curation
+      tags: [Shows]
+      parameters:
+        - { name: showId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: personId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: category, in: query, required: true, schema: { type: string, enum: [CAST, DIRECTING, WRITING] } }
+      responses:
+        "200": { description: Removed }
 
   /api/admin/shows/{showId}/terms/sync-tmdb:
     post:
@@ -6009,6 +6056,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PersonCreditDto"
+        creditsCurated:
+          type: boolean
         terms:
           type: array
           items:
@@ -6038,6 +6087,7 @@ components:
           lists,
           companies,
           people,
+          creditsCurated,
           terms,
           comments,
           enrichment,
@@ -6770,7 +6820,9 @@ components:
           type: integer
         visibleCount:
           type: integer
-      required: [movieId, syncedCount, visibleCount]
+        curated:
+          type: boolean
+      required: [movieId, syncedCount, visibleCount, curated]
     MovieCreditsBatchSyncResponse:
       type: object
       properties:
@@ -7433,6 +7485,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShowPersonCreditDto"
+        creditsCurated:
+          type: boolean
         terms:
           type: array
           items:
@@ -7460,6 +7514,7 @@ components:
           watches,
           externalIds,
           people,
+          creditsCurated,
           terms,
           lists,
           comments,
@@ -7683,7 +7738,29 @@ components:
           type: integer
         visibleCount:
           type: integer
-      required: [showId, syncedCount, visibleCount]
+        curated:
+          type: boolean
+      required: [showId, syncedCount, visibleCount, curated]
+    ShowTmdbCreditCandidatesResponse:
+      type: object
+      properties:
+        showId: { type: integer, format: int64 }
+        candidateCount: { type: integer }
+        groups:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              title: { type: string }
+              items:
+                type: array
+                items: { $ref: "#/components/schemas/MovieTmdbCreditCandidateDto" }
+            required: [id, title, items]
+      required: [showId, candidateCount, groups]
+    ShowTmdbCreditImportRequest:
+      allOf:
+        - $ref: "#/components/schemas/MovieTmdbCreditImportRequest"
     ShowCreditsBatchSyncResponse:
       type: object
       properties:

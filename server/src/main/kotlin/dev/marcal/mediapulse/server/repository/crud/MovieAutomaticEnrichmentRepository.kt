@@ -23,7 +23,7 @@ class MovieAutomaticEnrichmentRepository(
                         (m.terms_synced_at IS NULL AND (
                           m.terms_sync_attempted_at IS NULL OR m.terms_sync_attempted_at <= NOW() - INTERVAL '1 day'
                         ))
-                        OR (m.credits_synced_at IS NULL AND (
+                        OR (m.credits_curated_at IS NULL AND m.credits_synced_at IS NULL AND (
                           m.credits_sync_attempted_at IS NULL OR m.credits_sync_attempted_at <= NOW() - INTERVAL '1 day'
                         ))
                         OR (m.companies_synced_at IS NULL AND (
