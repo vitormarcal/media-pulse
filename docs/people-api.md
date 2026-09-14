@@ -1,11 +1,12 @@
 # People API
 
-A People API sustenta a exploração audiovisual transversal entre filmes e séries. Pessoas são entidades locais únicas, independentemente de aparecerem como elenco, direção, roteiro ou outra função.
+A People API sustenta a exploração audiovisual transversal entre filmes e séries. Pessoas são entidades locais únicas ligadas a elenco, direção ou roteiro.
 
 ## Escopo e origem dos dados
 
 - `people` guarda a identidade canônica local e o vínculo estável com o TMDb
 - `movie_credits` e `show_credits` ligam a mesma pessoa aos dois catálogos
+- `people.profile_url` referencia a imagem remota do TMDb; retratos de pessoas não são armazenados em disco
 - perfil e filmografias do TMDb são snapshots locais; endpoints de leitura não consultam provedores externos
 - watches de filmes e episódios determinam a relação da filmografia com o histórico do owner
 
@@ -69,7 +70,8 @@ Séries usam os episódios locais conhecidos:
 - múltiplos créditos, episódios ou watches da mesma obra não aumentam a contagem
 - são elegíveis apenas pessoas ligadas a pelo menos duas obras assistidas na função da seção
 - `CAST` considera créditos de elenco; `DIRECTING`, o job `Director`; `WRITING`, os jobs `Writer`, `Screenplay`, `Story` e `Story Editor`
-- música, produção e demais funções técnicas permanecem preservadas no arquivo, mas não disputam esses rankings
+- música, produção e demais funções técnicas não fazem parte do recorte local de pessoas
+- créditos fora do recorte são descartados; pessoas sem créditos são removidas quando não estão marcadas como favoritas
 - popularidade do TMDb e quantidade de créditos sem watch não influenciam o ranking
 - favoritos são excluídos para evitar repetição
 - empates usam a obra assistida mais recentemente, nome e ID, nessa ordem
@@ -84,12 +86,6 @@ Séries usam os episódios locais conhecidos:
 - a leitura continuará usando snapshots locais e nunca disparará atualização externa
 - frequência, retentativa e observabilidade devem ser definidas antes da implementação
 
-### Créditos ampliados nas páginas das obras
-
-- páginas de filmes e séries poderão expor música, produção e outras equipes além de direção, roteiro e elenco
-- a apresentação deve preservar a baixa densidade textual e evitar transformar a página em uma ficha técnica irrestrita
-- os créditos continuam disponíveis na página da pessoa mesmo antes dessa ampliação
-
 ## Non-goals
 
 - diretório irrestrito de todas as pessoas persistidas
@@ -97,6 +93,7 @@ Séries usam os episódios locais conhecidos:
 - busca externa ou criação de pessoas pela página de favoritos
 - atualização de provedor durante leitura
 - ordenação manual de favoritos
+- ficha técnica irrestrita com produção, música ou outras equipes
 
 ## Critérios de aceite
 

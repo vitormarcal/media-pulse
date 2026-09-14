@@ -39,9 +39,6 @@ class ShowCreditsService(
             "Writer",
             "Screenplay",
             "Story Editor",
-            "Executive Producer",
-            "Producer",
-            "Original Music Composer",
         )
 
     private val castLimit = 12

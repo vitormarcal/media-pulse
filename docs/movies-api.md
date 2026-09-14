@@ -310,7 +310,7 @@ Cada filme agora pode carregar um recorte controlado de pessoas vindas do TMDb.
 Escopo do sync:
 
 - `CAST`: só top billed, limitado aos primeiros nomes por `order`
-- `CREW`: apenas cargos relevantes como `Director`, `Writer`, `Screenplay`, `Story`, `Editor`, `Producer`, `Director of Photography` e `Original Music Composer`
+- `CREW`: somente direção e roteiro: `Director`, `Writer`, `Screenplay` e `Story`
 
 Persistência:
 
@@ -330,7 +330,7 @@ Persistência:
 - `limit` é normalizado entre `1` e `1000`
 - falhas individuais não interrompem o lote
 
-`POST /api/movies/{movieId}/credits/tmdb-candidates` expande créditos extras do TMDb para a página do filme.
+`POST /api/movies/{movieId}/credits/tmdb-candidates` expande o elenco do TMDb além do recorte principal para a página do filme.
 
 - olha além do recorte principal já usado no sync automático
 - tenta reconciliar automaticamente pessoas que já existem localmente
@@ -341,14 +341,15 @@ Persistência:
 - reaproveita a pessoa local se ela já existir por `tmdb_id`
 - cria a pessoa se ela ainda não estiver persistida
 - salva o vínculo filme-pessoa sem precisar rerodar o sync completo
+- rejeita créditos de equipe fora de direção e roteiro
 
 Perfil, busca, favoritos e filmografias audiovisuais estão documentados em [`people-api.md`](people-api.md).
 
 `POST /api/movies/{movieId}/people` vincula uma pessoa já existente ao filme.
 
 - reaproveita `people` local
-- aceita grupos editoriais simples: `DIRECTORS`, `WRITERS`, `CAST`, `OTHER`
-- `roleLabel` é opcional em `WRITERS` e `CAST`, e obrigatório em `OTHER`
+- aceita os grupos editoriais `DIRECTORS`, `WRITERS` e `CAST`
+- `roleLabel` é usado como personagem em `CAST`; vínculos de roteiro são persistidos como `Writer`
 
 ## Coleções oficiais TMDb
 

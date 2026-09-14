@@ -203,8 +203,8 @@ class MovieCreditsServiceTest {
         val response = service.fetchTmdbCandidates(12)
 
         assertEquals(1, response.reconciledCount)
-        assertEquals(2, response.candidateCount)
-        assertEquals(listOf("cast", "crew"), response.groups.map { it.id })
+        assertEquals(1, response.candidateCount)
+        assertEquals(listOf("cast"), response.groups.map { it.id })
         assertEquals(
             "Fresh Extra",
             response.groups
@@ -223,6 +223,51 @@ class MovieCreditsServiceTest {
             )
         }
     }
+
+    @Test
+    fun `sync should persist only directing and writing crew`() {
+        val movie = Movie(id = 15, originalTitle = "Movie 15", fingerprint = "fp15")
+        val capturedCredits = slot<List<MovieCreditAssignmentRepository.UpsertMovieCreditRequest>>()
+
+        every { movieRepository.findById(15) } returns Optional.of(movie)
+        every { movieQueryRepository.getMovieDetails(15) } returns movieDetails(15, "1515")
+        every { movieCreditsCrudRepository.markCreditsSynced(15) } returns 1
+        every { movieQueryRepository.getMoviePeople(15) } returns emptyList()
+        every { personRepository.findByTmdbId(any()) } returns null
+        every { personRepository.save(any()) } answers { firstArg<Person>().copy(id = firstArg<Person>().tmdbId.toLong()) }
+        every { movieCreditAssignmentRepository.replaceForMovie(15, capture(capturedCredits)) } returns Unit
+
+        every { tmdbApiClient.fetchMovieCredits("1515") } returns
+            TmdbApiClient.TmdbMovieCredits(
+                cast = emptyList(),
+                crew =
+                    listOf(
+                        movieCrew("1", "Director", "Directing"),
+                        movieCrew("2", "Writer", "Writing"),
+                        movieCrew("3", "Producer", "Production"),
+                        movieCrew("4", "Original Music Composer", "Sound"),
+                    ),
+            )
+
+        val response = service.syncFromTmdb(15)
+
+        assertEquals(2, response.syncedCount)
+        assertEquals(listOf("Director", "Writer"), capturedCredits.captured.map { it.job })
+        verify(exactly = 0) { personRepository.findByTmdbId("3") }
+        verify(exactly = 0) { personRepository.findByTmdbId("4") }
+    }
+
+    private fun movieCrew(
+        tmdbId: String,
+        job: String,
+        department: String,
+    ) = TmdbApiClient.TmdbMovieCrewCredit(
+        tmdbId = tmdbId,
+        name = "$job Person",
+        department = department,
+        job = job,
+        profilePath = null,
+    )
 
     private fun movieDetails(
         movieId: Long,

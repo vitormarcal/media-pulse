@@ -44,9 +44,6 @@ class PersonShowFilmographyService(
             "Writer",
             "Screenplay",
             "Story Editor",
-            "Executive Producer",
-            "Producer",
-            "Original Music Composer",
         )
 
     @Transactional(readOnly = true)

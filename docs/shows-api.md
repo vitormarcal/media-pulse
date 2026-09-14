@@ -127,7 +127,7 @@ A UI está disponível em `/shows/lists`, `/shows/lists/{slug}` e no bloco `Orga
 `POST /api/admin/shows/{showId}/credits/sync-tmdb` sincroniza as pessoas principais da série a partir do TMDb.
 
 - exige vínculo `TMDB` salvo na série
-- traz o recorte principal de elenco e equipe relevante
+- traz o recorte principal de elenco, direção e roteiro
 - persiste os vínculos em `show_credits`, reutilizando `people` por `tmdb_id`
 - a página da série passa a navegar para `/people/{slug}`
 - a página da pessoa agrega esses créditos de série ao lado dos créditos de filme

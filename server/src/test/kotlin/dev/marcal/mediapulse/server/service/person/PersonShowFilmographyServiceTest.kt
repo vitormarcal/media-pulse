@@ -67,6 +67,17 @@ class PersonShowFilmographyServiceTest {
                             "Writing",
                             "Writer",
                         ),
+                        TmdbApiClient.TmdbPersonTvCrewCredit(
+                            "901",
+                            "Show A",
+                            "Show A",
+                            null,
+                            2019,
+                            null,
+                            null,
+                            "Production",
+                            "Executive Producer",
+                        ),
                     ),
             )
         every { repository.replaceSnapshot(44, MediaType.SHOW, capture(snapshot)) } returns Unit
@@ -83,6 +94,12 @@ class PersonShowFilmographyServiceTest {
                 .single()
                 .roleLabel
                 .contains("Writer"),
+        )
+        assertFalse(
+            snapshot.captured
+                .single()
+                .roleLabel
+                .contains("Executive Producer"),
         )
     }
 

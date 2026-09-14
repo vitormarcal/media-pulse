@@ -122,7 +122,6 @@
                 <option value="DIRECTORS">Direção</option>
                 <option value="WRITERS">Roteiro</option>
                 <option value="CAST">Elenco</option>
-                <option value="OTHER">Outro</option>
               </select>
             </label>
 
@@ -208,7 +207,7 @@ const linkingPersonId = ref<number | null>(null)
 const importingCandidateKey = ref<string | null>(null)
 const feedback = ref<string | null>(null)
 const searchQuery = ref('')
-const linkGroup = ref<'DIRECTORS' | 'WRITERS' | 'CAST' | 'OTHER'>('DIRECTORS')
+const linkGroup = ref<'DIRECTORS' | 'WRITERS' | 'CAST'>('DIRECTORS')
 const linkRoleLabel = ref('')
 const suggestions = ref<PersonSuggestionDto[]>([])
 const editingEnabled = computed(() => props.editing ?? false)
@@ -216,7 +215,7 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const normalizedSearchQuery = computed(() => searchQuery.value.trim().replace(/\s+/g, ' ').toLowerCase())
 const shouldShowSuggestions = computed(() => editingEnabled.value && normalizedSearchQuery.value.length >= 2)
-const requiresRoleLabel = computed(() => linkGroup.value === 'CAST' || linkGroup.value === 'OTHER')
+const requiresRoleLabel = computed(() => linkGroup.value === 'CAST')
 
 const assignedPeople = computed(() => {
   const groups = props.people.groups
@@ -352,7 +351,7 @@ function normalizeGroupForLookup(group: string) {
   if (group === 'DIRECTORS') return 'directors'
   if (group === 'WRITERS') return 'writers'
   if (group === 'CAST') return 'cast'
-  return 'other'
+  return 'directors'
 }
 
 function suggestionMeta(item: PersonSuggestionDto) {
@@ -375,8 +374,7 @@ function buildLinkRequest(item: PersonSuggestionDto): PersonLinkRequest {
 async function linkPerson(item: PersonSuggestionDto) {
   if (linkingPersonId.value) return
   if (requiresRoleLabel.value && !linkRoleLabel.value.trim()) {
-    feedback.value =
-      linkGroup.value === 'CAST' ? 'Informe o personagem para o vínculo manual.' : 'Informe o rótulo deste crédito.'
+    feedback.value = 'Informe o personagem para o vínculo manual.'
     return
   }
 

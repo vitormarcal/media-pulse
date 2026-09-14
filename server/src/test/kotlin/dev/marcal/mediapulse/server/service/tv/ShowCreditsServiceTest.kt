@@ -2,6 +2,8 @@ package dev.marcal.mediapulse.server.service.tv
 
 import dev.marcal.mediapulse.server.api.shows.ShowCreditsSyncResponse
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
+import dev.marcal.mediapulse.server.model.person.Person
+import dev.marcal.mediapulse.server.model.tv.TvShow
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
 import dev.marcal.mediapulse.server.repository.crud.PersonRepository
 import dev.marcal.mediapulse.server.repository.crud.ShowCreditAssignmentRepository
@@ -9,9 +11,11 @@ import dev.marcal.mediapulse.server.repository.crud.ShowCreditsCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.springframework.transaction.support.TransactionTemplate
+import java.util.Optional
 import kotlin.test.assertEquals
 
 class ShowCreditsServiceTest {
@@ -83,4 +87,46 @@ class ShowCreditsServiceTest {
         assertEquals(3, transactionCalls)
         verify { creditsRepository.markCreditsSyncFailure(9, "provider unavailable") }
     }
+
+    @Test
+    fun `sync should persist only directing and writing crew`() {
+        val show = TvShow(id = 12, originalTitle = "Show 12", fingerprint = "show-12", tmdbId = "1212")
+        val capturedCredits = slot<List<ShowCreditAssignmentRepository.UpsertShowCreditRequest>>()
+
+        every { showRepository.findById(12) } returns Optional.of(show)
+        every { queryRepository.getShowPeople(12) } returns emptyList()
+        every { personRepository.findByTmdbId(any()) } returns null
+        every { personRepository.save(any()) } answers { firstArg<Person>().copy(id = firstArg<Person>().tmdbId.toLong()) }
+        every { assignments.replaceForShow(12, capture(capturedCredits)) } returns Unit
+        every { tmdb.fetchShowCredits("1212") } returns
+            TmdbApiClient.TmdbShowCredits(
+                cast = emptyList(),
+                crew =
+                    listOf(
+                        showCrew("1", "Director", "Directing"),
+                        showCrew("2", "Story Editor", "Writing"),
+                        showCrew("3", "Executive Producer", "Production"),
+                        showCrew("4", "Original Music Composer", "Sound"),
+                    ),
+            )
+
+        val response = service.syncFromTmdb(12)
+
+        assertEquals(2, response.syncedCount)
+        assertEquals(listOf("Director", "Story Editor"), capturedCredits.captured.map { it.job })
+        verify(exactly = 0) { personRepository.findByTmdbId("3") }
+        verify(exactly = 0) { personRepository.findByTmdbId("4") }
+    }
+
+    private fun showCrew(
+        tmdbId: String,
+        job: String,
+        department: String,
+    ) = TmdbApiClient.TmdbShowCrewCredit(
+        tmdbId = tmdbId,
+        name = "$job Person",
+        department = department,
+        job = job,
+        profilePath = null,
+    )
 }

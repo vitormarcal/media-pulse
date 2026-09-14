@@ -46,10 +46,6 @@ class MovieCreditsService(
             "Writer",
             "Screenplay",
             "Story",
-            "Editor",
-            "Producer",
-            "Director of Photography",
-            "Original Music Composer",
         )
 
     private val castLimit = 10
@@ -74,13 +70,10 @@ class MovieCreditsService(
             credits.cast
                 .sortedBy { it.order ?: Int.MAX_VALUE }
                 .filter { (it.order ?: Int.MAX_VALUE) >= castLimit }
-        val extraCrew = credits.crew.filter { (it.job ?: "") !in relevantCrewJobs }
-
         val reconciledCount =
             reconcileExistingLocalCredits(
                 movie = movie,
                 cast = extraCast,
-                crew = extraCrew,
                 linkedKeys = linkedKeys,
             )
 
@@ -94,17 +87,6 @@ class MovieCreditsService(
                         MovieTmdbCreditCandidateGroupDto(
                             id = "cast",
                             title = "Mais elenco do TMDb",
-                            items = items,
-                        )
-                    },
-                extraCrew
-                    .mapNotNull { credit ->
-                        buildTmdbCandidate(linkedKeys, credit)
-                    }.takeIf { it.isNotEmpty() }
-                    ?.let { items ->
-                        MovieTmdbCreditCandidateGroupDto(
-                            id = "crew",
-                            title = "Mais equipe do TMDb",
                             items = items,
                         )
                     },
@@ -151,7 +133,7 @@ class MovieCreditsService(
                         personId = person.id,
                         creditType = MovieCreditType.CREW,
                         department = "Writing",
-                        job = roleLabel ?: "Writer",
+                        job = "Writer",
                     )
                 "CAST" ->
                     MovieCreditAssignmentRepository.UpsertMovieCreditRequest(
@@ -159,14 +141,6 @@ class MovieCreditsService(
                         personId = person.id,
                         creditType = MovieCreditType.CAST,
                         characterName = roleLabel ?: "Elenco",
-                    )
-                "OTHER" ->
-                    MovieCreditAssignmentRepository.UpsertMovieCreditRequest(
-                        movieId = movie.id,
-                        personId = person.id,
-                        creditType = MovieCreditType.CREW,
-                        department = "Manual",
-                        job = roleLabel ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "roleLabel é obrigatório"),
                     )
                 else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "group inválido")
             }
@@ -208,6 +182,9 @@ class MovieCreditsService(
                                 (it.department ?: "") == (request.department ?: "") &&
                                 (it.job ?: "") == (request.job ?: "")
                         } ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "TMDb crew credit not found")
+                    if (match.job !in relevantCrewJobs) {
+                        throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Crédito de equipe fora do recorte audiovisual")
+                    }
                     val person = upsertPerson(match.tmdbId, match.name, match.profilePath)
                     MovieCreditAssignmentRepository.UpsertMovieCreditRequest(
                         movieId = movieId,
@@ -321,9 +298,8 @@ class MovieCreditsService(
 
         val crewCredits =
             credits.crew
-                .filter { credit ->
-                    (credit.job in relevantCrewJobs) || personExistsLocally(credit.tmdbId)
-                }.distinctBy { listOf(it.tmdbId, it.job ?: "", it.department ?: "") }
+                .filter { it.job in relevantCrewJobs }
+                .distinctBy { listOf(it.tmdbId, it.job ?: "", it.department ?: "") }
                 .map { credit ->
                     val person = upsertPerson(credit.tmdbId, credit.name, credit.profilePath)
                     MovieCreditAssignmentRepository.UpsertMovieCreditRequest(
@@ -353,7 +329,6 @@ class MovieCreditsService(
     private fun reconcileExistingLocalCredits(
         movie: Movie,
         cast: List<TmdbApiClient.TmdbMovieCastCredit>,
-        crew: List<TmdbApiClient.TmdbMovieCrewCredit>,
         linkedKeys: MutableSet<String>,
     ): Int {
         var reconciled = 0
@@ -367,23 +342,6 @@ class MovieCreditsService(
                     creditType = MovieCreditType.CAST,
                     characterName = credit.character ?: "",
                     billingOrder = credit.order,
-                )
-            val key = creditKey(person.tmdbId, request.creditType, request.job, request.characterName)
-            if (linkedKeys.add(key)) {
-                movieCreditAssignmentRepository.upsert(request)
-                reconciled++
-            }
-        }
-
-        crew.forEach { credit ->
-            val person = personRepository.findByTmdbId(credit.tmdbId) ?: return@forEach
-            val request =
-                MovieCreditAssignmentRepository.UpsertMovieCreditRequest(
-                    movieId = movie.id,
-                    personId = person.id,
-                    creditType = MovieCreditType.CREW,
-                    department = credit.department ?: "",
-                    job = credit.job ?: "",
                 )
             val key = creditKey(person.tmdbId, request.creditType, request.job, request.characterName)
             if (linkedKeys.add(key)) {
@@ -414,28 +372,6 @@ class MovieCreditsService(
             characterName = credit.character,
             billingOrder = credit.order,
             roleLabel = credit.character?.takeIf { it.isNotBlank() } ?: "Elenco",
-        )
-    }
-
-    private fun buildTmdbCandidate(
-        linkedKeys: Set<String>,
-        credit: TmdbApiClient.TmdbMovieCrewCredit,
-    ): MovieTmdbCreditCandidateDto? {
-        val key = creditKey(credit.tmdbId, MovieCreditType.CREW, credit.job ?: "", "")
-        if (key in linkedKeys || personRepository.findByTmdbId(credit.tmdbId) != null) {
-            return null
-        }
-
-        return MovieTmdbCreditCandidateDto(
-            personTmdbId = credit.tmdbId,
-            name = credit.name,
-            profileUrl = credit.profilePath?.let(manualMovieCatalogService::buildTmdbImageUrl),
-            creditType = MovieCreditType.CREW.toDto(),
-            department = credit.department,
-            job = credit.job,
-            characterName = null,
-            billingOrder = null,
-            roleLabel = credit.job?.takeIf { it.isNotBlank() } ?: credit.department?.takeIf { it.isNotBlank() } ?: "Equipe",
         )
     }
 
