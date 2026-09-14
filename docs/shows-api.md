@@ -131,7 +131,7 @@ A UI está disponível em `/shows/lists`, `/shows/lists/{slug}` e no bloco `Orga
 - persiste os vínculos em `show_credits`, reutilizando `people` por `tmdb_id`
 - a página da série passa a navegar para `/people/{slug}`
 - a página da pessoa agrega esses créditos de série ao lado dos créditos de filme
-- funciona como reparo explícito; a página da série não dispara esta operação
+- funciona como reparo explícito pela ação `Gerenciar pessoas` da página da série
 
 Um worker executa esse sync automaticamente para séries pendentes. `POST /api/admin/shows/credits/sync-tmdb?limit=100` mantém o mesmo processamento disponível para reparo em lote.
 

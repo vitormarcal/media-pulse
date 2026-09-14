@@ -46,7 +46,7 @@
         <div class="actions-copy">
           <p class="actions-eyebrow">Curadoria</p>
           <h2 id="show-actions-title">Ações da série</h2>
-          <p>Revise marcações ou escolha uma temporada para completar.</p>
+          <p>Revise dados ou escolha uma temporada para completar.</p>
         </div>
         <div class="action-list">
           <button
@@ -77,7 +77,14 @@
         />
       </div>
 
-      <ShowPeoplePanel :people="data.people" />
+      <div ref="peopleTarget">
+        <ShowPeoplePanel
+          :show-id="data.showId"
+          :people="data.people"
+          :editing="activeAction === 'people'"
+          @changed="refresh"
+        />
+      </div>
 
       <div ref="seasonsTarget">
         <ShowProgressPanel :progress="data.progress" :seasons="data.seasons" />
@@ -122,15 +129,17 @@ import type { ManualShowWatchCreateResponse } from '~/types/shows'
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
-type ShowAction = 'terms' | 'lists' | 'metadata' | 'seasons'
+type ShowAction = 'terms' | 'lists' | 'people' | 'metadata' | 'seasons'
 const activeAction = ref<ShowAction | null>(null)
 const heroTarget = ref<HTMLElement | null>(null)
 const seasonsTarget = ref<HTMLElement | null>(null)
 const metadataTarget = ref<HTMLElement | null>(null)
 const listsTarget = ref<HTMLElement | null>(null)
+const peopleTarget = ref<HTMLElement | null>(null)
 const showActions: Array<{ id: ShowAction; label: string; description: string; toggle: boolean }> = [
   { id: 'terms', label: 'Editar gêneros e tags', description: 'Revisar marcações', toggle: true },
   { id: 'lists', label: 'Organizar em listas', description: 'Adicionar ou remover', toggle: true },
+  { id: 'people', label: 'Gerenciar pessoas', description: 'Revisar créditos', toggle: true },
   { id: 'metadata', label: 'Enriquecer dados', description: 'Consultar TMDb', toggle: true },
   { id: 'seasons', label: 'Revisar temporadas', description: 'Ver progresso e episódios', toggle: false },
 ]
@@ -177,7 +186,13 @@ async function toggleAction(action: ShowAction) {
   if (!activeAction.value) return
   await nextTick()
   const target =
-    action === 'metadata' ? metadataTarget.value : action === 'lists' ? listsTarget.value : heroTarget.value
+    action === 'metadata'
+      ? metadataTarget.value
+      : action === 'lists'
+        ? listsTarget.value
+        : action === 'people'
+          ? peopleTarget.value
+          : heroTarget.value
   target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 </script>

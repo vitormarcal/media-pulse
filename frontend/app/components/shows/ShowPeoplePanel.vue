@@ -29,17 +29,53 @@
       </section>
 
       <p v-if="!people.groups.length" class="empty-copy">Nenhum crédito disponível.</p>
+
+      <div v-if="editing" class="editor-actions">
+        <button type="button" class="secondary-button" :disabled="syncing" @click="syncFromTmdb">
+          {{ syncing ? 'Sincronizando...' : 'Sincronizar base TMDb' }}
+        </button>
+      </div>
+
+      <p v-if="feedback" class="feedback" role="status">{{ feedback }}</p>
     </div>
   </article>
 </template>
 
 <script setup lang="ts">
-import type { ShowPageData } from '~/types/shows'
+import type { ShowCreditsSyncResponse, ShowPageData } from '~/types/shows'
 
-defineProps<{
+const props = defineProps<{
+  showId: number
   people: ShowPageData['people']
+  editing: boolean
 }>()
+
+const emit = defineEmits<{
+  changed: []
+}>()
+
+const config = useRuntimeConfig()
 const { resolveMediaUrl } = useMediaUrl()
+const syncing = ref(false)
+const feedback = ref<string | null>(null)
+
+async function syncFromTmdb() {
+  syncing.value = true
+  feedback.value = null
+
+  try {
+    const response = await $fetch<ShowCreditsSyncResponse>(`/api/admin/shows/${props.showId}/credits/sync-tmdb`, {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+    })
+    feedback.value = `${response.syncedCount} créditos locais atualizados a partir do TMDb.`
+    emit('changed')
+  } catch {
+    feedback.value = 'Não foi possível sincronizar os créditos do TMDb.'
+  } finally {
+    syncing.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -155,6 +191,43 @@ h2,
 
 .empty-copy {
   color: var(--base-color-text-secondary);
+}
+
+.editor-actions {
+  display: flex;
+  padding-top: 4px;
+}
+
+.secondary-button {
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  background: color-mix(in srgb, var(--base-color-surface-warm) 80%, white);
+}
+
+.secondary-button:focus-visible {
+  outline: 2px solid var(--base-color-focus, #435ee5);
+  outline-offset: 2px;
+}
+
+.secondary-button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.feedback {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.82rem;
 }
 
 @media (max-width: 900px) {
