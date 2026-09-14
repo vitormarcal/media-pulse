@@ -5,10 +5,13 @@ import dev.marcal.mediapulse.server.api.movies.PersonFavoriteDto
 import dev.marcal.mediapulse.server.api.movies.PersonFilmographyResponse
 import dev.marcal.mediapulse.server.api.movies.PersonShowFilmographyResponse
 import dev.marcal.mediapulse.server.api.movies.PersonSuggestionDto
+import dev.marcal.mediapulse.server.api.people.PersonHistoryCategory
+import dev.marcal.mediapulse.server.api.people.PersonHistoryPageResponse
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.service.person.PersonDetailsService
 import dev.marcal.mediapulse.server.service.person.PersonFavoritesService
 import dev.marcal.mediapulse.server.service.person.PersonFilmographyService
+import dev.marcal.mediapulse.server.service.person.PersonHistoryService
 import dev.marcal.mediapulse.server.service.person.PersonShowFilmographyService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -28,9 +31,17 @@ class PeopleController(
     private val personFilmographyService: PersonFilmographyService,
     private val personShowFilmographyService: PersonShowFilmographyService,
     private val personFavoritesService: PersonFavoritesService,
+    private val personHistoryService: PersonHistoryService,
 ) {
     @GetMapping("/favorites")
     fun favorites(): List<PersonFavoriteDto> = personFavoritesService.list()
+
+    @GetMapping("/history/most-present")
+    fun mostPresentInHistory(
+        @RequestParam category: PersonHistoryCategory,
+        @RequestParam(defaultValue = "4") limit: Int,
+        @RequestParam(defaultValue = "0") offset: Int,
+    ): PersonHistoryPageResponse = personHistoryService.mostPresent(category, limit, offset)
 
     @PostMapping("/{personId}/favorite")
     @ResponseStatus(HttpStatus.NO_CONTENT)

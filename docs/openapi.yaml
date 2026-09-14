@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.96
+  version: 1.0.0-beta.97
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -1693,6 +1693,30 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PersonFavoriteDto"
+
+  /api/people/history/most-present:
+    get:
+      summary: List people most present in the local watch history
+      tags: [People]
+      parameters:
+        - name: category
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/PersonHistoryCategory"
+        - name: limit
+          in: query
+          schema: { type: integer, default: 4, minimum: 1, maximum: 40 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0, minimum: 0 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonHistoryPageResponse"
 
   /api/people/{personId}/favorite:
     post:
@@ -6083,6 +6107,29 @@ components:
         watchedShowsCount: { type: integer, format: int64 }
         favoritedAt: { type: string, format: date-time }
       required: [personId, name, slug, roles, watchedMoviesCount, watchedShowsCount, favoritedAt]
+    PersonHistoryItemDto:
+      type: object
+      properties:
+        personId: { type: integer, format: int64 }
+        name: { type: string }
+        slug: { type: string }
+        profileUrl: { type: string, nullable: true }
+        watchedWorksCount: { type: integer, format: int64 }
+      required: [personId, name, slug, watchedWorksCount]
+    PersonHistoryCategory:
+      type: string
+      enum: [CAST, DIRECTING, WRITING]
+    PersonHistoryPageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PersonHistoryItemDto"
+        nextOffset:
+          type: integer
+          nullable: true
+      required: [items, nextOffset]
     PersonDetailsResponse:
       type: object
       properties:

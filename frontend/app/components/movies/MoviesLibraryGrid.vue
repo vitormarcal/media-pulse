@@ -29,6 +29,7 @@ withDefaults(
   }>(),
   {
     layout: 'masonry',
+    emptyMessage: '',
   },
 )
 </script>
