@@ -36,6 +36,11 @@ class PersonFilmographyRepository(
         val linkedCategories: Set<String>,
     )
 
+    data class CompactionResult(
+        val mediaType: MediaType,
+        val removedMembers: Int,
+    )
+
     fun findPerson(personId: Long): PersonRecord? =
         (
             entityManager
@@ -68,6 +73,96 @@ class PersonFilmographyRepository(
             .setParameter("limit", limit)
             .resultList
             .map { (it as Number).toLong() }
+
+    fun isCompacted(
+        personId: Long,
+        mediaType: MediaType,
+    ): Boolean =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT EXISTS (
+                  SELECT 1 FROM person_filmography_syncs
+                  WHERE person_id = :personId AND media_type = :mediaType AND compacted_at IS NOT NULL
+                )
+                """.trimIndent(),
+            ).setParameter("personId", personId)
+            .setParameter("mediaType", mediaType.name)
+            .singleResult as Boolean
+
+    fun findCompactionCandidatePersonIds(limit: Int): List<Long> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT person.id
+                FROM people person
+                JOIN person_filmography_syncs sync ON sync.person_id = person.id
+                WHERE person.favorited_at IS NULL
+                  AND sync.synced_at <= NOW() - INTERVAL '7 days'
+                  AND sync.compacted_at IS NULL
+                GROUP BY person.id
+                ORDER BY MIN(sync.synced_at), person.id
+                LIMIT :limit
+                """.trimIndent(),
+            ).setParameter("limit", limit)
+            .resultList
+            .map { (it as Number).toLong() }
+
+    fun compactIfEligible(
+        personId: Long,
+        mediaType: MediaType,
+    ): CompactionResult? {
+        val unfavoritedPersonLocked =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT person.id
+                    FROM people person
+                    WHERE person.id = :personId AND person.favorited_at IS NULL
+                    FOR UPDATE
+                    """.trimIndent(),
+                ).setParameter("personId", personId)
+                .resultList
+                .isNotEmpty()
+        if (!unfavoritedPersonLocked) return null
+
+        val marked =
+            entityManager
+                .createNativeQuery(
+                    """
+                    UPDATE person_filmography_syncs sync
+                    SET compacted_at = NOW()
+                    WHERE sync.person_id = :personId
+                      AND sync.media_type = :mediaType
+                      AND sync.synced_at <= NOW() - INTERVAL '7 days'
+                      AND sync.compacted_at IS NULL
+                      AND EXISTS (
+                        SELECT 1 FROM people person
+                        WHERE person.id = sync.person_id AND person.favorited_at IS NULL
+                      )
+                    """.trimIndent(),
+                ).setParameter("personId", personId)
+                .setParameter("mediaType", mediaType.name)
+                .executeUpdate()
+        if (marked == 0) return null
+
+        val localTable = if (mediaType == MediaType.MOVIE) "movies" else "tv_shows"
+        val removed =
+            entityManager
+                .createNativeQuery(
+                    """
+                    DELETE FROM person_filmography_members member
+                    WHERE member.person_id = :personId
+                      AND member.media_type = :mediaType
+                      AND NOT EXISTS (
+                        SELECT 1 FROM $localTable local WHERE local.tmdb_id = member.tmdb_id
+                      )
+                    """.trimIndent(),
+                ).setParameter("personId", personId)
+                .setParameter("mediaType", mediaType.name)
+                .executeUpdate()
+        return CompactionResult(mediaType, removed)
+    }
 
     fun findMembers(
         personId: Long,
@@ -164,7 +259,7 @@ class PersonFilmographyRepository(
                 INSERT INTO person_filmography_syncs(person_id, media_type, synced_at, sync_attempted_at)
                 VALUES (:personId, :mediaType, NOW(), NOW())
                 ON CONFLICT (person_id, media_type) DO UPDATE
-                SET synced_at = NOW(), sync_attempted_at = NOW(), sync_error = NULL
+                SET synced_at = NOW(), sync_attempted_at = NOW(), sync_error = NULL, compacted_at = NULL
                 """.trimIndent(),
             ).setParameter("personId", personId)
             .setParameter("mediaType", mediaType.name)

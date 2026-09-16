@@ -82,6 +82,7 @@ class PersonFilmographyService(
                     (availableCategories - member.linkedCategories).sorted(),
                 )
             },
+            repository.isCompacted(personId, MediaType.MOVIE),
         )
     }
 

@@ -3,7 +3,7 @@
     <SectionHeading
       eyebrow="Filmografia audiovisual"
       title="Explorar filmes e séries"
-      description="Compare a filmografia do TMDb com o catálogo local e escolha o que deseja adicionar."
+      :description="panelDescription"
       :summary="panelSummary"
     />
 
@@ -30,6 +30,13 @@
           {{ currentLoading ? 'Carregando...' : loadButtonLabel }}
         </button>
       </div>
+    </div>
+
+    <div v-if="currentCompacted" class="compacted-notice">
+      <p><strong>Filmografia local</strong> — atualize para consultar outras obras.</p>
+      <button type="button" :disabled="currentLoading" @click="refreshActive">
+        {{ currentLoading ? 'Atualizando...' : 'Atualizar filmografia' }}
+      </button>
     </div>
 
     <p v-if="currentError" class="panel-error">{{ currentError }}</p>
@@ -106,7 +113,7 @@
     </div>
 
     <div v-else-if="currentLoaded" class="empty-card">
-      <p>Nenhum item apareceu nesse recorte do TMDb.</p>
+      <p>{{ emptyLabel }}</p>
     </div>
   </section>
 </template>
@@ -179,6 +186,19 @@ const currentLoading = computed(() => (activeKind.value === 'movies' ? movieLoad
 const currentError = computed(() => (activeKind.value === 'movies' ? movieError.value : showError.value))
 const currentLoaded = computed(() =>
   activeKind.value === 'movies' ? !!movieFilmography.value : !!showFilmography.value,
+)
+const currentCompacted = computed(() =>
+  activeKind.value === 'movies' ? movieFilmography.value?.compacted === true : showFilmography.value?.compacted === true,
+)
+const panelDescription = computed(() =>
+  currentCompacted.value
+    ? 'Explore as obras desta pessoa que permanecem no catálogo local.'
+    : 'Compare a filmografia do TMDb com o catálogo local e escolha o que deseja adicionar.',
+)
+const emptyLabel = computed(() =>
+  currentCompacted.value
+    ? 'Nenhuma obra desta filmografia está no catálogo local.'
+    : 'Nenhum item apareceu nesse recorte do TMDb.',
 )
 
 const currentMembers = computed<ScreenographyMemberViewModel[]>(() => {
@@ -265,14 +285,18 @@ const countLabel = computed(() => {
     const catalogued = movieFilmography.value.members.filter((item) => item.inCatalog).length
     return movieFilmography.value.members.length
       ? `${catalogued}/${movieFilmography.value.members.length} filmes já estão no catálogo`
-      : 'Nenhum filme retornado pelo TMDb'
+      : movieFilmography.value.compacted
+        ? 'Nenhum filme local preservado'
+        : 'Nenhum filme retornado pelo TMDb'
   }
 
   if (!showFilmography.value) return `${props.person.stats.showCount} séries locais ligadas a esta pessoa`
   const catalogued = showFilmography.value.members.filter((item) => item.inCatalog).length
   return showFilmography.value.members.length
     ? `${catalogued}/${showFilmography.value.members.length} séries já estão no catálogo`
-    : 'Nenhuma série retornada pelo TMDb'
+    : showFilmography.value.compacted
+      ? 'Nenhuma série local preservada'
+      : 'Nenhuma série retornada pelo TMDb'
 })
 
 const panelSummary = computed(() => {
@@ -300,6 +324,38 @@ async function loadActive() {
   }
 
   await loadShows()
+}
+
+async function refreshActive() {
+  if (currentLoading.value) return
+  if (activeKind.value === 'movies') {
+    movieLoading.value = true
+    movieError.value = null
+    try {
+      movieFilmography.value = await $fetch<PersonFilmographyResponse>(
+        `/api/admin/people/${props.person.personId}/tmdb-filmography`,
+        { baseURL: config.public.apiBase, method: 'POST' },
+      )
+    } catch {
+      movieError.value = 'Não foi possível atualizar a filmografia de filmes desta pessoa.'
+    } finally {
+      movieLoading.value = false
+    }
+    return
+  }
+
+  showLoading.value = true
+  showError.value = null
+  try {
+    showFilmography.value = await $fetch<PersonShowFilmographyResponse>(
+      `/api/admin/people/${props.person.personId}/tmdb-show-filmography`,
+      { baseURL: config.public.apiBase, method: 'POST' },
+    )
+  } catch {
+    showError.value = 'Não foi possível atualizar a filmografia de séries desta pessoa.'
+  } finally {
+    showLoading.value = false
+  }
 }
 
 async function loadMovies() {
@@ -459,6 +515,38 @@ async function linkMember(item: ScreenographyMemberViewModel, category: string) 
   padding: 18px 20px;
   border-radius: 28px;
   background: color-mix(in srgb, var(--base-color-surface-strong) 82%, white);
+}
+
+.compacted-notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: var(--base-color-surface-warm);
+}
+
+.compacted-notice p {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.88rem;
+}
+
+.compacted-notice button {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--base-color-surface-strong);
+  color: var(--base-color-text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.compacted-notice button:focus-visible {
+  outline: 2px solid var(--base-color-focus, #435ee5);
+  outline-offset: 2px;
 }
 
 .mode-switch {

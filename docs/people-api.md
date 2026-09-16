@@ -26,6 +26,7 @@ A People API sustenta a exploração audiovisual transversal entre filmes e sér
 | `POST /api/people/{personId}/filmography/shows/{showId}/link`   | body com `category`          | vincula a pessoa a uma série local existente                        |
 | `POST /api/admin/people/{personId}/tmdb-filmography`      | `personId`                        | força atualização da filmografia de filmes                          |
 | `POST /api/admin/people/{personId}/tmdb-show-filmography` | `personId`                        | força atualização da filmografia de séries                          |
+| `POST /api/admin/people/filmography/compact`              | `limit=100`                       | compacta snapshots antigos e retorna as quantidades removidas       |
 
 ## Página e favoritos
 
@@ -51,6 +52,21 @@ As filmografias de filmes e séries possuem snapshots e estados de sincronizaç�
 - cada obra local informa as categorias já vinculadas e as categorias de elenco, direção ou roteiro ainda disponíveis no snapshot
 - quando uma categoria está ausente, a página permite vinculá-la sem sair da filmografia; uma opção é aplicada diretamente e várias opções usam um seletor compacto
 - o vínculo usa somente o snapshot local, marca a obra como curada manualmente e não consulta o TMDb durante a leitura ou a ação
+- `compacted=true` indica que o recorte contém somente obras locais; a página informa esse estado e oferece atualização manual da mídia ativa
+- atualizar manualmente substitui o recorte pelo snapshot completo do TMDb, limpa o estado compactado e inicia um novo prazo de retenção
+
+### Retenção e compactação
+
+- filmografias de pessoas não favoritas tornam-se elegíveis sete dias após a última sincronização bem-sucedida
+- filmes e séries são avaliados independentemente
+- a compactação exclui da base apenas membros sem correspondência no catálogo local; filmes, séries, créditos e pessoas não são removidos
+- pessoas favoritas são sempre excluídas da seleção
+- acesso e leitura da página não renovam o prazo nem consultam o TMDb
+- o scheduler executa diariamente às 04:30 por padrão e processa até 100 pessoas
+- `TMDB_FILMOGRAPHY_COMPACTION_CRON` altera o cron da rotina
+- a ação administrativa aceita `limit` entre 1 e 1.000 e usa as mesmas regras do scheduler
+- os registros excluídos deixam espaço reutilizável pelo PostgreSQL e reduzem o crescimento futuro, mas `pg_total_relation_size` não necessariamente diminui imediatamente
+- redução física do arquivo exige manutenção específica do PostgreSQL, como `VACUUM FULL`, fora da rotina da aplicação e com planejamento para o bloqueio da tabela
 
 Filmes usam:
 
@@ -91,11 +107,10 @@ Séries usam os episódios locais conhecidos:
 - a leitura continuará usando snapshots locais e nunca disparará atualização externa
 - frequência, retentativa e observabilidade devem ser definidas antes da implementação
 
-### Retenção dos snapshots de filmografia
+### Evolução da retenção
 
-- investigar uma política de retenção/compactação para `person_filmography_members` antes de ampliar atualizações periódicas
-- medição real em setembro de 2026: cerca de 305 mil vínculos e 240 MB, muito acima das tabelas de créditos locais
-- preservar favoritos e a navegação útil do owner, evitando guardar filmografias integrais de pessoas sem relevância local
+- acompanhar registros ativos, espaço reutilizável e crescimento de `person_filmography_members` após a primeira compactação
+- revisar o prazo de sete dias somente com base no uso e no crescimento medidos
 
 ## Non-goals
 
@@ -116,3 +131,5 @@ Séries usam os episódios locais conhecidos:
 - acesso direto e reload de `/people` são encaminhados para a SPA
 - filmes e séries refletem os watches locais nos estados documentados
 - endpoints de leitura funcionam apenas com dados locais
+- compactação preserva todos os membros correspondentes ao catálogo local e nunca seleciona favoritos
+- atualização manual restaura separadamente o snapshot completo de filmes ou séries

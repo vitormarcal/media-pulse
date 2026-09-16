@@ -9,6 +9,7 @@ import dev.marcal.mediapulse.server.service.movie.MovieCompaniesService
 import dev.marcal.mediapulse.server.service.movie.MovieCompanyMembersService
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.service.movie.MovieTermsService
+import dev.marcal.mediapulse.server.service.person.PersonFilmographyCompactionService
 import dev.marcal.mediapulse.server.service.person.PersonFilmographyService
 import dev.marcal.mediapulse.server.service.person.PersonShowFilmographyService
 import dev.marcal.mediapulse.server.service.tv.ShowCreditsService
@@ -57,7 +58,7 @@ class OperationalAdminControllerTest {
     @Test
     fun `people repair should delegate to filmography service`() {
         val movies = mockk<PersonFilmographyService>()
-        val controller = PeopleAdminController(movies, mockk<PersonShowFilmographyService>())
+        val controller = PeopleAdminController(movies, mockk<PersonShowFilmographyService>(), mockk<PersonFilmographyCompactionService>())
         every { movies.refreshAndGetFilmography(44) } returns
             PersonFilmographyResponse(44, "138", "Quentin Tarantino", null, emptyList())
 

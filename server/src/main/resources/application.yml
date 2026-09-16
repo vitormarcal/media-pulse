@@ -103,6 +103,8 @@ media-pulse:
     retry-backoff-ms: ${TMDB_RETRY_BACKOFF_MS:1000}
     enrichment:
       interval-ms: ${TMDB_ENRICHMENT_INTERVAL_MS:120000}
+    filmography-compaction:
+      cron: ${TMDB_FILMOGRAPHY_COMPACTION_CRON:0 30 4 * * *}
   igdb:
     enabled: ${IGDB_ENABLED:true}
     api-base-url: ${IGDB_API_BASE_URL:https://api.igdb.com/v4}

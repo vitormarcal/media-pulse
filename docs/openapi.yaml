@@ -2180,6 +2180,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/PersonFilmographyResponse"
 
+  /api/admin/people/filmography/compact:
+    post:
+      summary: Compact stale non-favorite person filmography snapshots
+      tags: [People]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 100, minimum: 1, maximum: 1000 }
+      responses:
+        "200":
+          description: Compaction result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonFilmographyCompactionResponse"
+
   /api/people/{personId}/filmography:
     get:
       summary: Fetch the locally persisted movie filmography snapshot
@@ -6787,7 +6804,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PersonFilmographyMemberDto"
-      required: [personId, tmdbId, name, members]
+        compacted:
+          type: boolean
+      required: [personId, tmdbId, name, members, compacted]
     PersonShowFilmographyMemberDto:
       type: object
       properties:
@@ -6855,7 +6874,18 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PersonShowFilmographyMemberDto"
-      required: [personId, tmdbId, name, members]
+        compacted:
+          type: boolean
+      required: [personId, tmdbId, name, members, compacted]
+    PersonFilmographyCompactionResponse:
+      type: object
+      properties:
+        requestedLimit: { type: integer }
+        candidates: { type: integer }
+        processedPeople: { type: integer }
+        compactedSnapshots: { type: integer }
+        removedMembers: { type: integer }
+      required: [requestedLimit, candidates, processedPeople, compactedSnapshots, removedMembers]
     MovieCompaniesSyncResponse:
       type: object
       properties:

@@ -231,6 +231,14 @@ data class PersonFilmographyLinkRequest(
     val category: String,
 )
 
+data class PersonFilmographyCompactionResponse(
+    val requestedLimit: Int,
+    val candidates: Int,
+    val processedPeople: Int,
+    val compactedSnapshots: Int,
+    val removedMembers: Int,
+)
+
 data class PersonDetailsResponse(
     val personId: Long,
     val tmdbId: String,
@@ -567,6 +575,7 @@ data class PersonFilmographyResponse(
     val name: String,
     val profileUrl: String?,
     val members: List<PersonFilmographyMemberDto>,
+    val compacted: Boolean = false,
 )
 
 data class PersonFilmographyMemberDto(
@@ -593,6 +602,7 @@ data class PersonShowFilmographyResponse(
     val name: String,
     val profileUrl: String?,
     val members: List<PersonShowFilmographyMemberDto>,
+    val compacted: Boolean = false,
 )
 
 data class PersonShowFilmographyMemberDto(

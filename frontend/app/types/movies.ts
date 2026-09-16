@@ -424,6 +424,7 @@ export interface PersonFilmographyResponse {
   name: string
   profileUrl: string | null
   members: PersonFilmographyMember[]
+  compacted: boolean
 }
 
 export interface PersonFilmographyMember {
@@ -450,6 +451,7 @@ export interface PersonShowFilmographyResponse {
   name: string
   profileUrl: string | null
   members: PersonShowFilmographyMember[]
+  compacted: boolean
 }
 
 export interface PersonShowFilmographyMember {
