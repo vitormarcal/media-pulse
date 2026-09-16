@@ -1,5 +1,8 @@
 package dev.marcal.mediapulse.server.service.movie
 
+import dev.marcal.mediapulse.server.api.movies.CreditBatchImportRequest
+import dev.marcal.mediapulse.server.api.movies.CreditBatchImportResponse
+import dev.marcal.mediapulse.server.api.movies.CreditBatchImportResultDto
 import dev.marcal.mediapulse.server.api.movies.MovieCreditsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCreditsSyncResponse
 import dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditCandidateDto
@@ -190,6 +193,18 @@ class MovieCreditsService(
         return findPersistedCredit(movieId, credit.personId, credit)
     }
 
+    fun importTmdbCredits(
+        movieId: Long,
+        request: CreditBatchImportRequest<MovieTmdbCreditImportRequest>,
+    ): CreditBatchImportResponse {
+        val results =
+            request.items.distinctBy(::importKey).map { item ->
+                val success = runCatching { transactionTemplate.execute { importTmdbCredit(movieId, item) } }.isSuccess
+                CreditBatchImportResultDto(importKey(item), success)
+            }
+        return CreditBatchImportResponse(results.count { it.success }, results.count { !it.success }, results)
+    }
+
     @Transactional
     fun removeCredit(
         movieId: Long,
@@ -360,6 +375,7 @@ class MovieCreditsService(
             characterName = credit.character,
             billingOrder = credit.order,
             roleLabel = credit.character?.takeIf { it.isNotBlank() } ?: "Elenco",
+            tmdbUrl = "https://www.themoviedb.org/person/${credit.tmdbId}",
         )
     }
 
@@ -379,6 +395,7 @@ class MovieCreditsService(
             characterName = null,
             billingOrder = null,
             roleLabel = if (category == "DIRECTING") "Direção" else "Roteiro",
+            tmdbUrl = "https://www.themoviedb.org/person/${credit.tmdbId}",
         )
     }
 
@@ -457,6 +474,9 @@ class MovieCreditsService(
     }
 
     private val writerJobs = setOf("Writer", "Screenplay", "Story")
+
+    private fun importKey(request: MovieTmdbCreditImportRequest): String =
+        listOf(request.personTmdbId, request.creditType.name, request.job ?: "", request.characterName ?: "").joinToString("|")
 
     private fun categoryKey(dto: PersonCreditDto): String =
         categoryKey(

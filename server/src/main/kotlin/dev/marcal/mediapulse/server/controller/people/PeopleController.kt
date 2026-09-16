@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.controller.people
 
 import dev.marcal.mediapulse.server.api.movies.PersonDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.PersonFavoriteDto
+import dev.marcal.mediapulse.server.api.movies.PersonFilmographyLinkRequest
 import dev.marcal.mediapulse.server.api.movies.PersonFilmographyResponse
 import dev.marcal.mediapulse.server.api.movies.PersonShowFilmographyResponse
 import dev.marcal.mediapulse.server.api.movies.PersonSuggestionDto
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -75,4 +77,20 @@ class PeopleController(
     fun showFilmography(
         @PathVariable personId: Long,
     ): PersonShowFilmographyResponse = personShowFilmographyService.getFilmography(personId)
+
+    @PostMapping("/{personId}/filmography/movies/{movieId}/link")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun linkMovie(
+        @PathVariable personId: Long,
+        @PathVariable movieId: Long,
+        @RequestBody request: PersonFilmographyLinkRequest,
+    ) = personFilmographyService.linkLocalMovie(personId, movieId, request.category)
+
+    @PostMapping("/{personId}/filmography/shows/{showId}/link")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun linkShow(
+        @PathVariable personId: Long,
+        @PathVariable showId: Long,
+        @RequestBody request: PersonFilmographyLinkRequest,
+    ) = personShowFilmographyService.linkLocalShow(personId, showId, request.category)
 }

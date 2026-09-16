@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.repository.PersonFilmographyRepository
 import dev.marcal.mediapulse.server.repository.PersonFilmographyRepository.MediaType
 import dev.marcal.mediapulse.server.service.tv.ManualShowCatalogService
+import dev.marcal.mediapulse.server.service.tv.ShowCreditsService
 import dev.marcal.mediapulse.server.util.TxUtil
 import io.mockk.every
 import io.mockk.mockk
@@ -18,7 +19,8 @@ class PersonShowFilmographyServiceTest {
     private val tmdb = mockk<TmdbApiClient>()
     private val catalog = mockk<ManualShowCatalogService>(relaxed = true)
     private val tx = mockk<TxUtil>()
-    private val service = PersonShowFilmographyService(repository, tmdb, catalog, tx)
+    private val credits = mockk<ShowCreditsService>(relaxed = true)
+    private val service = PersonShowFilmographyService(repository, tmdb, catalog, tx, credits)
 
     init {
         every { tx.inTx<Any>(any()) } answers { firstArg<() -> Any>().invoke() }
@@ -32,6 +34,25 @@ class PersonShowFilmographyServiceTest {
         service.getFilmography(44)
 
         verify(exactly = 0) { tmdb.fetchPersonTvCredits(any()) }
+    }
+
+    @Test
+    fun `link local show should use an available snapshot category`() {
+        every { repository.findMembers(44, MediaType.SHOW) } returns
+            listOf(
+                PersonFilmographyRepository.MemberRecord(
+                    PersonFilmographyRepository.MemberSnapshot("10", "Show", null, 2020, null, null, null, "Writer · Character"),
+                    8,
+                    "show",
+                    1,
+                    10,
+                    setOf("CAST"),
+                ),
+            )
+
+        service.linkLocalShow(44, 8, "WRITING")
+
+        verify { credits.linkExistingPerson(8, 44, "WRITING", null) }
     }
 
     @Test

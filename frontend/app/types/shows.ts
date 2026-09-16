@@ -205,6 +205,7 @@ export interface ShowTmdbCreditCandidate {
   characterName: string | null
   billingOrder: number | null
   roleLabel: string
+  tmdbUrl: string
 }
 
 export interface ShowTmdbCreditCandidatesResponse {

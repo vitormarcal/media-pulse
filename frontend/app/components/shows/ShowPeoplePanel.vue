@@ -55,14 +55,28 @@
       <div v-if="candidatesVisible" class="candidate-panel">
         <p v-if="loadingCandidates" class="empty-copy">Buscando pessoas no TMDb...</p>
         <template v-else-if="candidates">
-          <section v-for="group in candidates.groups" :key="group.id" class="group-row">
+          <div class="candidate-toolbar">
+            <input v-model="candidateQuery" type="search" placeholder="Buscar por nome ou função" />
+            <button
+              v-if="selectedKeys.length"
+              type="button"
+              class="mini-button"
+              :disabled="importingBatch"
+              @click="importSelected"
+            >
+              {{ importingBatch ? 'Adicionando...' : `Adicionar selecionados (${selectedKeys.length})` }}
+            </button>
+          </div>
+          <section v-for="group in filteredGroups" :key="group.id" class="group-row">
             <p class="group-label">{{ group.title }}</p>
             <div class="candidate-list">
-              <div
-                v-for="item in group.items.slice(0, visibleCounts[group.id] ?? 12)"
-                :key="candidateKey(item)"
-                class="candidate-card"
-              >
+              <div v-for="item in visibleCandidates(group)" :key="candidateKey(item)" class="candidate-card">
+                <input
+                  type="checkbox"
+                  :checked="selectedKeys.includes(candidateKey(item))"
+                  :aria-label="`Selecionar ${item.name}`"
+                  @change="toggleCandidate(item)"
+                />
                 <div class="candidate-identity">
                   <div class="person-avatar">
                     <img
@@ -77,6 +91,7 @@
                     ><small class="person-role">{{ item.roleLabel }}</small>
                   </div>
                 </div>
+                <a class="tmdb-person-link" :href="item.tmdbUrl" target="_blank" rel="noreferrer">TMDb</a>
                 <button
                   type="button"
                   class="mini-button"
@@ -88,7 +103,7 @@
               </div>
             </div>
             <button
-              v-if="group.items.length > (visibleCounts[group.id] ?? 12)"
+              v-if="!candidateQuery.trim() && group.items.length > (visibleCounts[group.id] ?? 12)"
               type="button"
               class="secondary-button load-more"
               @click="showMore(group.id)"
@@ -96,6 +111,7 @@
               Carregar mais
             </button>
           </section>
+          <p v-if="candidates.candidateCount && !filteredGroups.length" class="empty-copy">Nenhuma pessoa corresponde à busca.</p>
           <p v-if="!candidates.candidateCount" class="empty-copy">Não restaram pessoas do TMDb para adicionar.</p>
         </template>
       </div>
@@ -112,6 +128,7 @@ import type {
   ShowTmdbCreditCandidate,
   ShowTmdbCreditCandidatesResponse,
 } from '~/types/shows'
+import type { CreditBatchImportResponse } from '~/types/movies'
 
 const props = defineProps<{
   showId: number
@@ -133,6 +150,20 @@ const candidates = ref<ShowTmdbCreditCandidatesResponse | null>(null)
 const importingKey = ref<string | null>(null)
 const removingKey = ref<string | null>(null)
 const visibleCounts = reactive<Record<string, number>>({})
+const candidateQuery = ref('')
+const selectedKeys = ref<string[]>([])
+const importingBatch = ref(false)
+const filteredGroups = computed(() => {
+  const query = candidateQuery.value.trim().toLocaleLowerCase('pt-BR')
+  return (candidates.value?.groups ?? [])
+    .map((group) => ({
+      ...group,
+      items: group.items
+        .filter((item) => !query || `${item.name} ${item.roleLabel}`.toLocaleLowerCase('pt-BR').includes(query))
+        .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR', { sensitivity: 'base' })),
+    }))
+    .filter((group) => group.items.length)
+})
 
 async function syncFromTmdb() {
   if (props.people.curated && !window.confirm('Restaurar o recorte do TMDb e substituir sua curadoria manual?')) return
@@ -155,6 +186,17 @@ async function syncFromTmdb() {
 
 function candidateKey(item: ShowTmdbCreditCandidate) {
   return [item.personTmdbId, item.creditType, item.job ?? '', item.characterName ?? ''].join('|')
+}
+
+function visibleCandidates(group: ShowTmdbCreditCandidatesResponse['groups'][number]) {
+  return candidateQuery.value.trim() ? group.items : group.items.slice(0, visibleCounts[group.id] ?? 12)
+}
+
+function toggleCandidate(item: ShowTmdbCreditCandidate) {
+  const key = candidateKey(item)
+  selectedKeys.value = selectedKeys.value.includes(key)
+    ? selectedKeys.value.filter((candidate) => candidate !== key)
+    : [...selectedKeys.value, key]
 }
 
 async function toggleCandidates() {
@@ -189,12 +231,45 @@ async function importCandidate(item: ShowTmdbCreditCandidate) {
     })
     feedback.value = `${item.name} foi adicionado aos créditos.`
     emit('changed')
-    candidates.value = null
-    candidatesVisible.value = false
+    await fetchCandidates()
   } catch {
     feedback.value = `Não foi possível adicionar ${item.name}.`
   } finally {
     importingKey.value = null
+  }
+}
+
+async function fetchCandidates() {
+  candidates.value = await $fetch<ShowTmdbCreditCandidatesResponse>(
+    `/api/shows/${props.showId}/credits/tmdb-candidates`,
+    { baseURL: config.public.apiBase, method: 'POST' },
+  )
+  const available = new Set(candidates.value.groups.flatMap((group) => group.items.map(candidateKey)))
+  selectedKeys.value = selectedKeys.value.filter((key) => available.has(key))
+}
+
+async function importSelected() {
+  const selected = (candidates.value?.groups ?? [])
+    .flatMap((group) => group.items)
+    .filter((item) => selectedKeys.value.includes(candidateKey(item)))
+  if (!selected.length) return
+  importingBatch.value = true
+  try {
+    const response = await $fetch<CreditBatchImportResponse>(`/api/shows/${props.showId}/credits/from-tmdb/batch`, {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+      body: { items: selected },
+    })
+    selectedKeys.value = response.results.filter((item) => !item.success).map((item) => item.key)
+    feedback.value = response.failed
+      ? `${response.succeeded} adicionados; ${response.failed} não puderam ser adicionados.`
+      : `${response.succeeded} pessoas adicionadas.`
+    emit('changed')
+    await fetchCandidates()
+  } catch {
+    feedback.value = 'Não foi possível adicionar as pessoas selecionadas.'
+  } finally {
+    importingBatch.value = false
   }
 }
 
@@ -366,6 +441,30 @@ h2,
 .candidate-list {
   display: grid;
   gap: 10px;
+}
+
+.candidate-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.candidate-toolbar input {
+  min-width: min(100%, 280px);
+  padding: 10px 14px;
+  border: 1px solid var(--base-color-border, #91918c);
+  border-radius: 16px;
+  background: white;
+  color: var(--base-color-text-primary);
+  font: inherit;
+}
+
+.tmdb-person-link {
+  color: var(--base-color-text-secondary);
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 
 .candidate-card,

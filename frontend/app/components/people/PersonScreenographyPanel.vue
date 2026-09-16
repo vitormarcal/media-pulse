@@ -60,6 +60,23 @@
             <div class="card-actions">
               <a v-if="item.tmdbUrl" class="tmdb-link" :href="item.tmdbUrl" target="_blank" rel="noreferrer">TMDb</a>
               <button
+                v-if="item.inCatalog && item.availableCategories.length === 1"
+                type="button"
+                class="link-button"
+                :disabled="linkingKey === `${item.kind}:${item.tmdbId}`"
+                @click="linkMember(item, item.availableCategories[0]!)"
+              >
+                {{ linkingKey === `${item.kind}:${item.tmdbId}` ? 'Vinculando...' : 'Vincular' }}
+              </button>
+              <button
+                v-else-if="item.inCatalog && item.availableCategories.length > 1"
+                type="button"
+                class="link-button"
+                @click="toggleCategoryChoice(item)"
+              >
+                Vincular
+              </button>
+              <button
                 v-if="!item.inCatalog"
                 type="button"
                 class="add-button"
@@ -69,6 +86,20 @@
                 {{ addingKey === `${item.kind}:${item.tmdbId}` ? 'Adicionando...' : 'Adicionar' }}
               </button>
             </div>
+            <div v-if="categoryChoiceKey === `${item.kind}:${item.tmdbId}`" class="category-choice">
+              <button
+                v-for="category in item.availableCategories"
+                :key="category"
+                type="button"
+                :disabled="linkingKey === `${item.kind}:${item.tmdbId}`"
+                @click="linkMember(item, category)"
+              >
+                {{ categoryLabel(category) }}
+              </button>
+            </div>
+            <p v-if="linkedFeedbackKey === `${item.kind}:${item.tmdbId}`" class="linked-feedback" role="status">
+              Vinculado
+            </p>
           </article>
         </div>
       </section>
@@ -103,6 +134,8 @@ type ScreenographyMemberViewModel = {
   inCatalog: boolean
   roleLabel: string
   watchStatus: string
+  linkedCategories: string[]
+  availableCategories: string[]
 }
 
 const NuxtLink = resolveComponent('NuxtLink')
@@ -125,6 +158,9 @@ const showLoading = ref(false)
 const movieError = ref<string | null>(null)
 const showError = ref<string | null>(null)
 const addingKey = ref<string | null>(null)
+const linkingKey = ref<string | null>(null)
+const categoryChoiceKey = ref<string | null>(null)
+const linkedFeedbackKey = ref<string | null>(null)
 
 const modes = computed(() => [
   {
@@ -160,6 +196,8 @@ const currentMembers = computed<ScreenographyMemberViewModel[]>(() => {
           inCatalog: item.inCatalog,
           roleLabel: item.roleLabel,
           watchStatus: item.watchStatus,
+          linkedCategories: item.linkedCategories,
+          availableCategories: item.availableCategories,
         }))
         .sort(compareWatchStatus) ?? []
     )
@@ -178,6 +216,8 @@ const currentMembers = computed<ScreenographyMemberViewModel[]>(() => {
         inCatalog: item.inCatalog,
         roleLabel: item.roleLabel,
         watchStatus: item.watchStatus,
+        linkedCategories: item.linkedCategories,
+        availableCategories: item.availableCategories,
       }))
       .sort(compareWatchStatus) ?? []
   )
@@ -361,6 +401,50 @@ async function addMember(item: ScreenographyMemberViewModel) {
     addingKey.value = null
   }
 }
+
+function toggleCategoryChoice(item: ScreenographyMemberViewModel) {
+  const key = `${item.kind}:${item.tmdbId}`
+  categoryChoiceKey.value = categoryChoiceKey.value === key ? null : key
+}
+
+function categoryLabel(category: string) {
+  return { CAST: 'Elenco', DIRECTING: 'Direção', WRITING: 'Roteiro' }[category] ?? category
+}
+
+async function linkMember(item: ScreenographyMemberViewModel, category: string) {
+  const localId =
+    item.kind === 'movies'
+      ? movieFilmography.value?.members.find((member) => member.tmdbId === item.tmdbId)?.localMovieId
+      : showFilmography.value?.members.find((member) => member.tmdbId === item.tmdbId)?.localShowId
+  if (!localId) return
+  const key = `${item.kind}:${item.tmdbId}`
+  linkingKey.value = key
+  try {
+    await $fetch(`/api/people/${props.person.personId}/filmography/${item.kind}/${localId}/link`, {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+      body: { category },
+    })
+    item.availableCategories = item.availableCategories.filter((candidate) => candidate !== category)
+    item.linkedCategories = [...item.linkedCategories, category]
+    const source = item.kind === 'movies' ? movieFilmography.value?.members : showFilmography.value?.members
+    const member = source?.find((candidate) => candidate.tmdbId === item.tmdbId)
+    if (member) {
+      member.availableCategories = member.availableCategories.filter((candidate) => candidate !== category)
+      member.linkedCategories = [...member.linkedCategories, category]
+    }
+    categoryChoiceKey.value = null
+    linkedFeedbackKey.value = key
+    window.setTimeout(() => {
+      if (linkedFeedbackKey.value === key) linkedFeedbackKey.value = null
+    }, 1800)
+  } catch {
+    if (item.kind === 'movies') movieError.value = 'Não foi possível vincular esta pessoa ao filme.'
+    else showError.value = 'Não foi possível vincular esta pessoa à série.'
+  } finally {
+    linkingKey.value = null
+  }
+}
 </script>
 
 <style scoped>
@@ -385,7 +469,8 @@ async function addMember(item: ScreenographyMemberViewModel) {
 
 .mode-button,
 .load-button,
-.add-button {
+.add-button,
+.link-button {
   border: none;
   font: inherit;
   cursor: pointer;
@@ -435,7 +520,8 @@ async function addMember(item: ScreenographyMemberViewModel) {
 }
 
 .load-button,
-.add-button {
+.add-button,
+.link-button {
   padding: 8px 14px;
   border-radius: 16px;
 }
@@ -536,14 +622,39 @@ async function addMember(item: ScreenographyMemberViewModel) {
   font-size: 0.8rem;
 }
 
-.add-button {
+.add-button,
+.link-button {
   background: var(--base-color-brand-red);
   color: var(--base-color-text-primary);
+}
+
+.category-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-choice button {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+  cursor: pointer;
+}
+
+.linked-feedback {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .mode-button:focus-visible,
 .load-button:focus-visible,
 .add-button:focus-visible,
+.link-button:focus-visible,
+.category-choice button:focus-visible,
 .tmdb-link:focus-visible,
 .poster-link:focus-visible {
   outline: 2px solid var(--base-color-focus, #435ee5);

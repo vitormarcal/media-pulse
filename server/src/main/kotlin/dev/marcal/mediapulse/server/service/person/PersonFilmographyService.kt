@@ -2,10 +2,12 @@ package dev.marcal.mediapulse.server.service.person
 
 import dev.marcal.mediapulse.server.api.movies.PersonFilmographyMemberDto
 import dev.marcal.mediapulse.server.api.movies.PersonFilmographyResponse
+import dev.marcal.mediapulse.server.api.movies.PersonLinkRequest
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.repository.PersonFilmographyRepository
 import dev.marcal.mediapulse.server.repository.PersonFilmographyRepository.MediaType
 import dev.marcal.mediapulse.server.service.movie.ManualMovieCatalogService
+import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.util.TxUtil
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -19,6 +21,7 @@ class PersonFilmographyService(
     private val tmdbApiClient: TmdbApiClient,
     private val manualMovieCatalogService: ManualMovieCatalogService,
     private val tx: TxUtil,
+    private val movieCreditsService: MovieCreditsService,
 ) {
     data class BatchResult(
         val candidates: Int,
@@ -56,6 +59,7 @@ class PersonFilmographyService(
             person.profileUrl,
             repository.findMembers(personId, MediaType.MOVIE).map { member ->
                 val item = member.snapshot
+                val availableCategories = categories(item.roleLabel)
                 PersonFilmographyMemberDto(
                     item.tmdbId,
                     item.title,
@@ -74,6 +78,8 @@ class PersonFilmographyService(
                         member.watchedCount > 0 -> "WATCHED"
                         else -> "UNWATCHED"
                     },
+                    member.linkedCategories.sorted(),
+                    (availableCategories - member.linkedCategories).sorted(),
                 )
             },
         )
@@ -141,6 +147,24 @@ class PersonFilmographyService(
         return getFilmography(personId)
     }
 
+    fun linkLocalMovie(
+        personId: Long,
+        movieId: Long,
+        category: String,
+    ) {
+        val member =
+            repository.findMembers(personId, MediaType.MOVIE).firstOrNull { it.localId == movieId }
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Filme não encontrado na filmografia local")
+        val normalized = category.trim().uppercase()
+        if (normalized !in categories(member.snapshot.roleLabel) || normalized in member.linkedCategories) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Categoria indisponível para este vínculo")
+        }
+        movieCreditsService.linkExistingPerson(
+            movieId,
+            PersonLinkRequest(personId, groupFor(normalized), roleFor(member.snapshot.roleLabel, normalized)),
+        )
+    }
+
     private fun persist(
         personId: Long,
         items: Collection<Item>,
@@ -155,7 +179,7 @@ class PersonFilmographyService(
                     it.overview,
                     it.posterUrl,
                     it.backdropUrl,
-                    it.roles.take(3).joinToString(" · "),
+                    snapshotRoles(it.roles).joinToString(" · "),
                 )
             }
         tx.inTx { repository.replaceSnapshot(personId, MediaType.MOVIE, snapshots) }
@@ -171,4 +195,32 @@ class PersonFilmographyService(
     ) {
         if (role !in item.roles) item.roles.add(role)
     }
+
+    private fun categories(roleLabel: String): Set<String> {
+        val roles = roleLabel.split(" · ")
+        return buildSet {
+            if (roles.any { it == "Director" }) add("DIRECTING")
+            if (roles.any { it in relevantCrewJobs - "Director" }) add("WRITING")
+            if (roles.any { it !in relevantCrewJobs }) add("CAST")
+        }
+    }
+
+    private fun snapshotRoles(roles: List<String>): List<String> =
+        listOfNotNull(
+            roles.firstOrNull { it == "Director" },
+            roles.firstOrNull { it in relevantCrewJobs - "Director" },
+            roles.firstOrNull { it !in relevantCrewJobs },
+        )
+
+    private fun groupFor(category: String) =
+        when (category) {
+            "DIRECTING" -> "DIRECTORS"
+            "WRITING" -> "WRITERS"
+            else -> "CAST"
+        }
+
+    private fun roleFor(
+        roleLabel: String,
+        category: String,
+    ): String? = if (category == "CAST") roleLabel.split(" · ").firstOrNull { it !in relevantCrewJobs } else null
 }

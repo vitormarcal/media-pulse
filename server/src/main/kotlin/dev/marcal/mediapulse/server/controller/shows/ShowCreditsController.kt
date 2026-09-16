@@ -1,5 +1,7 @@
 package dev.marcal.mediapulse.server.controller.shows
 
+import dev.marcal.mediapulse.server.api.movies.CreditBatchImportRequest
+import dev.marcal.mediapulse.server.api.movies.CreditBatchImportResponse
 import dev.marcal.mediapulse.server.api.shows.ShowPersonCreditDto
 import dev.marcal.mediapulse.server.api.shows.ShowTmdbCreditCandidatesResponse
 import dev.marcal.mediapulse.server.api.shows.ShowTmdbCreditImportRequest
@@ -27,6 +29,12 @@ class ShowCreditsController(
         @PathVariable showId: Long,
         @RequestBody request: ShowTmdbCreditImportRequest,
     ): ShowPersonCreditDto = showCreditsService.importTmdbCredit(showId, request)
+
+    @PostMapping("/{showId}/credits/from-tmdb/batch")
+    fun importTmdbCredits(
+        @PathVariable showId: Long,
+        @RequestBody request: CreditBatchImportRequest<ShowTmdbCreditImportRequest>,
+    ): CreditBatchImportResponse = showCreditsService.importTmdbCredits(showId, request)
 
     @DeleteMapping("/{showId}/people/{personId}")
     fun removeCredit(

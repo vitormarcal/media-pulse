@@ -135,7 +135,7 @@ A UI está disponível em `/shows/lists`, `/shows/lists/{slug}` e no bloco `Orga
 - funciona como reparo explícito pela ação `Gerenciar pessoas` da página da série
 - restaura o recorte do TMDb e limpa a curadoria manual anterior
 
-Na mesma ação, `POST /api/shows/{showId}/credits/tmdb-candidates` consulta outras pessoas sem persistir nada. `POST /api/shows/{showId}/credits/from-tmdb` grava somente a escolha explícita. A UI exibe 12 opções por grupo e permite carregar mais.
+Na mesma ação, `POST /api/shows/{showId}/credits/tmdb-candidates` consulta outras pessoas sem persistir nada. `POST /api/shows/{showId}/credits/from-tmdb` grava somente a escolha explícita e `POST /api/shows/{showId}/credits/from-tmdb/batch` grava uma seleção com resultado independente por item. A UI ordena alfabeticamente dentro de elenco, direção e roteiro, pesquisa por nome ou função, abre o perfil da pessoa no TMDb e mostra 12 opções por grupo antes de carregar mais. Adições individuais ou em lote mantêm o painel aberto; numa falha parcial, somente as opções com erro continuam selecionadas.
 
 `DELETE /api/shows/{showId}/people/{personId}?category=CAST|DIRECTING|WRITING` remove fisicamente os vínculos da categoria. Adições e remoções marcam a série como curada; o worker não substitui esses créditos. Uma pessoa sem qualquer crédito audiovisual é apagada com seus dados dependentes, exceto quando favorita.
 

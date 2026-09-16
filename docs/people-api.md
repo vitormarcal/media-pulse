@@ -22,6 +22,8 @@ A People API sustenta a exploração audiovisual transversal entre filmes e sér
 | `DELETE /api/people/{personId}/favorite`                  | `personId`                        | remove a marcação de favorito                                       |
 | `GET /api/people/{personId}/filmography`                  | `personId`                        | snapshot local da filmografia de filmes                             |
 | `GET /api/people/{personId}/show-filmography`             | `personId`                        | snapshot local da filmografia de séries                             |
+| `POST /api/people/{personId}/filmography/movies/{movieId}/link` | body com `category`          | vincula a pessoa a um filme local existente                         |
+| `POST /api/people/{personId}/filmography/shows/{showId}/link`   | body com `category`          | vincula a pessoa a uma série local existente                        |
 | `POST /api/admin/people/{personId}/tmdb-filmography`      | `personId`                        | força atualização da filmografia de filmes                          |
 | `POST /api/admin/people/{personId}/tmdb-show-filmography` | `personId`                        | força atualização da filmografia de séries                          |
 
@@ -46,6 +48,9 @@ As filmografias de filmes e séries possuem snapshots e estados de sincronizaç�
 - presença local é resolvida dinamicamente pelo `tmdb_id`
 - leitura da filmografia não cria filmes, séries ou créditos
 - títulos externos continuam disponíveis para adição explícita pelo owner
+- cada obra local informa as categorias já vinculadas e as categorias de elenco, direção ou roteiro ainda disponíveis no snapshot
+- quando uma categoria está ausente, a página permite vinculá-la sem sair da filmografia; uma opção é aplicada diretamente e várias opções usam um seletor compacto
+- o vínculo usa somente o snapshot local, marca a obra como curada manualmente e não consulta o TMDb durante a leitura ou a ação
 
 Filmes usam:
 

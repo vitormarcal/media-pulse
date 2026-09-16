@@ -33,6 +33,7 @@ class PersonFilmographyRepository(
         val localSlug: String?,
         val watchedCount: Long,
         val totalCount: Long,
+        val linkedCategories: Set<String>,
     )
 
     fun findPerson(personId: Long): PersonRecord? =
@@ -73,6 +74,9 @@ class PersonFilmographyRepository(
         mediaType: MediaType,
     ): List<MemberRecord> {
         val localTable = if (mediaType == MediaType.MOVIE) "movies" else "tv_shows"
+        val creditsTable = if (mediaType == MediaType.MOVIE) "movie_credits" else "show_credits"
+        val workColumn = if (mediaType == MediaType.MOVIE) "movie_id" else "show_id"
+        val writingJobs = if (mediaType == MediaType.MOVIE) "'Writer', 'Screenplay', 'Story'" else "'Writer', 'Screenplay', 'Story Editor'"
         return entityManager
             .createNativeQuery(
                 """
@@ -80,7 +84,10 @@ class PersonFilmographyRepository(
                        member.overview, member.poster_url, member.backdrop_url, member.role_label,
                        local.id, local.slug,
                        ${if (mediaType == MediaType.MOVIE) "(SELECT COUNT(*) FROM movie_watches watch WHERE watch.movie_id = local.id)" else "(SELECT COUNT(DISTINCT watch.episode_id) FROM tv_episodes episode JOIN tv_episode_watches watch ON watch.episode_id = episode.id WHERE episode.show_id = local.id)"},
-                       ${if (mediaType == MediaType.MOVIE) "0" else "(SELECT COUNT(*) FROM tv_episodes episode WHERE episode.show_id = local.id)"}
+                       ${if (mediaType == MediaType.MOVIE) "0" else "(SELECT COUNT(*) FROM tv_episodes episode WHERE episode.show_id = local.id)"},
+                       EXISTS (SELECT 1 FROM $creditsTable credit WHERE credit.$workColumn = local.id AND credit.person_id = :personId AND credit.credit_type = 'CAST'),
+                       EXISTS (SELECT 1 FROM $creditsTable credit WHERE credit.$workColumn = local.id AND credit.person_id = :personId AND credit.job = 'Director'),
+                       EXISTS (SELECT 1 FROM $creditsTable credit WHERE credit.$workColumn = local.id AND credit.person_id = :personId AND credit.job IN ($writingJobs))
                 FROM person_filmography_members member
                 LEFT JOIN $localTable local ON local.tmdb_id = member.tmdb_id
                 WHERE member.person_id = :personId AND member.media_type = :mediaType
@@ -106,6 +113,11 @@ class PersonFilmographyRepository(
                     fields[9] as String?,
                     (fields[10] as Number).toLong(),
                     (fields[11] as Number).toLong(),
+                    buildSet {
+                        if (fields[12] as Boolean) add("CAST")
+                        if (fields[13] as Boolean) add("DIRECTING")
+                        if (fields[14] as Boolean) add("WRITING")
+                    },
                 )
             }
     }

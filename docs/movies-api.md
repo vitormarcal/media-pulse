@@ -47,6 +47,7 @@ A Movies API expõe consulta read-only da biblioteca e do histórico de watches,
 | `POST /api/admin/movies/credits/sync-tmdb` | `limit=100` | `MovieCreditsBatchSyncResponse` |
 | `POST /api/movies/{movieId}/credits/tmdb-candidates` | `movieId` | `MovieTmdbCreditCandidatesResponse` |
 | `POST /api/movies/{movieId}/credits/from-tmdb` | body com `personTmdbId`, `creditType`, `department?`, `job?`, `characterName?`, `billingOrder?` | `PersonCreditDto` |
+| `POST /api/movies/{movieId}/credits/from-tmdb/batch` | body com `items[]` no mesmo formato | `CreditBatchImportResponse` |
 | `POST /api/movies/{movieId}/people` | body com `personId`, `group`, `roleLabel?` | `PersonCreditDto` |
 | `POST /api/admin/movies/{movieId}/terms/sync-tmdb` | `movieId` | `MovieTermsSyncResponse` |
 | `POST /api/admin/movies/terms/sync-tmdb` | `limit=100` | `MovieTermsBatchSyncResponse` |
@@ -334,7 +335,8 @@ Persistência:
 `POST /api/movies/{movieId}/credits/tmdb-candidates` consulta candidatos de elenco, direção e roteiro.
 
 - é somente leitura e não cria pessoas nem vínculos, mesmo quando a pessoa já existe localmente
-- a UI mostra 12 por grupo e permite carregar mais
+- a UI ordena alfabeticamente dentro de elenco, direção e roteiro, permite pesquisar nome/função e mostra 12 por grupo antes de carregar mais
+- cada candidato possui link para o perfil correspondente no TMDb
 - retorna apenas categorias ainda não vinculadas para a pessoa
 
 `POST /api/movies/{movieId}/credits/from-tmdb` incorpora um crédito específico mostrado nessa expansão.
@@ -344,6 +346,8 @@ Persistência:
 - salva o vínculo filme-pessoa sem precisar rerodar o sync completo
 - rejeita créditos de equipe fora de direção e roteiro
 - marca o filme como curado manualmente, impedindo substituição pelo worker
+
+`POST /api/movies/{movieId}/credits/from-tmdb/batch` incorpora vários candidatos selecionados sem fechar o painel. Cada item roda isoladamente: sucessos permanecem salvos e a resposta identifica falhas para que continuem selecionadas na UI.
 
 `DELETE /api/movies/{movieId}/people/{personId}?category=CAST|DIRECTING|WRITING` remove fisicamente os vínculos da categoria. Se a pessoa ficar sem créditos audiovisuais e não for favorita, sua identidade e dados dependentes também são removidos. A remoção congela o conjunto do filme até a restauração explícita pelo TMDb.
 

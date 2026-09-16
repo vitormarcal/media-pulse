@@ -187,6 +187,7 @@ data class MovieTmdbCreditCandidateDto(
     val characterName: String?,
     val billingOrder: Int?,
     val roleLabel: String,
+    val tmdbUrl: String,
 )
 
 data class MovieTmdbCreditCandidateGroupDto(
@@ -209,6 +210,25 @@ data class MovieTmdbCreditImportRequest(
     val job: String? = null,
     val characterName: String? = null,
     val billingOrder: Int? = null,
+)
+
+data class CreditBatchImportRequest<T>(
+    val items: List<T> = emptyList(),
+)
+
+data class CreditBatchImportResultDto(
+    val key: String,
+    val success: Boolean,
+)
+
+data class CreditBatchImportResponse(
+    val succeeded: Int,
+    val failed: Int,
+    val results: List<CreditBatchImportResultDto>,
+)
+
+data class PersonFilmographyLinkRequest(
+    val category: String,
 )
 
 data class PersonDetailsResponse(
@@ -563,6 +583,8 @@ data class PersonFilmographyMemberDto(
     val inCatalog: Boolean,
     val roleLabel: String,
     val watchStatus: String,
+    val linkedCategories: List<String> = emptyList(),
+    val availableCategories: List<String> = emptyList(),
 )
 
 data class PersonShowFilmographyResponse(
@@ -587,6 +609,8 @@ data class PersonShowFilmographyMemberDto(
     val inCatalog: Boolean,
     val roleLabel: String,
     val watchStatus: String,
+    val linkedCategories: List<String> = emptyList(),
+    val availableCategories: List<String> = emptyList(),
 )
 
 data class MovieCompanyMembersResponse(

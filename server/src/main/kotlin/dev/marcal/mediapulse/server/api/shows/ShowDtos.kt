@@ -329,6 +329,7 @@ data class ShowTmdbCreditCandidateDto(
     val characterName: String?,
     val billingOrder: Int?,
     val roleLabel: String,
+    val tmdbUrl: String,
 )
 
 data class ShowTmdbCreditCandidateGroupDto(

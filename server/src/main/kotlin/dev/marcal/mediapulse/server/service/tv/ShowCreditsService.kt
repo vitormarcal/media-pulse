@@ -1,5 +1,8 @@
 package dev.marcal.mediapulse.server.service.tv
 
+import dev.marcal.mediapulse.server.api.movies.CreditBatchImportRequest
+import dev.marcal.mediapulse.server.api.movies.CreditBatchImportResponse
+import dev.marcal.mediapulse.server.api.movies.CreditBatchImportResultDto
 import dev.marcal.mediapulse.server.api.shows.ShowCreditsBatchSyncResponse
 import dev.marcal.mediapulse.server.api.shows.ShowCreditsSyncResponse
 import dev.marcal.mediapulse.server.api.shows.ShowPersonCreditDto
@@ -127,6 +130,65 @@ class ShowCreditsService(
         showCreditsCrudRepository.markCurated(show.id)
         return tvShowQueryRepository.getShowPeople(show.id).first {
             it.personId == assignment.personId &&
+                it.creditType.name == assignment.creditType.name &&
+                (it.job ?: "") == (assignment.job ?: "")
+        }
+    }
+
+    fun importTmdbCredits(
+        showId: Long,
+        request: CreditBatchImportRequest<ShowTmdbCreditImportRequest>,
+    ): CreditBatchImportResponse {
+        val results =
+            request.items.distinctBy(::importKey).map { item ->
+                val success = runCatching { transactionTemplate.execute { importTmdbCredit(showId, item) } }.isSuccess
+                CreditBatchImportResultDto(importKey(item), success)
+            }
+        return CreditBatchImportResponse(results.count { it.success }, results.count { !it.success }, results)
+    }
+
+    @Transactional
+    fun linkExistingPerson(
+        showId: Long,
+        personId: Long,
+        category: String,
+        roleLabel: String?,
+    ): ShowPersonCreditDto {
+        val show = requireShow(showId)
+        val person =
+            personRepository.findById(personId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Person not found")
+            }
+        val assignment =
+            when (normalizeCategory(category)) {
+                "DIRECTING" ->
+                    ShowCreditAssignmentRepository.UpsertShowCreditRequest(
+                        show.id,
+                        person.id,
+                        MovieCreditType.CREW,
+                        "Directing",
+                        "Director",
+                    )
+                "WRITING" ->
+                    ShowCreditAssignmentRepository.UpsertShowCreditRequest(
+                        show.id,
+                        person.id,
+                        MovieCreditType.CREW,
+                        "Writing",
+                        "Writer",
+                    )
+                else ->
+                    ShowCreditAssignmentRepository.UpsertShowCreditRequest(
+                        show.id,
+                        person.id,
+                        MovieCreditType.CAST,
+                        characterName = roleLabel ?: "Elenco",
+                    )
+            }
+        showCreditAssignmentRepository.upsert(assignment)
+        showCreditsCrudRepository.markCurated(show.id)
+        return tvShowQueryRepository.getShowPeople(show.id).first {
+            it.personId == person.id &&
                 it.creditType.name == assignment.creditType.name &&
                 (it.job ?: "") == (assignment.job ?: "")
         }
@@ -333,6 +395,7 @@ class ShowCreditsService(
             credit.character,
             credit.order,
             credit.character ?: "Elenco",
+            "https://www.themoviedb.org/person/${credit.tmdbId}",
         )
     }
 
@@ -352,6 +415,7 @@ class ShowCreditsService(
             null,
             null,
             if (category == "DIRECTING") "Direção" else "Roteiro",
+            "https://www.themoviedb.org/person/${credit.tmdbId}",
         )
     }
 
@@ -379,6 +443,9 @@ class ShowCreditsService(
         tmdbId: String,
         category: String,
     ): String = "$tmdbId|$category"
+
+    private fun importKey(request: ShowTmdbCreditImportRequest): String =
+        listOf(request.personTmdbId, request.creditType.name, request.job ?: "", request.characterName ?: "").joinToString("|")
 
     private fun upsertPerson(
         tmdbId: String,

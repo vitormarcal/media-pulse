@@ -2237,6 +2237,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/PersonShowFilmographyResponse"
 
+  /api/people/{personId}/filmography/movies/{movieId}/link:
+    post:
+      summary: Link a person filmography category to an existing local movie
+      tags: [People]
+      parameters:
+        - { name: personId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: movieId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/PersonFilmographyLinkRequest" } } }
+      responses:
+        "204": { description: Linked }
+
+  /api/people/{personId}/filmography/shows/{showId}/link:
+    post:
+      summary: Link a person filmography category to an existing local show
+      tags: [People]
+      parameters:
+        - { name: personId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: showId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/PersonFilmographyLinkRequest" } } }
+      responses:
+        "204": { description: Linked }
+
   /api/admin/movies/{movieId}/terms/sync-tmdb:
     post:
       summary: Sync movie terms from TMDb
@@ -2394,6 +2420,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PersonCreditDto"
+
+  /api/movies/{movieId}/credits/from-tmdb/batch:
+    post:
+      summary: Import selected TMDb movie credits independently
+      tags: [Movies]
+      parameters:
+        - { name: movieId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/MovieCreditBatchImportRequest" } } }
+      responses:
+        "200":
+          description: Per-item import result
+          content: { application/json: { schema: { $ref: "#/components/schemas/CreditBatchImportResponse" } } }
 
   /api/movies/{movieId}/people:
     post:
@@ -2869,6 +2909,20 @@ paths:
         "200":
           description: OK
           content: { application/json: { schema: { $ref: "#/components/schemas/ShowPersonCreditDto" } } }
+
+  /api/shows/{showId}/credits/from-tmdb/batch:
+    post:
+      summary: Import selected TMDb show credits independently
+      tags: [Shows]
+      parameters:
+        - { name: showId, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ShowCreditBatchImportRequest" } } }
+      responses:
+        "200":
+          description: Per-item import result
+          content: { application/json: { schema: { $ref: "#/components/schemas/CreditBatchImportResponse" } } }
 
   /api/shows/{showId}/people/{personId}:
     delete:
@@ -6709,7 +6763,13 @@ components:
         watchStatus:
           type: string
           enum: [OUTSIDE_CATALOG, UNWATCHED, WATCHED]
-      required: [tmdbId, title, tmdbUrl, inCatalog, roleLabel, watchStatus]
+        linkedCategories:
+          type: array
+          items: { type: string, enum: [CAST, DIRECTING, WRITING] }
+        availableCategories:
+          type: array
+          items: { type: string, enum: [CAST, DIRECTING, WRITING] }
+      required: [tmdbId, title, tmdbUrl, inCatalog, roleLabel, watchStatus, linkedCategories, availableCategories]
     PersonFilmographyResponse:
       type: object
       properties:
@@ -6766,7 +6826,18 @@ components:
         watchStatus:
           type: string
           enum: [OUTSIDE_CATALOG, NOT_STARTED, IN_PROGRESS, WATCHED]
-      required: [tmdbId, title, tmdbUrl, inCatalog, roleLabel, watchStatus]
+        linkedCategories:
+          type: array
+          items: { type: string, enum: [CAST, DIRECTING, WRITING] }
+        availableCategories:
+          type: array
+          items: { type: string, enum: [CAST, DIRECTING, WRITING] }
+      required: [tmdbId, title, tmdbUrl, inCatalog, roleLabel, watchStatus, linkedCategories, availableCategories]
+    PersonFilmographyLinkRequest:
+      type: object
+      properties:
+        category: { type: string, enum: [CAST, DIRECTING, WRITING] }
+      required: [category]
     PersonShowFilmographyResponse:
       type: object
       properties:
@@ -6888,7 +6959,9 @@ components:
           nullable: true
         roleLabel:
           type: string
-      required: [personTmdbId, name, creditType, roleLabel]
+        tmdbUrl:
+          type: string
+      required: [personTmdbId, name, creditType, roleLabel, tmdbUrl]
     MovieTmdbCreditCandidateGroupDto:
       type: object
       properties:
@@ -6936,6 +7009,35 @@ components:
           type: integer
           nullable: true
       required: [personTmdbId, creditType]
+    MovieCreditBatchImportRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/MovieTmdbCreditImportRequest" }
+      required: [items]
+    ShowCreditBatchImportRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ShowTmdbCreditImportRequest" }
+      required: [items]
+    CreditBatchImportResultDto:
+      type: object
+      properties:
+        key: { type: string }
+        success: { type: boolean }
+      required: [key, success]
+    CreditBatchImportResponse:
+      type: object
+      properties:
+        succeeded: { type: integer }
+        failed: { type: integer }
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/CreditBatchImportResultDto" }
+      required: [succeeded, failed, results]
     MoviesRecentResponse:
       type: object
       properties:

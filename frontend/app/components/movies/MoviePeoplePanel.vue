@@ -72,16 +72,30 @@
           <p v-if="loadingTmdbCandidates" class="tmdb-state">Buscando créditos extras no TMDb...</p>
 
           <template v-else-if="tmdbCandidates">
+            <div class="candidate-toolbar">
+              <input v-model="candidateQuery" type="search" placeholder="Buscar por nome ou função" />
+              <button
+                v-if="selectedCandidateKeys.length"
+                type="button"
+                class="mini-button"
+                :disabled="importingBatch"
+                @click="importSelected"
+              >
+                {{ importingBatch ? 'Adicionando...' : `Adicionar selecionados (${selectedCandidateKeys.length})` }}
+              </button>
+            </div>
             <div v-if="tmdbCandidates.candidateCount" class="tmdb-groups">
-              <section v-for="group in tmdbCandidates.groups" :key="group.id" class="tmdb-group">
+              <section v-for="group in filteredCandidateGroups" :key="group.id" class="tmdb-group">
                 <p class="group-label">{{ group.title }}</p>
 
                 <div class="candidate-list">
-                  <div
-                    v-for="item in group.items.slice(0, visibleCandidateCounts[group.id] ?? 12)"
-                    :key="candidateKey(item)"
-                    class="candidate-card"
-                  >
+                  <div v-for="item in visibleCandidates(group)" :key="candidateKey(item)" class="candidate-card">
+                    <input
+                      type="checkbox"
+                      :checked="selectedCandidateKeys.includes(candidateKey(item))"
+                      :aria-label="`Selecionar ${item.name}`"
+                      @change="toggleCandidate(item)"
+                    />
                     <div class="candidate-identity">
                       <div class="person-avatar candidate-avatar">
                         <img
@@ -98,6 +112,8 @@
                       </div>
                     </div>
 
+                    <a class="tmdb-person-link" :href="item.tmdbUrl" target="_blank" rel="noreferrer">TMDb</a>
+
                     <button
                       type="button"
                       class="mini-button"
@@ -109,7 +125,7 @@
                   </div>
                 </div>
                 <button
-                  v-if="group.items.length > (visibleCandidateCounts[group.id] ?? 12)"
+                  v-if="!candidateQuery.trim() && group.items.length > (visibleCandidateCounts[group.id] ?? 12)"
                   type="button"
                   class="ghost-button load-more"
                   @click="showMore(group.id)"
@@ -117,6 +133,7 @@
                   Carregar mais
                 </button>
               </section>
+              <p v-if="!filteredCandidateGroups.length" class="tmdb-state">Nenhuma pessoa corresponde à busca.</p>
             </div>
 
             <p v-else class="tmdb-state">Não restaram pessoas extras do TMDb para escolher neste filme.</p>
@@ -197,6 +214,7 @@ import type {
   MovieTmdbCreditCandidate,
   MovieTmdbCreditCandidatesResponse,
   MovieTmdbCreditImportRequest,
+  CreditBatchImportResponse,
 } from '~/types/movies'
 
 const props = defineProps<{
@@ -222,6 +240,9 @@ const importingCandidateKey = ref<string | null>(null)
 const removingKey = ref<string | null>(null)
 const visibleCandidateCounts = reactive<Record<string, number>>({})
 const feedback = ref<string | null>(null)
+const candidateQuery = ref('')
+const selectedCandidateKeys = ref<string[]>([])
+const importingBatch = ref(false)
 const searchQuery = ref('')
 const linkGroup = ref<'DIRECTORS' | 'WRITERS' | 'CAST'>('DIRECTORS')
 const linkRoleLabel = ref('')
@@ -232,6 +253,17 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null
 const normalizedSearchQuery = computed(() => searchQuery.value.trim().replace(/\s+/g, ' ').toLowerCase())
 const shouldShowSuggestions = computed(() => editingEnabled.value && normalizedSearchQuery.value.length >= 2)
 const requiresRoleLabel = computed(() => linkGroup.value === 'CAST')
+const filteredCandidateGroups = computed(() => {
+  const query = candidateQuery.value.trim().toLocaleLowerCase('pt-BR')
+  return (tmdbCandidates.value?.groups ?? [])
+    .map((group) => ({
+      ...group,
+      items: group.items
+        .filter((item) => !query || `${item.name} ${item.roleLabel}`.toLocaleLowerCase('pt-BR').includes(query))
+        .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR', { sensitivity: 'base' })),
+    }))
+    .filter((group) => group.items.length)
+})
 
 const assignedPeople = computed(() => {
   const groups = props.people.groups
@@ -268,6 +300,8 @@ async function fetchTmdbCandidates() {
         method: 'POST',
       },
     )
+    const available = new Set(tmdbCandidates.value.groups.flatMap((group) => group.items.map(candidateKey)))
+    selectedCandidateKeys.value = selectedCandidateKeys.value.filter((key) => available.has(key))
   } catch {
     feedback.value = 'Não foi possível buscar pessoas extras do TMDb.'
     tmdbCandidates.value = null
@@ -326,9 +360,18 @@ function buildImportRequest(item: MovieTmdbCreditCandidate): MovieTmdbCreditImpo
 }
 
 function candidateKey(item: MovieTmdbCreditCandidate) {
-  return [item.personTmdbId, item.creditType, item.job || '', item.characterName || '', item.billingOrder || ''].join(
-    '|',
-  )
+  return [item.personTmdbId, item.creditType, item.job || '', item.characterName || ''].join('|')
+}
+
+function visibleCandidates(group: MovieTmdbCreditCandidatesResponse['groups'][number]) {
+  return candidateQuery.value.trim() ? group.items : group.items.slice(0, visibleCandidateCounts[group.id] ?? 12)
+}
+
+function toggleCandidate(item: MovieTmdbCreditCandidate) {
+  const key = candidateKey(item)
+  selectedCandidateKeys.value = selectedCandidateKeys.value.includes(key)
+    ? selectedCandidateKeys.value.filter((candidate) => candidate !== key)
+    : [...selectedCandidateKeys.value, key]
 }
 
 async function importCandidate(item: MovieTmdbCreditCandidate) {
@@ -349,6 +392,31 @@ async function importCandidate(item: MovieTmdbCreditCandidate) {
     feedback.value = `Não foi possível adicionar ${item.name} a partir do TMDb.`
   } finally {
     importingCandidateKey.value = null
+  }
+}
+
+async function importSelected() {
+  const selected = (tmdbCandidates.value?.groups ?? [])
+    .flatMap((group) => group.items)
+    .filter((item) => selectedCandidateKeys.value.includes(candidateKey(item)))
+  if (!selected.length) return
+  importingBatch.value = true
+  try {
+    const response = await $fetch<CreditBatchImportResponse>(`/api/movies/${props.movieId}/credits/from-tmdb/batch`, {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+      body: { items: selected.map(buildImportRequest) },
+    })
+    selectedCandidateKeys.value = response.results.filter((item) => !item.success).map((item) => item.key)
+    feedback.value = response.failed
+      ? `${response.succeeded} adicionados; ${response.failed} não puderam ser adicionados.`
+      : `${response.succeeded} pessoas adicionadas.`
+    emit('changed')
+    await fetchTmdbCandidates()
+  } catch {
+    feedback.value = 'Não foi possível adicionar as pessoas selecionadas.'
+  } finally {
+    importingBatch.value = false
   }
 }
 
@@ -626,6 +694,30 @@ h2 {
   align-items: center;
   gap: 10px;
   min-width: 0;
+}
+
+.candidate-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.candidate-toolbar input {
+  min-width: min(100%, 280px);
+  padding: 10px 14px;
+  border: 1px solid var(--base-color-border, #91918c);
+  border-radius: 16px;
+  background: white;
+  color: var(--base-color-text-primary);
+  font: inherit;
+}
+
+.tmdb-person-link {
+  color: var(--base-color-text-secondary);
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 
 .candidate-list {

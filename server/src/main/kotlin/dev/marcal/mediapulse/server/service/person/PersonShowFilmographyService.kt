@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.repository.PersonFilmographyRepository
 import dev.marcal.mediapulse.server.repository.PersonFilmographyRepository.MediaType
 import dev.marcal.mediapulse.server.service.tv.ManualShowCatalogService
+import dev.marcal.mediapulse.server.service.tv.ShowCreditsService
 import dev.marcal.mediapulse.server.util.TxUtil
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -19,6 +20,7 @@ class PersonShowFilmographyService(
     private val tmdbApiClient: TmdbApiClient,
     private val manualShowCatalogService: ManualShowCatalogService,
     private val tx: TxUtil,
+    private val showCreditsService: ShowCreditsService,
 ) {
     data class BatchResult(
         val candidates: Int,
@@ -56,6 +58,7 @@ class PersonShowFilmographyService(
             person.profileUrl,
             repository.findMembers(personId, MediaType.SHOW).map { member ->
                 val item = member.snapshot
+                val availableCategories = categories(item.roleLabel)
                 PersonShowFilmographyMemberDto(
                     item.tmdbId,
                     item.title,
@@ -75,6 +78,8 @@ class PersonShowFilmographyService(
                         member.totalCount > 0 && member.watchedCount >= member.totalCount -> "WATCHED"
                         else -> "IN_PROGRESS"
                     },
+                    member.linkedCategories.sorted(),
+                    (availableCategories - member.linkedCategories).sorted(),
                 )
             },
         )
@@ -142,6 +147,21 @@ class PersonShowFilmographyService(
         return getFilmography(personId)
     }
 
+    fun linkLocalShow(
+        personId: Long,
+        showId: Long,
+        category: String,
+    ) {
+        val member =
+            repository.findMembers(personId, MediaType.SHOW).firstOrNull { it.localId == showId }
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Série não encontrada na filmografia local")
+        val normalized = category.trim().uppercase()
+        if (normalized !in categories(member.snapshot.roleLabel) || normalized in member.linkedCategories) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Categoria indisponível para este vínculo")
+        }
+        showCreditsService.linkExistingPerson(showId, personId, normalized, roleFor(member.snapshot.roleLabel, normalized))
+    }
+
     private fun persist(
         personId: Long,
         items: Collection<Item>,
@@ -156,7 +176,7 @@ class PersonShowFilmographyService(
                     it.overview,
                     it.posterUrl,
                     it.backdropUrl,
-                    it.roles.take(3).joinToString(" · "),
+                    snapshotRoles(it.roles).joinToString(" · "),
                 )
             }
         tx.inTx { repository.replaceSnapshot(personId, MediaType.SHOW, snapshots) }
@@ -172,4 +192,25 @@ class PersonShowFilmographyService(
     ) {
         if (role !in item.roles) item.roles.add(role)
     }
+
+    private fun categories(roleLabel: String): Set<String> {
+        val roles = roleLabel.split(" · ")
+        return buildSet {
+            if (roles.any { it == "Director" }) add("DIRECTING")
+            if (roles.any { it in relevantCrewJobs - "Director" }) add("WRITING")
+            if (roles.any { it !in relevantCrewJobs }) add("CAST")
+        }
+    }
+
+    private fun snapshotRoles(roles: List<String>): List<String> =
+        listOfNotNull(
+            roles.firstOrNull { it == "Director" },
+            roles.firstOrNull { it in relevantCrewJobs - "Director" },
+            roles.firstOrNull { it !in relevantCrewJobs },
+        )
+
+    private fun roleFor(
+        roleLabel: String,
+        category: String,
+    ): String? = if (category == "CAST") roleLabel.split(" · ").firstOrNull { it !in relevantCrewJobs } else null
 }

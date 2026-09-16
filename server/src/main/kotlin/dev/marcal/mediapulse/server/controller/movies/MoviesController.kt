@@ -1,5 +1,7 @@
 package dev.marcal.mediapulse.server.controller.movies
 
+import dev.marcal.mediapulse.server.api.movies.CreditBatchImportRequest
+import dev.marcal.mediapulse.server.api.movies.CreditBatchImportResponse
 import dev.marcal.mediapulse.server.api.movies.ExistingMovieWatchCreateRequest
 import dev.marcal.mediapulse.server.api.movies.ManualMovieWatchCreateResponse
 import dev.marcal.mediapulse.server.api.movies.MovieCompanyDetailsResponse
@@ -129,6 +131,12 @@ class MoviesController(
         @PathVariable movieId: Long,
         @RequestBody request: MovieTmdbCreditImportRequest,
     ): PersonCreditDto = movieCreditsService.importTmdbCredit(movieId, request)
+
+    @PostMapping("/{movieId}/credits/from-tmdb/batch")
+    fun importMovieTmdbCredits(
+        @PathVariable movieId: Long,
+        @RequestBody request: CreditBatchImportRequest<MovieTmdbCreditImportRequest>,
+    ): CreditBatchImportResponse = movieCreditsService.importTmdbCredits(movieId, request)
 
     @PostMapping("/{movieId}/people")
     fun linkExistingPerson(

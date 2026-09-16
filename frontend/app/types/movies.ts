@@ -168,6 +168,7 @@ export interface MovieTmdbCreditCandidate {
   characterName: string | null
   billingOrder: number | null
   roleLabel: string
+  tmdbUrl: string
 }
 
 export interface MovieTmdbCreditCandidateGroup {
@@ -190,6 +191,12 @@ export interface MovieTmdbCreditImportRequest {
   job: string | null
   characterName: string | null
   billingOrder: number | null
+}
+
+export interface CreditBatchImportResponse {
+  succeeded: number
+  failed: number
+  results: Array<{ key: string; success: boolean }>
 }
 
 export interface PersonDetailsResponse {
@@ -433,6 +440,8 @@ export interface PersonFilmographyMember {
   inCatalog: boolean
   roleLabel: string
   watchStatus: 'OUTSIDE_CATALOG' | 'UNWATCHED' | 'WATCHED'
+  linkedCategories: string[]
+  availableCategories: string[]
 }
 
 export interface PersonShowFilmographyResponse {
@@ -457,6 +466,8 @@ export interface PersonShowFilmographyMember {
   inCatalog: boolean
   roleLabel: string
   watchStatus: 'OUTSIDE_CATALOG' | 'NOT_STARTED' | 'IN_PROGRESS' | 'WATCHED'
+  linkedCategories: string[]
+  availableCategories: string[]
 }
 
 export interface MovieCompanyMembersResponse {

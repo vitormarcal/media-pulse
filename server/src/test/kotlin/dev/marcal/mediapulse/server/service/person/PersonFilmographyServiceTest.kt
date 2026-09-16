@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.repository.PersonFilmographyRepository
 import dev.marcal.mediapulse.server.repository.PersonFilmographyRepository.MediaType
 import dev.marcal.mediapulse.server.service.movie.ManualMovieCatalogService
+import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.util.TxUtil
 import io.mockk.every
 import io.mockk.mockk
@@ -18,7 +19,8 @@ class PersonFilmographyServiceTest {
     private val tmdb = mockk<TmdbApiClient>()
     private val catalog = mockk<ManualMovieCatalogService>(relaxed = true)
     private val tx = mockk<TxUtil>()
-    private val service = PersonFilmographyService(repository, tmdb, catalog, tx)
+    private val credits = mockk<MovieCreditsService>(relaxed = true)
+    private val service = PersonFilmographyService(repository, tmdb, catalog, tx, credits)
 
     init {
         every { tx.inTx<Any>(any()) } answers { firstArg<() -> Any>().invoke() }
@@ -32,6 +34,25 @@ class PersonFilmographyServiceTest {
         service.getFilmography(44)
 
         verify(exactly = 0) { tmdb.fetchPersonMovieCredits(any()) }
+    }
+
+    @Test
+    fun `link local movie should use an available snapshot category`() {
+        every { repository.findMembers(44, MediaType.MOVIE) } returns
+            listOf(
+                PersonFilmographyRepository.MemberRecord(
+                    PersonFilmographyRepository.MemberSnapshot("10", "Movie", null, 2020, null, null, null, "Director · Hero"),
+                    7,
+                    "movie",
+                    1,
+                    0,
+                    setOf("CAST"),
+                ),
+            )
+
+        service.linkLocalMovie(44, 7, "DIRECTING")
+
+        verify { credits.linkExistingPerson(7, match { it.personId == 44L && it.group == "DIRECTORS" }) }
     }
 
     @Test
