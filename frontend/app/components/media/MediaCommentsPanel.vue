@@ -2,7 +2,7 @@
   <section class="comments-panel">
     <SectionHeading eyebrow="Comentários" :title="title" :description="description" />
 
-    <div v-if="localComments.length" class="summary-card">
+    <div v-if="localComments[0]" class="summary-card">
       <div>
         <p class="summary-label">Comentários</p>
         <strong>{{ localComments.length }} {{ localComments.length === 1 ? 'comentário' : 'comentários' }}</strong>

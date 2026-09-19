@@ -43,7 +43,7 @@
               <div class="member-poster">
                 <img
                   v-if="resolveMediaUrl(member.imageUrl)"
-                  :src="resolveMediaUrl(member.imageUrl)"
+                  :src="resolveMediaUrl(member.imageUrl) ?? undefined"
                   :alt="member.title"
                 />
                 <div v-else class="member-fallback">{{ member.title.slice(0, 1) }}</div>
@@ -135,7 +135,7 @@ watch(
 )
 
 const pageData = computed<MovieCollectionPageData | null>(() =>
-  membersResponse.value ? buildMovieCollectionPageData(membersResponse.value) : data.value,
+  membersResponse.value ? buildMovieCollectionPageData(membersResponse.value) : (data.value ?? null),
 )
 
 function fallbackOverview(inCatalog: boolean) {

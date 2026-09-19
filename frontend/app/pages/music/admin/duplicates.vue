@@ -421,7 +421,7 @@ function syncSelections(items: DuplicateTrackGroupResponse[]) {
 }
 
 function selectionFor(group: DuplicateTrackGroupResponse): GroupSelection {
-  return selections.value[groupId(group)]
+  return (selections.value[groupId(group)] ??= suggestedSelectionFor(group))
 }
 
 function isGroupSelected(group: DuplicateTrackGroupResponse) {
@@ -698,16 +698,19 @@ async function loadMore() {
   feedback.value = null
 
   try {
-    const page = await $fetch<DuplicateTrackReviewPageResponse>('/api/admin/music/track-duplicates', {
-      baseURL: config.public.apiBase,
-      query: {
-        limit: 20,
-        cursor: nextCursor.value,
-        includeIgnored: includeIgnored.value,
-        artist: artistFilter.value || undefined,
-        album: albumFilter.value || undefined,
+    const page: DuplicateTrackReviewPageResponse = await $fetch<DuplicateTrackReviewPageResponse>(
+      '/api/admin/music/track-duplicates',
+      {
+        baseURL: config.public.apiBase,
+        query: {
+          limit: 20,
+          cursor: nextCursor.value,
+          includeIgnored: includeIgnored.value,
+          artist: artistFilter.value || undefined,
+          album: albumFilter.value || undefined,
+        },
       },
-    })
+    )
 
     groups.value = [...groups.value, ...page.items]
     nextCursor.value = page.nextCursor
@@ -727,16 +730,19 @@ async function fetchAllFilteredGroups() {
   let cursor: string | null = null
 
   do {
-    const page = await $fetch<DuplicateTrackReviewPageResponse>('/api/admin/music/track-duplicates', {
-      baseURL: config.public.apiBase,
-      query: {
-        limit: 100,
-        cursor: cursor || undefined,
-        includeIgnored: includeIgnored.value,
-        artist: artistFilter.value || undefined,
-        album: albumFilter.value || undefined,
+    const page: DuplicateTrackReviewPageResponse = await $fetch<DuplicateTrackReviewPageResponse>(
+      '/api/admin/music/track-duplicates',
+      {
+        baseURL: config.public.apiBase,
+        query: {
+          limit: 100,
+          cursor: cursor || undefined,
+          includeIgnored: includeIgnored.value,
+          artist: artistFilter.value || undefined,
+          album: albumFilter.value || undefined,
+        },
       },
-    })
+    )
 
     aggregated.push(...page.items)
     cursor = page.nextCursor

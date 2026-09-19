@@ -19,7 +19,7 @@
               <div v-for="preview in item.previewMovies.slice(0, 3)" :key="preview.id" class="poster-tile">
                 <img
                   v-if="resolveMediaUrl(preview.imageUrl)"
-                  :src="resolveMediaUrl(preview.imageUrl)"
+                  :src="resolveMediaUrl(preview.imageUrl) ?? undefined"
                   :alt="preview.title"
                 />
                 <div v-else class="poster-fallback">{{ preview.title.slice(0, 1) }}</div>

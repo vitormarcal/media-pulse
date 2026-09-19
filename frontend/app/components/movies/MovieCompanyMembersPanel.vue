@@ -37,7 +37,11 @@
               :to="item.localSlug ? `/movies/${item.localSlug}` : undefined"
             >
               <div class="movie-poster">
-                <img v-if="resolveMediaUrl(item.posterUrl)" :src="resolveMediaUrl(item.posterUrl)" :alt="item.title" />
+                <img
+                  v-if="resolveMediaUrl(item.posterUrl)"
+                  :src="resolveMediaUrl(item.posterUrl) ?? undefined"
+                  :alt="item.title"
+                />
                 <div v-else class="movie-fallback">{{ item.title.slice(0, 1) }}</div>
               </div>
             </component>

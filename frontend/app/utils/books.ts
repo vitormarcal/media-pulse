@@ -91,7 +91,7 @@ function mapEdition(edition: BookDetailsResponse['editions'][number]): BookEditi
   }
 }
 
-function bookToShelfItem(read: ReadCardDto): EditorialShelfItem {
+function bookToShelfItem(read: BooksListResponse['items'][number]): EditorialShelfItem {
   const timestamp = read.finishedAt ?? read.startedAt
   const authors = read.book.authors.map((author) => author.name).join(', ')
 

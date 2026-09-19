@@ -247,15 +247,18 @@ async function loadGroups() {
     const items: DuplicateTrackGroupResponse[] = []
     let cursor: string | null = null
     do {
-      const page = await $fetch<DuplicateTrackReviewPageResponse>('/api/admin/music/track-duplicates', {
-        baseURL: config.public.apiBase,
-        query: {
-          limit: 100,
-          cursor: cursor || undefined,
-          includeIgnored: includeIgnored.value,
-          album: props.albumTitle,
+      const page: DuplicateTrackReviewPageResponse = await $fetch<DuplicateTrackReviewPageResponse>(
+        '/api/admin/music/track-duplicates',
+        {
+          baseURL: config.public.apiBase,
+          query: {
+            limit: 100,
+            cursor: cursor || undefined,
+            includeIgnored: includeIgnored.value,
+            album: props.albumTitle,
+          },
         },
-      })
+      )
       items.push(...page.items.filter((group) => group.albumId === props.albumId))
       cursor = page.nextCursor
     } while (cursor)

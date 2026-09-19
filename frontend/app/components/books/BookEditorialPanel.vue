@@ -2,7 +2,7 @@
   <section class="editorial-panel">
     <SectionHeading eyebrow="Comentários" title="Textos sobre o livro" />
 
-    <div v-if="entries.length" class="summary-card">
+    <div v-if="entries[0]" class="summary-card">
       <div>
         <p class="summary-label">Comentários</p>
         <strong>{{ entries.length }} {{ entries.length === 1 ? 'registro' : 'registros' }}</strong>

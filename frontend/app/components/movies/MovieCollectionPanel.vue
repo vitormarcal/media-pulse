@@ -36,7 +36,11 @@
           >
             <component :is="item.href ? NuxtLink : 'div'" class="poster-link" :to="item.href || undefined">
               <div class="movie-poster">
-                <img v-if="resolveMediaUrl(item.imageUrl)" :src="resolveMediaUrl(item.imageUrl)" :alt="item.title" />
+                <img
+                  v-if="resolveMediaUrl(item.imageUrl)"
+                  :src="resolveMediaUrl(item.imageUrl) ?? undefined"
+                  :alt="item.title"
+                />
                 <div v-else class="movie-fallback">{{ item.title.slice(0, 1) }}</div>
               </div>
             </component>
@@ -151,9 +155,9 @@ const collectionItems = computed<CollectionDisplayItem[]>(() => {
     href: member.localSlug ? `/movies/${member.localSlug}` : null,
     tmdbUrl: member.tmdbUrl,
     inCatalog: member.inCatalog,
-    current: member.localMovieId === props.collection?.movies.find((movie) => movie.current)?.id,
+    current: String(member.localMovieId) === props.collection?.movies.find((movie) => movie.current)?.id,
     statusLabel:
-      member.localMovieId === props.collection?.movies.find((movie) => movie.current)?.id
+      String(member.localMovieId) === props.collection?.movies.find((movie) => movie.current)?.id
         ? 'Este filme'
         : member.inCatalog
           ? 'Catálogo'

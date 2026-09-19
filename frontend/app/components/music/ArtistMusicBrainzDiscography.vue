@@ -71,10 +71,13 @@ async function load() {
   message.value = ''
   selected.value = []
   try {
-    preview.value = await $fetch(`/api/music/artists/${props.artistId}/musicbrainz/discography`, {
-      baseURL: config.public.apiBase,
-      method: 'POST',
-    })
+    preview.value = await $fetch<MusicBrainzDiscographyPreview>(
+      `/api/music/artists/${props.artistId}/musicbrainz/discography`,
+      {
+        baseURL: config.public.apiBase,
+        method: 'POST',
+      },
+    )
     if (!preview.value.items.length) message.value = 'Nenhum release group encontrado.'
   } catch {
     message.value = 'Não foi possível carregar a discografia.'

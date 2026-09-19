@@ -53,7 +53,7 @@
 
       <div class="gallery">
         <div v-for="(image, index) in gallery" :key="`${image}-${index}`" class="gallery-item" :class="`slot-${index}`">
-          <img v-if="resolveMediaUrl(image)" :src="resolveMediaUrl(image)" :alt="title" />
+          <img v-if="resolveMediaUrl(image)" :src="resolveMediaUrl(image) ?? undefined" :alt="title" />
         </div>
       </div>
     </div>

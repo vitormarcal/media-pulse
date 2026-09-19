@@ -52,7 +52,11 @@
               :to="item.localSlug ? `${item.kind === 'movies' ? '/movies' : '/shows'}/${item.localSlug}` : undefined"
             >
               <div class="poster-shell">
-                <img v-if="resolveMediaUrl(item.posterUrl)" :src="resolveMediaUrl(item.posterUrl)" :alt="item.title" />
+                <img
+                  v-if="resolveMediaUrl(item.posterUrl)"
+                  :src="resolveMediaUrl(item.posterUrl) ?? undefined"
+                  :alt="item.title"
+                />
                 <div v-else class="poster-fallback">{{ item.title.slice(0, 1) }}</div>
               </div>
             </component>
@@ -498,7 +502,8 @@ async function linkMember(item: ScreenographyMemberViewModel, category: string) 
       member.linkedCategories = [...member.linkedCategories, category]
       const filmography = item.kind === 'movies' ? movieFilmography.value : showFilmography.value
       if (filmography?.compacted && !member.availableCategories.length) {
-        filmography.members = filmography.members.filter((candidate) => candidate.tmdbId !== item.tmdbId)
+        const index = filmography.members.findIndex((candidate) => candidate.tmdbId === item.tmdbId)
+        if (index >= 0) filmography.members.splice(index, 1)
       }
     }
     categoryChoiceKey.value = null

@@ -1,5 +1,6 @@
 import type {
   GameDetailsResponse,
+  GameSessionStatus,
   GameLibraryCardDto,
   GameLibraryCardModel,
   GamePageData,
@@ -10,7 +11,7 @@ import type {
 } from '~/types/games'
 import { formatAbsoluteDate, formatRelativeDate, formatShortNumber } from '~/utils/formatting'
 
-const statusLabels: Record<string, string> = {
+const statusLabels: Record<GameSessionStatus, string> = {
   PLAYING: 'Jogando',
   BACKLOG: 'Backlog',
   COMPLETED: 'Finalizado',

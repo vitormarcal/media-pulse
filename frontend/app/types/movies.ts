@@ -369,6 +369,19 @@ export interface ManualMovieCatalogCreateRequest {
   imdbId: string | null
 }
 
+export interface ManualMovieWatchCreateResponse {
+  movieId: number
+  title: string
+  year: number | null
+  coverUrl: string | null
+  watchedAt: string
+  source: string
+  createdMovie: boolean
+  watchInserted: boolean
+  coverAssigned: boolean
+  externalIds: ManualMovieExternalIdView[]
+}
+
 export interface ManualMovieCatalogCreateResponse {
   movieId: number
   slug: string | null

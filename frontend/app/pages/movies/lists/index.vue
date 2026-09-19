@@ -33,7 +33,7 @@
                   <div v-for="preview in item.previewMovies.slice(0, 3)" :key="preview.id" class="poster-tile">
                     <img
                       v-if="resolveMediaUrl(preview.imageUrl)"
-                      :src="resolveMediaUrl(preview.imageUrl)"
+                      :src="resolveMediaUrl(preview.imageUrl) ?? undefined"
                       :alt="preview.title"
                     />
                     <div v-else class="poster-fallback">{{ preview.title.slice(0, 1) }}</div>
@@ -81,7 +81,7 @@ function posterTone(listId: number) {
   return `poster-mosaic--tone-${listId % 4}`
 }
 
-function cardShellStyle(item: (typeof data.value.items)[number]) {
+function cardShellStyle(item: NonNullable<typeof data.value>['items'][number]) {
   const heroImageUrl = resolveMediaUrl(item.coverImageUrl ?? item.previewMovies[0]?.imageUrl ?? null)
   if (!heroImageUrl) return undefined
 

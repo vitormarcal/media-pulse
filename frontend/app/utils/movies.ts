@@ -21,6 +21,7 @@ import type {
   MoviesStatsResponse,
   MovieWatchEntryModel,
 } from '~/types/movies'
+import type { ShowLibraryCardDto, ShowLibraryCardModel } from '~/types/shows'
 import type { EditorialHighlight, EditorialShelfItem, MoviesRecentResponse, MoviesSummaryResponse } from '~/types/home'
 import { formatAbsoluteDate, formatRelativeDate, formatShortNumber } from '~/utils/formatting'
 
@@ -116,6 +117,7 @@ function uniquePeopleById(items: PersonCreditDto[]) {
 function buildSearchCardModel(movie: MoviesSearchResponse['movies'][number]): MovieLibraryCardModel {
   return {
     id: `search-${movie.movieId}`,
+    movieId: movie.movieId,
     title: movie.title,
     subtitle: formatMovieSubtitle(movie.title, movie.originalTitle, movie.year),
     href: movieHref(movie.slug),
@@ -151,6 +153,7 @@ function buildPersonShowCardModel(show: ShowLibraryCardDto): ShowLibraryCardMode
 function buildWatchedYearCardModel(movie: MoviesByYearResponse['watched'][number]): MovieLibraryCardModel {
   return {
     id: `year-watched-${movie.movieId}`,
+    movieId: movie.movieId,
     title: movie.title,
     subtitle: formatMovieSubtitle(movie.title, movie.originalTitle, movie.year),
     href: movieHref(movie.slug),
@@ -164,6 +167,7 @@ function buildWatchedYearCardModel(movie: MoviesByYearResponse['watched'][number
 function buildUnwatchedYearCardModel(movie: MoviesByYearResponse['unwatched'][number]): MovieLibraryCardModel {
   return {
     id: `year-unwatched-${movie.movieId}`,
+    movieId: movie.movieId,
     title: movie.title,
     subtitle: formatMovieSubtitle(movie.title, movie.originalTitle, movie.year),
     href: movieHref(movie.slug),

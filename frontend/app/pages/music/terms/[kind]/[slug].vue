@@ -34,7 +34,7 @@
               <p class="spotlight-kicker">Entrada do recorte</p>
               <h2>{{ spotlightAlbum?.title || data.name }}</h2>
               <p v-if="spotlightAlbum" class="spotlight-subtitle">{{ spotlightAlbum.subtitle }}</p>
-              <p v-if="spotlightAlbum" class="spotlight-meta">{{ spotlightAlbum.meta }}</p>
+              <p v-if="spotlightAlbum" class="spotlight-meta">{{ spotlightAlbum.primaryMeta }}</p>
               <p v-if="spotlightAlbum" class="spotlight-note">{{ spotlightAlbum.aside }}</p>
               <p v-else class="spotlight-note">Ainda não há um álbum ativo para abrir esse recorte.</p>
             </div>

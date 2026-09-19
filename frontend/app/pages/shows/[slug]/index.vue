@@ -65,7 +65,7 @@
       </section>
 
       <div v-if="activeAction === 'metadata'" ref="metadataTarget">
-        <ShowMetadataEnrichmentPanel :show-id="data.showId" :identifiers="data.externalIds" @applied="refresh" />
+        <ShowMetadataEnrichmentPanel :show-id="data.showId" :identifiers="data.externalIds" @applied="refresh()" />
       </div>
 
       <div ref="listsTarget">

@@ -19,7 +19,11 @@
         <div class="chip-list">
           <div v-for="item in group.items" :key="item.id" class="person-pill">
             <div class="person-avatar">
-              <img v-if="resolveMediaUrl(item.profileUrl)" :src="resolveMediaUrl(item.profileUrl)" :alt="item.name" />
+              <img
+                v-if="resolveMediaUrl(item.profileUrl)"
+                :src="resolveMediaUrl(item.profileUrl) ?? undefined"
+                :alt="item.name"
+              />
               <div v-else class="avatar-fallback">{{ item.name.slice(0, 1) }}</div>
             </div>
 
@@ -100,7 +104,7 @@
                       <div class="person-avatar candidate-avatar">
                         <img
                           v-if="resolveMediaUrl(item.profileUrl)"
-                          :src="resolveMediaUrl(item.profileUrl)"
+                          :src="resolveMediaUrl(item.profileUrl) ?? undefined"
                           :alt="item.name"
                         />
                         <div v-else class="avatar-fallback">{{ item.name.slice(0, 1) }}</div>
@@ -181,7 +185,7 @@
                 <div class="suggestion-avatar">
                   <img
                     v-if="resolveMediaUrl(item.profileUrl)"
-                    :src="resolveMediaUrl(item.profileUrl)"
+                    :src="resolveMediaUrl(item.profileUrl) ?? undefined"
                     :alt="item.name"
                   />
                   <div v-else class="avatar-fallback">{{ item.name.slice(0, 1) }}</div>

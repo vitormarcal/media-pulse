@@ -46,13 +46,15 @@ Isso gera o frontend estático em `.output/public`.
 
 ## Qualidade
 
-Valide lint e formatação antes de abrir PR ou publicar mudanças:
+Valide lint, formatação e tipos antes de abrir PR ou publicar mudanças:
 
 ```bash
 npm run check
 ```
 
-Esse comando executa `npm run lint` e `npm run format:check`.
+Esse comando executa `npm run lint`, `npm run format:check` e `npm run typecheck`.
+
+Para verificar somente os tipos, execute `npm run typecheck`. TypeScript e `vue-tsc` são dependências de desenvolvimento com versões fixadas no projeto e registradas no lockfile. Isso evita que o Nuxt busque versões externas incompatíveis durante a validação.
 
 Para aplicar correções automáticas:
 

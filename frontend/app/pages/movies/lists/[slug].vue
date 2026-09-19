@@ -87,7 +87,11 @@
             @click="updateCoverMovie(movie.movieId)"
           >
             <div class="cover-option__poster">
-              <img v-if="resolveMediaUrl(movie.imageUrl)" :src="resolveMediaUrl(movie.imageUrl)" :alt="movie.title" />
+              <img
+                v-if="resolveMediaUrl(movie.imageUrl)"
+                :src="resolveMediaUrl(movie.imageUrl) ?? undefined"
+                :alt="movie.title"
+              />
               <div v-else class="cover-option__fallback">{{ movie.title.slice(0, 1) }}</div>
             </div>
             <div class="cover-option__copy">
@@ -146,7 +150,11 @@
             @drop.prevent="handleDrop(movie.movieId)"
           >
             <div class="order-card__poster">
-              <img v-if="resolveMediaUrl(movie.imageUrl)" :src="resolveMediaUrl(movie.imageUrl)" :alt="movie.title" />
+              <img
+                v-if="resolveMediaUrl(movie.imageUrl)"
+                :src="resolveMediaUrl(movie.imageUrl) ?? undefined"
+                :alt="movie.title"
+              />
               <div v-else class="order-card__fallback">{{ movie.title.slice(0, 1) }}</div>
             </div>
 
@@ -279,6 +287,10 @@ function handleDrop(targetMovieId: number) {
   }
 
   const [moved] = nextItems.splice(sourceIndex, 1)
+  if (!moved) {
+    handleDragEnd()
+    return
+  }
   nextItems.splice(targetIndex, 0, moved)
   orderedMovies.value = nextItems
   handleDragEnd()

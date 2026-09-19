@@ -18,6 +18,8 @@
         eyebrow="Livros"
         title="Livros"
         :items="data.books"
+        description=""
+        summary=""
         empty-message="Nenhum livro apareceu para esse autor."
       />
 

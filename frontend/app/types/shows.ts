@@ -412,6 +412,7 @@ export interface ShowWatchEntryModel {
 }
 
 export interface ShowPageData {
+  lists: ShowListSummaryDto[]
   showId: number
   slug: string
   title: string

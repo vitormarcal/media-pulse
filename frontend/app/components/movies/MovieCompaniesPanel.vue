@@ -8,7 +8,11 @@
     <div v-if="companies.items.length" class="chip-list">
       <NuxtLink v-for="item in companies.items" :key="item.id" :to="item.href" class="company-pill">
         <div class="logo-badge">
-          <img v-if="resolveMediaUrl(item.logoUrl)" :src="resolveMediaUrl(item.logoUrl)" :alt="item.name" />
+          <img
+            v-if="resolveMediaUrl(item.logoUrl)"
+            :src="resolveMediaUrl(item.logoUrl) ?? undefined"
+            :alt="item.name"
+          />
           <span v-else>{{ item.name.slice(0, 1) }}</span>
         </div>
         <div class="company-copy">

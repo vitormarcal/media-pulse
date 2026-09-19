@@ -331,7 +331,7 @@ function confidenceLabel(value: string) {
   return value === 'HIGH' ? 'Alta confiança' : 'Revisar'
 }
 
-function routeQueryValue(value: string | string[] | null | undefined) {
+function routeQueryValue(value: string | (string | null)[] | null | undefined) {
   return Array.isArray(value) ? (value[0] ?? '') : (value ?? '')
 }
 

@@ -25,7 +25,11 @@
 
         <div class="logo-card">
           <div class="logo-frame">
-            <img v-if="resolveMediaUrl(data.logoUrl)" :src="resolveMediaUrl(data.logoUrl)" :alt="data.name" />
+            <img
+              v-if="resolveMediaUrl(data.logoUrl)"
+              :src="resolveMediaUrl(data.logoUrl) ?? undefined"
+              :alt="data.name"
+            />
             <div v-else class="logo-fallback">{{ data.name.slice(0, 1) }}</div>
           </div>
         </div>
