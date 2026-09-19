@@ -52,14 +52,17 @@ As filmografias de filmes e séries possuem snapshots e estados de sincronizaç�
 - cada obra local informa as categorias já vinculadas e as categorias de elenco, direção ou roteiro ainda disponíveis no snapshot
 - quando uma categoria está ausente, a página permite vinculá-la sem sair da filmografia; uma opção é aplicada diretamente e várias opções usam um seletor compacto
 - o vínculo usa somente o snapshot local, marca a obra como curada manualmente e não consulta o TMDb durante a leitura ou a ação
-- `compacted=true` indica que o recorte contém somente obras locais; a página informa esse estado e oferece atualização manual da mídia ativa
+- `compacted=true` indica que o recorte contém somente obras locais com vínculos ainda incompletos; obras já completamente vinculadas continuam disponíveis nos créditos canônicos da página
 - atualizar manualmente substitui o recorte pelo snapshot completo do TMDb, limpa o estado compactado e inicia um novo prazo de retenção
 
 ### Retenção e compactação
 
 - filmografias de pessoas não favoritas tornam-se elegíveis sete dias após a última sincronização bem-sucedida
 - filmes e séries são avaliados independentemente
-- a compactação exclui da base apenas membros sem correspondência no catálogo local; filmes, séries, créditos e pessoas não são removidos
+- a compactação exclui membros externos e membros locais cujas categorias de elenco, direção e roteiro já estejam completamente vinculadas
+- membros locais permanecem no snapshot compacto somente quando permitem reparar ao menos uma categoria de crédito ausente
+- ao corrigir a última categoria pendente, o membro é removido imediatamente do snapshot compacto e continua visível nos créditos canônicos da página
+- filmes, séries, créditos e pessoas nunca são removidos pela compactação
 - pessoas favoritas são sempre excluídas da seleção
 - acesso e leitura da página não renovam o prazo nem consultam o TMDb
 - o scheduler executa diariamente às 04:30 por padrão e processa até 100 pessoas
@@ -131,5 +134,5 @@ Séries usam os episódios locais conhecidos:
 - acesso direto e reload de `/people` são encaminhados para a SPA
 - filmes e séries refletem os watches locais nos estados documentados
 - endpoints de leitura funcionam apenas com dados locais
-- compactação preserva todos os membros correspondentes ao catálogo local e nunca seleciona favoritos
+- compactação preserva membros locais com vínculos incompletos e nunca seleciona favoritos
 - atualização manual restaura separadamente o snapshot completo de filmes ou séries

@@ -37,22 +37,19 @@ class PersonShowFilmographyServiceTest {
     }
 
     @Test
-    fun `link local show should use an available snapshot category`() {
-        every { repository.findMembers(44, MediaType.SHOW) } returns
+    fun `link local show should use an available category and prune a resolved compacted member`() {
+        val snapshot = PersonFilmographyRepository.MemberSnapshot("10", "Show", null, 2020, null, null, null, "Writer · Character")
+        every { repository.findMembers(44, MediaType.SHOW) } returnsMany
             listOf(
-                PersonFilmographyRepository.MemberRecord(
-                    PersonFilmographyRepository.MemberSnapshot("10", "Show", null, 2020, null, null, null, "Writer · Character"),
-                    8,
-                    "show",
-                    1,
-                    10,
-                    setOf("CAST"),
-                ),
+                listOf(PersonFilmographyRepository.MemberRecord(snapshot, 8, "show", 1, 10, setOf("CAST"))),
+                listOf(PersonFilmographyRepository.MemberRecord(snapshot, 8, "show", 1, 10, setOf("CAST", "WRITING"))),
             )
+        every { repository.isCompacted(44, MediaType.SHOW) } returns true
 
         service.linkLocalShow(44, 8, "WRITING")
 
         verify { credits.linkExistingPerson(8, 44, "WRITING", null) }
+        verify { repository.deleteMember(44, MediaType.SHOW, "10") }
     }
 
     @Test

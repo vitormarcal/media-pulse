@@ -12,7 +12,7 @@ import kotlin.test.assertNotNull
 
 class PersonFilmographyRepositoryTest {
     @Test
-    fun `compaction removes only members without a local movie`() {
+    fun `compaction preserves only local movies with missing credits`() {
         val entityManager = mockk<EntityManager>()
         val lockQuery = mockk<Query>(relaxed = true)
         val markQuery = mockk<Query>(relaxed = true)
@@ -37,7 +37,10 @@ class PersonFilmographyRepositoryTest {
                 match {
                     it.contains("NOT EXISTS") &&
                         it.contains("FROM movies local") &&
-                        it.contains("local.tmdb_id = member.tmdb_id")
+                        it.contains("FROM movie_credits credit") &&
+                        it.contains("credit.movie_id = local.id") &&
+                        it.contains("credit.credit_type = 'CAST'") &&
+                        it.contains("credit.job = 'Director'")
                 },
             )
         }

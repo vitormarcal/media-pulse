@@ -161,6 +161,7 @@ class PersonShowFilmographyService(
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Categoria indisponível para este vínculo")
         }
         showCreditsService.linkExistingPerson(showId, personId, normalized, roleFor(member.snapshot.roleLabel, normalized))
+        pruneResolvedCompactedMember(personId, showId)
     }
 
     private fun persist(
@@ -214,4 +215,15 @@ class PersonShowFilmographyService(
         roleLabel: String,
         category: String,
     ): String? = if (category == "CAST") roleLabel.split(" · ").firstOrNull { it !in relevantCrewJobs } else null
+
+    private fun pruneResolvedCompactedMember(
+        personId: Long,
+        showId: Long,
+    ) {
+        if (!repository.isCompacted(personId, MediaType.SHOW)) return
+        val member = repository.findMembers(personId, MediaType.SHOW).firstOrNull { it.localId == showId } ?: return
+        if ((categories(member.snapshot.roleLabel) - member.linkedCategories).isEmpty()) {
+            tx.inTx { repository.deleteMember(personId, MediaType.SHOW, member.snapshot.tmdbId) }
+        }
+    }
 }

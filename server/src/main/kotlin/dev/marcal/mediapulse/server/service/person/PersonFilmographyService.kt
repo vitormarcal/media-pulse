@@ -164,6 +164,7 @@ class PersonFilmographyService(
             movieId,
             PersonLinkRequest(personId, groupFor(normalized), roleFor(member.snapshot.roleLabel, normalized)),
         )
+        pruneResolvedCompactedMember(personId, movieId)
     }
 
     private fun persist(
@@ -224,4 +225,15 @@ class PersonFilmographyService(
         roleLabel: String,
         category: String,
     ): String? = if (category == "CAST") roleLabel.split(" · ").firstOrNull { it !in relevantCrewJobs } else null
+
+    private fun pruneResolvedCompactedMember(
+        personId: Long,
+        movieId: Long,
+    ) {
+        if (!repository.isCompacted(personId, MediaType.MOVIE)) return
+        val member = repository.findMembers(personId, MediaType.MOVIE).firstOrNull { it.localId == movieId } ?: return
+        if ((categories(member.snapshot.roleLabel) - member.linkedCategories).isEmpty()) {
+            tx.inTx { repository.deleteMember(personId, MediaType.MOVIE, member.snapshot.tmdbId) }
+        }
+    }
 }

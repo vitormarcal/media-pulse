@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.marcal.mediapulse.server"
-version = "1.0.0-beta.98"
+version = "1.0.0-beta.99"
 
 java {
     toolchain {

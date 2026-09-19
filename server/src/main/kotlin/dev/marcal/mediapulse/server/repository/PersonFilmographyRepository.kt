@@ -147,6 +147,17 @@ class PersonFilmographyRepository(
         if (marked == 0) return null
 
         val localTable = if (mediaType == MediaType.MOVIE) "movies" else "tv_shows"
+        val creditsTable = if (mediaType == MediaType.MOVIE) "movie_credits" else "show_credits"
+        val workColumn = if (mediaType == MediaType.MOVIE) "movie_id" else "show_id"
+        val writingJobs = if (mediaType == MediaType.MOVIE) "'Writer', 'Screenplay', 'Story'" else "'Writer', 'Screenplay', 'Story Editor'"
+        val relevantCrewJobs =
+            if (mediaType ==
+                MediaType.MOVIE
+            ) {
+                "'Director', 'Writer', 'Screenplay', 'Story'"
+            } else {
+                "'Director', 'Writer', 'Screenplay', 'Story Editor'"
+            }
         val removed =
             entityManager
                 .createNativeQuery(
@@ -155,13 +166,67 @@ class PersonFilmographyRepository(
                     WHERE member.person_id = :personId
                       AND member.media_type = :mediaType
                       AND NOT EXISTS (
-                        SELECT 1 FROM $localTable local WHERE local.tmdb_id = member.tmdb_id
+                        SELECT 1
+                        FROM $localTable local
+                        WHERE local.tmdb_id = member.tmdb_id
+                          AND (
+                            (
+                              'Director' = ANY(string_to_array(member.role_label, ' · '))
+                              AND NOT EXISTS (
+                                SELECT 1 FROM $creditsTable credit
+                                WHERE credit.$workColumn = local.id
+                                  AND credit.person_id = :personId
+                                  AND credit.job = 'Director'
+                              )
+                            )
+                            OR (
+                              EXISTS (
+                                SELECT 1 FROM unnest(string_to_array(member.role_label, ' · ')) AS roles(role)
+                                WHERE role IN ($writingJobs)
+                              )
+                              AND NOT EXISTS (
+                                SELECT 1 FROM $creditsTable credit
+                                WHERE credit.$workColumn = local.id
+                                  AND credit.person_id = :personId
+                                  AND credit.job IN ($writingJobs)
+                              )
+                            )
+                            OR (
+                              EXISTS (
+                                SELECT 1 FROM unnest(string_to_array(member.role_label, ' · ')) AS roles(role)
+                                WHERE role NOT IN ($relevantCrewJobs)
+                              )
+                              AND NOT EXISTS (
+                                SELECT 1 FROM $creditsTable credit
+                                WHERE credit.$workColumn = local.id
+                                  AND credit.person_id = :personId
+                                  AND credit.credit_type = 'CAST'
+                              )
+                            )
+                          )
                       )
                     """.trimIndent(),
                 ).setParameter("personId", personId)
                 .setParameter("mediaType", mediaType.name)
                 .executeUpdate()
         return CompactionResult(mediaType, removed)
+    }
+
+    fun deleteMember(
+        personId: Long,
+        mediaType: MediaType,
+        tmdbId: String,
+    ) {
+        entityManager
+            .createNativeQuery(
+                """
+                DELETE FROM person_filmography_members
+                WHERE person_id = :personId AND media_type = :mediaType AND tmdb_id = :tmdbId
+                """.trimIndent(),
+            ).setParameter("personId", personId)
+            .setParameter("mediaType", mediaType.name)
+            .setParameter("tmdbId", tmdbId)
+            .executeUpdate()
     }
 
     fun findMembers(

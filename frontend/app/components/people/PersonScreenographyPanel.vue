@@ -33,7 +33,7 @@
     </div>
 
     <div v-if="currentCompacted" class="compacted-notice">
-      <p><strong>Filmografia local</strong> — atualize para consultar outras obras.</p>
+      <p><strong>Vínculos locais pendentes</strong> — atualize para consultar a filmografia completa.</p>
       <button type="button" :disabled="currentLoading" @click="refreshActive">
         {{ currentLoading ? 'Atualizando...' : 'Atualizar filmografia' }}
       </button>
@@ -188,16 +188,18 @@ const currentLoaded = computed(() =>
   activeKind.value === 'movies' ? !!movieFilmography.value : !!showFilmography.value,
 )
 const currentCompacted = computed(() =>
-  activeKind.value === 'movies' ? movieFilmography.value?.compacted === true : showFilmography.value?.compacted === true,
+  activeKind.value === 'movies'
+    ? movieFilmography.value?.compacted === true
+    : showFilmography.value?.compacted === true,
 )
 const panelDescription = computed(() =>
   currentCompacted.value
-    ? 'Explore as obras desta pessoa que permanecem no catálogo local.'
+    ? 'Revise obras locais que ainda não estão completamente vinculadas a esta pessoa.'
     : 'Compare a filmografia do TMDb com o catálogo local e escolha o que deseja adicionar.',
 )
 const emptyLabel = computed(() =>
   currentCompacted.value
-    ? 'Nenhuma obra desta filmografia está no catálogo local.'
+    ? 'Nenhum vínculo local pendente para esta pessoa.'
     : 'Nenhum item apareceu nesse recorte do TMDb.',
 )
 
@@ -283,20 +285,26 @@ const countLabel = computed(() => {
   if (activeKind.value === 'movies') {
     if (!movieFilmography.value) return `${props.person.stats.movieCount} filmes locais ligados a esta pessoa`
     const catalogued = movieFilmography.value.members.filter((item) => item.inCatalog).length
+    if (movieFilmography.value.compacted) {
+      return movieFilmography.value.members.length
+        ? `${movieFilmography.value.members.length} filmes locais com vínculos pendentes`
+        : 'Nenhum vínculo de filme pendente'
+    }
     return movieFilmography.value.members.length
       ? `${catalogued}/${movieFilmography.value.members.length} filmes já estão no catálogo`
-      : movieFilmography.value.compacted
-        ? 'Nenhum filme local preservado'
-        : 'Nenhum filme retornado pelo TMDb'
+      : 'Nenhum filme retornado pelo TMDb'
   }
 
   if (!showFilmography.value) return `${props.person.stats.showCount} séries locais ligadas a esta pessoa`
   const catalogued = showFilmography.value.members.filter((item) => item.inCatalog).length
+  if (showFilmography.value.compacted) {
+    return showFilmography.value.members.length
+      ? `${showFilmography.value.members.length} séries locais com vínculos pendentes`
+      : 'Nenhum vínculo de série pendente'
+  }
   return showFilmography.value.members.length
     ? `${catalogued}/${showFilmography.value.members.length} séries já estão no catálogo`
-    : showFilmography.value.compacted
-      ? 'Nenhuma série local preservada'
-      : 'Nenhuma série retornada pelo TMDb'
+    : 'Nenhuma série retornada pelo TMDb'
 })
 
 const panelSummary = computed(() => {
@@ -488,6 +496,10 @@ async function linkMember(item: ScreenographyMemberViewModel, category: string) 
     if (member) {
       member.availableCategories = member.availableCategories.filter((candidate) => candidate !== category)
       member.linkedCategories = [...member.linkedCategories, category]
+      const filmography = item.kind === 'movies' ? movieFilmography.value : showFilmography.value
+      if (filmography?.compacted && !member.availableCategories.length) {
+        filmography.members = filmography.members.filter((candidate) => candidate.tmdbId !== item.tmdbId)
+      }
     }
     categoryChoiceKey.value = null
     linkedFeedbackKey.value = key
