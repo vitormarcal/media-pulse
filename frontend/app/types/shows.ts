@@ -692,3 +692,9 @@ export interface ShowLibraryPageData {
   libraryCursor: string | null
   mode: 'library' | 'search' | 'year'
 }
+
+export interface ShowEpisodesRefreshResponse {
+  showId: number
+  addedSeasonsCount: number
+  addedEpisodesCount: number
+}

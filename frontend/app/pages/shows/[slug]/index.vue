@@ -46,7 +46,7 @@
         <div class="actions-copy">
           <p class="actions-eyebrow">Curadoria</p>
           <h2 id="show-actions-title">Ações da série</h2>
-          <p>Revise dados ou escolha uma temporada para completar.</p>
+          <p>Revise dados e complete as temporadas da série.</p>
         </div>
         <div class="action-list">
           <button
@@ -61,7 +61,19 @@
             <span>{{ action.label }}</span>
             <small>{{ action.toggle && activeAction === action.id ? 'Fechar' : action.description }}</small>
           </button>
+          <button type="button" class="action-button" :disabled="refreshingEpisodes" @click="refreshEpisodes">
+            <span>{{ refreshingEpisodes ? 'Atualizando episódios…' : 'Atualizar episódios' }}</span>
+            <small>Todas as temporadas regulares, incluindo episódios futuros</small>
+          </button>
         </div>
+        <p
+          v-if="episodesRefreshMessage"
+          class="episodes-feedback"
+          :class="{ error: episodesRefreshFailed }"
+          role="status"
+        >
+          {{ episodesRefreshMessage }}
+        </p>
       </section>
 
       <div v-if="activeAction === 'metadata'" ref="metadataTarget">
@@ -125,8 +137,12 @@ import ShowWatchTimeline from '~/components/shows/ShowWatchTimeline.vue'
 import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
 import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import { useShowPageData } from '~/composables/useShowPageData'
-import type { ManualShowWatchCreateResponse } from '~/types/shows'
+import type { ManualShowWatchCreateResponse, ShowEpisodesRefreshResponse } from '~/types/shows'
 
+const config = useRuntimeConfig()
+const refreshingEpisodes = ref(false)
+const episodesRefreshMessage = ref('')
+const episodesRefreshFailed = ref(false)
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
 type ShowAction = 'terms' | 'lists' | 'people' | 'metadata' | 'seasons'
@@ -172,6 +188,33 @@ useHead(() => ({
 
 async function handleWatchCreated(_response: ManualShowWatchCreateResponse) {
   await refresh()
+}
+
+async function refreshEpisodes() {
+  if (!data.value || refreshingEpisodes.value) return
+  episodesRefreshFailed.value = false
+  episodesRefreshMessage.value = ''
+  if (!data.value.externalIds.some((identifier) => identifier.provider === 'TMDB')) {
+    episodesRefreshMessage.value = 'Vincule a série ao TMDb em “Enriquecer dados” antes de atualizar episódios.'
+    await toggleAction('metadata')
+    return
+  }
+  refreshingEpisodes.value = true
+  try {
+    const result = await $fetch<ShowEpisodesRefreshResponse>(`/api/shows/${data.value.showId}/episodes/refresh`, {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+    })
+    episodesRefreshMessage.value = result.addedEpisodesCount
+      ? `Atualização concluída: ${result.addedSeasonsCount} novas temporadas e ${result.addedEpisodesCount} novos episódios.`
+      : 'Nenhum episódio novo. Todas as temporadas regulares estão atualizadas.'
+    await refresh()
+  } catch {
+    episodesRefreshFailed.value = true
+    episodesRefreshMessage.value = 'Não foi possível atualizar os episódios. Tente novamente.'
+  } finally {
+    refreshingEpisodes.value = false
+  }
 }
 
 async function toggleAction(action: ShowAction) {
@@ -287,6 +330,19 @@ async function toggleAction(action: ShowAction) {
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+.action-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.episodes-feedback {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.82rem;
+}
+.episodes-feedback.error {
+  color: #9e0a0a;
 }
 .action-button:hover {
   background: color-mix(in srgb, var(--base-color-surface-warm) 80%, white);

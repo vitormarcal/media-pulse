@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.controller.shows
 
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowEpisodesRefreshResponse
 import dev.marcal.mediapulse.server.api.shows.ShowListAttachRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListCoverUpdateRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListCreateRequest
@@ -30,6 +31,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowsStatsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowsSummaryResponse
 import dev.marcal.mediapulse.server.repository.ShowListQueryRepository
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
+import dev.marcal.mediapulse.server.service.tv.ShowEpisodesRefreshService
 import dev.marcal.mediapulse.server.service.tv.ShowListsService
 import dev.marcal.mediapulse.server.service.tv.ShowMetadataEnrichmentService
 import dev.marcal.mediapulse.server.service.tv.ShowSeasonMetadataEnrichmentService
@@ -55,12 +57,18 @@ import kotlin.math.min
 @RequestMapping("/api/shows")
 class ShowsController(
     private val repository: TvShowQueryRepository,
+    private val showEpisodesRefreshService: ShowEpisodesRefreshService,
     private val showSeasonMetadataEnrichmentService: ShowSeasonMetadataEnrichmentService,
     private val showTermsService: ShowTermsService,
     private val showMetadataEnrichmentService: ShowMetadataEnrichmentService,
     private val showListsService: ShowListsService,
     private val showListQueryRepository: ShowListQueryRepository,
 ) {
+    @PostMapping("/{showId}/episodes/refresh")
+    fun refreshEpisodes(
+        @PathVariable showId: Long,
+    ): ShowEpisodesRefreshResponse = showEpisodesRefreshService.refresh(showId)
+
     @GetMapping("/library")
     fun library(
         @RequestParam(defaultValue = "20") limit: Int,

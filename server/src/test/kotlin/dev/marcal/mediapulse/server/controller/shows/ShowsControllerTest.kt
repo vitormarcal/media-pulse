@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.controller.shows
 import dev.marcal.mediapulse.server.api.shows.CurrentlyWatchingShowDto
 import dev.marcal.mediapulse.server.api.shows.RangeDto
 import dev.marcal.mediapulse.server.api.shows.ShowDetailsResponse
+import dev.marcal.mediapulse.server.api.shows.ShowEpisodesRefreshResponse
 import dev.marcal.mediapulse.server.api.shows.ShowProgressDto
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowSeasonEpisodeDto
@@ -20,6 +21,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowsTotalStatsDto
 import dev.marcal.mediapulse.server.api.shows.ShowsYearStatsDto
 import dev.marcal.mediapulse.server.repository.ShowListQueryRepository
 import dev.marcal.mediapulse.server.repository.TvShowQueryRepository
+import dev.marcal.mediapulse.server.service.tv.ShowEpisodesRefreshService
 import dev.marcal.mediapulse.server.service.tv.ShowListsService
 import dev.marcal.mediapulse.server.service.tv.ShowMetadataEnrichmentService
 import dev.marcal.mediapulse.server.service.tv.ShowSeasonMetadataEnrichmentService
@@ -28,6 +30,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.server.ResponseStatusException
 import java.time.Duration
 import java.time.Instant
@@ -37,15 +43,31 @@ import kotlin.test.assertFailsWith
 class ShowsControllerTest {
     private val repository = mockk<TvShowQueryRepository>(relaxed = true)
     private val showSeasonMetadataEnrichmentService = mockk<ShowSeasonMetadataEnrichmentService>(relaxed = true)
+    private val episodesRefreshService = mockk<ShowEpisodesRefreshService>()
     private val controller =
         ShowsController(
             repository,
+            episodesRefreshService,
             showSeasonMetadataEnrichmentService,
             mockk<ShowTermsService>(),
             mockk<ShowMetadataEnrichmentService>(),
             mockk<ShowListsService>(),
             mockk<ShowListQueryRepository>(relaxed = true),
         )
+
+    @Test
+    fun `refresh episodes exposes counts through post without a request body`() {
+        every { episodesRefreshService.refresh(29) } returns ShowEpisodesRefreshResponse(29, 2, 15)
+        MockMvcBuilders
+            .standaloneSetup(controller)
+            .build()
+            .perform(post("/api/shows/29/episodes/refresh"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.showId").value(29))
+            .andExpect(jsonPath("$.addedSeasonsCount").value(2))
+            .andExpect(jsonPath("$.addedEpisodesCount").value(15))
+        verify(exactly = 1) { episodesRefreshService.refresh(29) }
+    }
 
     @Test
     fun `recent should delegate to repository`() {

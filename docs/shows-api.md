@@ -165,6 +165,25 @@ Termos visíveis são pontos de exploração do catálogo. `GET /api/shows/terms
 - a página `/shows/terms/{kind}/{termId}/{slug}` reutiliza o grid visual da biblioteca de séries
 - os chips visíveis da página da série navegam para esse recorte; o modo de edição preserva suas ações de curadoria
 
+## Atualização de episódios faltantes
+
+`POST /api/shows/{showId}/episodes/refresh` completa uma série existente a partir do vínculo TMDb salvo, sem body.
+
+- consulta todas as temporadas regulares (número maior que zero), incluindo episódios futuros ou sem data de estreia
+- adiciona somente episódios ausentes; preserva metadados, identificadores e watches existentes
+- procura episódios por ID TMDb, posição na série/temporada e fingerprint para evitar duplicatas
+- temporada 0 e episódios sem número válido são ignorados
+- temporadas são derivadas dos episódios locais; uma temporada vazia no TMDb só aparecerá quando houver episódios
+- retorna `showId`, `addedSeasonsCount` (temporadas antes ausentes que receberam episódios) e `addedEpisodesCount`
+- consulta todas as temporadas antes de gravar; falha de consulta não deixa importação parcial
+- grava em uma transação, serializando atualizações desta ação para a mesma série
+- retorna `404` para série inexistente, `409` para vínculo ausente/alterado ou conflito de identidade, e `502` se o TMDb não retornar os dados necessários
+- não cria watches nem altera imagens, créditos ou metadados da série
+
+Na página da série, **Ações da série → Atualizar episódios** mostra carregamento, resultado ou falha e recarrega os dados ao concluir. Sem vínculo TMDb, orienta usar **Enriquecer dados**.
+
+Validação manual: atualize uma série incompleta e confira os novos episódios e temporadas; repita a ação e espere contagens zero. Confira que episódios futuros foram incluídos, especiais ficaram de fora e o histórico de assistidos permaneceu igual.
+
 ## Catálogo manual
 
 `POST /api/shows/catalog/suggestions` busca sugestões no TMDb usando o título informado em `q`.

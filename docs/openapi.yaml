@@ -2721,6 +2721,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/MoviesSummaryResponse"
 
+  /api/shows/{showId}/episodes/refresh:
+    post:
+      tags: [Shows]
+      summary: Adiciona episódios faltantes de todas as temporadas regulares pelo TMDb
+      description: Inclui episódios futuros, preserva dados existentes e não cria watches. Temporadas vazias não são persistidas. Repetir não cria duplicatas.
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Atualização concluída, inclusive quando não há novidades
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShowEpisodesRefreshResponse"
+        "404":
+          description: Série não encontrada
+        "409":
+          description: Vínculo TMDb ausente ou alterado, ou conflito de identidade
+        "502":
+          description: Dados necessários indisponíveis no TMDb
+
   /api/shows/library:
     get:
       summary: Shows library
@@ -3639,6 +3665,19 @@ components:
         type: integer
         format: int64
   schemas:
+    ShowEpisodesRefreshResponse:
+      type: object
+      required: [showId, addedSeasonsCount, addedEpisodesCount]
+      properties:
+        showId:
+          type: integer
+          format: int64
+        addedSeasonsCount:
+          type: integer
+          minimum: 0
+        addedEpisodesCount:
+          type: integer
+          minimum: 0
     AlbumListWriteRequest:
       type: object
       required: [name]

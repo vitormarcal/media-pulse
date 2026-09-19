@@ -7,6 +7,7 @@ import dev.marcal.mediapulse.server.controller.movies.MovieCatalogController
 import dev.marcal.mediapulse.server.controller.movies.MoviesController
 import dev.marcal.mediapulse.server.controller.music.MusicBrainzPageEnrichmentController
 import dev.marcal.mediapulse.server.controller.shows.ShowCatalogController
+import dev.marcal.mediapulse.server.controller.shows.ShowsController
 import org.junit.jupiter.api.Test
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -20,6 +21,7 @@ class ExternalActionHttpMethodContractTest {
             listOf(
                 GameCatalogController::class.java to "suggestions",
                 ShowCatalogController::class.java to "suggestCatalogEntry",
+                ShowsController::class.java to "refreshEpisodes",
                 MovieCatalogController::class.java to "suggestCatalogEntry",
                 MovieAdminController::class.java to "refreshCollection",
                 MovieAdminController::class.java to "refreshCompany",

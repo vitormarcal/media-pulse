@@ -5,6 +5,9 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 
 interface TvShowRepository : CrudRepository<TvShow, Long> {
+    @Query(value = "SELECT * FROM tv_shows WHERE id = :showId FOR UPDATE", nativeQuery = true)
+    fun findByIdForUpdate(showId: Long): TvShow?
+
     fun findByFingerprint(fingerprint: String): TvShow?
 
     fun findBySlug(slug: String): TvShow?
