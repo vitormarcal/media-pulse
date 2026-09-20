@@ -11,6 +11,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieListCoverUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListDetailsResponse
 import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListRulesUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
 import dev.marcal.mediapulse.server.api.movies.MovieTermCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieTermDetailsResponse
@@ -177,6 +178,12 @@ class MoviesController(
     ) {
         movieListsService.updateOrder(listId, request)
     }
+
+    @PatchMapping("/lists/{listId}/rules")
+    fun updateListRules(
+        @PathVariable listId: Long,
+        @RequestBody request: MovieListRulesUpdateRequest,
+    ) = movieListsService.updateRules(listId, request)
 
     @PatchMapping("/lists/{listId}/cover")
     fun updateMovieListCover(

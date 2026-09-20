@@ -73,3 +73,7 @@ docker build -f ./frontend/Dockerfile -t media-pulse-frontend:test .
 ```
 
 Esse caminho é útil para validar apenas a camada de UI. Para produção com frontend e backend no mesmo domínio, use o `Dockerfile` raiz do repositório.
+
+## Listas mistas
+
+Listas de filmes e séries permitem incluir automaticamente favoritos e/ou abandonados, preservando inclusões manuais. Em filmes, abra “Editar lista”; em séries, use “Incluir automaticamente” na página da lista. As duas regras combinam-se por OU. Ordem e capa fixa aplicam-se aos itens manuais; itens automáticos aparecem depois. Consulte [a especificação e o roadmap](../docs/features/mixed-media-lists.md).

@@ -1,7 +1,7 @@
 <template>
   <section class="lists-panel">
     <SectionHeading
-      eyebrow="Listas manuais"
+      eyebrow="Inclusões manuais"
       :title="sectionTitle"
       :description="sectionDescription"
       :summary="lists.summary"
@@ -30,7 +30,7 @@
           </div>
 
           <div class="card-copy">
-            <p class="card-kicker">Lista manual</p>
+            <p class="card-kicker">Lista</p>
             <h3>{{ item.name }}</h3>
             <p class="card-description">{{ item.description || fallbackDescription(item.itemCount) }}</p>
           </div>
@@ -49,19 +49,20 @@
           :disabled="busyListId === item.listId"
           @click="removeFromList(item.listId, item.name)"
         >
-          Tirar desta lista
+          Remover inclusão manual
         </button>
       </article>
     </div>
 
     <article v-else-if="editingEnabled" class="empty-state">
       <p class="empty-eyebrow">Listas</p>
-      <h3>Este filme não está em nenhuma lista.</h3>
+      <h3>Este filme não tem inclusões manuais.</h3>
     </article>
 
-    <p v-else class="quiet-empty">Nenhuma lista vinculada.</p>
+    <p v-else class="quiet-empty">Nenhuma inclusão manual.</p>
 
     <div v-if="editingEnabled" class="editor-panel">
+      <p class="editor-note">Regras automáticas podem manter o filme na lista após remover a inclusão manual.</p>
       <div class="editor-head">
         <p class="editor-eyebrow">Ajustes</p>
       </div>
@@ -83,7 +84,7 @@
         </div>
       </div>
 
-      <p v-else class="editor-note">Este filme já está em todas as listas manuais disponíveis.</p>
+      <p v-else class="editor-note">Este filme já está em todas as listas disponíveis.</p>
 
       <form class="create-form" @submit.prevent="createAndAttachList">
         <p class="group-label">Criar nova lista</p>

@@ -148,6 +148,8 @@ data class MovieListSummaryDto(
     val coverMovieId: Long? = null,
     val coverUrl: String? = null,
     val previewMovies: List<MovieListPreviewMovieDto> = emptyList(),
+    val includeFavorites: Boolean = false,
+    val includeAbandoned: Boolean = false,
 )
 
 data class PersonSuggestionDto(
@@ -292,6 +294,9 @@ data class MovieListDetailsResponse(
     val movieCount: Long,
     val watchedMoviesCount: Long,
     val movies: List<MovieLibraryCardDto>,
+    val includeFavorites: Boolean = false,
+    val includeAbandoned: Boolean = false,
+    val manualMovieIds: List<Long> = emptyList(),
 )
 
 data class MovieCreditsSyncResponse(
@@ -743,4 +748,9 @@ data class ManualMovieWatchCreateResponse(
 data class ManualMovieExternalIdView(
     val provider: String,
     val externalId: String,
+)
+
+data class MovieListRulesUpdateRequest(
+    val includeFavorites: Boolean,
+    val includeAbandoned: Boolean,
 )

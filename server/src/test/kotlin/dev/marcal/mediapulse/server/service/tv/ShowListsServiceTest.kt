@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowListAttachRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListCoverUpdateRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListCreateRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListOrderUpdateRequest
+import dev.marcal.mediapulse.server.api.shows.ShowListRulesUpdateRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListSummaryDto
 import dev.marcal.mediapulse.server.model.tv.ShowList
 import dev.marcal.mediapulse.server.model.tv.TvShow
@@ -11,6 +12,7 @@ import dev.marcal.mediapulse.server.repository.ShowListQueryRepository
 import dev.marcal.mediapulse.server.repository.crud.ShowListItemCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.ShowListRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
+import io.mockk.Called
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -27,6 +29,33 @@ class ShowListsServiceTest {
     private val query = mockk<ShowListQueryRepository>()
     private val service = ShowListsService(shows, lists, items, query)
     private val list = ShowList(id = 2, name = "Favoritas", normalizedName = "favoritas", slug = "favoritas")
+
+    @Test
+    fun `rules preserve manual membership and list metadata`() {
+        val existing = ShowList(id = 2, name = "Mixed", normalizedName = "mixed", slug = "mixed", coverShowId = 7)
+        every { lists.findById(2) } returns Optional.of(existing)
+        every { lists.save(any()) } answers { firstArg() }
+        every { query.summary(2) } returns
+            ShowListSummaryDto(2, "Mixed", "mixed", null, 1, includeFavorites = true, includeAbandoned = true)
+
+        val result = service.updateRules(2, ShowListRulesUpdateRequest(true, true))
+
+        assertEquals(true, result.includeFavorites)
+        assertEquals(true, result.includeAbandoned)
+        verify { lists.save(match { it.includeFavorites && it.includeAbandoned && it.coverShowId == 7L && it.name == "Mixed" }) }
+        verify { items wasNot Called }
+    }
+
+    @Test
+    fun `rules reject unknown lists`() {
+        every { lists.findById(99) } returns Optional.empty()
+        val error =
+            kotlin.test.assertFailsWith<org.springframework.web.server.ResponseStatusException> {
+                service.updateRules(99, ShowListRulesUpdateRequest(false, true))
+            }
+        assertEquals(404, error.statusCode.value())
+        verify(exactly = 0) { lists.save(any()) }
+    }
 
     @Test
     fun `create normalizes and persists list`() {

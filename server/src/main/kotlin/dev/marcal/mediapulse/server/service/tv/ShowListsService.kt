@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowListAttachRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListCoverUpdateRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListCreateRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListOrderUpdateRequest
+import dev.marcal.mediapulse.server.api.shows.ShowListRulesUpdateRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListSummaryDto
 import dev.marcal.mediapulse.server.model.tv.ShowList
 import dev.marcal.mediapulse.server.repository.ShowListQueryRepository
@@ -24,6 +25,25 @@ class ShowListsService(
     private val items: ShowListItemCrudRepository,
     private val query: ShowListQueryRepository,
 ) {
+    @Transactional
+    fun updateRules(
+        listId: Long,
+        request: ShowListRulesUpdateRequest,
+    ): ShowListSummaryDto {
+        val list =
+            lists.findById(listId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Show list not found")
+            }
+        lists.save(
+            list.copy(
+                includeFavorites = request.includeFavorites,
+                includeAbandoned = request.includeAbandoned,
+                updatedAt = Instant.now(),
+            ),
+        )
+        return summary(listId)
+    }
+
     @Transactional(readOnly = true)
     fun listAll() = query.listAll()
 

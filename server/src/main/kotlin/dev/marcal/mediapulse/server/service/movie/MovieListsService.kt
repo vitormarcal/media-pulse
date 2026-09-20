@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCoverUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListRulesUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
 import dev.marcal.mediapulse.server.model.movie.MovieList
 import dev.marcal.mediapulse.server.repository.MovieQueryRepository
@@ -24,6 +25,26 @@ class MovieListsService(
     private val movieListItemCrudRepository: MovieListItemCrudRepository,
     private val movieQueryRepository: MovieQueryRepository,
 ) {
+    @Transactional
+    fun updateRules(
+        listId: Long,
+        request: MovieListRulesUpdateRequest,
+    ): MovieListSummaryDto {
+        val list =
+            movieListRepository.findById(listId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Movie list not found")
+            }
+        movieListRepository.save(
+            list.copy(
+                includeFavorites = request.includeFavorites,
+                includeAbandoned = request.includeAbandoned,
+                updatedAt = Instant.now(),
+            ),
+        )
+        return movieQueryRepository.getMovieListSummary(listId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Movie list not found")
+    }
+
     @Transactional(readOnly = true)
     fun listAll(): List<MovieListSummaryDto> = movieQueryRepository.listMovieLists()
 

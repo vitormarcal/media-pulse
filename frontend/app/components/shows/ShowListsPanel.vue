@@ -1,7 +1,7 @@
 <template>
   <section class="lists-panel">
     <SectionHeading
-      eyebrow="Listas manuais"
+      eyebrow="Inclusões manuais"
       :title="lists.length ? 'Listas com esta série' : 'Listas'"
       :summary="summary"
     />
@@ -10,16 +10,17 @@
         <NuxtLink :to="`/shows/lists/${list.slug}`"
           ><strong>{{ list.name }}</strong
           ><small>{{ list.itemCount }} séries</small>
-          <p>{{ list.description || 'Curadoria pessoal em ordem manual.' }}</p></NuxtLink
+          <p>{{ list.description || 'Curadoria pessoal.' }}</p></NuxtLink
         >
         <button v-if="editing" type="button" :disabled="busy === list.listId" @click="remove(list)">
-          Remover desta lista
+          Remover inclusão manual
         </button>
       </article>
     </div>
-    <p v-else-if="!editing" class="quiet">Nenhuma lista vinculada.</p>
+    <p v-else-if="!editing" class="quiet">Nenhuma inclusão manual.</p>
 
     <div v-if="editing" class="editor">
+      <p class="quiet">Regras automáticas podem manter a série na lista após remover a inclusão manual.</p>
       <div v-if="available.length" class="chips">
         <button
           v-for="list in available"

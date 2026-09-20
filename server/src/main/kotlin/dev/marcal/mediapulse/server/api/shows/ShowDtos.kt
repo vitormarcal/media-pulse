@@ -82,6 +82,8 @@ data class ShowListSummaryDto(
     val coverShowId: Long? = null,
     val coverUrl: String? = null,
     val previewShows: List<ShowListPreviewShowDto> = emptyList(),
+    val includeFavorites: Boolean = false,
+    val includeAbandoned: Boolean = false,
 )
 
 data class ShowListItemDto(
@@ -105,6 +107,9 @@ data class ShowListDetailsResponse(
     val showCount: Long,
     val watchedShowsCount: Long,
     val shows: List<ShowListItemDto>,
+    val includeFavorites: Boolean = false,
+    val includeAbandoned: Boolean = false,
+    val manualShowIds: List<Long> = emptyList(),
 )
 
 data class ShowListCreateRequest(
@@ -595,4 +600,9 @@ data class ManualShowWatchCreateResponse(
 data class ManualShowExternalIdView(
     val provider: String,
     val externalId: String,
+)
+
+data class ShowListRulesUpdateRequest(
+    val includeFavorites: Boolean,
+    val includeAbandoned: Boolean,
 )

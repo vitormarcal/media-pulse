@@ -69,6 +69,8 @@ export interface ShowListPreviewShowDto {
   coverUrl: string | null
 }
 export interface ShowListSummaryDto {
+  includeFavorites: boolean
+  includeAbandoned: boolean
   listId: number
   name: string
   slug: string
@@ -89,6 +91,9 @@ export interface ShowListItemDto {
   watchedEpisodesCount: number
 }
 export interface ShowListDetailsResponse {
+  includeFavorites: boolean
+  includeAbandoned: boolean
+  manualShowIds: number[]
   listId: number
   name: string
   slug: string

@@ -23,6 +23,10 @@ data class MovieList(
     val description: String? = null,
     @Column(name = "cover_movie_id")
     val coverMovieId: Long? = null,
+    @Column(name = "include_favorites", nullable = false)
+    val includeFavorites: Boolean = false,
+    @Column(name = "include_abandoned", nullable = false)
+    val includeAbandoned: Boolean = false,
     @Column(name = "created_at")
     val createdAt: Instant = Instant.now(),
     @Column(name = "updated_at")

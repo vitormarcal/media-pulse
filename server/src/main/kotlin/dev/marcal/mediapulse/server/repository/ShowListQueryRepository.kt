@@ -28,10 +28,10 @@ class ShowListQueryRepository(
         val query =
             entityManager.createNativeQuery(
                 """
-                SELECT sl.id, sl.name, sl.slug, sl.description, sl.cover_show_id, cs.cover_url, COUNT(sli.id)
+                SELECT sl.id, sl.name, sl.slug, sl.description, sl.cover_show_id, cs.cover_url, COUNT(sli.id), sl.include_favorites, sl.include_abandoned
                 FROM show_lists sl
                 LEFT JOIN tv_shows cs ON cs.id = sl.cover_show_id
-                LEFT JOIN show_list_items sli ON sli.list_id = sl.id
+                LEFT JOIN show_list_members sli ON sli.list_id = sl.id
                 $filter
                 GROUP BY sl.id, sl.name, sl.slug, sl.description, sl.cover_show_id, cs.cover_url
                 ORDER BY COALESCE(sl.updated_at, sl.created_at) DESC, sl.name
@@ -54,6 +54,8 @@ class ShowListQueryRepository(
                 (row[4] as Number?)?.toLong(),
                 row[5] as String?,
                 previews[id].orEmpty(),
+                row[7] as Boolean,
+                row[8] as Boolean,
             )
         }
     }
@@ -63,7 +65,7 @@ class ShowListQueryRepository(
             entityManager
                 .createNativeQuery(
                     """
-                    SELECT sl.id, sl.name, sl.slug, sl.description, sl.cover_show_id, cs.cover_url
+                    SELECT sl.id, sl.name, sl.slug, sl.description, sl.cover_show_id, cs.cover_url, sl.include_favorites, sl.include_abandoned
                     FROM show_lists sl LEFT JOIN tv_shows cs ON cs.id = sl.cover_show_id WHERE sl.slug = :slug
                     """.trimIndent(),
                 ).setParameter("slug", slug.trim())
@@ -79,11 +81,11 @@ class ShowListQueryRepository(
                       COALESCE((SELECT st.title FROM tv_show_titles st WHERE st.show_id=s.id ORDER BY st.is_primary ASC, st.id LIMIT 1), s.original_title),
                       s.original_title, s.slug, s.year, s.cover_url,
                       COUNT(DISTINCT e.id), COUNT(DISTINCT CASE WHEN w.id IS NOT NULL THEN e.id END)
-                    FROM show_list_items sli JOIN tv_shows s ON s.id=sli.show_id
+                    FROM show_list_members sli JOIN tv_shows s ON s.id=sli.show_id
                     LEFT JOIN tv_episodes e ON e.show_id=s.id LEFT JOIN tv_episode_watches w ON w.episode_id=e.id
                     WHERE sli.list_id=:listId
                     GROUP BY s.id, s.original_title, s.slug, s.year, s.cover_url, sli.position, sli.id
-                    ORDER BY sli.position, sli.id
+                    ORDER BY sli.position NULLS LAST, s.id
                     """.trimIndent(),
                 ).setParameter("listId", id)
                 .resultList
@@ -110,6 +112,16 @@ class ShowListQueryRepository(
             shows.size.toLong(),
             shows.count { it.episodesCount > 0 && it.watchedEpisodesCount == it.episodesCount }.toLong(),
             shows,
+            list[6] as Boolean,
+            list[7] as Boolean,
+            entityManager
+                .createNativeQuery(
+                    "SELECT show_id FROM show_list_items WHERE list_id = :id ORDER BY position, id",
+                ).setParameter("id", id)
+                .resultList
+                .map {
+                    (it as Number).toLong()
+                },
         )
     }
 
@@ -122,8 +134,8 @@ class ShowListQueryRepository(
                     SELECT list_id, show_id, title, slug, cover_url FROM (
                       SELECT sli.list_id, s.id show_id,
                         COALESCE((SELECT st.title FROM tv_show_titles st WHERE st.show_id=s.id ORDER BY st.is_primary ASC, st.id LIMIT 1), s.original_title) title,
-                        s.slug, s.cover_url, ROW_NUMBER() OVER(PARTITION BY sli.list_id ORDER BY sli.position, sli.id) rank
-                      FROM show_list_items sli JOIN tv_shows s ON s.id=sli.show_id WHERE sli.list_id IN (:ids)
+                        s.slug, s.cover_url, ROW_NUMBER() OVER(PARTITION BY sli.list_id ORDER BY sli.position NULLS LAST, s.id) rank
+                      FROM show_list_members sli JOIN tv_shows s ON s.id=sli.show_id WHERE sli.list_id IN (:ids)
                     ) ranked WHERE rank <= 3 ORDER BY list_id, rank
                     """.trimIndent(),
                 ).setParameter("ids", ids)

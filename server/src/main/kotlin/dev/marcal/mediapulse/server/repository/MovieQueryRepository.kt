@@ -502,11 +502,11 @@ class MovieQueryRepository(
                   ml.description,
                   ml.cover_movie_id,
                   cm.cover_url,
-                  COUNT(mli2.id) AS item_count
+                  COUNT(mli2.id) AS item_count, ml.include_favorites, ml.include_abandoned
                 FROM movie_list_items mli
                 JOIN movie_lists ml ON ml.id = mli.list_id
                 LEFT JOIN movies cm ON cm.id = ml.cover_movie_id
-                LEFT JOIN movie_list_items mli2 ON mli2.list_id = ml.id
+                LEFT JOIN movie_list_members mli2 ON mli2.list_id = ml.id
                 WHERE mli.movie_id = :movieId
                 GROUP BY ml.id, ml.name, ml.slug, ml.description, ml.cover_movie_id, cm.cover_url
                 ORDER BY ml.name ASC, ml.id ASC
@@ -529,6 +529,8 @@ class MovieQueryRepository(
                         coverUrl = fields[5] as String?,
                         itemCount = (fields[6] as Number).toLong(),
                         previewMovies = previewsByListId[listId].orEmpty(),
+                        includeFavorites = fields[7] as Boolean,
+                        includeAbandoned = fields[8] as Boolean,
                     )
                 }
             }
@@ -586,10 +588,10 @@ class MovieQueryRepository(
                   ml.description,
                   ml.cover_movie_id,
                   cm.cover_url,
-                  COUNT(mli.id) AS item_count
+                  COUNT(mli.id) AS item_count, ml.include_favorites, ml.include_abandoned
                 FROM movie_lists ml
                 LEFT JOIN movies cm ON cm.id = ml.cover_movie_id
-                LEFT JOIN movie_list_items mli ON mli.list_id = ml.id
+                LEFT JOIN movie_list_members mli ON mli.list_id = ml.id
                 GROUP BY ml.id, ml.name, ml.slug, ml.description, ml.cover_movie_id, cm.cover_url
                 ORDER BY COALESCE(ml.updated_at, ml.created_at) DESC, ml.name ASC
                 """.trimIndent(),
@@ -618,10 +620,10 @@ class MovieQueryRepository(
                   ml.description,
                   ml.cover_movie_id,
                   cm.cover_url,
-                  COUNT(mli.id) AS item_count
+                  COUNT(mli.id) AS item_count, ml.include_favorites, ml.include_abandoned
                 FROM movie_lists ml
                 LEFT JOIN movies cm ON cm.id = ml.cover_movie_id
-                LEFT JOIN movie_list_items mli ON mli.list_id = ml.id
+                LEFT JOIN movie_list_members mli ON mli.list_id = ml.id
                 WHERE ml.id = :listId
                 GROUP BY ml.id, ml.name, ml.slug, ml.description, ml.cover_movie_id, cm.cover_url
                 LIMIT 1
@@ -1139,10 +1141,10 @@ class MovieQueryRepository(
                         SELECT 1
                         FROM movie_watches mw
                         WHERE mw.movie_id = mli.movie_id
-                      ) THEN mli.movie_id END) AS watched_movies_count
+                      ) THEN mli.movie_id END) AS watched_movies_count, ml.include_favorites, ml.include_abandoned
                     FROM movie_lists ml
                     LEFT JOIN movies cm ON cm.id = ml.cover_movie_id
-                    LEFT JOIN movie_list_items mli ON mli.list_id = ml.id
+                    LEFT JOIN movie_list_members mli ON mli.list_id = ml.id
                     WHERE ml.slug = :slug
                     GROUP BY ml.id, ml.name, ml.slug, ml.description, ml.cover_movie_id, cm.cover_url
                     LIMIT 1
@@ -1174,7 +1176,7 @@ class MovieQueryRepository(
                         COUNT(mw.id) AS watch_count,
                         MAX(mw.watched_at) AS last_watched_at,
                         MIN(mli.position) AS position
-                      FROM movie_list_items mli
+                      FROM movie_list_members mli
                       JOIN movies m ON m.id = mli.movie_id
                       LEFT JOIN movie_watches mw ON mw.movie_id = m.id
                       WHERE mli.list_id = :listId
@@ -1182,7 +1184,7 @@ class MovieQueryRepository(
                     )
                     SELECT movie_id, title, original_title, slug, year, cover_url, watch_count, last_watched_at
                     FROM movie_rollup
-                    ORDER BY position ASC, title ASC
+                    ORDER BY position ASC NULLS LAST, movie_id ASC
                     """.trimIndent(),
                 ).setParameter("listId", listId)
                 .resultList
@@ -1210,6 +1212,17 @@ class MovieQueryRepository(
             movieCount = (base[6] as Number).toLong(),
             watchedMoviesCount = (base[7] as Number).toLong(),
             movies = movies,
+            includeFavorites = base[8] as Boolean,
+            includeAbandoned = base[9] as Boolean,
+            manualMovieIds =
+                entityManager
+                    .createNativeQuery(
+                        "SELECT movie_id FROM movie_list_items WHERE list_id = :id ORDER BY position, id",
+                    ).setParameter("id", listId)
+                    .resultList
+                    .map {
+                        (it as Number).toLong()
+                    },
         )
     }
 
@@ -1777,6 +1790,8 @@ class MovieQueryRepository(
             coverUrl = fields[5] as String?,
             itemCount = (fields[6] as Number).toLong(),
             previewMovies = previewMovies,
+            includeFavorites = fields[7] as Boolean,
+            includeAbandoned = fields[8] as Boolean,
         )
 
     private fun getMovieListPreviewMovies(
@@ -1806,7 +1821,7 @@ class MovieQueryRepository(
                           PARTITION BY mli.list_id
                           ORDER BY mli.position ASC, m.id ASC
                         ) AS item_rank
-                      FROM movie_list_items mli
+                      FROM movie_list_members mli
                       JOIN movies m ON m.id = mli.movie_id
                       WHERE mli.list_id IN (:listIds)
                     )

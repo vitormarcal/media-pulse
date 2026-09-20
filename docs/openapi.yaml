@@ -3734,6 +3734,52 @@ paths:
         "404":
           description: Media not found.
 
+  /api/movies/lists/{listId}/rules:
+    patch:
+      tags: [Movies]
+      summary: Atualiza regras de inclusão automática da lista mista
+      parameters:
+        - name: listId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MovieListRulesUpdateRequest' }
+      responses:
+        '200':
+          description: Lista atualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MovieListSummaryDto' }
+        '400': { description: Regras inválidas }
+        '404': { description: Lista não encontrada }
+
+  /api/shows/lists/{listId}/rules:
+    patch:
+      tags: [Shows]
+      summary: Atualiza regras de inclusão automática da lista mista
+      parameters:
+        - name: listId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ShowListRulesUpdateRequest' }
+      responses:
+        '200':
+          description: Lista atualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ShowListSummaryDto' }
+        '400': { description: Regras inválidas }
+        '404': { description: Lista não encontrada }
+
 components:
   parameters:
     AlbumListId:
@@ -6118,6 +6164,8 @@ components:
     MovieListSummaryDto:
       type: object
       properties:
+        includeFavorites: { type: boolean, default: false }
+        includeAbandoned: { type: boolean, default: false }
         listId:
           type: integer
           format: int64
@@ -6146,6 +6194,9 @@ components:
     MovieListDetailsResponse:
       type: object
       properties:
+        includeFavorites: { type: boolean, default: false }
+        includeAbandoned: { type: boolean, default: false }
+        manualMovieIds: { type: array, items: { type: integer, format: int64 } }
         listId:
           type: integer
           format: int64
@@ -7810,6 +7861,8 @@ components:
     ShowListSummaryDto:
       type: object
       properties:
+        includeFavorites: { type: boolean, default: false }
+        includeAbandoned: { type: boolean, default: false }
         listId: { type: integer, format: int64 }
         name: { type: string }
         slug: { type: string }
@@ -7834,6 +7887,9 @@ components:
     ShowListDetailsResponse:
       type: object
       properties:
+        includeFavorites: { type: boolean, default: false }
+        includeAbandoned: { type: boolean, default: false }
+        manualShowIds: { type: array, items: { type: integer, format: int64 } }
         listId: { type: integer, format: int64 }
         name: { type: string }
         slug: { type: string }
@@ -8710,3 +8766,17 @@ components:
         data:
           type: object
       required: [data]
+
+    MovieListRulesUpdateRequest:
+      type: object
+      required: [includeFavorites, includeAbandoned]
+      properties:
+        includeFavorites: { type: boolean }
+        includeAbandoned: { type: boolean }
+
+    ShowListRulesUpdateRequest:
+      type: object
+      required: [includeFavorites, includeAbandoned]
+      properties:
+        includeFavorites: { type: boolean }
+        includeAbandoned: { type: boolean }

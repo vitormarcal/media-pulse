@@ -8,6 +8,7 @@ import dev.marcal.mediapulse.server.api.shows.ShowListCoverUpdateRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListCreateRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListDetailsResponse
 import dev.marcal.mediapulse.server.api.shows.ShowListOrderUpdateRequest
+import dev.marcal.mediapulse.server.api.shows.ShowListRulesUpdateRequest
 import dev.marcal.mediapulse.server.api.shows.ShowListSummaryDto
 import dev.marcal.mediapulse.server.api.shows.ShowMetadataEnrichmentApplyRequest
 import dev.marcal.mediapulse.server.api.shows.ShowMetadataEnrichmentApplyResponse
@@ -133,6 +134,12 @@ class ShowsController(
         @PathVariable listId: Long,
         @RequestBody request: ShowListOrderUpdateRequest,
     ) = showListsService.updateOrder(listId, request)
+
+    @PatchMapping("/lists/{listId}/rules")
+    fun updateListRules(
+        @PathVariable listId: Long,
+        @RequestBody request: ShowListRulesUpdateRequest,
+    ) = showListsService.updateRules(listId, request)
 
     @PatchMapping("/lists/{listId}/cover")
     fun updateListCover(

@@ -5,7 +5,7 @@
     </div>
 
     <div v-else-if="error" class="state-card error">
-      <p>Não foi possível carregar as listas manuais.</p>
+      <p>Não foi possível carregar as listas.</p>
       <pre>{{ error.message }}</pre>
     </div>
 
@@ -21,9 +21,9 @@
       />
 
       <section class="lists-section">
-        <SectionHeading eyebrow="Listas" title="Listas manuais" :summary="data.summary" />
+        <SectionHeading eyebrow="Listas" title="Listas" :summary="data.summary" />
 
-        <p v-if="!data.items.length" class="quiet-empty">Nenhuma lista manual foi criada ainda.</p>
+        <p v-if="!data.items.length" class="quiet-empty">Nenhuma lista foi criada ainda.</p>
 
         <div v-else class="lists-masonry">
           <article v-for="item in data.items" :key="item.id" class="list-card" :style="cardShellStyle(item)">
@@ -44,7 +44,9 @@
               </div>
 
               <div class="card-copy">
-                <p class="card-kicker">Lista manual</p>
+                <p class="card-kicker">
+                  {{ item.includeFavorites || item.includeAbandoned ? 'Lista mista' : 'Lista manual' }}
+                </p>
                 <h2>{{ item.name }}</h2>
               </div>
 
@@ -91,11 +93,11 @@ function cardShellStyle(item: NonNullable<typeof data.value>['items'][number]) {
 }
 
 useHead(() => ({
-  title: 'Listas manuais · Filmes · Media Pulse',
+  title: 'Listas · Filmes · Media Pulse',
   meta: [
     {
       name: 'description',
-      content: 'Estante de listas manuais de filmes no Media Pulse.',
+      content: 'Estante de listas de filmes no Media Pulse.',
     },
   ],
 }))

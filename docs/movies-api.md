@@ -427,5 +427,17 @@ As respostas de detalhe por ID e slug expõem os dois campos.
 - As operações são idempotentes, sem body, retornam `204` e retornam `404` quando a obra não existe.
 - As marcações são independentes e podem estar ativas simultaneamente.
 - A página da obra oferece dois botões com estado pressionado, bloqueio durante gravação e mensagem de erro em caso de falha. Atualizações dos detalhes preservam o conteúdo montado; após salvar uma marcação, uma nova leitura substitui eventuais respostas anteriores à gravação.
-- Histórico, progresso, avaliações, listas, biblioteca e “Continuar assistindo” mantêm o comportamento existente; não há novos filtros.
+- Histórico, progresso, avaliações, listas, biblioteca e “Continuar assistindo” mantêm o comportamento existente; as listas podem aplicar regras automáticas conforme a seção de listas mistas.
 - Os campos são gravados exclusivamente pelas ações pessoais, fora do mapeamento JPA usado por importação e enriquecimento, para preservar escolhas durante atualizações externas.
+
+## Listas mistas
+
+A migration `V62__add_mixed_list_rules.sql` adiciona regras às listas existentes, inicialmente desativadas.
+
+`PATCH /api/movies/lists/{listId}/rules` recebe `{"includeFavorites": true, "includeAbandoned": false}` e retorna `MovieListSummaryDto` (404 se a lista não existir). Ambos os campos são booleanos.
+
+Resumos e detalhes retornam `includeFavorites` e `includeAbandoned`. O detalhe inclui `manualMovieIds`, na ordem manual. Contagens, previews e itens consideram a união sem duplicatas entre inclusões manuais e obras que atendem a pelo menos uma regra. Desmarcar remove apenas a inclusão automática. A atualização aparece na próxima leitura.
+
+A reordenação recebe somente os IDs manuais, e a capa fixa é escolhida entre eles. Itens automáticos seguem os manuais, por ID crescente. Os painéis na página da obra continuam gerenciando vínculos manuais.
+
+Especificação, critérios de aceite e roadmap: [Listas mistas](features/mixed-media-lists.md).

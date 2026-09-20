@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.movies.MovieListAttachRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCoverUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListCreateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListOrderUpdateRequest
+import dev.marcal.mediapulse.server.api.movies.MovieListRulesUpdateRequest
 import dev.marcal.mediapulse.server.api.movies.MovieListSummaryDto
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieList
@@ -11,6 +12,7 @@ import dev.marcal.mediapulse.server.repository.MovieQueryRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieListItemCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieListRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
+import io.mockk.Called
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -31,6 +33,37 @@ class MovieListsServiceTest {
             movieListItemCrudRepository = movieListItemCrudRepository,
             movieQueryRepository = movieQueryRepository,
         )
+
+    @Test
+    fun `rules preserve manual membership and list metadata`() {
+        val existing = MovieList(id = 2, name = "Mixed", normalizedName = "mixed", slug = "mixed", coverMovieId = 7)
+        every { movieListRepository.findById(2) } returns Optional.of(existing)
+        every { movieListRepository.save(any()) } answers { firstArg() }
+        every { movieQueryRepository.getMovieListSummary(2) } returns
+            MovieListSummaryDto(2, "Mixed", "mixed", null, 1, includeFavorites = true, includeAbandoned = true)
+
+        val result = service.updateRules(2, MovieListRulesUpdateRequest(true, true))
+
+        assertEquals(true, result.includeFavorites)
+        assertEquals(true, result.includeAbandoned)
+        verify {
+            movieListRepository.save(
+                match { it.includeFavorites && it.includeAbandoned && it.coverMovieId == 7L && it.name == "Mixed" },
+            )
+        }
+        verify { movieListItemCrudRepository wasNot Called }
+    }
+
+    @Test
+    fun `rules reject unknown lists`() {
+        every { movieListRepository.findById(99) } returns Optional.empty()
+        val error =
+            kotlin.test.assertFailsWith<org.springframework.web.server.ResponseStatusException> {
+                service.updateRules(99, MovieListRulesUpdateRequest(false, true))
+            }
+        assertEquals(404, error.statusCode.value())
+        verify(exactly = 0) { movieListRepository.save(any()) }
+    }
 
     @Test
     fun `create should persist list and return summary`() {

@@ -13,15 +13,23 @@
         </div>
         <div>
           <NuxtLink to="/shows/lists">Voltar para listas</NuxtLink>
-          <p>Lista manual</p>
+          <p>{{ data.includeFavorites || data.includeAbandoned ? 'Lista mista' : 'Lista manual' }}</p>
           <h1>{{ data.name }}</h1>
           <p>{{ data.description || 'Curadoria pessoal de séries.' }}</p>
           <small>{{ data.showCount }} séries · {{ data.watchedShowsCount }} concluídas</small>
           <button class="delete-list" type="button" :disabled="saving" @click="deleteList">Excluir lista</button>
         </div>
       </header>
+      <ListAutomaticRules
+        domain="shows"
+        :list-id="data.listId"
+        :include-favorites="data.includeFavorites"
+        :include-abandoned="data.includeAbandoned"
+        :disabled="saving"
+        @saved="refresh()"
+      />
       <section>
-        <SectionHeading eyebrow="Ordem manual" title="Séries da lista" />
+        <SectionHeading eyebrow="Curadoria" title="Séries da lista" />
         <p v-if="feedback" class="feedback" role="status">{{ feedback }}</p>
         <p v-if="!data.shows.length">Esta lista ainda está vazia.</p>
         <div class="items">
@@ -38,17 +46,19 @@
               >
               <p>{{ show.year || 'Série' }} · {{ show.watchedEpisodesCount }}/{{ show.episodesCount }} episódios</p>
             </div>
-            <div class="actions">
+            <div v-if="data.manualShowIds.includes(show.showId)" class="actions">
               <button :disabled="index === 0 || saving" @click="move(index, -1)">Subir</button
-              ><button :disabled="index === ordered.length - 1 || saving" @click="move(index, 1)">Descer</button
+              ><button :disabled="index === data.manualShowIds.length - 1 || saving" @click="move(index, 1)">
+                Descer</button
               ><button
                 :class="{ active: data.coverShowId === show.showId }"
                 :disabled="saving"
                 @click="setCover(show.showId)"
               >
                 {{ data.coverShowId === show.showId ? 'Capa' : 'Usar como capa' }}</button
-              ><button :disabled="saving" @click="remove(show.showId)">Remover</button>
+              ><button :disabled="saving" @click="remove(show.showId)">Remover inclusão manual</button>
             </div>
+            <span v-else>Inclusão automática</span>
           </article>
         </div>
       </section>
@@ -56,6 +66,7 @@
   </main>
 </template>
 <script setup lang="ts">
+import ListAutomaticRules from '~/components/media/ListAutomaticRules.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 import { useShowList } from '~/composables/useShowListPageData'
 import type { ShowListItemDto } from '~/types/shows'
@@ -87,7 +98,7 @@ async function persistOrder() {
     await $fetch(`/api/shows/lists/${data.value.listId}/order`, {
       baseURL: config.public.apiBase,
       method: 'POST',
-      body: { showIds: ordered.value.map((s) => s.showId) },
+      body: { showIds: ordered.value.filter((s) => data.value?.manualShowIds.includes(s.showId)).map((s) => s.showId) },
     })
     await refresh()
   } catch (error) {

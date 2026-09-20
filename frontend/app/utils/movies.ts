@@ -724,8 +724,8 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
     enrichment: movie.enrichment,
     lists: {
       summary: movie.lists.length
-        ? `${movie.lists.length} listas manuais já incluem este filme.`
-        : 'Este filme ainda não entrou em nenhuma lista manual.',
+        ? `${movie.lists.length} listas incluem este filme manualmente.`
+        : 'Este filme ainda não tem inclusões manuais.',
       visibleCount: movie.lists.length,
       items: movie.lists.map((list) => ({
         id: `list-${list.listId}`,
@@ -944,6 +944,8 @@ export function buildMovieCompanyPageData(
 
 export function buildMovieListPageData(list: MovieListDetailsResponse): import('~/types/movies').MovieListPageData {
   return {
+    includeFavorites: list.includeFavorites,
+    includeAbandoned: list.includeAbandoned,
     listId: list.listId,
     name: list.name,
     slug: list.slug,
@@ -955,6 +957,7 @@ export function buildMovieListPageData(list: MovieListDetailsResponse): import('
       movieCount: list.movieCount,
       watchedMoviesCount: list.watchedMoviesCount,
     },
+    manualMovieIds: list.manualMovieIds,
     movies: list.movies.map(buildLibraryCardModel),
   }
 }
@@ -962,6 +965,8 @@ export function buildMovieListPageData(list: MovieListDetailsResponse): import('
 export function buildMovieListsIndexPageData(lists: MovieListSummaryDto[]): MovieListsIndexPageData {
   const items = lists.map((list) => ({
     id: `list-${list.listId}`,
+    includeFavorites: list.includeFavorites,
+    includeAbandoned: list.includeAbandoned,
     listId: list.listId,
     name: list.name,
     href: `/movies/lists/${list.slug}`,
@@ -998,9 +1003,7 @@ export function buildMovieListsIndexPageData(lists: MovieListSummaryDto[]): Movi
           }
         : null,
     },
-    summary: items.length
-      ? `${formatShortNumber(items.length)} listas manuais.`
-      : 'Nenhuma lista manual foi criada ainda.',
+    summary: items.length ? `${formatShortNumber(items.length)} listas.` : 'Nenhuma lista foi criada ainda.',
     items,
   }
 }

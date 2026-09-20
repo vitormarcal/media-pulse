@@ -195,6 +195,13 @@ Future direction:
 - connect games to cross-domain lists, mentions, and timeline events
 - support better personal context around play history, platforms, and completion state
 
+## Listas mistas de filmes e séries
+
+Roadmap aprovado e regras da entrega: [Listas mistas](docs/features/mixed-media-lists.md).
+
+- Entrega atual: combinar vínculos manuais com inclusão automática por Favorito ou Abandonado em listas de filmes e séries.
+- Próxima evolução candidata: filtros por tags, mediante nova descoberta; fora do escopo atual.
+
 ## Cross-Domain Product
 
 Future direction:

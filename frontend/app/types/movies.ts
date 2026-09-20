@@ -103,6 +103,8 @@ export interface MovieCompanyDto {
 }
 
 export interface MovieListSummaryDto {
+  includeFavorites: boolean
+  includeAbandoned: boolean
   listId: number
   name: string
   slug: string
@@ -243,6 +245,9 @@ export interface MovieCompanyDetailsResponse {
 }
 
 export interface MovieListDetailsResponse {
+  includeFavorites: boolean
+  includeAbandoned: boolean
+  manualMovieIds: number[]
   listId: number
   name: string
   slug: string
@@ -742,6 +747,9 @@ export interface MovieCompanyPageData {
 }
 
 export interface MovieListPageData {
+  includeFavorites: boolean
+  includeAbandoned: boolean
+  manualMovieIds: number[]
   listId: number
   name: string
   slug: string
@@ -776,6 +784,8 @@ export interface MovieListsIndexPageData {
   summary: string
   items: Array<{
     id: string
+    includeFavorites: boolean
+    includeAbandoned: boolean
     listId: number
     name: string
     href: string

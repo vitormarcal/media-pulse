@@ -25,7 +25,7 @@
               </button>
             </div>
 
-            <p class="eyebrow">Lista manual</p>
+            <p class="eyebrow">{{ data.includeFavorites || data.includeAbandoned ? 'Lista mista' : 'Lista manual' }}</p>
             <h1>{{ data.name }}</h1>
             <p v-if="heroIntro" class="intro">{{ heroIntro }}</p>
 
@@ -51,11 +51,22 @@
         </div>
       </section>
 
-      <section v-if="reorderMode && data.movies.length" class="cover-panel">
+      <ListAutomaticRules
+        v-if="reorderMode"
+        domain="movies"
+        :list-id="data.listId"
+        :include-favorites="data.includeFavorites"
+        :include-abandoned="data.includeAbandoned"
+        @saved="refresh()"
+      />
+
+      <section v-if="reorderMode && manualMovies.length" class="cover-panel">
         <div class="cover-panel__copy">
           <p class="eyebrow">Imagem do recorte</p>
           <h2>Escolha a capa da lista</h2>
-          <p class="cover-panel__description">Sem escolha manual, a capa segue o primeiro filme da ordem.</p>
+          <p class="cover-panel__description">
+            Escolha entre os filmes manuais. Sem escolha, a capa segue o primeiro filme da lista.
+          </p>
         </div>
 
         <div class="cover-panel__toolbar">
@@ -78,7 +89,7 @@
 
         <div class="cover-grid">
           <button
-            v-for="movie in orderedMovies"
+            v-for="movie in manualMovies"
             :key="`cover-${movie.id}`"
             type="button"
             class="cover-option"
@@ -103,11 +114,13 @@
         </div>
       </section>
 
-      <section v-if="reorderMode && data.movies.length" class="order-panel">
+      <section v-if="reorderMode && manualMovies.length" class="order-panel">
         <div class="order-copy">
           <p class="eyebrow">Sequência manual</p>
           <h2>Ajuste a ordem do recorte</h2>
-          <p class="order-description">Arraste para remontar a sequência da lista.</p>
+          <p class="order-description">
+            Arraste para ordenar os filmes manuais. Inclusões automáticas aparecem depois.
+          </p>
         </div>
 
         <div class="order-toolbar">
@@ -136,7 +149,7 @@
 
         <div class="order-stack">
           <article
-            v-for="(movie, index) in orderedMovies"
+            v-for="(movie, index) in manualMovies"
             :key="movie.id"
             class="order-card"
             :class="{
@@ -186,6 +199,7 @@
 
 <script setup lang="ts">
 import { NuxtLink } from '#components'
+import ListAutomaticRules from '~/components/media/ListAutomaticRules.vue'
 import MoviesLibraryGrid from '~/components/movies/MoviesLibraryGrid.vue'
 import { useMovieListPageData } from '~/composables/useMovieListPageData'
 import type { MovieLibraryCardModel, MovieListCoverUpdateRequest, MovieListOrderUpdateRequest } from '~/types/movies'
@@ -244,8 +258,11 @@ const gridSummary = computed(() =>
     ? `${data.value.stats.movieCount} filmes no recorte e ${data.value.stats.watchedMoviesCount} com sessão registrada.`
     : 'Nenhum filme disponível.',
 )
-const persistedMovieIds = computed(() => data.value?.movies.map((movie) => movie.movieId) ?? [])
-const orderedMovieIds = computed(() => orderedMovies.value.map((movie) => movie.movieId))
+const manualMovies = computed(() =>
+  orderedMovies.value.filter((movie) => data.value?.manualMovieIds.includes(movie.movieId)),
+)
+const persistedMovieIds = computed(() => data.value?.manualMovieIds ?? [])
+const orderedMovieIds = computed(() => manualMovies.value.map((movie) => movie.movieId))
 const orderDirty = computed(() => persistedMovieIds.value.join(',') !== orderedMovieIds.value.join(','))
 
 function toggleReorderMode() {

@@ -13,7 +13,7 @@
         :spotlight="null"
       />
       <section>
-        <SectionHeading eyebrow="Curadoria" title="Listas manuais" :summary="`${data.length} listas`" />
+        <SectionHeading eyebrow="Curadoria" title="Listas" :summary="`${data.length} listas`" />
         <form class="create" @submit.prevent="createList">
           <label><span>Nome</span><input v-model="name" required placeholder="Favoritas" /></label
           ><label><span>Descrição</span><input v-model="description" placeholder="Opcional" /></label
@@ -30,9 +30,9 @@
                 :alt="list.name"
               /><span v-else>{{ list.name.slice(0, 1) }}</span>
             </div>
-            <p>Lista manual</p>
+            <p>{{ list.includeFavorites || list.includeAbandoned ? 'Lista mista' : 'Lista manual' }}</p>
             <h2>{{ list.name }}</h2>
-            <small>{{ list.itemCount }} séries · Ordem manual</small></NuxtLink
+            <small>{{ list.itemCount }} séries</small></NuxtLink
           >
         </div>
       </section>
