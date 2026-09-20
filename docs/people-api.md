@@ -49,6 +49,7 @@ As filmografias de filmes e séries possuem snapshots e estados de sincronizaç�
 - presença local é resolvida dinamicamente pelo `tmdb_id`
 - leitura da filmografia não cria filmes, séries ou créditos
 - títulos externos continuam disponíveis para adição explícita pelo owner
+- adicionar ou vincular uma obra mantém o owner na página da pessoa, sem abrir automaticamente o filme ou a série; a atualização após adicionar preserva a filmografia aberta e o recorte selecionado
 - cada obra local informa as categorias já vinculadas e as categorias de elenco, direção ou roteiro ainda disponíveis no snapshot
 - quando uma categoria está ausente, a página permite vinculá-la sem sair da filmografia; uma opção é aplicada diretamente e várias opções usam um seletor compacto
 - o vínculo usa somente o snapshot local, marca a obra como curada manualmente e não consulta o TMDb durante a leitura ou a ação

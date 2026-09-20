@@ -1,6 +1,6 @@
 <template>
   <main class="person-page">
-    <div v-if="status === 'pending'" class="state-card">
+    <div v-if="status === 'pending' && !data" class="state-card">
       <p>Carregando...</p>
     </div>
 
