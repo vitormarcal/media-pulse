@@ -378,6 +378,8 @@ data class MovieAutomaticEnrichmentDto(
 )
 
 data class MovieDetailsResponse(
+    val favorite: Boolean = false,
+    val abandoned: Boolean = false,
     val movieId: Long,
     val title: String,
     val originalTitle: String,

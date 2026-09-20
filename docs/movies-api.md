@@ -415,3 +415,17 @@ Filmes podem ser vinculados a uma coleção oficial do TMDb, como `The Matrix Co
 - endpoints documentados existem em `MoviesController`, `MovieCatalogController` ou `PeopleController`
 - DTOs citados existem em `api/movies`
 - comportamento de provider externo é descrito como enriquecimento, não como fonte canônica
+
+## Marcações pessoais
+
+A migration `V61__add_movie_and_show_personal_marks.sql` adiciona `favorite` e `abandoned`
+como booleanos locais, inicialmente `false`, em `movies`.
+As respostas de detalhe por ID e slug expõem os dois campos.
+
+- `POST /api/movies/{movieId}/favorite` e `DELETE /api/movies/{movieId}/favorite` ativam e desativam Favorito.
+- `POST /api/movies/{movieId}/abandoned` e `DELETE /api/movies/{movieId}/abandoned` ativam e desativam Abandonado.
+- As operações são idempotentes, sem body, retornam `204` e retornam `404` quando a obra não existe.
+- As marcações são independentes e podem estar ativas simultaneamente.
+- A página da obra oferece dois botões com estado pressionado, bloqueio durante gravação e mensagem de erro em caso de falha. Atualizações dos detalhes preservam o conteúdo montado; após salvar uma marcação, uma nova leitura substitui eventuais respostas anteriores à gravação.
+- Histórico, progresso, avaliações, listas, biblioteca e “Continuar assistindo” mantêm o comportamento existente; não há novos filtros.
+- Os campos são gravados exclusivamente pelas ações pessoais, fora do mapeamento JPA usado por importação e enriquecimento, para preservar escolhas durante atualizações externas.

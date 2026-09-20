@@ -557,7 +557,9 @@ class TvShowQueryRepository(
                       s.terms_synced_at,
                       s.terms_sync_attempted_at,
                       s.terms_sync_error,
-                      s.credits_curated_at
+                      s.credits_curated_at,
+                      s.favorite,
+                      s.abandoned
                     FROM tv_shows s
                     WHERE s.id = :showId
                     """.trimIndent(),
@@ -691,6 +693,8 @@ class TvShowQueryRepository(
             }
 
         return ShowDetailsResponse(
+            favorite = base.getOrNull(14) as? Boolean ?: false,
+            abandoned = base.getOrNull(15) as? Boolean ?: false,
             showId = (base[0] as Number).toLong(),
             title = base[1] as String,
             originalTitle = base[2] as String,

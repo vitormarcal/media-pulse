@@ -249,3 +249,17 @@ Regras importantes:
 - endpoints documentados existem em `ShowsController`, `ShowCatalogController` ou `ManualShowWatchController`
 - DTOs citados existem em `api/shows`
 - cursor é tratado como contrato opaco
+
+## Marcações pessoais
+
+A migration `V61__add_movie_and_show_personal_marks.sql` adiciona `favorite` e `abandoned`
+como booleanos locais, inicialmente `false`, em `tv_shows`.
+As respostas de detalhe por ID e slug expõem os dois campos.
+
+- `POST /api/shows/{showId}/favorite` e `DELETE /api/shows/{showId}/favorite` ativam e desativam Favorito.
+- `POST /api/shows/{showId}/abandoned` e `DELETE /api/shows/{showId}/abandoned` ativam e desativam Abandonado.
+- As operações são idempotentes, sem body, retornam `204` e retornam `404` quando a obra não existe.
+- As marcações são independentes e podem estar ativas simultaneamente.
+- A página da obra oferece dois botões com estado pressionado, bloqueio durante gravação e mensagem de erro em caso de falha. Atualizações dos detalhes preservam o conteúdo montado; após salvar uma marcação, uma nova leitura substitui eventuais respostas anteriores à gravação.
+- Histórico, progresso, avaliações, listas, biblioteca e “Continuar assistindo” mantêm o comportamento existente; não há novos filtros.
+- Os campos são gravados exclusivamente pelas ações pessoais, fora do mapeamento JPA usado por importação e enriquecimento, para preservar escolhas durante atualizações externas.

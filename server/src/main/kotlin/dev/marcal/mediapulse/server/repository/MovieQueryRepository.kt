@@ -272,7 +272,9 @@ class MovieQueryRepository(
                       m.terms_sync_attempted_at,
                       m.credits_sync_attempted_at,
                       m.companies_sync_attempted_at,
-                      m.credits_curated_at
+                      m.credits_curated_at,
+                      m.favorite,
+                      m.abandoned
                     FROM movies m
                     LEFT JOIN movie_collections mc ON mc.id = m.collection_id
                     WHERE m.id = :movieId
@@ -410,6 +412,8 @@ class MovieQueryRepository(
             }
 
         return MovieDetailsResponse(
+            favorite = base.getOrNull(23) as? Boolean ?: false,
+            abandoned = base.getOrNull(24) as? Boolean ?: false,
             movieId = (base[0] as Number).toLong(),
             title = base[1] as String,
             originalTitle = base[2] as String,

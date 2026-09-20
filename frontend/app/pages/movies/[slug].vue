@@ -1,6 +1,6 @@
 <template>
   <main class="movie-page">
-    <div v-if="status === 'pending'" class="state-card">
+    <div v-if="status === 'pending' && !data" class="state-card">
       <p>Carregando...</p>
     </div>
 
@@ -45,6 +45,15 @@
           @terms-changed="handleTermsChanged"
         />
       </div>
+
+      <MediaPersonalMarks
+        :key="data.movieId"
+        v-model:favorite="data.favorite"
+        v-model:abandoned="data.abandoned"
+        media-type="movies"
+        :entity-id="data.movieId"
+        @saved="refresh()"
+      />
 
       <section class="movie-actions" aria-labelledby="movie-actions-title">
         <div class="actions-copy">
@@ -125,6 +134,7 @@
 </template>
 
 <script setup lang="ts">
+import MediaPersonalMarks from '~/components/media/MediaPersonalMarks.vue'
 import MovieAddWatchPanel from '~/components/movies/MovieAddWatchPanel.vue'
 import MovieCollectionPanel from '~/components/movies/MovieCollectionPanel.vue'
 import MovieContextPanel from '~/components/movies/MovieContextPanel.vue'

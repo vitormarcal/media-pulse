@@ -695,6 +695,8 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
 
   return {
     movieId: movie.movieId,
+    favorite: movie.favorite,
+    abandoned: movie.abandoned,
     slug: movie.slug ?? String(movie.movieId),
     title: movie.title,
     originalTitle: movie.originalTitle,

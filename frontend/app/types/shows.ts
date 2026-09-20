@@ -161,6 +161,8 @@ export interface ShowPersonCreditDto {
 }
 
 export interface ShowDetailsResponse {
+  favorite: boolean
+  abandoned: boolean
   showId: number
   title: string
   originalTitle: string
@@ -412,6 +414,8 @@ export interface ShowWatchEntryModel {
 }
 
 export interface ShowPageData {
+  favorite: boolean
+  abandoned: boolean
   lists: ShowListSummaryDto[]
   showId: number
   slug: string

@@ -146,6 +146,9 @@ class MovieQueryRepositoryTest {
                         null,
                         null,
                         null,
+                        null,
+                        true,
+                        true,
                     ),
                 ),
                 emptyList<Any>(),
@@ -155,6 +158,8 @@ class MovieQueryRepositoryTest {
         val response = repository.getMovieDetailsBySlug("3828")
 
         assertEquals(10L, response.movieId)
+        assertTrue(response.favorite)
+        assertTrue(response.abandoned)
         verify(exactly = 1) { query.setParameter("slug", "3828") }
     }
 

@@ -1,6 +1,6 @@
 <template>
   <main class="show-page">
-    <div v-if="status === 'pending'" class="state-card">
+    <div v-if="status === 'pending' && !data" class="state-card">
       <p>Carregando...</p>
     </div>
 
@@ -41,6 +41,15 @@
           @terms-changed="refresh"
         />
       </div>
+
+      <MediaPersonalMarks
+        :key="data.showId"
+        v-model:favorite="data.favorite"
+        v-model:abandoned="data.abandoned"
+        media-type="shows"
+        :entity-id="data.showId"
+        @saved="refresh()"
+      />
 
       <section class="show-actions" aria-labelledby="show-actions-title">
         <div class="actions-copy">
@@ -127,6 +136,7 @@
 </template>
 
 <script setup lang="ts">
+import MediaPersonalMarks from '~/components/media/MediaPersonalMarks.vue'
 import ShowAddWatchPanel from '~/components/shows/ShowAddWatchPanel.vue'
 import ShowPageHero from '~/components/shows/ShowPageHero.vue'
 import ShowMetadataEnrichmentPanel from '~/components/shows/ShowMetadataEnrichmentPanel.vue'

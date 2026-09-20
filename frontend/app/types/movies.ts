@@ -302,6 +302,8 @@ export interface MovieListCoverUpdateRequest {
 }
 
 export interface MovieDetailsResponse {
+  favorite: boolean
+  abandoned: boolean
   movieId: number
   title: string
   originalTitle: string
@@ -574,6 +576,8 @@ export interface MovieWatchEntryModel {
 }
 
 export interface MoviePageData {
+  favorite: boolean
+  abandoned: boolean
   movieId: number
   slug: string
   title: string

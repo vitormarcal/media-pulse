@@ -35,6 +35,98 @@ tags:
   - name: Ratings
     description: Manual ratings attached to media details.
 paths:
+  /api/movies/{movieId}/favorite:
+    post:
+      tags: [Movies]
+      summary: Set the favorite personal mark
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "204": { description: Personal mark saved (idempotent) }
+        "404": { description: Movie not found }
+    delete:
+      tags: [Movies]
+      summary: Clear the favorite personal mark
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "204": { description: Personal mark saved (idempotent) }
+        "404": { description: Movie not found }
+  /api/movies/{movieId}/abandoned:
+    post:
+      tags: [Movies]
+      summary: Set the abandoned personal mark
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "204": { description: Personal mark saved (idempotent) }
+        "404": { description: Movie not found }
+    delete:
+      tags: [Movies]
+      summary: Clear the abandoned personal mark
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "204": { description: Personal mark saved (idempotent) }
+        "404": { description: Movie not found }
+  /api/shows/{showId}/favorite:
+    post:
+      tags: [Shows]
+      summary: Set the favorite personal mark
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "204": { description: Personal mark saved (idempotent) }
+        "404": { description: Show not found }
+    delete:
+      tags: [Shows]
+      summary: Clear the favorite personal mark
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "204": { description: Personal mark saved (idempotent) }
+        "404": { description: Show not found }
+  /api/shows/{showId}/abandoned:
+    post:
+      tags: [Shows]
+      summary: Set the abandoned personal mark
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "204": { description: Personal mark saved (idempotent) }
+        "404": { description: Show not found }
+    delete:
+      tags: [Shows]
+      summary: Clear the abandoned personal mark
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "204": { description: Personal mark saved (idempotent) }
+        "404": { description: Show not found }
   /api/games/catalog/suggestions:
     post:
       tags: [Games]
@@ -6123,6 +6215,12 @@ components:
     MovieDetailsResponse:
       type: object
       properties:
+        favorite:
+          type: boolean
+          description: Owner-controlled favorite mark, independent of abandoned.
+        abandoned:
+          type: boolean
+          description: Owner-controlled record only; does not affect progress or lists.
         movieId:
           type: integer
           format: int64
@@ -6188,6 +6286,8 @@ components:
           $ref: "#/components/schemas/MovieAutomaticEnrichmentDto"
       required:
         [
+          favorite,
+          abandoned,
           movieId,
           title,
           originalTitle,
@@ -7613,6 +7713,12 @@ components:
     ShowDetailsResponse:
       type: object
       properties:
+        favorite:
+          type: boolean
+          description: Owner-controlled favorite mark, independent of abandoned.
+        abandoned:
+          type: boolean
+          description: Owner-controlled record only; does not affect progress or lists.
         showId:
           type: integer
           format: int64
@@ -7678,6 +7784,8 @@ components:
           $ref: "#/components/schemas/ShowAutomaticEnrichmentDto"
       required:
         [
+          favorite,
+          abandoned,
           showId,
           title,
           originalTitle,

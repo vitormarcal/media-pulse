@@ -203,6 +203,8 @@ data class ShowPersonCreditDto(
 )
 
 data class ShowDetailsResponse(
+    val favorite: Boolean = false,
+    val abandoned: Boolean = false,
     val showId: Long,
     val title: String,
     val originalTitle: String,

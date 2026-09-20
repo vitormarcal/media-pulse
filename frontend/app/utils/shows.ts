@@ -358,6 +358,8 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
 
   return {
     showId: show.showId,
+    favorite: show.favorite,
+    abandoned: show.abandoned,
     slug: show.slug ?? String(show.showId),
     title: show.title,
     originalTitle: show.originalTitle,
