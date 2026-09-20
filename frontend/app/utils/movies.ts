@@ -724,8 +724,8 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
     enrichment: movie.enrichment,
     lists: {
       summary: movie.lists.length
-        ? `${movie.lists.length} listas incluem este filme manualmente.`
-        : 'Este filme ainda não tem inclusões manuais.',
+        ? `${movie.lists.length} listas incluem este filme.`
+        : 'Este filme ainda não está em nenhuma lista.',
       visibleCount: movie.lists.length,
       items: movie.lists.map((list) => ({
         id: `list-${list.listId}`,

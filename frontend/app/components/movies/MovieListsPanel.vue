@@ -1,11 +1,6 @@
 <template>
   <section class="lists-panel">
-    <SectionHeading
-      eyebrow="Inclusões manuais"
-      :title="sectionTitle"
-      :description="sectionDescription"
-      :summary="lists.summary"
-    />
+    <SectionHeading eyebrow="Listas" :title="sectionTitle" :description="sectionDescription" :summary="lists.summary" />
 
     <div v-if="lists.items.length" class="lists-masonry">
       <article v-for="item in lists.items" :key="item.id" class="list-card" :style="cardShellStyle(item)">
@@ -37,7 +32,9 @@
 
           <div class="card-footer">
             <span class="meta-pill">{{ item.itemCount }} filmes</span>
-            <span class="meta-pill meta-pill--muted">Ordem manual</span>
+            <span class="meta-pill meta-pill--muted">
+              {{ item.includedAutomatically ? 'Inclusão automática' : 'Inclusão manual' }}
+            </span>
             <span v-if="!editingEnabled" class="open-note">Ver recorte</span>
           </div>
         </component>

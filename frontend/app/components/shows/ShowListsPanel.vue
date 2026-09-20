@@ -1,10 +1,6 @@
 <template>
   <section class="lists-panel">
-    <SectionHeading
-      eyebrow="Inclusões manuais"
-      :title="lists.length ? 'Listas com esta série' : 'Listas'"
-      :summary="summary"
-    />
+    <SectionHeading eyebrow="Listas" :title="lists.length ? 'Listas com esta série' : 'Listas'" :summary="summary" />
     <div v-if="lists.length" class="list-grid">
       <article v-for="list in lists" :key="list.listId" class="list-card">
         <NuxtLink :to="`/shows/lists/${list.slug}`"
