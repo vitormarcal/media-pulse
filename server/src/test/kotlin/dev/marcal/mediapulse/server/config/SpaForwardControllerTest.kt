@@ -14,4 +14,13 @@ class SpaForwardControllerTest {
         assertContains(routes, "/people")
         assertEquals("forward:/index.html", SpaForwardController().forwardToIndex())
     }
+
+    @Test
+    fun `show list pages should be forwarded to the spa`() {
+        val method = SpaForwardController::class.java.getDeclaredMethod("forwardToIndex")
+        val routes = method.getAnnotation(GetMapping::class.java).value.toList()
+
+        assertContains(routes, "/shows/lists")
+        assertContains(routes, "/shows/lists/{slug}")
+    }
 }
