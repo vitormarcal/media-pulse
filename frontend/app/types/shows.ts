@@ -71,6 +71,7 @@ export interface ShowListPreviewShowDto {
 export interface ShowListSummaryDto {
   includeFavorites: boolean
   includeAbandoned: boolean
+  includedAutomatically: boolean
   listId: number
   name: string
   slug: string

@@ -6166,6 +6166,7 @@ components:
       properties:
         includeFavorites: { type: boolean, default: false }
         includeAbandoned: { type: boolean, default: false }
+        includedAutomatically: { type: boolean, default: false }
         listId:
           type: integer
           format: int64
@@ -6196,6 +6197,7 @@ components:
       properties:
         includeFavorites: { type: boolean, default: false }
         includeAbandoned: { type: boolean, default: false }
+        includedAutomatically: { type: boolean, default: false }
         manualMovieIds: { type: array, items: { type: integer, format: int64 } }
         listId:
           type: integer

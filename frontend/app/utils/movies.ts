@@ -736,6 +736,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
         coverMovieId: list.coverMovieId,
         coverImageUrl: list.coverUrl,
         itemCount: list.itemCount,
+        includedAutomatically: list.includedAutomatically,
         previewMovies: list.previewMovies.map((preview) => ({
           id: `list-${list.listId}-preview-${preview.movieId}`,
           title: preview.title,

@@ -12,9 +12,15 @@
           ><small>{{ list.itemCount }} séries</small>
           <p>{{ list.description || 'Curadoria pessoal.' }}</p></NuxtLink
         >
-        <button v-if="editing" type="button" :disabled="busy === list.listId" @click="remove(list)">
+        <button
+          v-if="editing && !list.includedAutomatically"
+          type="button"
+          :disabled="busy === list.listId"
+          @click="remove(list)"
+        >
           Remover inclusão manual
         </button>
+        <p v-if="editing && list.includedAutomatically" class="quiet">Incluído automaticamente por esta lista.</p>
       </article>
     </div>
     <p v-else-if="!editing" class="quiet">Nenhuma inclusão manual.</p>

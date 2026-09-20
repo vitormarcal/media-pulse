@@ -43,7 +43,7 @@
         </component>
 
         <button
-          v-if="editingEnabled"
+          v-if="editingEnabled && !item.includedAutomatically"
           type="button"
           class="card-action"
           :disabled="busyListId === item.listId"
@@ -51,6 +51,9 @@
         >
           Remover inclusão manual
         </button>
+        <p v-if="editingEnabled && item.includedAutomatically" class="editor-note">
+          Incluído automaticamente por esta lista.
+        </p>
       </article>
     </div>
 

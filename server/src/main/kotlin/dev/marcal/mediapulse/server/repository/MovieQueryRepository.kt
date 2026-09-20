@@ -502,12 +502,12 @@ class MovieQueryRepository(
                   ml.description,
                   ml.cover_movie_id,
                   cm.cover_url,
-                  COUNT(mli2.id) AS item_count, ml.include_favorites, ml.include_abandoned
-                FROM movie_list_items mli
-                JOIN movie_lists ml ON ml.id = mli.list_id
+                  COUNT(mli2.id) AS item_count, ml.include_favorites, ml.include_abandoned,
+                  EXISTS (SELECT 1 FROM movie_list_items manual WHERE manual.list_id = ml.id AND manual.movie_id = :movieId) AS manual_membership
+                FROM movie_lists ml
                 LEFT JOIN movies cm ON cm.id = ml.cover_movie_id
                 LEFT JOIN movie_list_members mli2 ON mli2.list_id = ml.id
-                WHERE mli.movie_id = :movieId
+                WHERE EXISTS (SELECT 1 FROM movie_list_members membership WHERE membership.list_id = ml.id AND membership.movie_id = :movieId)
                 GROUP BY ml.id, ml.name, ml.slug, ml.description, ml.cover_movie_id, cm.cover_url
                 ORDER BY ml.name ASC, ml.id ASC
                 """.trimIndent(),
@@ -531,6 +531,7 @@ class MovieQueryRepository(
                         previewMovies = previewsByListId[listId].orEmpty(),
                         includeFavorites = fields[7] as Boolean,
                         includeAbandoned = fields[8] as Boolean,
+                        includedAutomatically = !(fields[9] as Boolean),
                     )
                 }
             }

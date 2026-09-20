@@ -14,7 +14,7 @@ class ShowListQueryRepository(
     private val entityManager: EntityManager,
 ) {
     fun forShow(showId: Long): List<ShowListSummaryDto> =
-        summaries("WHERE EXISTS (SELECT 1 FROM show_list_items x WHERE x.list_id = sl.id AND x.show_id = :showId)", showId)
+        summaries("WHERE EXISTS (SELECT 1 FROM show_list_members x WHERE x.list_id = sl.id AND x.show_id = :showId)", showId)
 
     fun listAll(): List<ShowListSummaryDto> = summaries()
 
@@ -56,6 +56,15 @@ class ShowListQueryRepository(
                 previews[id].orEmpty(),
                 row[7] as Boolean,
                 row[8] as Boolean,
+                showId != null &&
+                    !(
+                        entityManager
+                            .createNativeQuery(
+                                "SELECT EXISTS (SELECT 1 FROM show_list_items WHERE list_id = :listId AND show_id = :showId)",
+                            ).setParameter("listId", id)
+                            .setParameter("showId", showId)
+                            .singleResult as Boolean
+                    ),
             )
         }
     }

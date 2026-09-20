@@ -150,6 +150,7 @@ data class MovieListSummaryDto(
     val previewMovies: List<MovieListPreviewMovieDto> = emptyList(),
     val includeFavorites: Boolean = false,
     val includeAbandoned: Boolean = false,
+    val includedAutomatically: Boolean = false,
 )
 
 data class PersonSuggestionDto(

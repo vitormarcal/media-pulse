@@ -105,6 +105,7 @@ export interface MovieCompanyDto {
 export interface MovieListSummaryDto {
   includeFavorites: boolean
   includeAbandoned: boolean
+  includedAutomatically: boolean
   listId: number
   name: string
   slug: string
@@ -617,6 +618,7 @@ export interface MoviePageData {
       coverMovieId: number | null
       coverImageUrl: string | null
       itemCount: number
+      includedAutomatically: boolean
       previewMovies: Array<{
         id: string
         title: string

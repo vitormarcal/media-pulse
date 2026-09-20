@@ -33,6 +33,7 @@ Em filmes, “Editar lista” oferece as regras; em séries, elas ficam na pági
 - Itens manuais vêm primeiro, na ordem salva; automáticos vêm depois, por ID crescente, com desempate estável nos previews.
 - Reordenação e capa fixa continuam atuando apenas sobre inclusões manuais. Sem capa fixa, usa-se o primeiro item efetivo.
 - Os painéis de listas na página da obra continuam gerenciando seus vínculos manuais; o conteúdo completo está na página da lista.
+- As páginas de filmes e séries também exibem listas nas quais a obra entrou automaticamente por uma regra ativa. O retorno identifica `includedAutomatically`; nesses casos a UI não oferece remoção manual.
 - Regras são explícitas: nomes como “Favoritos” não ativam regras por inferência.
 
 ## Non-goals

@@ -70,6 +70,9 @@ class MixedListsIntegrationTest {
                         assertEquals(expected.size.toLong(), summary.itemCount)
                         assertEquals(expected.take(3), summary.previewMovies.map { m -> m.movieId })
                         assertEquals(summary, movies.listMovieLists().single())
+                        val entityLists = movies.getMovieLists(ids[2])
+                        assertEquals(if (expected.contains(ids[2])) listOf(listId) else emptyList(), entityLists.map { it.listId })
+                        if (expected.contains(ids[2])) assertEquals(true, entityLists.single().includedAutomatically)
                     } else {
                         val detail = shows.details("mixed")
                         assertEquals(expected, detail.shows.map { s -> s.showId })
@@ -80,6 +83,9 @@ class MixedListsIntegrationTest {
                         assertEquals(expected.size.toLong(), summary.itemCount)
                         assertEquals(expected.take(3), summary.previewShows.map { s -> s.showId })
                         assertEquals(summary, shows.listAll().single())
+                        val entityLists = shows.forShow(ids[2])
+                        assertEquals(if (expected.contains(ids[2])) listOf(listId) else emptyList(), entityLists.map { it.listId })
+                        if (expected.contains(ids[2])) assertEquals(true, entityLists.single().includedAutomatically)
                     }
                 }
                 assertContents(listOf(ids[1], ids[0]), false, false)
