@@ -1,5 +1,12 @@
 <template>
-  <section class="read-timeline">
+  <section v-if="compact && reads.length" class="compact-reads">
+    <h2>{{ reads.length === 1 ? 'Leitura' : 'Leituras' }}</h2>
+    <div v-for="read in reads" :key="read.id" class="compact-read">
+      <span>{{ read.context }}</span>
+      <span v-if="read.period" class="period">{{ read.period }}</span>
+    </div>
+  </section>
+  <section v-else-if="!compact" class="read-timeline">
     <SectionHeading eyebrow="Histórico" title="Leituras recentes" />
 
     <div class="timeline-list">
@@ -36,10 +43,29 @@ import type { BookReadEntryModel } from '~/types/books'
 
 defineProps<{
   reads: BookReadEntryModel[]
+  compact?: boolean
 }>()
 </script>
 
 <style scoped>
+.compact-reads {
+  display: grid;
+  gap: 16px;
+}
+.compact-reads h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.compact-read {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  font-size: 0.88rem;
+}
+.period {
+  color: var(--base-color-text-secondary);
+}
+
 .read-timeline,
 .timeline-list {
   display: grid;

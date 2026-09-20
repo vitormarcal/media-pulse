@@ -57,10 +57,16 @@ function mapRead(read: ReadCardDto, index: number): BookReadEntryModel {
     id: `read-${read.readId}`,
     title: index === 0 ? 'Leitura mais recente' : `Registro ${index + 1}`,
     href: null,
-    context: buildReadContext(read),
+    context: read.status === 'READ' ? mapStatus(read.status) : buildReadContext(read),
     meta: anchorDate ? formatAbsoluteDate(anchorDate) : 'Sem data definida',
     relativeDate: anchorDate ? formatRelativeDate(anchorDate) : 'Sem atividade recente',
     source: read.source,
+    period: [
+      read.startedAt ? `Início ${formatAbsoluteDate(read.startedAt)}` : null,
+      read.finishedAt ? `Fim ${formatAbsoluteDate(read.finishedAt)}` : null,
+    ]
+      .filter(Boolean)
+      .join(' · '),
   }
 }
 
@@ -586,10 +592,8 @@ export function buildBookPageData(book: BookDetailsResponse): BookPageData {
     })),
     subtitle: book.releaseDate ? book.releaseDate.slice(0, 4) : null,
     heroMeta: [
-      book.releaseDate ? book.releaseDate.slice(0, 4) : null,
-      book.rating != null ? `${book.rating.toFixed(1)} de nota` : null,
-      `${book.reads.length} registros`,
-      latestActivity ? `Último ${latestActivity}` : null,
+      latestRead ? mapStatus(latestRead.status) : 'Sem leitura registrada',
+      book.rating != null ? `${book.rating.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}/5` : null,
     ].filter(Boolean) as string[],
     stats: {
       totalReads: book.reads.length,
@@ -597,8 +601,9 @@ export function buildBookPageData(book: BookDetailsResponse): BookPageData {
       latestActivity,
       ratingText: book.rating != null ? `${book.rating.toFixed(1)} / 5` : null,
     },
-    editions: book.editions.slice(0, 8).map(mapEdition),
-    recentReads: book.reads.slice(0, 24).map(mapRead),
+    editions: book.editions.map(mapEdition),
+    readingEdition: latestRead?.edition ? mapEdition(latestRead.edition) : null,
+    recentReads: book.reads.map(mapRead),
     reviewRaw: book.reviewRaw,
     reviewedAt: book.reviewedAt,
     comments: book.comments,

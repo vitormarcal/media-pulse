@@ -1,27 +1,26 @@
 <template>
   <section class="book-hero">
-    <NuxtLink class="back-link" to="/books"> Voltar para livros </NuxtLink>
-
-    <div class="hero-grid" :style="heroShellStyle">
-      <div class="copy">
-        <p class="eyebrow">Livro</p>
-        <h1>{{ title }}</h1>
-        <div v-if="authors.length" class="authors-row">
-          <NuxtLink v-for="author in authors" :key="author.id" class="author-link" :to="author.href">
-            {{ author.name }}
-          </NuxtLink>
-        </div>
-        <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
-        <p v-if="description" class="description">{{ description }}</p>
-
-        <div class="meta-list">
-          <span v-for="item in heroMeta" :key="item" class="meta-pill">{{ item }}</span>
-        </div>
-      </div>
-
+    <NuxtLink class="back-link" to="/books">← Livros</NuxtLink>
+    <div class="hero-grid">
       <div class="cover-frame">
         <img v-if="resolvedCoverUrl" :src="resolvedCoverUrl" :alt="title" />
         <div v-else class="cover-fallback">{{ title.slice(0, 1) }}</div>
+      </div>
+      <div class="copy">
+        <h1>{{ title }}</h1>
+        <div v-if="authors.length" class="authors-row">
+          <NuxtLink v-for="author in authors" :key="author.id" :to="author.href">{{ author.name }}</NuxtLink>
+        </div>
+        <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
+        <div v-if="heroMeta.length" class="meta-list">
+          <span v-for="item in heroMeta" :key="item">{{ item }}</span>
+        </div>
+        <div v-if="description" class="synopsis">
+          <p class="description">{{ expanded ? description : descriptionPreview }}</p>
+          <button v-if="description.length > 320" type="button" :aria-expanded="expanded" @click="expanded = !expanded">
+            {{ expanded ? 'Ler menos' : 'Ler mais' }}
+          </button>
+        </div>
       </div>
     </div>
   </section>
@@ -29,7 +28,6 @@
 
 <script setup lang="ts">
 import type { AuthorLinkModel } from '~/types/books'
-
 const props = defineProps<{
   title: string
   authors: AuthorLinkModel[]
@@ -38,146 +36,111 @@ const props = defineProps<{
   coverUrl: string | null
   heroMeta: string[]
 }>()
-
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedCoverUrl = computed(() => resolveMediaUrl(props.coverUrl))
-const heroShellStyle = computed(() =>
-  resolvedCoverUrl.value
-    ? {
-        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${resolvedCoverUrl.value}")`,
-      }
-    : undefined,
-)
+const expanded = ref(false)
+const descriptionPreview = computed(() => {
+  const description = props.description || ''
+  return description.length > 320 ? `${description.slice(0, 320).replace(/\s+\S*$/, '')}…` : description
+})
 </script>
 
 <style scoped>
 .book-hero {
   display: grid;
-  gap: 18px;
+  gap: 24px;
 }
-
 .back-link {
   width: fit-content;
-  padding: 8px 14px;
-  border-radius: 16px;
-  background: var(--base-color-surface-warm);
-  color: var(--base-color-text-primary);
-  font-size: 0.8rem;
+  font-size: 0.88rem;
 }
-
+a,
+button {
+  color: var(--base-color-text-primary);
+}
+a:hover {
+  text-decoration: underline;
+}
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(16rem, 0.7fr);
-  gap: 28px;
-  padding: clamp(24px, 4vw, 42px);
-  border-radius: 40px;
-  background-image:
-    radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
-  background-size: cover;
-  background-position: center;
-  border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
 }
-
 .copy {
   display: grid;
-  align-content: end;
   gap: 12px;
+  min-width: 0;
 }
-
-.eyebrow {
-  margin: 0;
-  color: var(--base-color-brand-red);
-  font-size: 0.74rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-}
-
 h1 {
   margin: 0;
-  font-size: clamp(3rem, 7vw, 5.8rem);
-  line-height: 0.92;
-  letter-spacing: -0.07em;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
 }
-
-.subtitle {
-  margin: 0;
-  color: var(--base-color-text-secondary);
-  font-size: 1.02rem;
-}
-
-.authors-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.author-link {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--base-color-surface-wash) 72%, white);
-  color: var(--base-color-text-primary);
-  font-size: 0.84rem;
-  text-decoration: none;
-}
-
-.author-link:hover {
-  background: color-mix(in srgb, var(--base-color-surface-warm) 88%, white);
-}
-
-.description {
-  max-width: 42rem;
-  margin: 0;
-  color: var(--base-color-text-secondary);
-  line-height: 1.6;
-}
-
+.authors-row,
 .meta-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 4px;
+  gap: 8px 16px;
 }
-
-.meta-pill {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--base-color-surface-wash) 72%, white);
-  color: var(--base-color-text-primary);
+.subtitle,
+.description {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+}
+.subtitle,
+.meta-list {
+  font-size: 0.88rem;
+}
+.description {
+  max-width: 44rem;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+.synopsis {
+  margin-top: 8px;
+}
+button {
+  background: var(--base-color-surface-warm);
+  border: 0;
+  border-radius: 16px;
+  padding: 8px 14px;
+  margin-top: 8px;
+  font: inherit;
   font-size: 0.8rem;
+  cursor: pointer;
 }
-
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--base-color-focus);
+  outline-offset: 4px;
+}
 .cover-frame {
-  min-height: 32rem;
   overflow: hidden;
-  border-radius: 28px;
-  border: 8px solid #fff;
+  border-radius: 16px;
   background: var(--base-color-surface-soft);
 }
-
-.cover-frame img,
-.cover-fallback {
+.cover-frame img {
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
 }
-
 .cover-fallback {
   display: grid;
   place-items: center;
-  font-size: 5rem;
+  aspect-ratio: 2 / 3;
+  font-size: 4rem;
   color: var(--base-color-text-secondary);
-  font-weight: 700;
 }
-
-@media (max-width: 980px) {
+@media (max-width: 575px) {
   .hero-grid {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
-
   .cover-frame {
-    min-height: 22rem;
+    width: 128px;
   }
 }
 </style>

@@ -77,3 +77,9 @@ Esse caminho é útil para validar apenas a camada de UI. Para produção com fr
 ## Listas mistas
 
 Listas de filmes e séries permitem incluir automaticamente favoritos e/ou abandonados, preservando inclusões manuais. Em filmes, abra “Editar lista”; em séries, use “Incluir automaticamente” na página da lista. As duas regras combinam-se por OU. Ordem e capa fixa aplicam-se aos itens manuais; itens automáticos aparecem depois. Consulte [a especificação e o roadmap](../docs/features/mixed-media-lists.md).
+
+## Página do livro
+
+A página prioriza capa, identificação, nota e estado da leitura, seguidos de sinopse expansível, sessões de leitura e comentário pessoal. Datas de início e término aparecem quando disponíveis; a edição vinculada à leitura mais recente tem prioridade, com as demais acessíveis em uma seção expansível.
+
+O comentário é exibido diretamente, sem contadores ou resumo de atividade. Escrever e editar abrem os respectivos formulários; novos comentários permitem registrar outras impressões ou releituras. A data pode ser ajustada em “Alterar data”. Textos importados do Hardcover mantêm a indicação de origem e não oferecem edição local.

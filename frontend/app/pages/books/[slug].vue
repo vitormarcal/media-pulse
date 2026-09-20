@@ -19,7 +19,7 @@
         :hero-meta="data.heroMeta"
       />
 
-      <BookContextPanel :stats="data.stats" :editions="data.editions" />
+      <BookReadTimeline :reads="data.recentReads" compact />
 
       <BookEditorialPanel
         :book-id="data.bookId"
@@ -28,7 +28,7 @@
         :comments="data.comments"
       />
 
-      <BookReadTimeline :reads="data.recentReads" />
+      <BookContextPanel :editions="data.editions" :reading-edition="data.readingEdition" />
     </template>
   </main>
 </template>
@@ -59,8 +59,8 @@ useHead(() => ({
 <style scoped>
 .book-page {
   display: grid;
-  gap: var(--sema-space-section);
-  width: min(1480px, calc(100vw - 32px));
+  gap: 32px;
+  width: min(1040px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 28px 0 84px;
 }
@@ -83,7 +83,7 @@ pre {
 
 @media (max-width: 720px) {
   .book-page {
-    width: min(100vw - 20px, 1480px);
+    width: min(100vw - 20px, 1040px);
     padding: 20px 0 64px;
   }
 }

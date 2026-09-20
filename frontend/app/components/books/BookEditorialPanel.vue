@@ -1,13 +1,15 @@
 <template>
   <section class="editorial-panel">
-    <SectionHeading eyebrow="Comentários" title="Textos sobre o livro" />
-
-    <div v-if="entries[0]" class="summary-card">
-      <div>
-        <p class="summary-label">Comentários</p>
-        <strong>{{ entries.length }} {{ entries.length === 1 ? 'registro' : 'registros' }}</strong>
-      </div>
-      <p class="summary-copy">Mais recente {{ buildEntryLabel(entries[0]) }}</p>
+    <div class="section-header">
+      <h2>{{ entries.length > 1 ? 'Comentários' : 'Comentário' }}</h2>
+      <button
+        class="button button-secondary"
+        type="button"
+        :aria-expanded="composerOpen"
+        @click="composerOpen = !composerOpen"
+      >
+        {{ composerOpen ? 'Cancelar' : entries.length ? 'Adicionar comentário' : 'Escrever comentário' }}
+      </button>
     </div>
 
     <div v-if="entries.length" class="entry-list">
@@ -43,10 +45,8 @@
           <div class="entry-header">
             <div class="entry-meta-block">
               <div class="entry-kicker-row">
-                <p class="entry-kicker">{{ buildEntryLabel(entry) }}</p>
-                <span :class="['origin-badge', `origin-badge--${entry.kind}`]">
-                  {{ entry.kind === 'manual' ? 'Manual' : 'Hardcover' }}
-                </span>
+                <p class="entry-kicker">{{ formatAbsoluteDate(entry.commentedAt) }}</p>
+                <span v-if="entry.kind === 'hardcover'" class="origin-badge">Importado do Hardcover</span>
               </div>
               <p v-if="entry.kind === 'manual' && entry.edited" class="entry-edited">
                 Editado {{ formatRelativeDate(entry.updatedAt) }}
@@ -69,27 +69,8 @@
       </article>
     </div>
 
-    <article v-else class="empty-card">
-      <p>Nenhum texto registrado.</p>
-    </article>
-
-    <div class="composer-shell">
-      <div class="composer-header">
-        <div>
-          <p class="summary-label">Novo comentário</p>
-        </div>
-
-        <button
-          v-if="entries.length"
-          class="button button-secondary"
-          type="button"
-          @click="composerOpen = !composerOpen"
-        >
-          {{ composerOpen ? 'Fechar' : 'Escrever' }}
-        </button>
-      </div>
-
-      <form v-if="composerOpen" class="composer-card" @submit.prevent="submitNewComment">
+    <div v-if="composerOpen" class="composer-shell">
+      <form class="composer-card" @submit.prevent="submitNewComment">
         <label class="field">
           <span class="field-label">Comentário</span>
           <textarea
@@ -101,10 +82,13 @@
           />
         </label>
 
-        <label class="field field-compact">
-          <span class="field-label">Data do comentário</span>
-          <input v-model="draftCommentedAt" class="input" type="datetime-local" :disabled="submitting" />
-        </label>
+        <details class="date-options">
+          <summary>Alterar data</summary>
+          <label class="field field-compact">
+            <span class="field-label">Data do comentário</span>
+            <input v-model="draftCommentedAt" class="input" type="datetime-local" :disabled="submitting" />
+          </label>
+        </details>
 
         <div class="actions">
           <button class="button button-primary" type="submit" :disabled="submitting || !draftBody.trim()">
@@ -118,7 +102,6 @@
 </template>
 
 <script setup lang="ts">
-import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { MediaCommentDto } from '~/types/comments'
 import { formatAbsoluteDate, formatRelativeDate } from '~/utils/formatting'
 
@@ -152,7 +135,7 @@ const props = defineProps<{
 const config = useRuntimeConfig()
 
 const localComments = ref([...props.comments])
-const composerOpen = ref(props.comments.length === 0)
+const composerOpen = ref(false)
 const draftBody = ref('')
 const draftCommentedAt = ref(toLocalDateTimeInput(new Date().toISOString()))
 const submitting = ref(false)
@@ -168,9 +151,6 @@ watch(
   () => props.comments,
   (nextComments) => {
     localComments.value = [...nextComments]
-    if (!nextComments.length) {
-      composerOpen.value = true
-    }
   },
 )
 
@@ -212,10 +192,6 @@ function splitParagraphs(body: string) {
     .split(/\n\s*\n/g)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean)
-}
-
-function buildEntryLabel(entry: EditorialEntry) {
-  return `${formatRelativeDate(entry.commentedAt)} · ${formatAbsoluteDate(entry.commentedAt)}`
 }
 
 function startEdit(entry: Extract<EditorialEntry, { kind: 'manual' }>) {
@@ -318,6 +294,33 @@ function sortComments(comments: MediaCommentDto[]) {
 </script>
 
 <style scoped>
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.date-options summary {
+  cursor: pointer;
+  color: var(--base-color-text-secondary);
+  font-size: 0.88rem;
+  margin-bottom: 12px;
+}
+.button:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--base-color-focus);
+  outline-offset: 4px;
+}
+.entry-paragraph {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .editorial-panel,
 .entry-list,
 .composer-shell {
@@ -325,20 +328,13 @@ function sortComments(comments: MediaCommentDto[]) {
   gap: 24px;
 }
 
-.summary-card,
 .composer-card,
-.entry-card,
-.empty-card {
+.entry-card {
   display: grid;
   gap: 18px;
-  padding: clamp(22px, 3vw, 32px);
-  border-radius: 28px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, white 92%, var(--base-color-surface-soft)),
-    color-mix(in srgb, var(--base-color-surface-soft) 88%, white)
-  );
-  border: 1px solid color-mix(in srgb, var(--base-color-border) 56%, white);
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--base-color-surface-soft);
 }
 
 .composer-header,
@@ -362,7 +358,6 @@ function sortComments(comments: MediaCommentDto[]) {
   max-width: 18rem;
 }
 
-.summary-label,
 .field-label,
 .entry-kicker,
 .entry-edited {
@@ -370,26 +365,19 @@ function sortComments(comments: MediaCommentDto[]) {
   color: var(--base-color-text-secondary);
   font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
-.summary-card strong,
 .entry-kicker,
 .entry-paragraph,
-.empty-card p,
 .feedback {
   margin: 0;
 }
 
-.summary-card strong,
 .entry-kicker,
-.entry-paragraph,
-.empty-card p {
+.entry-paragraph {
   color: var(--base-color-text-primary);
 }
 
-.summary-copy,
 .entry-edited {
   color: var(--base-color-text-secondary);
 }
@@ -455,19 +443,11 @@ function sortComments(comments: MediaCommentDto[]) {
 }
 
 .origin-badge {
-  border-radius: 999px;
+  border-radius: 12px;
   padding: 6px 10px;
   background: hsla(60, 20%, 98%, 0.5);
   color: var(--base-color-text-secondary);
   font-size: 0.76rem;
-}
-
-.origin-badge--hardcover {
-  background: color-mix(in srgb, var(--base-color-surface-warm) 82%, white);
-}
-
-.origin-badge--manual {
-  background: color-mix(in srgb, white 72%, var(--base-color-surface-soft));
 }
 
 .entry-paragraph {

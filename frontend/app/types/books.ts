@@ -84,6 +84,7 @@ export interface BookReadEntryModel {
   meta: string
   relativeDate: string
   source: string
+  period?: string
 }
 
 export interface BookEditionModel {
@@ -109,6 +110,7 @@ export interface BookPageData {
     ratingText: string | null
   }
   editions: BookEditionModel[]
+  readingEdition: BookEditionModel | null
   recentReads: BookReadEntryModel[]
   reviewRaw: string | null
   reviewedAt: string | null
