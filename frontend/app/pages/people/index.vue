@@ -12,6 +12,35 @@
       </label>
     </section>
 
+    <section v-if="query" class="results-section">
+      <div class="section-copy">
+        <p class="eyebrow">Busca local</p>
+        <h2>{{ searching ? 'Buscando…' : 'Pessoas encontradas' }}</h2>
+      </div>
+      <div v-if="results.length" class="people-grid compact">
+        <article v-for="person in results" :key="person.personId" class="person-card">
+          <NuxtLink :to="`/people/${person.slug}`" class="portrait-link">
+            <img
+              v-if="resolveMediaUrl(person.profileUrl)"
+              :src="resolveMediaUrl(person.profileUrl)!"
+              :alt="person.name"
+            />
+            <span v-else>{{ person.name.slice(0, 1) }}</span>
+          </NuxtLink>
+          <div class="card-copy">
+            <NuxtLink :to="`/people/${person.slug}`"
+              ><strong>{{ person.name }}</strong></NuxtLink
+            >
+            <small>{{ person.roles.slice(0, 2).join(' · ') || 'Catálogo audiovisual' }}</small>
+          </div>
+          <button type="button" :aria-label="favoriteLabel(person)" @click="toggleSearchFavorite(person)">
+            {{ person.favorite ? '★' : '☆' }}
+          </button>
+        </article>
+      </div>
+      <p v-else-if="!searching" class="empty-copy">Nenhuma pessoa local encontrada.</p>
+    </section>
+
     <section class="favorites-section">
       <div class="section-copy">
         <p class="eyebrow">Sua seleção</p>
@@ -83,35 +112,6 @@
           {{ section.loading ? 'Carregando…' : 'Carregar mais' }}
         </button>
       </div>
-    </section>
-
-    <section v-if="query" class="results-section">
-      <div class="section-copy">
-        <p class="eyebrow">Busca local</p>
-        <h2>{{ searching ? 'Buscando…' : 'Pessoas encontradas' }}</h2>
-      </div>
-      <div v-if="results.length" class="people-grid compact">
-        <article v-for="person in results" :key="person.personId" class="person-card">
-          <NuxtLink :to="`/people/${person.slug}`" class="portrait-link">
-            <img
-              v-if="resolveMediaUrl(person.profileUrl)"
-              :src="resolveMediaUrl(person.profileUrl)!"
-              :alt="person.name"
-            />
-            <span v-else>{{ person.name.slice(0, 1) }}</span>
-          </NuxtLink>
-          <div class="card-copy">
-            <NuxtLink :to="`/people/${person.slug}`"
-              ><strong>{{ person.name }}</strong></NuxtLink
-            >
-            <small>{{ person.roles.slice(0, 2).join(' · ') || 'Catálogo audiovisual' }}</small>
-          </div>
-          <button type="button" :aria-label="favoriteLabel(person)" @click="toggleSearchFavorite(person)">
-            {{ person.favorite ? '★' : '☆' }}
-          </button>
-        </article>
-      </div>
-      <p v-else-if="!searching" class="empty-copy">Nenhuma pessoa local encontrada.</p>
     </section>
   </main>
 </template>

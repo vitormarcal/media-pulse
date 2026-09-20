@@ -34,6 +34,7 @@ A People API sustenta a exploração audiovisual transversal entre filmes e sér
 
 - mostra favoritos como conteúdo principal e não lista indiscriminadamente todas as pessoas
 - a busca considera somente pessoas locais com ao menos um crédito em filme ou série
+- durante uma busca, os resultados e os estados de carregamento ou ausência de resultados aparecem logo abaixo do campo de busca, antes dos favoritos e das seções de histórico
 - cards priorizam retrato e nome; contagens do histórico aparecem em uma única linha curta
 - `people.favorited_at` preserva estado e ordem de marcação
 - marcar e desmarcar são operações idempotentes
@@ -87,7 +88,7 @@ Séries usam os episódios locais conhecidos:
 
 ## Mais presentes no seu histórico
 
-- três seções de descoberta em `/people`, depois dos favoritos e antes dos resultados de busca: Elenco, Direção e Roteiro
+- três seções de descoberta em `/people`, depois dos favoritos: Elenco, Direção e Roteiro
 - cada seção começa com 4 pessoas e permite carregar mais 4 independentemente
 - uma pessoa pode aparecer em mais de uma seção quando possuir funções diferentes
 - cada ranking considera somente a quantidade de obras distintas efetivamente assistidas na função correspondente
