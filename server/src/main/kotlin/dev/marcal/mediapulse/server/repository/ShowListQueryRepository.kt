@@ -25,10 +25,16 @@ class ShowListQueryRepository(
         showId: Long? = null,
         listId: Long? = null,
     ): List<ShowListSummaryDto> {
+        val manualMembershipSelect =
+            if (showId == null) {
+                "FALSE"
+            } else {
+                "EXISTS (SELECT 1 FROM show_list_items manual WHERE manual.list_id = sl.id AND manual.show_id = :showId)"
+            }
         val query =
             entityManager.createNativeQuery(
                 """
-                SELECT sl.id, sl.name, sl.slug, sl.description, sl.cover_show_id, cs.cover_url, COUNT(sli.id), sl.include_favorites, sl.include_abandoned
+                SELECT sl.id, sl.name, sl.slug, sl.description, sl.cover_show_id, cs.cover_url, COUNT(sli.id), sl.include_favorites, sl.include_abandoned, $manualMembershipSelect AS manual_membership
                 FROM show_lists sl
                 LEFT JOIN tv_shows cs ON cs.id = sl.cover_show_id
                 LEFT JOIN show_list_members sli ON sli.list_id = sl.id
@@ -56,15 +62,7 @@ class ShowListQueryRepository(
                 previews[id].orEmpty(),
                 row[7] as Boolean,
                 row[8] as Boolean,
-                showId != null &&
-                    !(
-                        entityManager
-                            .createNativeQuery(
-                                "SELECT EXISTS (SELECT 1 FROM show_list_items WHERE list_id = :listId AND show_id = :showId)",
-                            ).setParameter("listId", id)
-                            .setParameter("showId", showId)
-                            .singleResult as Boolean
-                    ),
+                !(row[9] as Boolean),
             )
         }
     }
