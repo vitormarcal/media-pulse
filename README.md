@@ -1,14 +1,15 @@
 # Media Pulse
 
-Media Pulse centraliza dados pessoais de consumo de mídia em cinco domínios:
+Media Pulse centraliza o histórico pessoal de consumo cultural e atividades físicas:
 
 - música
 - livros
 - filmes
 - séries
 - games
+- treinos (corrida, corda e academia)
 
-O backend agrega dados de provedores externos, persiste uma visão canônica local e expõe APIs HTTP principalmente read-only para exploração, resumos e páginas de detalhe.
+O backend agrega dados de provedores externos, persiste uma visão canônica local e expõe APIs HTTP principalmente read-only para exploração, resumos e páginas de detalhe. Treinos têm registro manual com foto opcional e histórico visual em `/workouts`.
 
 ## Estrutura do repositório
 
@@ -43,7 +44,7 @@ Integrações, pipeline, storage, CORS e limites HTTP possuem defaults e opçõe
 
 ## Documentação
 
-- APIs de domínio: `docs/books-api.md`, `docs/music-api.md`, `docs/movies-api.md`, `docs/shows-api.md`, `docs/games-api.md` e `docs/people-api.md`
+- APIs de domínio: `docs/books-api.md`, `docs/music-api.md`, `docs/movies-api.md`, `docs/shows-api.md`, `docs/games-api.md`, `docs/people-api.md` e `docs/workouts-api.md`
 - Operações e integrações: `docs/operations-api.md`, `docs/plex-movie-ingestion.md` e `docs/plex-show-ingestion.md`
 - Contrato HTTP publicado: `docs/openapi.yaml`
 - Descoberta de novas features: `docs/feature-discovery.md`

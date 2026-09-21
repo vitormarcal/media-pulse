@@ -28,6 +28,8 @@ class SpaForwardController {
         "/books",
         "/books/authors/{id}",
         "/books/{slug}",
+        "/workouts",
+        "/workouts/",
         "/games",
         "/games/",
         "/games/{slug}",

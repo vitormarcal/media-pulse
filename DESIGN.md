@@ -228,3 +228,9 @@ What distinguishes Pinterest is its generous border-radius system (12px–40px, 
 4. Pin Sans is the only font — compact at 12px for UI, 70px for display
 5. Photography carries the design — the UI stays warm and minimal
 6. Plum black (#211922) for text — warmer than pure black
+
+## 10. Registro de treinos
+
+A captura de treinos começa pela escolha entre cards de atividade com imagem. Os dados essenciais aparecem em um card compacto, com métricas específicas por categoria e atalhos de duração. Local e foto são opcionais; detalhes adicionais são revelados sob demanda. Evitar formulário extenso ou sequência longa de etapas. Preservar rótulos acessíveis, foco visível, uso por teclado e erros legíveis.
+
+No histórico, a foto pessoal tem prioridade sobre a imagem fixa da categoria. Cards mostram data/horário, atividade e métricas, com filtros simples e layout responsivo. Reutilizar os tokens e o tratamento visual das páginas existentes.

@@ -7,7 +7,7 @@ This document defines the product intent for Media Pulse. It should be read toge
 
 # Mission
 
-Media Pulse is a personal canonical archive of cultural consumption, combining history, curation, and discovery while preserving ownership of the data independently from Big Tech platforms.
+Media Pulse is a personal canonical archive of cultural consumption and physical activities, combining history, memories, curation, and discovery while preserving ownership of the data independently from Big Tech platforms.
 
 The product exists for one primary user: its owner. Decisions should optimize for the owner's best experience, not for generic enterprise workflows, public growth, social engagement, or SaaS scalability.
 
@@ -68,8 +68,8 @@ When adding new data, prefer structures that make the archive easier to query, i
 
 Media Pulse is:
 
-- a personal media archive
-- a canonical local record of cultural consumption
+- a personal archive of media and physical activities
+- a canonical local record of cultural consumption and workouts
 - a visual exploration and curation tool
 - a bridge between external providers and owned data
 - a product optimized for one owner's experience
@@ -202,13 +202,23 @@ Roadmap aprovado e regras da entrega: [Listas mistas](docs/features/mixed-media-
 - Entrega atual: combinar vínculos manuais com inclusão automática por Favorito ou Abandonado em listas de filmes e séries.
 - Próxima evolução candidata: filtros por tags, mediante nova descoberta; fora do escopo atual.
 
+## Workouts
+
+Approved MVP: [Treinos](docs/features/workouts.md).
+
+- manual records for running, jumping rope, and gym workouts
+- start date/time and duration, running distance, optional jump count and location
+- fixed category images and an optional locally owned photo per workout
+- visual history with category filters and low-friction capture
+- no training plans, exercise prescriptions, or provider integrations in this MVP
+
 ## Cross-Domain Product
 
 Future direction:
 
 - connect domains through mentions and relationships
 - add cross-domain lists
-- add a global timeline across music, books, movies, shows, and games
+- add a global timeline across music, books, movies, shows, games, and workouts
 - improve global search and navigation across related media
 - support authentication and authorization for protecting the personal archive
 - make import, enrichment, correction, and image workflows feel consistent across domains

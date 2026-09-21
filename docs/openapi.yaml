@@ -6,6 +6,8 @@ info:
 servers:
   - url: http://localhost:8080
 tags:
+  - name: Workouts
+    description: Manual exercise records and locally owned memories.
   - name: Books
     description: Read-only books endpoints.
   - name: Movies
@@ -35,6 +37,67 @@ tags:
   - name: Ratings
     description: Manual ratings attached to media details.
 paths:
+  /api/workouts:
+    get:
+      tags: [Workouts]
+      summary: List workouts ordered by start time and ID descending
+      parameters:
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/WorkoutCategory'
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 24 }
+      responses:
+        "200":
+          description: Workout history page
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextPage]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Workout'
+                  nextPage: { type: integer, nullable: true }
+        "400": { description: Invalid category or pagination }
+    post:
+      tags: [Workouts]
+      summary: Save a workout with an optional photo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [workout]
+              properties:
+                workout:
+                  $ref: '#/components/schemas/WorkoutCreateRequest'
+                photo:
+                  type: string
+                  format: binary
+                  description: Optional JPEG or PNG, at most 10 MB and 40 megapixels; original bytes preserved.
+            encoding:
+              workout:
+                contentType: application/json
+              photo:
+                contentType: image/jpeg, image/png
+      responses:
+        "201":
+          description: Workout saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workout'
+        "400": { description: Invalid workout or photo }
+        "413": { description: Multipart request exceeds configured limits }
   /api/movies/{movieId}/favorite:
     post:
       tags: [Movies]
@@ -3803,6 +3866,45 @@ components:
         type: integer
         format: int64
   schemas:
+    WorkoutCategory:
+      type: string
+      enum: [RUNNING, JUMP_ROPE, GYM]
+    WorkoutCreateRequest:
+      type: object
+      required: [category, startedAt, durationMinutes]
+      properties:
+        category:
+          $ref: '#/components/schemas/WorkoutCategory'
+        startedAt:
+          type: string
+          format: date-time
+          description: Workout start including timezone offset; stored as an instant.
+        durationMinutes: { type: integer, minimum: 1, maximum: 2147483647 }
+        distanceKm:
+          type: number
+          nullable: true
+          minimum: 0.001
+          maximum: 9999999.999
+          multipleOf: 0.001
+          description: Required for RUNNING; must be absent or null for other categories.
+        jumps:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 2147483647
+          description: Optional for JUMP_ROPE; must be absent or null for other categories.
+        location: { type: string, nullable: true, maxLength: 200 }
+    Workout:
+      allOf:
+        - $ref: '#/components/schemas/WorkoutCreateRequest'
+        - type: object
+          required: [id, photoUrl]
+          properties:
+            id: { type: integer, format: int64 }
+            photoUrl:
+              type: string
+              nullable: true
+              description: Local URL under /covers/workouts; null uses the category image in the frontend.
     ShowEpisodesRefreshResponse:
       type: object
       required: [showId, addedSeasonsCount, addedEpisodesCount]

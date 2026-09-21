@@ -28,7 +28,7 @@ class StaticResourcesConfig(
     override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
         registry
             .addResourceHandler("/covers/**")
-            .addResourceLocations("file:$coversPath")
+            .addResourceLocations("file:${ensureTrailingSlash(File(coversPath).absolutePath)}")
 
         registry
             .addResourceHandler("/_nuxt/**")
