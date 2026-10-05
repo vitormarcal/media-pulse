@@ -43,6 +43,8 @@ const label = computed(() => {
       return 'Filme'
     case 'book':
       return 'Livro'
+    case 'magazine':
+      return 'Revista'
     case 'game':
       return 'Game'
     default:

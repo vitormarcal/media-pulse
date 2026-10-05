@@ -5,7 +5,7 @@
         {{ backLabel }}
       </NuxtLink>
 
-      <p class="eyebrow">Livros</p>
+      <p class="eyebrow">{{ eyebrow }}</p>
       <h1>{{ title }}</h1>
       <p v-if="intro" class="intro">{{ intro }}</p>
 
@@ -16,7 +16,12 @@
       </div>
     </div>
 
-    <component :is="spotlightWrapper" :to="spotlight?.href || undefined" class="spotlight-link">
+    <component
+      :is="spotlightWrapper"
+      v-if="spotlight || showEmptySpotlight"
+      :to="spotlight?.href || undefined"
+      class="spotlight-link"
+    >
       <article class="spotlight-card">
         <div class="spotlight-poster">
           <img v-if="spotlightImageUrl" :src="spotlightImageUrl" :alt="spotlight?.title || title" />
@@ -38,22 +43,27 @@
 <script setup lang="ts">
 import { NuxtLink } from '#components'
 
-const props = defineProps<{
-  title: string
-  intro: string
-  backLink: string
-  backLabel: string
-  accentLink: string
-  accentLabel: string
-  spotlight: {
+const props = withDefaults(
+  defineProps<{
+    eyebrow?: string
+    showEmptySpotlight?: boolean
     title: string
-    subtitle: string
-    imageUrl: string | null
-    href: string
-    meta: string
-    note: string
-  } | null
-}>()
+    intro: string
+    backLink: string
+    backLabel: string
+    accentLink: string
+    accentLabel: string
+    spotlight: {
+      title: string
+      subtitle: string
+      imageUrl: string | null
+      href: string
+      meta: string
+      note: string
+    } | null
+  }>(),
+  { eyebrow: 'Livros', showEmptySpotlight: true },
+)
 
 const { resolveMediaUrl } = useMediaUrl()
 const spotlightImageUrl = computed(() => (props.spotlight ? resolveMediaUrl(props.spotlight.imageUrl) : null))

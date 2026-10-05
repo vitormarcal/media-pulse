@@ -1,8 +1,19 @@
 <template>
-  <section class="comments-panel">
-    <SectionHeading eyebrow="Comentários" :title="title" :description="description" />
+  <section class="comments-panel" :class="{ compact }">
+    <div v-if="compact" class="compact-header">
+      <h2>Comentários</h2>
+      <button
+        class="button button-secondary"
+        type="button"
+        :aria-expanded="composerOpen"
+        @click="composerOpen = !composerOpen"
+      >
+        {{ composerOpen ? 'Cancelar' : 'Comentar' }}
+      </button>
+    </div>
+    <SectionHeading v-else eyebrow="Comentários" :title="title" :description="description" />
 
-    <div v-if="localComments[0]" class="summary-card">
+    <div v-if="!compact && localComments[0]" class="summary-card">
       <div>
         <p class="summary-label">Comentários</p>
         <strong>{{ localComments.length }} {{ localComments.length === 1 ? 'comentário' : 'comentários' }}</strong>
@@ -63,7 +74,7 @@
       </article>
     </div>
 
-    <article v-else class="empty-card">
+    <article v-else-if="!compact" class="empty-card">
       <p>{{ emptyLabel }}</p>
     </article>
 
@@ -80,8 +91,8 @@
       <p v-if="deleteError" class="feedback error" role="alert">{{ deleteError }}</p>
     </div>
 
-    <div class="composer-shell">
-      <div class="composer-header">
+    <div v-if="!compact || composerOpen" class="composer-shell">
+      <div v-if="!compact" class="composer-header">
         <div>
           <p class="summary-label">Novo comentário</p>
         </div>
@@ -108,10 +119,13 @@
           />
         </label>
 
-        <label class="field field-compact">
-          <span class="field-label">Data do comentário</span>
-          <input v-model="draftCommentedAt" class="input" type="datetime-local" :disabled="submitting" />
-        </label>
+        <details :open="!compact">
+          <summary v-if="compact">Alterar data</summary>
+          <label class="field field-compact">
+            <span class="field-label">Data do comentário</span>
+            <input v-model="draftCommentedAt" class="input" type="datetime-local" :disabled="submitting" />
+          </label>
+        </details>
 
         <div class="actions">
           <button class="button button-primary" type="submit" :disabled="submitting || !draftBody.trim()">
@@ -130,6 +144,7 @@ import type { MediaCommentDto } from '~/types/comments'
 import { formatAbsoluteDate, formatRelativeDate } from '~/utils/formatting'
 
 const props = defineProps<{
+  compact?: boolean
   title: string
   description: string
   mediaType: 'movies' | 'shows' | 'albums' | 'books' | 'games' | 'magazines'
@@ -151,7 +166,7 @@ async function deleteComment() {
     localComments.value = localComments.value.filter((comment) => comment.id !== deleteId.value)
     if (editingId.value === deleteId.value) cancelEdit()
     deleteId.value = null
-    if (!localComments.value.length) composerOpen.value = true
+    if (!props.compact && !localComments.value.length) composerOpen.value = true
   } catch (error) {
     deleteError.value = error instanceof Error ? error.message : 'Não foi possível excluir o comentário.'
   } finally {
@@ -160,7 +175,7 @@ async function deleteComment() {
 }
 
 const localComments = ref(sortComments([...props.comments]))
-const composerOpen = ref(props.comments.length === 0)
+const composerOpen = ref(!props.compact && props.comments.length === 0)
 const draftBody = ref('')
 const draftCommentedAt = ref(toLocalDateTimeInput(new Date().toISOString()))
 const submitting = ref(false)
@@ -176,7 +191,7 @@ watch(
   () => props.comments,
   (nextComments) => {
     localComments.value = sortComments([...nextComments])
-    if (!nextComments.length) {
+    if (!props.compact && !nextComments.length) {
       composerOpen.value = true
     }
   },
@@ -445,5 +460,34 @@ function sortComments(comments: MediaCommentDto[]) {
   .composer-header {
     align-items: stretch;
   }
+}
+
+.compact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.compact-header h2 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+.compact .comment-card,
+.compact .composer-card,
+.compact .empty-card {
+  padding: 20px;
+  border-radius: 20px;
+  border: 0;
+  background: var(--base-color-surface-soft);
+}
+.compact .field-label {
+  text-transform: none;
+  letter-spacing: normal;
+}
+.compact summary {
+  cursor: pointer;
+  color: var(--base-color-text-secondary);
+  font-size: 0.88rem;
+  margin-bottom: 12px;
 }
 </style>

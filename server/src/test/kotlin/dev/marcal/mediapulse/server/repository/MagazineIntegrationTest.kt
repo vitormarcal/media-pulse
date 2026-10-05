@@ -201,6 +201,47 @@ class MagazineIntegrationTest {
     }
 
     @Test
+    fun `saving complete progress persists read state finish date and library counters`() {
+        val initial =
+            service.create(
+                MagazineIssueRequest(
+                    publication = MagazinePublicationRequest("Automática"),
+                    number = "1",
+                    totalPages = 80,
+                    read = MagazineReadRequest(MagazineReadStatus.CURRENTLY_READING, startedAt = day, currentPage = 20),
+                ),
+                null,
+            )
+        val completed =
+            service.updateRead(
+                initial.issue.id,
+                initial.reads.single().id,
+                MagazineReadRequest(MagazineReadStatus.CURRENTLY_READING, currentPage = 80),
+            )
+        assertEquals(MagazineReadStatus.READ, completed.reads.single().status)
+        assertEquals(day, completed.reads.single().startedAt)
+        assertEquals(LocalDate.now(), completed.reads.single().finishedAt)
+        assertEquals(
+            100.0,
+            service
+                .details(initial.issue.id)
+                .reads
+                .single()
+                .progressPct,
+        )
+        assertEquals(1L, service.overview().completedReadsCount)
+        assertTrue(service.library(null, null, MagazineReadStatus.CURRENTLY_READING, 0, 24).items.isEmpty())
+        assertEquals(
+            initial.issue.id,
+            service
+                .library(null, null, MagazineReadStatus.READ, 0, 24)
+                .items
+                .single()
+                .id,
+        )
+    }
+
+    @Test
     fun `invalid initial read rolls back publication and number and duplicate identities conflict`() {
         assertFailsWith<ResponseStatusException> {
             service.create(

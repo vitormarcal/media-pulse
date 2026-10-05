@@ -9,16 +9,14 @@
     </label>
     <div v-if="read.status !== 'WANT_TO_READ'" class="mag-fields">
       <label
-        ><span>{{ read.status === 'READ' ? 'Início (opcional ao marcar diretamente)' : 'Data de início' }}</span
-        ><input v-model="read.startedAt" type="date" :required="read.status !== 'READ'"
+        ><span>Início</span><input v-model="read.startedAt" type="date" :required="read.status !== 'READ'"
       /></label>
       <label v-if="read.status === 'READ'"
-        ><span>Data de término</span
-        ><input v-model="read.finishedAt" type="date" :min="read.startedAt || undefined" required
+        ><span>Término</span><input v-model="read.finishedAt" type="date" :min="read.startedAt || undefined" required
       /></label>
       <template v-else>
         <label
-          ><span>Informar progresso por</span
+          ><span>Progresso</span
           ><select v-model="mode" @change="changeMode">
             <option value="percent">Porcentagem</option>
             <option v-if="totalPages" value="page">Página atual</option>

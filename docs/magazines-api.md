@@ -53,12 +53,12 @@ Estados: `WANT_TO_READ` (Quero ler), `CURRENTLY_READING` (Lendo), `READ` (Lida),
 }
 ```
 
-- Datas são dias (`AAAA-MM-DD`), sem conversão de fuso. A UI sugere o dia local atual e permite alterá-lo.
+- Datas são dias (`AAAA-MM-DD`), sem conversão de fuso. A UI sugere o dia local atual e permite alterá-lo. Para o mês/ano de publicação, a UI usa um seletor de mês e um campo numérico de ano, gerando `AAAA-MM`; não depende do suporte a `input type="month"`.
 - Quero ler não aceita início, término ou progresso. Lendo e Abandonada exigem início; não aceitam término.
 - Lida exige término. Sem início prévio ou informado, início recebe o mesmo dia do término. Concluir uma jornada iniciada preserva seu início. Término nunca antecede início; conclusão define progresso de 100%.
 - Envie `progressPct` entre 0 e 100 ou `currentPage`, nunca ambos. Página exige total conhecido e deve estar entre zero e o total. Porcentagem é calculada por `currentPage / totalPages × 100`. Sem total, use porcentagem direta.
 - Omitir início e progresso no `PUT` preserva os valores existentes; porcentagem explícita limpa a página anterior. Para corrigir uma jornada para Quero ler, envie apenas o estado; suas datas e progresso serão limpos.
-- Progresso de 100% não conclui automaticamente a jornada. A conclusão é uma ação explícita com data.
+- Salvar porcentagem de 100% ou a página final conclui automaticamente a jornada no backend (`READ`). O término recebe o dia atual do servidor quando não informado, e o início existente é preservado. Sem início, ambos recebem a data de término. Editar uma leitura já concluída preserva seu término histórico.
 - Há no máximo uma jornada Quero ler ou Lendo por número, protegida por bloqueio transacional e índice parcial único. Uma nova jornada pode ser iniciada quando a anterior foi concluída ou abandonada.
 - `reads` retorna as jornadas por ID decrescente. `latestRead` prioriza a jornada em aberto; na ausência dela, usa a última criada.
 

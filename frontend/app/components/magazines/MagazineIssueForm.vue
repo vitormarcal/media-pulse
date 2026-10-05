@@ -1,6 +1,6 @@
 <template>
   <form class="mag-panel mag-form" @submit.prevent="save">
-    <h2>{{ issue ? 'Editar número' : 'Adicionar número de revista' }}</h2>
+    <h2>{{ issue ? 'Editar número' : 'Adicionar revista' }}</h2>
     <fieldset class="mag-form" :disabled="saving">
       <label class="mag-field"
         ><span>Publicação</span
@@ -16,13 +16,13 @@
           ><span>Nome da revista</span
           ><input v-model="name" required maxlength="200" placeholder="Ex.: Superinteressante"
         /></label>
-        <label><span>ISSN (opcional)</span><input v-model="issn" maxlength="9" placeholder="0000-0000" /></label>
+        <label><span>ISSN</span><input v-model="issn" maxlength="9" placeholder="0000-0000" /></label>
       </div>
       <div class="mag-fields">
         <label
           ><span>Número</span><input v-model="number" maxlength="100" :required="!coverDate" placeholder="Ex.: 475"
         /></label>
-        <label><span>Mês/ano</span><input v-model="coverDate" type="month" :required="!number.trim()" /></label>
+        <MagazineMonthField v-model="coverDate" :required="!number.trim()" />
       </div>
       <MagazineReadFields
         v-if="!issue"
@@ -33,18 +33,17 @@
         <summary>Capa e total de páginas</summary>
         <div class="mag-form">
           <label class="mag-field"
-            ><span>Total de páginas (opcional)</span><input v-model.number="totalPages" type="number" min="1" step="1"
+            ><span>Total de páginas</span><input v-model.number="totalPages" type="number" min="1" step="1"
           /></label>
           <label class="mag-field"
-            ><span>Capa (JPEG ou PNG, até 10 MB)</span
-            ><input type="file" accept="image/jpeg,image/png" @change="chooseCover"
+            ><span>Capa</span><input type="file" accept="image/jpeg,image/png" @change="chooseCover"
           /></label>
           <img v-if="preview" :src="preview" alt="Prévia da capa" class="mag-preview" />
           <button v-if="preview" type="button" class="mag-button" @click="removeImage">Remover capa</button>
         </div>
       </details>
       <div class="mag-actions">
-        <button class="mag-button primary" type="submit">{{ saving ? 'Salvando…' : 'Salvar número' }}</button
+        <button class="mag-button primary" type="submit">{{ saving ? 'Salvando…' : 'Salvar' }}</button
         ><button class="mag-button" type="button" @click="$emit('cancel')">Fechar</button>
       </div>
     </fieldset>
@@ -55,6 +54,7 @@
 import type { MagazineDetails, MagazineIssue, MagazinePublication, MagazineReadRequest } from '~/types/magazines'
 import { magazineError, readPayload } from '~/utils/magazines'
 import MagazineReadFields from './MagazineReadFields.vue'
+import MagazineMonthField from './MagazineMonthField.vue'
 const props = defineProps<{ publications: MagazinePublication[]; issue?: MagazineIssue }>()
 const emit = defineEmits<{ saved: [MagazineDetails]; cancel: [] }>()
 const config = useRuntimeConfig()

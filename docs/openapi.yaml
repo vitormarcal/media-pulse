@@ -4242,6 +4242,7 @@ components:
           type: string
           nullable: true
     MagazineReadRequest:
+      description: Saving 100 percent or the final page completes the journey with today's server date when finishedAt is omitted, preserving startedAt. Explicit READ preserves an existing finish date.
       type: object
       required:
       - status

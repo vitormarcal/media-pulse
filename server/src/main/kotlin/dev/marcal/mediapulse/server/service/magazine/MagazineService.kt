@@ -229,43 +229,42 @@ class MagazineService(
         current: MagazineRead?,
         request: MagazineReadRequest,
     ): MagazineRead {
-        var started = request.startedAt ?: current?.startedAt
-        var finished = request.finishedAt
-        val status = request.status
-        if (status == MagazineReadStatus.WANT_TO_READ) {
-            if (request.startedAt != null ||
-                finished != null ||
-                request.currentPage != null ||
-                (request.progressPct ?: 0.0) != 0.0
-            ) {
-                bad("Quero ler não aceita datas ou progresso de leitura.")
-            }
-            return (
-                current ?: MagazineRead(
-                    issueId = issue.id,
-                    status = status,
-                )
-            ).copy(status = status, startedAt = null, finishedAt = null, currentPage = null, progressPct = 0.0)
-        }
-        if (status == MagazineReadStatus.READ) {
-            finished = finished ?: current?.finishedAt ?: bad("Informe a data de término.")
-            started = started ?: finished
-        } else {
-            if (finished != null) bad("A data de término se aplica à leitura concluída.")
-            if (started == null) bad("Informe a data de início.")
-        }
-        if (finished != null && finished < started) bad("O término não pode anteceder o início.")
         val percentage = request.progressPct
         if (percentage != null && (!percentage.isFinite() || percentage !in 0.0..100.0)) bad("Informe progresso entre 0 e 100%.")
         if (percentage != null && request.currentPage != null) bad("Informe porcentagem ou página, não ambas.")
         val totalPages = issue.totalPages
         val page = request.currentPage ?: if (percentage == null) current?.currentPage else null
         if (page != null && (page < 0 || (totalPages != null && page > totalPages))) bad("Página atual inválida.")
+        if (request.currentPage != null && totalPages == null) bad("Informe o total de páginas ou use porcentagem.")
+        val enteredProgress = percentage ?: request.currentPage?.let { it.toDouble() / totalPages!! * 100 }
+        val autoComplete = request.status != MagazineReadStatus.READ && enteredProgress == 100.0
+        val status = if (autoComplete) MagazineReadStatus.READ else request.status
+        var started = request.startedAt ?: current?.startedAt
+        var finished = request.finishedAt
+        if (status == MagazineReadStatus.WANT_TO_READ) {
+            if (request.startedAt != null || finished != null || request.currentPage != null || (percentage ?: 0.0) != 0.0) {
+                bad("Quero ler não aceita datas ou progresso de leitura.")
+            }
+            return (current ?: MagazineRead(issueId = issue.id, status = status)).copy(
+                status = status,
+                startedAt = null,
+                finishedAt = null,
+                currentPage = null,
+                progressPct = 0.0,
+            )
+        }
+        if (status == MagazineReadStatus.READ) {
+            finished = finished ?: if (autoComplete) LocalDate.now() else current?.finishedAt ?: bad("Informe a data de término.")
+            started = started ?: finished
+        } else {
+            if (finished != null) bad("A data de término se aplica à leitura concluída.")
+            if (started == null) bad("Informe a data de início.")
+        }
+        if (finished != null && finished < started) bad("O término não pode anteceder o início.")
         val progress =
             when {
                 status == MagazineReadStatus.READ -> 100.0
                 page != null && totalPages != null -> page.toDouble() / totalPages * 100
-                request.currentPage != null && issue.totalPages == null -> bad("Informe o total de páginas ou use porcentagem.")
                 else -> percentage ?: current?.progressPct ?: 0.0
             }
         return (current ?: MagazineRead(issueId = issue.id, status = status)).copy(

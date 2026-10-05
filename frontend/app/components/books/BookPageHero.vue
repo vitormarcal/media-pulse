@@ -1,6 +1,6 @@
 <template>
   <section class="book-hero">
-    <NuxtLink class="back-link" to="/books">← Livros</NuxtLink>
+    <NuxtLink class="back-link" :to="backLink">← {{ backLabel }}</NuxtLink>
     <div class="hero-grid">
       <div class="cover-frame">
         <img v-if="resolvedCoverUrl" :src="resolvedCoverUrl" :alt="title" />
@@ -28,14 +28,19 @@
 
 <script setup lang="ts">
 import type { AuthorLinkModel } from '~/types/books'
-const props = defineProps<{
-  title: string
-  authors: AuthorLinkModel[]
-  subtitle: string | null
-  description: string | null
-  coverUrl: string | null
-  heroMeta: string[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    backLink?: string
+    backLabel?: string
+    title: string
+    authors: AuthorLinkModel[]
+    subtitle: string | null
+    description: string | null
+    coverUrl: string | null
+    heroMeta: string[]
+  }>(),
+  { backLink: '/books', backLabel: 'Livros' },
+)
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedCoverUrl = computed(() => resolveMediaUrl(props.coverUrl))
 const expanded = ref(false)

@@ -5,64 +5,74 @@
       Não foi possível carregar as revistas. <button class="mag-button" @click="refresh()">Tentar novamente</button>
     </div>
     <template v-else-if="data">
-      <section class="mag-hero">
-        <div>
-          <NuxtLink to="/">← Voltar para a capa</NuxtLink>
-          <p class="mag-eyebrow">Revistas</p>
-          <h1>Entre páginas e descobertas</h1>
-          <p>Os números que você quer abrir, as leituras em curso e as que ficaram na memória.</p>
-          <div class="mag-actions">
-            <button class="mag-button primary" :aria-expanded="addMode" @click="toggleAdd">Adicionar revista</button
-            ><NuxtLink class="mag-button" to="/magazines?view=archive">Abrir arquivo inteiro</NuxtLink>
-          </div>
-        </div>
-        <NuxtLink v-if="spotlight" :to="`/magazines/${spotlight.id}`"
-          ><div class="mag-cover">
-            <img
-              v-if="resolveMediaUrl(spotlight.coverUrl)"
-              :src="resolveMediaUrl(spotlight.coverUrl)!"
-              :alt="`${spotlight.publication.name} ${magazineNumber(spotlight)}`"
-            /><span v-else class="mag-cover-fallback">{{ spotlight.publication.name.slice(0, 1) }}</span>
-          </div>
-          <p>{{ spotlight.publication.name }} · {{ magazineNumber(spotlight) }}</p></NuxtLink
-        >
-      </section>
-      <MagazineIssueForm
-        v-if="openedOnce"
-        v-show="addMode"
-        :publications="data.publications"
-        @saved="created"
-        @cancel="toggleAdd"
+      <MoviesCollectionHero
+        v-if="showEditorial"
+        eyebrow="Revistas"
+        title="Revistas"
+        intro=""
+        :lead="spotlight ? magazineHighlight(spotlight) : null"
+        :supporting="[]"
+        :show-empty-lead="false"
+        accent-link="/magazines?add=1"
+        accent-label="Adicionar revista"
       />
+      <BooksLibraryHero
+        v-else
+        eyebrow="Revistas"
+        :title="filtered ? 'Resultados' : 'Revistas'"
+        intro=""
+        back-link="/magazines"
+        back-label="Voltar"
+        accent-link="/magazines?add=1"
+        accent-label="Adicionar revista"
+        :spotlight="
+          spotlight
+            ? {
+                title: spotlight.publication.name,
+                subtitle: magazineNumber(spotlight),
+                imageUrl: spotlight.coverUrl,
+                href: `/magazines/${spotlight.id}`,
+                meta: magazineCard(spotlight).progressLabel,
+                note: '',
+              }
+            : null
+        "
+        :show-empty-spotlight="false"
+      />
+      <div v-show="addMode" ref="issueForm">
+        <MagazineIssueForm
+          v-if="openedOnce"
+          v-show="addMode"
+          :publications="data.publications"
+          @saved="created"
+          @cancel="toggleAdd"
+        />
+      </div>
       <template v-if="showEditorial && data.overview">
         <section v-if="data.overview.inProgress.length" class="mag-section">
-          <SectionHeading eyebrow="Em leitura" title="Abertas agora" />
+          <SectionHeading eyebrow="Leitura" title="Em andamento" />
           <div class="mag-strip">
-            <BookLibraryCard v-for="issue in data.overview.inProgress" :key="issue.id" :item="magazineCard(issue)" />
-          </div>
-        </section>
-        <section class="mag-panel">
-          <SectionHeading eyebrow="Seu arquivo" title="Leituras que ficam" />
-          <div class="mag-metrics">
-            <p>
-              <strong>{{ data.overview.numbersCount }}</strong
-              >Números no arquivo
-            </p>
-            <p>
-              <strong>{{ data.overview.completedReadsCount }}</strong
-              >Leituras concluídas, incluindo releituras
-            </p>
+            <MediaStripCard
+              v-for="issue in data.overview.inProgress"
+              :key="issue.id"
+              :item="magazineShelf(issue)"
+              variant="large"
+            />
           </div>
         </section>
         <section v-if="data.overview.recent.length" class="mag-section">
-          <SectionHeading eyebrow="Concluídas" title="Últimas revistas" />
+          <SectionHeading eyebrow="Histórico" title="Últimas leituras" />
           <div class="mag-grid">
-            <BookLibraryCard v-for="issue in data.overview.recent" :key="issue.id" :item="magazineCard(issue)" />
+            <MediaPosterCard
+              v-for="issue in data.overview.recent"
+              :key="issue.id"
+              :item="magazineShelf(issue)"
+              variant="standard"
+            />
           </div>
         </section>
       </template>
       <section class="mag-section">
-        <SectionHeading eyebrow="Arquivo" :title="filtered ? 'Seu recorte' : 'Todos os números'" />
         <form class="mag-panel mag-filters" @submit.prevent="applyFilters">
           <label
             ><span>Buscar revista ou número</span
@@ -89,23 +99,18 @@
             </select></label
           >
           <div class="mag-actions">
-            <button class="mag-button" type="submit">Filtrar</button
+            <button class="mag-button primary" type="submit">Filtrar</button
             ><NuxtLink v-if="filtered" class="mag-button" to="/magazines?view=archive">Limpar</NuxtLink>
           </div>
         </form>
-        <div v-if="items.length" class="mag-grid">
-          <BookLibraryCard v-for="issue in items" :key="issue.id" :item="magazineCard(issue)" />
-        </div>
-        <div v-else class="mag-state">
-          <p>
-            {{
-              filtered
-                ? 'Nenhum número encontrado neste recorte.'
-                : 'Seu arquivo de revistas começa com a primeira leitura.'
-            }}
-          </p>
-          <button class="mag-button primary" @click="toggleAdd">Adicionar revista</button>
-        </div>
+        <BooksLibraryGrid
+          eyebrow="Arquivo"
+          :title="filtered ? 'Resultados' : 'Todos os números'"
+          description=""
+          summary=""
+          :items="items.map(magazineCard)"
+          empty-message="Nenhuma revista encontrada."
+        />
         <div v-if="nextPage != null" class="mag-actions">
           <button class="mag-button" :disabled="loadingMore" @click="loadMore">
             {{ loadingMore ? 'Buscando mais revistas…' : 'Carregar mais revistas' }}
@@ -117,7 +122,11 @@
   </main>
 </template>
 <script setup lang="ts">
-import BookLibraryCard from '~/components/books/BookLibraryCard.vue'
+import BooksLibraryGrid from '~/components/books/BooksLibraryGrid.vue'
+import BooksLibraryHero from '~/components/books/BooksLibraryHero.vue'
+import MoviesCollectionHero from '~/components/movies/MoviesCollectionHero.vue'
+import MediaStripCard from '~/components/home/MediaStripCard.vue'
+import MediaPosterCard from '~/components/home/MediaPosterCard.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 import MagazineIssueForm from '~/components/magazines/MagazineIssueForm.vue'
 import type {
@@ -127,10 +136,16 @@ import type {
   MagazineOverview,
   MagazinePublication,
 } from '~/types/magazines'
-import { magazineCard, magazineError, magazineNumber, magazineStates } from '~/utils/magazines'
+import {
+  magazineCard,
+  magazineError,
+  magazineNumber,
+  magazineStates,
+  magazineHighlight,
+  magazineShelf,
+} from '~/utils/magazines'
 const route = useRoute()
 const config = useRuntimeConfig()
-const { resolveMediaUrl } = useMediaUrl()
 const query = computed(() => String(route.query.q || ''))
 const publication = computed(() => String(route.query.publicationId || ''))
 const selectedStatus = computed(() => String(route.query.status || ''))
@@ -185,6 +200,16 @@ const items = computed(() => [...(data.value?.library.items || []), ...extra.val
 const spotlight = computed(
   () => data.value?.overview.inProgress[0] || data.value?.overview.recent[0] || data.value?.library.items[0],
 )
+const issueForm = ref<HTMLElement>()
+watch(addMode, async (open) => {
+  if (open) {
+    await nextTick()
+    issueForm.value?.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    })
+  }
+})
 async function toggleAdd() {
   await navigateTo({ path: '/magazines', query: { ...route.query, add: addMode.value ? undefined : '1' } })
 }

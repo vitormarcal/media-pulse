@@ -1,4 +1,5 @@
 import type { MagazineIssue, MagazineReadRequest, MagazineReadStatus } from '~/types/magazines'
+import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
 import type { BookLibraryCardModel } from '~/types/books'
 
 export const magazineStates: Record<MagazineReadStatus, string> = {
@@ -50,5 +51,34 @@ export function readPayload(read: MagazineReadRequest): MagazineReadRequest {
       : typeof read.currentPage === 'number'
         ? { currentPage: read.currentPage }
         : { progressPct: typeof read.progressPct === 'number' ? read.progressPct : 0 }),
+  }
+}
+
+export function magazineShelf(issue: MagazineIssue): EditorialShelfItem {
+  const card = magazineCard(issue)
+  return {
+    id: card.id,
+    type: 'magazine',
+    title: card.title,
+    subtitle: card.subtitle,
+    imageUrl: card.imageUrl,
+    href: card.href,
+    meta: card.progressLabel,
+    detail: card.aside,
+    timestamp: issue.activityDate,
+  }
+}
+export function magazineHighlight(issue: MagazineIssue): EditorialHighlight {
+  const card = magazineCard(issue)
+  return {
+    id: card.id,
+    type: 'magazine',
+    title: card.title,
+    subtitle: card.subtitle,
+    imageUrl: card.imageUrl,
+    href: card.href,
+    eyebrow: card.progressLabel,
+    timestamp: issue.activityDate,
+    meta: card.activityLabel,
   }
 }

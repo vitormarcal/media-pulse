@@ -1,6 +1,6 @@
 <template>
   <form class="mag-panel mag-form" @submit.prevent="save">
-    <h2>{{ existing ? 'Atualizar leitura' : reread ? 'Registrar releitura' : 'Registrar leitura' }}</h2>
+    <h2>{{ existing ? 'Editar leitura' : reread ? 'Releitura' : 'Leitura' }}</h2>
     <fieldset :disabled="saving" class="mag-form">
       <MagazineReadFields
         v-model="draft"
@@ -8,8 +8,8 @@
         :preserve-start="Boolean(existing?.startedAt)"
       />
       <div class="mag-actions">
-        <button type="submit" class="mag-button primary">{{ saving ? 'Salvando…' : 'Salvar leitura' }}</button
-        ><button type="button" class="mag-button" @click="$emit('cancel')">Fechar</button>
+        <button type="submit" class="mag-button primary">{{ saving ? 'Salvando…' : 'Salvar' }}</button
+        ><button type="button" class="mag-button" @click="$emit('cancel')">Cancelar</button>
       </div>
     </fieldset>
     <p v-if="error" class="mag-error" role="alert">{{ error }}</p>

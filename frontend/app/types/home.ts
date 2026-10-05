@@ -1,4 +1,4 @@
-export type EditorialMediaType = 'music' | 'show' | 'movie' | 'book' | 'game'
+export type EditorialMediaType = 'music' | 'show' | 'movie' | 'book' | 'game' | 'magazine'
 
 export interface ApiRange {
   start: string

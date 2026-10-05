@@ -26,7 +26,7 @@ O backend terá contratos próprios sob `/api/magazines` para consultar e manter
 
 A navegação terá a entrada Revistas. A página `/magazines` seguirá a composição das bibliotecas existentes: cabeçalho visual com ação de adicionar, destaque para leituras em andamento e recentes, seguido de arquivo com busca, filtros, cards e “Carregar mais”. Nos recortes filtrados, priorizar os resultados, como nas bibliotecas atuais. Cada card representa um número e mostra publicação, identificação, capa ou fallback, estado/progresso e atividade recente; releituras não duplicam o número no catálogo.
 
-O detalhe de um número combinará capa e metadados no cabeçalho, painel compacto de leitura, comentários compartilhados e histórico das jornadas. A publicação será um vínculo para seu recorte na biblioteca. Ações de iniciar, atualizar progresso, concluir e reler devem estar acessíveis no detalhe. O registro permite escolher uma publicação existente ou criar uma nova sem sair do fluxo; campos opcionais são revelados sob demanda.
+O detalhe de um número combinará capa e metadados no cabeçalho, painel compacto de leitura, comentários compartilhados e histórico das jornadas. A publicação será um vínculo para seu recorte na biblioteca. Ações de iniciar, atualizar progresso, concluir e reler devem estar acessíveis no detalhe. A edição de uma jornada abre dentro do item correspondente no histórico, com foco e rolagem suave quando necessários. Mês/ano usa seleção explícita de mês e ano numérico em todos os navegadores. O registro permite escolher uma publicação existente ou criar uma nova sem sair do fluxo; campos opcionais são revelados sob demanda.
 
 Referências existentes: bibliotecas em `frontend/app/pages/{books,movies,shows,games}/index.vue`, detalhes nos mesmos domínios, `BookLibraryCard`, `BookReadTimeline`, painéis de registro manual de filmes/jogos e `MediaCommentsPanel`. Reutilizar componentes compartilhados quando compatíveis e seguir a composição dos componentes de domínio quando houver diferenças de comportamento.
 
@@ -49,7 +49,7 @@ Seguir `DESIGN.md`: capas em destaque, grid responsivo, superfícies e neutros q
 - Releitura cria uma nova jornada; atualizações de estado e progresso alteram a jornada em curso. Permitir no máximo uma jornada em aberto por número.
 - Progresso pode ser informado diretamente em porcentagem ou pela página atual. Quando houver total, calcular `página atual / total × 100`; sem total, permitir porcentagem direta e não inferir total de páginas.
 - Validar porcentagem entre 0 e 100, total de páginas positivo, página atual não negativa e não superior ao total quando conhecido. Término não pode anteceder início.
-- Concluir define progresso como 100%. Informar progresso de 100% não substitui a ação explícita de concluir e escolher a data de término.
+- Concluir define progresso como 100%. Ao salvar porcentagem de 100% ou a página final, o backend muda o estado para Lida e preenche o término com o dia atual do servidor, preservando o início; sem início, usa o mesmo dia para ambos.
 - Comentários pertencem ao número e continuam disponíveis entre jornadas, com o mesmo comportamento de criação, edição e exclusão dos demais domínios.
 - Ordenar a biblioteca pela atividade de leitura mais recente; manter o histórico de cada número distinguindo todas as jornadas.
 

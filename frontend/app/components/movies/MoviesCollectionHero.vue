@@ -8,12 +8,12 @@
 
     <div class="hero-grid">
       <div class="copy">
-        <p class="eyebrow">Filmes</p>
+        <p class="eyebrow">{{ eyebrow }}</p>
         <h1>{{ title }}</h1>
         <p v-if="intro" class="intro">{{ intro }}</p>
       </div>
 
-      <component :is="leadWrapper" :to="lead?.href || undefined" class="lead-link">
+      <component :is="leadWrapper" v-if="lead || showEmptyLead" :to="lead?.href || undefined" class="lead-link">
         <article class="lead-card">
           <div class="lead-poster">
             <img v-if="leadImageUrl" :src="leadImageUrl" :alt="lead?.title || title" />
@@ -87,9 +87,13 @@ const props = withDefaults(
     backLink?: string
     backLabel?: string
     accentLink?: string
+    eyebrow?: string
+    showEmptyLead?: boolean
     accentLabel?: string
   }>(),
   {
+    eyebrow: 'Filmes',
+    showEmptyLead: true,
     backLink: '/',
     backLabel: 'Voltar para a capa',
     accentLink: '/movies',

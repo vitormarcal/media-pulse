@@ -55,7 +55,7 @@ class MagazineServiceTest {
                 MagazineReadRequest(MagazineReadStatus.CURRENTLY_READING, startedAt = start, currentPage = 20),
             )
         assertEquals(25.0, page.progressPct)
-        val percent = service.normalizeRead(issue, page, MagazineReadRequest(MagazineReadStatus.CURRENTLY_READING, progressPct = 100.0))
+        val percent = service.normalizeRead(issue, page, MagazineReadRequest(MagazineReadStatus.CURRENTLY_READING, progressPct = 75.0))
         assertEquals(null, percent.currentPage)
         assertEquals(MagazineReadStatus.CURRENTLY_READING, percent.status)
         assertEquals(null, percent.finishedAt)
@@ -66,6 +66,38 @@ class MagazineServiceTest {
                 MagazineReadRequest(MagazineReadStatus.CURRENTLY_READING, startedAt = start, progressPct = 37.5),
             )
         assertEquals(37.5, noTotal.progressPct)
+    }
+
+    @Test
+    fun `explicit 100 percent or final page completes with today's date and preserves start`() {
+        val current =
+            MagazineRead(id = 3, issueId = 7, status = MagazineReadStatus.CURRENTLY_READING, startedAt = start, progressPct = 50.0)
+        for (request in listOf(
+            MagazineReadRequest(MagazineReadStatus.CURRENTLY_READING, progressPct = 100.0),
+            MagazineReadRequest(MagazineReadStatus.CURRENTLY_READING, currentPage = 80),
+        )) {
+            val completed = service.normalizeRead(issue, current, request)
+            assertEquals(MagazineReadStatus.READ, completed.status)
+            assertEquals(LocalDate.now(), completed.finishedAt)
+            assertEquals(start, completed.startedAt)
+            assertEquals(100.0, completed.progressPct)
+            assertEquals(current.id, completed.id)
+        }
+        val direct =
+            service.normalizeRead(
+                issue.copy(totalPages = null),
+                null,
+                MagazineReadRequest(MagazineReadStatus.CURRENTLY_READING, progressPct = 100.0),
+            )
+        assertEquals(direct.finishedAt, direct.startedAt)
+        assertEquals(LocalDate.now(), direct.finishedAt)
+        val historical =
+            service.normalizeRead(
+                issue,
+                current.copy(status = MagazineReadStatus.READ, finishedAt = end, progressPct = 100.0),
+                MagazineReadRequest(MagazineReadStatus.READ),
+            )
+        assertEquals(end, historical.finishedAt)
     }
 
     @Test
