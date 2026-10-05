@@ -5,6 +5,7 @@ export interface MagazinePublication {
   id: number
   name: string
   issn: string | null
+  numbersCount: number
 }
 export interface MagazineReadRequest {
   status: MagazineReadStatus
@@ -40,7 +41,7 @@ export interface MagazineLibrary {
 }
 export interface MagazineOverview {
   inProgress: MagazineIssue[]
-  recent: MagazineIssue[]
+  recent: { issue: MagazineIssue; read: MagazineRead }[]
   numbersCount: number
   completedReadsCount: number
 }

@@ -32,7 +32,7 @@ export function magazineCard(issue: MagazineIssue): BookLibraryCardModel {
     href: `/magazines/${issue.id}`,
     imageUrl: issue.coverUrl,
     progressLabel: issue.latestRead ? magazineStates[issue.latestRead.status] : 'Sem leitura',
-    activityLabel: magazineDate(issue.activityDate),
+    activityLabel: '',
     aside: issue.latestRead ? `${Math.round(issue.latestRead.progressPct)}%` : '',
   }
 }

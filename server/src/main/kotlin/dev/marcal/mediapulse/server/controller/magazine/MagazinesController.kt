@@ -45,7 +45,8 @@ class MagazinesController(
         @RequestParam(required = false) status: MagazineReadStatus?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "24") limit: Int,
-    ) = service.library(q, publicationId, status, page, limit)
+        @RequestParam(defaultValue = "false") unread: Boolean,
+    ) = service.library(q, publicationId, status, page, limit, unread)
 
     @GetMapping("/overview")
     fun overview() = service.overview()

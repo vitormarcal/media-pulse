@@ -1,6 +1,6 @@
 <template>
   <form class="mag-panel mag-form" @submit.prevent="save">
-    <h2>{{ issue ? 'Editar número' : 'Adicionar revista' }}</h2>
+    <h2>{{ issue ? 'Editar número' : 'Adicionar número' }}</h2>
     <fieldset class="mag-form" :disabled="saving">
       <label class="mag-field"
         ><span>Publicação</span

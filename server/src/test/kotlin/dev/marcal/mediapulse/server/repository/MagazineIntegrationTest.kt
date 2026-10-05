@@ -104,6 +104,51 @@ class MagazineIntegrationTest {
     }
 
     @Test
+    fun `publication archive and recent journeys keep distinct projections`() {
+        val first =
+            service.create(
+                MagazineIssueRequest(
+                    publication = MagazinePublicationRequest("Arquivo"),
+                    number = "1",
+                    coverDate = "2011-04",
+                    read = MagazineReadRequest(MagazineReadStatus.READ, finishedAt = day),
+                ),
+                null,
+            )
+        val publicationId = first.issue.publication.id
+        val second =
+            service.create(
+                MagazineIssueRequest(
+                    publicationId = publicationId,
+                    number = "2",
+                    coverDate = "2026-01",
+                    read = MagazineReadRequest(MagazineReadStatus.WANT_TO_READ),
+                ),
+                null,
+            )
+        service.createRead(first.issue.id, MagazineReadRequest(MagazineReadStatus.CURRENTLY_READING, startedAt = day))
+        assertEquals(2L, service.publications().single().numbersCount)
+        assertEquals(listOf(second.issue.id, first.issue.id), service.library(null, publicationId, null, 0, 24).items.map { it.id })
+        assertEquals(listOf(second.issue.id), service.library(null, null, null, 0, 24, unread = true).items.map { it.id })
+        assertEquals(
+            first.reads.single().id,
+            service
+                .overview()
+                .recent
+                .single()
+                .read.id,
+        )
+        assertEquals(
+            first.issue.id,
+            service
+                .overview()
+                .inProgress
+                .single()
+                .id,
+        )
+    }
+
+    @Test
     fun `sessions comments filtering pagination corrections and deletions survive persistence`() {
         val first =
             service.create(

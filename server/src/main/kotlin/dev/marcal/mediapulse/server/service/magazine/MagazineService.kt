@@ -9,6 +9,7 @@ import dev.marcal.mediapulse.server.api.magazine.MagazinePublicationDto
 import dev.marcal.mediapulse.server.api.magazine.MagazinePublicationRequest
 import dev.marcal.mediapulse.server.api.magazine.MagazineReadDto
 import dev.marcal.mediapulse.server.api.magazine.MagazineReadRequest
+import dev.marcal.mediapulse.server.api.magazine.MagazineRecentReadDto
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.magazine.MagazineIssue
 import dev.marcal.mediapulse.server.model.magazine.MagazinePublication
@@ -41,7 +42,10 @@ class MagazineService(
     private val covers: MagazineCoverService,
     private val tx: TxUtil,
 ) {
-    fun publications(): List<MagazinePublicationDto> = publications.findAllByOrderByNameAsc().map { it.toDto() }
+    fun publications(): List<MagazinePublicationDto> {
+        val counts = query.publicationCounts()
+        return publications.findAllByOrderByNameAsc().map { it.toDto().copy(numbersCount = counts[it.id] ?: 0) }
+    }
 
     fun library(
         q: String?,
@@ -49,16 +53,20 @@ class MagazineService(
         status: MagazineReadStatus?,
         page: Int,
         limit: Int,
+        unread: Boolean = false,
     ): MagazineLibraryDto {
         if (page < 0 || limit !in 1..100) bad("Paginação inválida.")
-        val ids = query.issueIds(q, publicationId, status, page, limit)
+        val ids = query.issueIds(q, publicationId, status, page, limit, unread)
         return MagazineLibraryDto(cards(ids.take(limit)), if (ids.size > limit) page + 1 else null)
     }
 
     fun overview(): MagazineOverviewDto =
         MagazineOverviewDto(
             library(null, null, MagazineReadStatus.CURRENTLY_READING, 0, 6).items,
-            library(null, null, MagazineReadStatus.READ, 0, 6).items,
+            reads.findTop6ByStatusOrderByFinishedAtDescIdDesc(MagazineReadStatus.READ).let { journeys ->
+                val issueCards = cards(journeys.map { it.issueId }).associateBy { it.id }
+                journeys.map { MagazineRecentReadDto(issueCards.getValue(it.issueId), it.toDto()) }
+            },
             issues.count(),
             reads.countByStatus(MagazineReadStatus.READ),
         )

@@ -225,3 +225,18 @@ summary {
     column-count: 1;
   }
 }
+
+.mag-publications {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+}
+.mag-publication {
+  display: grid;
+  gap: 8px;
+  color: var(--base-color-text-primary);
+}
+.mag-publication span {
+  color: var(--base-color-text-secondary);
+  font-size: 0.88rem;
+}

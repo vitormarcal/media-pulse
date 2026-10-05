@@ -64,3 +64,9 @@ Seguir `DESIGN.md`: capas em destaque, grid responsivo, superfícies e neutros q
 - Corrigir ou excluir registros e consultar os dados após recarregar a página.
 - Navegar por publicação e estado, buscar números e carregar mais itens sem duplicar cards por releitura.
 - Apresentar biblioteca e detalhe com padrões visuais e de interação consistentes com os domínios existentes, inclusive em celular e por teclado.
+
+### Navegação do acervo
+
+“Adicionar número” cadastra uma edição, reutilizando uma publicação ou criando-a quando necessário. O filtro “Leitura” mantém os estados de jornada e acrescenta “Não lida” (nenhuma jornada concluída). Publicações mostra contagens e abre o acervo daquela publicação, agrupado pelo ano de edição; números sem data ficam ao final. A paginação é mantida.
+
+`GET /api/magazines` aceita `unread=true`; ao filtrar por publicação, ordena por mês de edição decrescente, sem data ao final. `GET /api/magazines/publications` inclui `numbersCount`. `overview.recent` retorna pares `{issue, read}` das seis jornadas concluídas mais recentes, inclusive releituras e números com nova leitura ativa. Cards do acervo não mostram a data de atividade; cards de últimas leituras mostram o término da jornada.

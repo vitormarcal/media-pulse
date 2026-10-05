@@ -240,3 +240,5 @@ No histórico, a foto pessoal tem prioridade sobre a imagem fixa da categoria. C
 Reutilizar os cabeçalhos de coleção/biblioteca, cards de capa e grid masonry existentes em livros e filmes. No detalhe, seguir o cabeçalho compacto e os comentários de livros. Usar títulos diretos (Revistas, Leituras, Comentários), sem frases decorativas ou explicações repetidas.
 
 Mês/ano de publicação usa seleção de mês e ano numérico, com a mesma apresentação em Firefox e Chromium. Editar uma leitura abre o formulário no próprio item do histórico; manter foco visível e rolagem suave apenas quando necessária, respeitando movimento reduzido. Ao salvar 100%, refletir a conclusão retornada pelo backend.
+
+No acervo de revistas, a ação é “Adicionar número” e o filtro é “Leitura”. Últimas leituras mostra jornadas concluídas em cards compactos, com data de término explícita; Todos os números mantém capas grandes sem data de atividade ambígua. Publicações oferece contagens do acervo e navegação por publicação, com números agrupados pelo ano da edição. Sem data fica ao final.

@@ -9,5 +9,7 @@ interface MagazineReadRepository : JpaRepository<MagazineRead, Long> {
 
     fun findByIssueIdInOrderByIdDesc(issueIds: Collection<Long>): List<MagazineRead>
 
+    fun findTop6ByStatusOrderByFinishedAtDescIdDesc(status: MagazineReadStatus): List<MagazineRead>
+
     fun countByStatus(status: MagazineReadStatus): Long
 }

@@ -54,15 +54,21 @@ data class MagazineLibraryDto(
 
 data class MagazineOverviewDto(
     val inProgress: List<MagazineIssueDto>,
-    val recent: List<MagazineIssueDto>,
+    val recent: List<MagazineRecentReadDto>,
     val numbersCount: Long,
     val completedReadsCount: Long,
+)
+
+data class MagazineRecentReadDto(
+    val issue: MagazineIssueDto,
+    val read: MagazineReadDto,
 )
 
 data class MagazinePublicationDto(
     val id: Long,
     val name: String,
     val issn: String?,
+    val numbersCount: Long = 0,
 )
 
 data class MagazineReadDto(

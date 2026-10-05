@@ -43,8 +43,14 @@ paths:
     get:
       tags:
       - Magazines
-      summary: List numbers by reading activity date descending
+      summary: List numbers by reading activity, or publication month when filtering a publication
       parameters:
+      - name: unread
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Only issues without any completed reading journey.
       - name: q
         in: query
         schema:
@@ -123,7 +129,7 @@ paths:
     get:
       tags:
       - Magazines
-      summary: Read in-progress and recent numbers and archive counts
+      summary: Read in-progress numbers, recent completed journeys and archive counts
       responses:
         '200':
           description: Success
@@ -4232,7 +4238,12 @@ components:
       - id
       - name
       - issn
+      - numbersCount
       properties:
+        numbersCount:
+          type: integer
+          format: int64
+          description: Number of archived issues in the publication listing.
         id:
           type: integer
           format: int64
@@ -4388,6 +4399,14 @@ components:
         nextPage:
           type: integer
           nullable: true
+    MagazineRecentRead:
+      type: object
+      required: [issue, read]
+      properties:
+        issue:
+          $ref: '#/components/schemas/MagazineIssue'
+        read:
+          $ref: '#/components/schemas/MagazineRead'
     MagazineOverview:
       type: object
       required:
@@ -4403,7 +4422,7 @@ components:
         recent:
           type: array
           items:
-            $ref: '#/components/schemas/MagazineIssue'
+            $ref: '#/components/schemas/MagazineRecentRead'
         numbersCount:
           type: integer
           format: int64

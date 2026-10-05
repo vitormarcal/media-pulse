@@ -75,3 +75,9 @@ Campos inválidos retornam `400`, registros inexistentes `404`, identidade repet
 ## Validação
 
 Testes de serviço cobrem datas, progresso, regras e compensação de capa; testes HTTP cobrem multipart, estados/datas inválidos e mensagens; integração PostgreSQL/Flyway/JPA cobre persistência, comentários, filtros, paginação, rollback, correção, exclusão e início concorrente de releituras. Execute com `JAVA_TOOL_OPTIONS=-Dapi.version=1.44` se o Docker 29 exigir compatibilidade do cliente Testcontainers.
+
+### Navegação do acervo
+
+“Adicionar número” cadastra uma edição, reutilizando uma publicação ou criando-a quando necessário. O filtro “Leitura” mantém os estados de jornada e acrescenta “Não lida” (nenhuma jornada concluída). Publicações mostra contagens e abre o acervo daquela publicação, agrupado pelo ano de edição; números sem data ficam ao final. A paginação é mantida.
+
+`GET /api/magazines` aceita `unread=true`; ao filtrar por publicação, ordena por mês de edição decrescente, sem data ao final. `GET /api/magazines/publications` inclui `numbersCount`. `overview.recent` retorna pares `{issue, read}` das seis jornadas concluídas mais recentes, inclusive releituras e números com nova leitura ativa. Cards do acervo não mostram a data de atividade; cards de últimas leituras mostram o término da jornada.
