@@ -64,6 +64,10 @@ npm run fix
 
 Esse comando executa `npm run lint:fix` e `npm run format`.
 
+## Revistas
+
+`/magazines` oferece biblioteca visual com busca e filtros por publicação/estado, cadastro manual e paginação. `/magazines/{id}` apresenta capa, dados do número, comentários compartilhados e histórico de jornadas, com edição, progresso e releituras. Capas e ISSN são opcionais; o registro aceita numeração e/ou mês/ano. A API está documentada em `docs/magazines-api.md`.
+
 ## Docker
 
 Build standalone do frontend:

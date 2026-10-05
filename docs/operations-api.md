@@ -126,7 +126,7 @@ Resposta: `ApiResult<Unit>`.
 
 ## Comments
 
-Comentários são cross-domain e podem aparecer nos detalhes de livros, filmes, séries, álbuns e games.
+Comentários são cross-domain e podem aparecer nos detalhes de livros, filmes, séries, álbuns, games e números de revistas.
 
 ### `POST /api/comments/{mediaType}/{entityId}`
 
@@ -141,11 +141,15 @@ Body:
 }
 ```
 
-- `mediaType`: `movies`, `shows`, `albums`, `books`, `games`
+- `mediaType`: `movies`, `shows`, `albums`, `books`, `games`, `magazines`
 - `body` é obrigatório depois de `trim`
 - `body` acima de 10000 caracteres retorna `400`
 - mídia inexistente retorna `404`
 - retorna `MediaCommentDto`
+
+### `DELETE /api/comments/{commentId}`
+
+Exclui um comentário existente, com resposta `204`; retorna `404` se não existir. A UI compartilhada oferece confirmação antes da exclusão.
 
 ### `POST /api/comments/{commentId}/edit`
 

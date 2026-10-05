@@ -8,6 +8,7 @@ import dev.marcal.mediapulse.server.model.comment.MediaComment
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import dev.marcal.mediapulse.server.repository.crud.BookRepository
 import dev.marcal.mediapulse.server.repository.crud.GameRepository
+import dev.marcal.mediapulse.server.repository.crud.MagazineIssueRepository
 import dev.marcal.mediapulse.server.repository.crud.MediaCommentRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
@@ -25,6 +26,7 @@ class MediaCommentService(
     private val albumRepository: AlbumRepository,
     private val bookRepository: BookRepository,
     private val gameRepository: GameRepository,
+    private val magazineIssueRepository: MagazineIssueRepository,
 ) {
     @Transactional
     fun create(
@@ -67,6 +69,15 @@ class MediaCommentService(
         return mediaCommentRepository.save(updated).toDto()
     }
 
+    @Transactional
+    fun delete(commentId: Long) {
+        val current =
+            mediaCommentRepository.findById(commentId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "comentário não encontrado")
+            }
+        mediaCommentRepository.delete(current)
+    }
+
     private fun resolveMediaType(mediaType: String): EntityType =
         when (mediaType.trim().lowercase()) {
             "movies" -> EntityType.MOVIE
@@ -74,6 +85,7 @@ class MediaCommentService(
             "albums" -> EntityType.ALBUM
             "books" -> EntityType.BOOK
             "games" -> EntityType.GAME
+            "magazines" -> EntityType.MAGAZINE_ISSUE
             else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "mediaType inválido")
         }
 
@@ -88,6 +100,7 @@ class MediaCommentService(
                 EntityType.ALBUM -> albumRepository.existsById(entityId)
                 EntityType.BOOK -> bookRepository.existsById(entityId)
                 EntityType.GAME -> gameRepository.existsById(entityId)
+                EntityType.MAGAZINE_ISSUE -> magazineIssueRepository.lockById(entityId) != null
                 else -> false
             }
         if (!exists) {

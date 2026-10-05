@@ -46,7 +46,10 @@
               <p v-if="comment.edited" class="comment-edited">Editado {{ formatRelativeDate(comment.updatedAt) }}</p>
             </div>
 
-            <button class="button button-ghost" type="button" @click="startEdit(comment)">Editar</button>
+            <div class="actions">
+              <button class="button button-ghost" type="button" @click="startEdit(comment)">Editar</button>
+              <button class="button button-ghost" type="button" @click="deleteId = comment.id">Excluir</button>
+            </div>
           </div>
 
           <p
@@ -63,6 +66,19 @@
     <article v-else class="empty-card">
       <p>{{ emptyLabel }}</p>
     </article>
+
+    <div v-if="deleteId != null" class="empty-card" role="alert">
+      <p>Excluir este comentário?</p>
+      <div class="actions">
+        <button class="button button-secondary" type="button" :disabled="deleting" @click="deleteComment">
+          Confirmar exclusão
+        </button>
+        <button class="button button-ghost" type="button" :disabled="deleting" @click="deleteId = null">
+          Cancelar
+        </button>
+      </div>
+      <p v-if="deleteError" class="feedback error" role="alert">{{ deleteError }}</p>
+    </div>
 
     <div class="composer-shell">
       <div class="composer-header">
@@ -116,13 +132,32 @@ import { formatAbsoluteDate, formatRelativeDate } from '~/utils/formatting'
 const props = defineProps<{
   title: string
   description: string
-  mediaType: 'movies' | 'shows' | 'albums' | 'books' | 'games'
+  mediaType: 'movies' | 'shows' | 'albums' | 'books' | 'games' | 'magazines'
   entityId: number
   comments: MediaCommentDto[]
   emptyLabel: string
 }>()
 
 const config = useRuntimeConfig()
+const deleteId = ref<number | null>(null)
+const deleting = ref(false)
+const deleteError = ref('')
+async function deleteComment() {
+  if (deleteId.value == null) return
+  deleting.value = true
+  deleteError.value = ''
+  try {
+    await $fetch(`/api/comments/${deleteId.value}`, { method: 'DELETE', baseURL: config.public.apiBase })
+    localComments.value = localComments.value.filter((comment) => comment.id !== deleteId.value)
+    if (editingId.value === deleteId.value) cancelEdit()
+    deleteId.value = null
+    if (!localComments.value.length) composerOpen.value = true
+  } catch (error) {
+    deleteError.value = error instanceof Error ? error.message : 'Não foi possível excluir o comentário.'
+  } finally {
+    deleting.value = false
+  }
+}
 
 const localComments = ref(sortComments([...props.comments]))
 const composerOpen = ref(props.comments.length === 0)

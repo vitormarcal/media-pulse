@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.99
+  version: 1.0.0-beta.100
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -36,7 +36,348 @@ tags:
     description: Manual comments attached to media details.
   - name: Ratings
     description: Manual ratings attached to media details.
+  - name: Magazines
+    description: Local publications, numbers, reading journeys and rereads.
 paths:
+  /api/magazines:
+    get:
+      tags:
+      - Magazines
+      summary: List numbers by reading activity date descending
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+      - name: publicationId
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: status
+        in: query
+        schema:
+          $ref: '#/components/schemas/MagazineReadStatus'
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 24
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagazineLibrary'
+        '400':
+          description: Invalid fields or image
+        '404':
+          description: Record not found
+        '409':
+          description: Duplicate identity or another open journey
+    post:
+      tags:
+      - Magazines
+      summary: Create a number and initial reading journey
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - issue
+              properties:
+                issue:
+                  $ref: '#/components/schemas/MagazineIssueRequest'
+                cover:
+                  type: string
+                  format: binary
+                  description: JPEG/PNG, at most 10 MB and 40 megapixels.
+            encoding:
+              issue:
+                contentType: application/json
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagazineDetails'
+        '400':
+          description: Invalid fields or image
+        '404':
+          description: Record not found
+        '409':
+          description: Duplicate identity or another open journey
+  /api/magazines/overview:
+    get:
+      tags:
+      - Magazines
+      summary: Read in-progress and recent numbers and archive counts
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagazineOverview'
+        '400':
+          description: Invalid fields or image
+        '404':
+          description: Record not found
+        '409':
+          description: Duplicate identity or another open journey
+  /api/magazines/publications:
+    get:
+      tags:
+      - Magazines
+      summary: List publications alphabetically
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MagazinePublication'
+        '400':
+          description: Invalid fields or image
+        '404':
+          description: Record not found
+        '409':
+          description: Duplicate identity or another open journey
+  /api/magazines/publications/{id}:
+    put:
+      tags:
+      - Magazines
+      summary: Edit name and ISSN across all numbers
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MagazinePublicationRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagazinePublication'
+        '400':
+          description: Invalid fields or image
+        '404':
+          description: Record not found
+        '409':
+          description: Duplicate identity or another open journey
+  /api/magazines/{id}:
+    get:
+      tags:
+      - Magazines
+      summary: Read number details with journeys and shared comments
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagazineDetails'
+        '400':
+          description: Invalid fields or image
+        '404':
+          description: Record not found
+        '409':
+          description: Duplicate identity or another open journey
+    put:
+      tags:
+      - Magazines
+      summary: Replace metadata; preserve cover unless replaced or explicitly removed
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - issue
+              properties:
+                issue:
+                  $ref: '#/components/schemas/MagazineIssueRequest'
+                cover:
+                  type: string
+                  format: binary
+                  description: JPEG/PNG, at most 10 MB and 40 megapixels.
+            encoding:
+              issue:
+                contentType: application/json
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagazineDetails'
+        '400':
+          description: Invalid fields or image
+        '404':
+          description: Record not found
+        '409':
+          description: Duplicate identity or another open journey
+    delete:
+      tags:
+      - Magazines
+      summary: Delete number, journeys, comments and local cover
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Record not found
+  /api/magazines/{id}/reads:
+    post:
+      tags:
+      - Magazines
+      summary: Create a reading or rereading journey
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MagazineReadRequest'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagazineDetails'
+        '400':
+          description: Invalid fields or image
+        '404':
+          description: Record not found
+        '409':
+          description: Duplicate identity or another open journey
+  /api/magazines/{id}/reads/{readId}:
+    put:
+      tags:
+      - Magazines
+      summary: Update state dates or progress in the same journey
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: readId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MagazineReadRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagazineDetails'
+        '400':
+          description: Invalid fields or image
+        '404':
+          description: Record not found
+        '409':
+          description: Duplicate identity or another open journey
+    delete:
+      tags:
+      - Magazines
+      summary: Delete journey; preserve number and comments
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: readId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Record not found
+  /api/comments/{commentId}:
+    delete:
+      tags:
+      - Comments
+      summary: Delete a shared media comment
+      parameters:
+      - name: commentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Comment not found
   /api/workouts:
     get:
       tags: [Workouts]
@@ -3684,7 +4025,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [movies, shows, albums, books]
+            enum: [movies, shows, albums, books, games, magazines]
         - name: entityId
           in: path
           required: true
@@ -3866,6 +4207,208 @@ components:
         type: integer
         format: int64
   schemas:
+    MagazineReadStatus:
+      type: string
+      enum:
+      - WANT_TO_READ
+      - CURRENTLY_READING
+      - READ
+      - DID_NOT_FINISH
+    MagazinePublicationRequest:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        issn:
+          type: string
+          nullable: true
+          description: Optional ISSN with valid check digit; normalized to NNNN-NNNX.
+    MagazinePublication:
+      type: object
+      required:
+      - id
+      - name
+      - issn
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        issn:
+          type: string
+          nullable: true
+    MagazineReadRequest:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          $ref: '#/components/schemas/MagazineReadStatus'
+        startedAt:
+          type: string
+          format: date
+          nullable: true
+        finishedAt:
+          type: string
+          format: date
+          nullable: true
+        progressPct:
+          type: number
+          minimum: 0
+          maximum: 100
+          nullable: true
+        currentPage:
+          type: integer
+          minimum: 0
+          nullable: true
+    MagazineRead:
+      type: object
+      required:
+      - id
+      - issueId
+      - status
+      - progressPct
+      - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        issueId:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/MagazineReadStatus'
+        startedAt:
+          type: string
+          format: date
+          nullable: true
+        finishedAt:
+          type: string
+          format: date
+          nullable: true
+        progressPct:
+          type: number
+          minimum: 0
+          maximum: 100
+        currentPage:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    MagazineIssueRequest:
+      type: object
+      properties:
+        publicationId:
+          type: integer
+          format: int64
+          nullable: true
+        publication:
+          $ref: '#/components/schemas/MagazinePublicationRequest'
+        number:
+          type: string
+          nullable: true
+          maxLength: 100
+        coverDate:
+          type: string
+          nullable: true
+          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+        totalPages:
+          type: integer
+          nullable: true
+          minimum: 1
+        read:
+          $ref: '#/components/schemas/MagazineReadRequest'
+        removeCover:
+          type: boolean
+          default: false
+    MagazineIssue:
+      type: object
+      required:
+      - id
+      - publication
+      - activityDate
+      properties:
+        id:
+          type: integer
+          format: int64
+        publication:
+          $ref: '#/components/schemas/MagazinePublication'
+        number:
+          type: string
+          nullable: true
+        coverDate:
+          type: string
+          nullable: true
+        totalPages:
+          type: integer
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        activityDate:
+          type: string
+          format: date
+        latestRead:
+          allOf:
+          - $ref: '#/components/schemas/MagazineRead'
+          nullable: true
+    MagazineDetails:
+      type: object
+      required:
+      - issue
+      - reads
+      - comments
+      properties:
+        issue:
+          $ref: '#/components/schemas/MagazineIssue'
+        reads:
+          type: array
+          items:
+            $ref: '#/components/schemas/MagazineRead'
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaCommentDto'
+    MagazineLibrary:
+      type: object
+      required:
+      - items
+      - nextPage
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MagazineIssue'
+        nextPage:
+          type: integer
+          nullable: true
+    MagazineOverview:
+      type: object
+      required:
+      - inProgress
+      - recent
+      - numbersCount
+      - completedReadsCount
+      properties:
+        inProgress:
+          type: array
+          items:
+            $ref: '#/components/schemas/MagazineIssue'
+        recent:
+          type: array
+          items:
+            $ref: '#/components/schemas/MagazineIssue'
+        numbersCount:
+          type: integer
+          format: int64
+        completedReadsCount:
+          type: integer
+          format: int64
     WorkoutCategory:
       type: string
       enum: [RUNNING, JUMP_ROPE, GYM]

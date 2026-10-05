@@ -5,6 +5,11 @@ import dev.marcal.mediapulse.server.model.comment.MediaComment
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface MediaCommentRepository : JpaRepository<MediaComment, Long> {
+    fun deleteByEntityTypeAndEntityId(
+        entityType: EntityType,
+        entityId: Long,
+    )
+
     fun findByEntityTypeAndEntityIdOrderByCommentedAtDescIdDesc(
         entityType: EntityType,
         entityId: Long,

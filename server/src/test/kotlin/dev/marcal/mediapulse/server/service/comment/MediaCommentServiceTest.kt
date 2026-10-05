@@ -7,6 +7,7 @@ import dev.marcal.mediapulse.server.model.comment.MediaComment
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import dev.marcal.mediapulse.server.repository.crud.BookRepository
 import dev.marcal.mediapulse.server.repository.crud.GameRepository
+import dev.marcal.mediapulse.server.repository.crud.MagazineIssueRepository
 import dev.marcal.mediapulse.server.repository.crud.MediaCommentRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
@@ -35,6 +36,7 @@ class MediaCommentServiceTest {
             albumRepository = albumRepository,
             bookRepository = bookRepository,
             gameRepository = gameRepository,
+            magazineIssueRepository = mockk<MagazineIssueRepository>(),
         )
 
     @Test

@@ -148,6 +148,16 @@ Future direction:
 - connect books to other domains through mentions, themes, lists, and timeline events
 - improve curation and correction of covers, editions, and reading sessions
 
+## Revistas
+
+MVP aprovado: [Revistas](docs/features/magazines.md).
+
+- domínio local separado de livros, com publicações, ISSN opcional e números
+- registro manual de intenção, leitura em andamento, conclusão e abandono
+- datas, progresso em porcentagem ou páginas, releituras e comentários compartilhados
+- biblioteca visual e detalhe consistentes com os domínios existentes
+- artigos individuais, integrações externas e área conjunta Leituras ficam fora deste MVP
+
 ## Movies
 
 Current foundation:

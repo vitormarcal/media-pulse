@@ -28,6 +28,7 @@ const items = [
   { label: 'Séries', href: '/shows' },
   { label: 'Filmes', href: '/movies' },
   { label: 'Livros', href: '/books' },
+  { label: 'Revistas', href: '/magazines' },
   { label: 'Games', href: '/games' },
   { label: 'Treinos', href: '/workouts' },
   { label: 'Pessoas', href: '/people' },
