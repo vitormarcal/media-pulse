@@ -1,6 +1,6 @@
 <template>
   <section class="book-hero">
-    <NuxtLink class="back-link" :to="backLink">← {{ backLabel }}</NuxtLink>
+    <NuxtLink class="back-link" :to="backLink">{{ backLabel }}</NuxtLink>
     <div class="hero-grid">
       <div class="cover-frame">
         <img v-if="resolvedCoverUrl" :src="resolvedCoverUrl" :alt="title" />
@@ -39,7 +39,7 @@ const props = withDefaults(
     coverUrl: string | null
     heroMeta: string[]
   }>(),
-  { backLink: '/books', backLabel: 'Livros' },
+  { backLink: '/books', backLabel: 'Voltar para livros' },
 )
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedCoverUrl = computed(() => resolveMediaUrl(props.coverUrl))
@@ -57,7 +57,11 @@ const descriptionPreview = computed(() => {
 }
 .back-link {
   width: fit-content;
-  font-size: 0.88rem;
+  padding: 8px 14px;
+  border-radius: 16px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+  font-size: 0.8rem;
 }
 a,
 button {

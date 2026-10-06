@@ -7,7 +7,7 @@
     <template v-else-if="data">
       <BookPageHero
         back-link="/magazines"
-        back-label="Revistas"
+        back-label="Voltar para revistas"
         :title="data.issue.publication.name"
         :authors="[]"
         :subtitle="magazineNumber(data.issue)"
