@@ -39,7 +39,7 @@
             ><input v-model.number="totalPages" :disabled="savedId != null" type="number" min="1" step="1"
           /></label>
           <label class="mag-field"
-            ><span>Capa</span><input type="file" accept="image/jpeg,image/png" @change="chooseCover"
+            ><span>Capa</span><input type="file" accept="image/jpeg,image/png,image/webp" @change="chooseCover"
           /></label>
           <MediaImage v-if="preview" :src="preview" alt="Prévia da capa" class="mag-preview" />
           <button v-if="preview" type="button" class="mag-button" @click="removeImage">Remover capa</button>

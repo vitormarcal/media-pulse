@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.marcal.mediapulse.server"
-version = "1.1.0"
+version = "1.1.1"
 
 java {
     toolchain {
@@ -40,6 +40,7 @@ dependencies {
 
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("com.twelvemonkeys.imageio:imageio-webp:3.15.0")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

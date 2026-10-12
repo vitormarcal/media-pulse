@@ -44,10 +44,12 @@
       <section v-if="!initial" class="art-section">
         <h3>Imagens</h3>
         <div class="art-fields">
-          <label>Arquivos <input type="file" accept="image/jpeg,image/png" multiple @change="selectFiles" /></label>
+          <label
+            >Arquivos <input type="file" accept="image/jpeg,image/png,image/webp" multiple @change="selectFiles"
+          /></label>
           <label>URLs das imagens <textarea v-model="imageUrls" rows="2" placeholder="Uma URL por linha" /></label>
         </div>
-        <p class="art-muted art-caption">JPEG ou PNG · Até 10 MB por imagem</p>
+        <p class="art-muted art-caption">JPEG, PNG ou WebP · Até 10 MB por imagem</p>
       </section>
       <p v-if="error" class="art-error" role="alert">{{ error }}</p>
       <p v-if="imageErrors.length" class="art-error" role="alert">

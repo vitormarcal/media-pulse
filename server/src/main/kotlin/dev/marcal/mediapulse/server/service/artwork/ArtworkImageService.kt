@@ -126,7 +126,7 @@ class ArtworkImageService(
                     try {
                         reader.input = input
                         val format = reader.formatName.lowercase()
-                        require(format in setOf("jpeg", "png"))
+                        require(format in setOf("jpeg", "png", "webp"))
                         require(reader.getWidth(0).toLong() * reader.getHeight(0) <= 40_000_000)
                         requireNotNull(reader.read(0))
                         format
@@ -135,9 +135,17 @@ class ArtworkImageService(
                     }
                 }
             } catch (_: Exception) {
-                bad("Escolha uma imagem JPEG ou PNG válida, com até 40 megapixels.")
+                bad("Escolha uma imagem JPEG, PNG ou WebP válida, com até 40 megapixels.")
             }
-        val image = ImageContent(bytes, if (format == "jpeg") MediaType.IMAGE_JPEG else MediaType.IMAGE_PNG)
+        val image =
+            ImageContent(
+                bytes,
+                when (format) {
+                    "jpeg" -> MediaType.IMAGE_JPEG
+                    "png" -> MediaType.IMAGE_PNG
+                    else -> MediaType.parseMediaType("image/webp")
+                },
+            )
         return if (visualLibrary.enabled) {
             visualLibrary.upload(
                 image,

@@ -8,7 +8,7 @@ Centralizar novas imagens de revistas e artes visuais no Visual Library, mantend
 
 - Flag desligada por padrão; habilitar para novos uploads de capas de revistas, imagens de obras e retratos de artistas.
 - Upload pelo Media Pulse, armazenamento no Visual Library e referência estável pelo ID do asset.
-- Preservar imagens locais existentes e validações atuais de JPEG/PNG, 10 MB e 40 megapixels.
+- Preservar imagens locais existentes e validações atuais de JPEG/PNG/WebP, 10 MB e 40 megapixels.
 - Salvar dados válidos da revista mesmo se o upload remoto falhar; permitir tentar apenas a capa novamente.
 - Preservar obras, artistas e imagens anteriores em falhas de envio.
 - Exibir placeholders quando imagens não carregarem, sem bloquear dados e ações das páginas.

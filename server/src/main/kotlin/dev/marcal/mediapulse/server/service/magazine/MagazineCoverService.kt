@@ -39,27 +39,25 @@ class MagazineCoverService(
                     try {
                         reader.input = input
                         val format = reader.formatName.lowercase()
-                        require(format in setOf("jpeg", "png"))
+                        require(format in setOf("jpeg", "png", "webp"))
                         require(reader.getWidth(0).toLong() * reader.getHeight(0) <= 40_000_000)
                         requireNotNull(reader.read(0))
-                        if (format == "jpeg") "jpg" else "png"
+                        if (format == "jpeg") "jpg" else format
                     } finally {
                         reader.dispose()
                     }
                 }
             } catch (_: Exception) {
-                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Escolha uma capa JPEG ou PNG válida, com até 40 megapixels.")
+                throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Escolha uma capa JPEG, PNG ou WebP válida, com até 40 megapixels.")
             }
         if (visualLibrary.enabled) {
             return visualLibrary.upload(
                 ImageContent(
                     bytes,
-                    if (extension ==
-                        "jpg"
-                    ) {
-                        MediaType.IMAGE_JPEG
-                    } else {
-                        MediaType.IMAGE_PNG
+                    when (extension) {
+                        "jpg" -> MediaType.IMAGE_JPEG
+                        "png" -> MediaType.IMAGE_PNG
+                        else -> MediaType.parseMediaType("image/webp")
                     },
                 ),
                 metadata,
@@ -79,7 +77,7 @@ class MagazineCoverService(
 
     fun delete(photoUrl: String) {
         // Remote assets may be shared and are retained by Visual Library.
-        if (!Regex("/covers/magazines/[a-zA-Z0-9-]+\\.(jpg|png)").matches(photoUrl)) return
+        if (!Regex("/covers/magazines/[a-zA-Z0-9-]+\\.(jpg|png|webp)").matches(photoUrl)) return
         Files.deleteIfExists(directory.resolve(photoUrl.substringAfterLast('/')))
     }
 }

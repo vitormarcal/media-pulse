@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.1.0
+  version: 1.1.1
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -563,7 +563,7 @@ paths:
     post:
       tags:
       - Artworks
-      summary: Add local JPEG/PNG image up to 10 MB
+      summary: Add local JPEG/PNG/WebP image up to 10 MB
       parameters:
       - name: id
         in: path
@@ -605,7 +605,7 @@ paths:
     post:
       tags:
       - Artworks
-      summary: Download public direct JPEG/PNG URL into local gallery
+      summary: Download public direct JPEG/PNG/WebP URL into local gallery
       parameters:
       - name: id
         in: path
@@ -898,7 +898,7 @@ paths:
                 cover:
                   type: string
                   format: binary
-                  description: JPEG/PNG, at most 10 MB and 40 megapixels.
+                  description: JPEG/PNG/WebP, at most 10 MB and 40 megapixels.
             encoding:
               issue:
                 contentType: application/json
@@ -1054,7 +1054,7 @@ paths:
                 cover:
                   type: string
                   format: binary
-                  description: JPEG/PNG, at most 10 MB and 40 megapixels.
+                  description: JPEG/PNG/WebP, at most 10 MB and 40 megapixels.
             encoding:
               issue:
                 contentType: application/json
@@ -1105,7 +1105,7 @@ paths:
               type: object
               required: [cover]
               properties:
-                cover: { type: string, format: binary, description: 'JPEG/PNG, at most 10 MB and 40 megapixels.' }
+                cover: { type: string, format: binary, description: 'JPEG/PNG/WebP, at most 10 MB and 40 megapixels.' }
       responses:
         '200':
           description: Saved details, including an optional remote upload error
@@ -1143,6 +1143,8 @@ paths:
             image/jpeg:
               schema: { type: string, format: binary }
             image/png:
+              schema: { type: string, format: binary }
+            image/webp:
               schema: { type: string, format: binary }
         '304': { description: Not modified }
         '400': { description: Invalid UUID }

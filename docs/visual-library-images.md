@@ -16,13 +16,13 @@ VISUAL_LIBRARY_ENABLED=true
 VISUAL_LIBRARY_BASE_URL=http://visual-library:3000
 ```
 
-Não é necessário expor esse hostname ao navegador: ele consulta o backend do Media Pulse. Nenhuma credencial é enviada; a API atual do Visual Library não tem autenticação. Configuração inválida impede inicialização. Não são necessárias novas dependências ou migrations.
+Não é necessário expor esse hostname ao navegador: ele consulta o backend do Media Pulse. Nenhuma credencial é enviada; a API atual do Visual Library não tem autenticação. Configuração inválida impede inicialização. Não são necessárias migrations. O backend inclui o [plugin ImageIO WebP do TwelveMonkeys](https://github.com/haraldk/TwelveMonkeys) para validar esse formato.
 
 ## Upload e leitura
 
 A integração usa o contrato de upload do Visual Library **0.6.0**.
 
-O backend preserva as validações existentes de JPEG/PNG, 10 MB e 40 megapixels, então envia multipart para `POST /api/assets`, com `image`, `source=media-pulse`, `hiddenFromGallery=false`, `tags` (array JSON em campo texto) e `sourceReference` (objeto JSON em campo texto). As imagens ficam disponíveis na galeria central. Deduplicação aceita tanto 201 quanto 200; a origem e visibilidade retornadas podem ser as do primeiro envio dos mesmos bytes.
+O backend preserva as validações existentes de JPEG/PNG/WebP, 10 MB e 40 megapixels, então envia multipart para `POST /api/assets`, com `image`, `source=media-pulse`, `hiddenFromGallery=false`, `tags` (array JSON em campo texto) e `sourceReference` (objeto JSON em campo texto). As imagens ficam disponíveis na galeria central. Deduplicação aceita tanto 201 quanto 200; a origem e visibilidade retornadas podem ser as do primeiro envio dos mesmos bytes.
 
 As referências usam o ID real do Media Pulse convertido em **string**. O tipo separa entidades de tabelas diferentes, mesmo quando seus IDs numéricos coincidem:
 
@@ -79,3 +79,9 @@ JAVA_TOOL_OPTIONS=-Dapi.version=1.44 ./server/gradlew -p server test \
 Também foi validado `bootRun` com PostgreSQL e Visual Library 0.6.0 temporários: upload de capa, obra e retrato com tags e referências corretas, deduplicação, recuperação dos bytes sem cópia local, e preservação dos dados após desligar o serviço de imagens. Reenvio da mesma associação preservou tags editadas manualmente; uma nova associação a um asset com oito tags pessoais confirmou o retry sem sugestões e a preservação dessas oito tags. O frontend foi conferido em Chromium, com retry de capa e placeholders em 390 e 1280 pixels.
 
 No navegador, interromper uploads/leitura de imagens e conferir placeholders, metadados e histórico. Em revistas, criar com upload indisponível, tentar a capa novamente e verificar que há apenas um número e uma jornada. Conferir também imagens locais e referências remotas com a flag desligada.
+
+## WebP
+
+Revistas, obras e retratos aceitam JPEG, PNG e WebP nos dois destinos de armazenamento. Obras/retratos também aceitam WebP por URL pública direta. A validação identifica o formato pelos bytes, lê dimensões e decodifica pixels com ImageIO, usando `com.twelvemonkeys.imageio:imageio-webp:3.15.0` para WebP. Essa dependência permite manter a validação real de imagem sem escrever um decodificador próprio ou adicionar bibliotecas nativas. Limites continuam em 10 MB e 40 megapixels. MIME e extensão do cliente não determinam o formato. Os bytes são preservados; sem conversão para JPEG/PNG. Capas WebP locais usam `.webp` e participam da compensação e remoção existentes.
+
+Validação de WebP cobre imagens estáticas e animadas, MIME/extensão de cliente incorretos, dados truncados, dimensões declaradas acima de 40 megapixels, preservação dos bytes e remoção local. O smoke com `bootRun`, PostgreSQL e Visual Library confirmou envio de capa/obra/retrato, MIME `image/webp` na leitura pelo proxy e funcionamento local com a flag desligada, incluindo exclusão da capa.

@@ -7,6 +7,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.server.ResponseStatusException
 import java.awt.image.BufferedImage
@@ -25,6 +26,80 @@ class MagazineCoverServiceTest {
 
     @TempDir
     lateinit var root: Path
+
+    @Test
+    fun `WebP dimensions over forty megapixels are rejected before decoding pixels`() {
+        val service = MagazineCoverService(root.toString(), mockk<VisualLibraryClient>(relaxed = true))
+        val bytes = javaClass.getResourceAsStream("/fixtures/images/static.webp")!!.use { it.readBytes() }
+        // VP8 frame-header dimensions are little-endian, starting at byte 26 in this fixture.
+        java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN).apply {
+            putShort(26, 10_000.toShort())
+            putShort(28, 10_000.toShort())
+        }
+        ImageIO.createImageInputStream(bytes.inputStream()).use { input ->
+            val reader = ImageIO.getImageReaders(input).next()
+            try {
+                reader.input = input
+                assertEquals(10_000, reader.getWidth(0))
+                assertEquals(10_000, reader.getHeight(0))
+            } finally {
+                reader.dispose()
+            }
+        }
+        assertEquals(
+            400,
+            assertFailsWith<ResponseStatusException> {
+                service.save(MockMultipartFile("cover", "large.webp", "image/webp", bytes), metadata)
+            }.statusCode.value(),
+        )
+        assertFalse(Files.exists(root.resolve("magazines")))
+    }
+
+    @Test
+    fun `static and animated WebP retain original bytes in local and remote storage`() {
+        val client = mockk<VisualLibraryClient>(relaxed = true)
+        val local = MagazineCoverService(root.toString(), client)
+        for (fixture in listOf("static.webp", "animated.webp")) {
+            val bytes = javaClass.getResourceAsStream("/fixtures/images/$fixture")!!.use { it.readBytes() }
+            val file = MockMultipartFile("cover", "renamed.png", "image/png", bytes)
+            val url = local.save(file, metadata)
+            assertTrue(url.endsWith(".webp"))
+            val target = root.resolve("magazines").resolve(url.substringAfterLast('/'))
+            assertContentEquals(bytes, Files.readAllBytes(target))
+            local.delete(url)
+            assertFalse(Files.exists(target))
+            every { client.enabled } returns true
+            every { client.upload(any(), metadata) } returns "/api/image-assets/test/content"
+            assertEquals("/api/image-assets/test/content", local.save(file, metadata))
+            verify {
+                client.upload(
+                    match {
+                        it.bytes.contentEquals(bytes) && it.contentType == MediaType.parseMediaType("image/webp")
+                    },
+                    metadata,
+                )
+            }
+            every { client.enabled } returns false
+        }
+    }
+
+    @Test
+    fun `truncated and fake WebP are rejected without local writes or remote uploads`() {
+        val client = mockk<VisualLibraryClient>(relaxed = true)
+        every { client.enabled } returns true
+        val service = MagazineCoverService(root.toString(), client)
+        val bytes = javaClass.getResourceAsStream("/fixtures/images/static.webp")!!.use { it.readBytes() }
+        for (invalid in listOf(bytes.copyOf(bytes.size / 2), "RIFFfakeWEBP".toByteArray())) {
+            assertEquals(
+                400,
+                assertFailsWith<ResponseStatusException> {
+                    service.save(MockMultipartFile("cover", "fake.webp", "image/webp", invalid), metadata)
+                }.statusCode.value(),
+            )
+        }
+        verify(exactly = 0) { client.upload(any(), any()) }
+        assertFalse(Files.exists(root.resolve("magazines")))
+    }
 
     @Test
     fun `enabled remote storage does not write local files and deletion preserves shared assets`() {

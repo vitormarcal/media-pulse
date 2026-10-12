@@ -40,12 +40,17 @@
         <div class="art-fields">
           <label
             >{{ artistId ? 'Arquivo' : 'Arquivos' }}
-            <input :key="fileKey" type="file" accept="image/jpeg,image/png" :multiple="!artistId" @change="selectFiles"
+            <input
+              :key="fileKey"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              :multiple="!artistId"
+              @change="selectFiles"
           /></label>
           <label>URL da imagem <input v-model="url" type="url" maxlength="4000" /></label>
           <label v-if="!artistId" class="art-wide">Legenda <input v-model="caption" maxlength="500" /></label>
         </div>
-        <p class="art-muted">JPEG ou PNG · Até 10 MB</p>
+        <p class="art-muted">JPEG, PNG ou WebP · Até 10 MB</p>
         <div class="art-actions">
           <button class="art-button" :disabled="!files.length && !url">
             {{ busy ? 'Adicionando…' : 'Adicionar imagem' }}</button
