@@ -11,12 +11,14 @@ import dev.marcal.mediapulse.server.api.magazine.MagazinePublicationRequest
 import dev.marcal.mediapulse.server.api.magazine.MagazineReadDto
 import dev.marcal.mediapulse.server.api.magazine.MagazineReadRequest
 import dev.marcal.mediapulse.server.api.magazine.MagazineRecentReadDto
+import dev.marcal.mediapulse.server.integration.visuallibrary.VisualLibraryUploadException
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.magazine.MagazineIssue
 import dev.marcal.mediapulse.server.model.magazine.MagazineIssueOrder
 import dev.marcal.mediapulse.server.model.magazine.MagazinePublication
 import dev.marcal.mediapulse.server.model.magazine.MagazineRead
 import dev.marcal.mediapulse.server.model.magazine.MagazineReadStatus
+import dev.marcal.mediapulse.server.model.visuallibrary.VisualLibraryUploadMetadata
 import dev.marcal.mediapulse.server.repository.MediaCommentQueryRepository
 import dev.marcal.mediapulse.server.repository.crud.MagazineIssueRepository
 import dev.marcal.mediapulse.server.repository.crud.MagazinePublicationRepository
@@ -100,14 +102,16 @@ class MagazineService(
         request: MagazineIssueRequest,
         cover: MultipartFile?,
     ): MagazineDetailsDto =
-        withCover(cover) { url ->
+        withCover(cover) { upload ->
             val publication = resolvePublication(request)
             val normalized = normalizeIssue(request, publication.id)
             val existing = issues.findByPublicationIdAndIdentityKey(publication.id, normalized.identityKey)
             if (existing != null) conflict("Este número já existe. Abra o detalhe para atualizar ou reler.")
-            val issue = issues.saveAndFlush(normalized.copy(coverUrl = url))
+            val issue = issues.saveAndFlush(normalized)
             val read = request.read ?: bad("Escolha um estado para a leitura.")
             saveRead(issue, null, read)
+            val url = upload(issue, publication)
+            if (url != null) issues.saveAndFlush(lockedIssue(issue.id).copy(coverUrl = url))
             details(issue.id)
         }
 
@@ -118,7 +122,7 @@ class MagazineService(
     ): MagazineDetailsDto {
         var oldCover: String? = null
         val result =
-            withCover(cover) { url ->
+            withCover(cover) { upload ->
                 val current = lockedIssue(id)
                 val publication = resolvePublication(request)
                 val normalized = normalizeIssue(request, publication.id)
@@ -131,10 +135,11 @@ class MagazineService(
                 ) {
                     bad("O total é menor que uma página já registrada. Corrija a leitura primeiro.")
                 }
+                val url = upload(normalized.copy(id = id), publication)
                 val replacement =
                     if (url != null) {
                         url
-                    } else if (request.removeCover) {
+                    } else if (request.removeCover && cover == null) {
                         null
                     } else {
                         current.coverUrl
@@ -159,6 +164,25 @@ class MagazineService(
                             else -> journey
                         }
                     reads.save(updatedRead)
+                }
+                details(id)
+            }
+        oldCover?.let { runCatching { covers.delete(it) } }
+        return result
+    }
+
+    fun updateCover(
+        id: Long,
+        cover: MultipartFile,
+    ): MagazineDetailsDto {
+        var oldCover: String? = null
+        val result =
+            withCover(cover) { upload ->
+                val current = lockedIssue(id)
+                val url = upload(current, publication(current.publicationId))
+                if (url != null) {
+                    oldCover = current.coverUrl?.takeIf { it != url }
+                    issues.saveAndFlush(current.copy(coverUrl = url))
                 }
                 details(id)
             }
@@ -436,15 +460,26 @@ class MagazineService(
             conflict("O registro conflita com dados existentes. Recarregue e revise os campos.")
         }
 
-    private fun <T> withCover(
+    private fun withCover(
         cover: MultipartFile?,
-        action: (String?) -> T,
-    ): T {
-        val url = cover?.let(covers::save)
+        action: ((MagazineIssue, MagazinePublication) -> String?) -> MagazineDetailsDto,
+    ): MagazineDetailsDto {
+        var url: String? = null
+        var uploadError: String? = null
         try {
-            return mutate { action(url) }
+            return mutate {
+                action { issue, publication ->
+                    try {
+                        val metadata = VisualLibraryUploadMetadata.forEntity("magazine_issue", issue.id, "revista", publication.name)
+                        url = cover?.let { covers.save(it, metadata) }
+                    } catch (error: VisualLibraryUploadException) {
+                        uploadError = error.reason
+                    }
+                    url
+                }
+            }.copy(coverUploadError = uploadError)
         } catch (error: Exception) {
-            if (url != null) runCatching { covers.delete(url) }.exceptionOrNull()?.let(error::addSuppressed)
+            url?.let { saved -> runCatching { covers.delete(saved) }.exceptionOrNull()?.let(error::addSuppressed) }
             throw error
         }
     }

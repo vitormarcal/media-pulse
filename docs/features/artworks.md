@@ -74,3 +74,7 @@ A implementação exigirá migration Flyway para obras, artistas, experiências,
 Cadastro mantém título, artista e ano e torna tipo, movimento e técnica visíveis. Tipo oferece categorias comuns e Outra com texto próprio; exemplos curtos orientam movimento e técnica. País de origem usa nomes de países, com preservação dos valores anteriores na migration V66 para revisão manual.
 
 A revisão dos detalhes segue [Detalhes de artista e obra](artworks-detail-layout.md): galeria ampla com navegação e ampliação na página, ficha compacta e leitura confortável. Textos curtos aparecem completos; descrições e biografias longas começam com um trecho expansível. Artistas reúnem retrato opcional, dados e biografia, com obras locais agrupadas por ano de criação. Controles de imagens e listas aparecem por ações de gerenciamento. Tipos personalizados, dados preenchidos, múltiplas imagens, correções e histórico permanecem disponíveis. Integração com Wikipedia foi adiada; o cadastro continua manual.
+
+## Armazenamento opcional de imagens
+
+A centralização de novas imagens no Visual Library estende o armazenamento local descrito neste MVP. Consulte o [escopo aprovado](visual-library-images.md) e a [operação](../visual-library-images.md). Os dados do domínio permanecem no Media Pulse; imagens locais existentes continuam disponíveis.

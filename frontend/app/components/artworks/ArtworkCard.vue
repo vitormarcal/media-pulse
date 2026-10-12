@@ -1,7 +1,12 @@
 <template>
   <NuxtLink :to="`/artworks/${item.id}`" class="art-work-card">
-    <img v-if="item.imageUrl" :src="resolveMediaUrl(item.imageUrl) || undefined" :alt="item.title" loading="lazy" />
-    <div v-else class="art-image-fallback">{{ item.type || 'Obra' }}</div>
+    <MediaImage
+      :src="resolveMediaUrl(item.imageUrl)"
+      :alt="item.title"
+      loading="lazy"
+      :fallback="item.type || 'Obra'"
+      fallback-class="art-image-fallback"
+    />
     <h3>{{ item.title }} <span v-if="item.favorite" aria-label="Favorita">♥</span></h3>
     <p>{{ [hideArtist ? null : item.artist?.name, item.year].filter((part) => part != null).join(' · ') }}</p>
     <p v-if="item.movement" class="art-muted">{{ item.movement }}</p>

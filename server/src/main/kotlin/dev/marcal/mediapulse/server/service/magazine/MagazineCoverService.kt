@@ -1,7 +1,11 @@
 package dev.marcal.mediapulse.server.service.magazine
 
+import dev.marcal.mediapulse.server.integration.visuallibrary.VisualLibraryClient
+import dev.marcal.mediapulse.server.model.image.ImageContent
+import dev.marcal.mediapulse.server.model.visuallibrary.VisualLibraryUploadMetadata
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
@@ -14,10 +18,14 @@ import javax.imageio.ImageIO
 @Service
 class MagazineCoverService(
     @Value("\${media-pulse.storage.covers-path}") coversPath: String,
+    private val visualLibrary: VisualLibraryClient,
 ) {
     private val directory = Path.of(coversPath).resolve("magazines")
 
-    fun save(photo: MultipartFile): String {
+    fun save(
+        photo: MultipartFile,
+        metadata: VisualLibraryUploadMetadata,
+    ): String {
         if (photo.isEmpty || photo.size > 10 * 1024 * 1024) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A capa deve ter até 10 MB e não pode estar vazia.")
         }
@@ -42,6 +50,21 @@ class MagazineCoverService(
             } catch (_: Exception) {
                 throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Escolha uma capa JPEG ou PNG válida, com até 40 megapixels.")
             }
+        if (visualLibrary.enabled) {
+            return visualLibrary.upload(
+                ImageContent(
+                    bytes,
+                    if (extension ==
+                        "jpg"
+                    ) {
+                        MediaType.IMAGE_JPEG
+                    } else {
+                        MediaType.IMAGE_PNG
+                    },
+                ),
+                metadata,
+            )
+        }
         Files.createDirectories(directory)
         val name = "${UUID.randomUUID()}.$extension"
         val target = directory.resolve(name)
@@ -55,6 +78,8 @@ class MagazineCoverService(
     }
 
     fun delete(photoUrl: String) {
+        // Remote assets may be shared and are retained by Visual Library.
+        if (!Regex("/covers/magazines/[a-zA-Z0-9-]+\\.(jpg|png)").matches(photoUrl)) return
         Files.deleteIfExists(directory.resolve(photoUrl.substringAfterLast('/')))
     }
 }

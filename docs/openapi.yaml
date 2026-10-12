@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0
+  version: 1.1.0
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -595,6 +595,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArtworkImage'
+        '503':
+          description: Image upload to Visual Library failed; existing data and images are preserved.
         '400':
           description: Invalid input.
         '404':
@@ -624,6 +626,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArtworkImage'
+        '503':
+          description: Image upload to Visual Library failed; existing data and images are preserved.
         '400':
           description: Invalid input.
         '404':
@@ -709,6 +713,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArtworkArtist'
+        '503':
+          description: Image upload to Visual Library failed; existing data and images are preserved.
         '400':
           description: Invalid input.
         '404':
@@ -760,6 +766,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArtworkArtist'
+        '503':
+          description: Image upload to Visual Library failed; existing data and images are preserved.
         '400':
           description: Invalid input.
         '404':
@@ -875,6 +883,7 @@ paths:
       tags:
       - Magazines
       summary: Create a number and initial reading journey
+      description: Remote cover upload failure returns 201 with saved data and coverUploadError.
       requestBody:
         required: true
         content:
@@ -1023,6 +1032,7 @@ paths:
       tags:
       - Magazines
       summary: Replace metadata; preserve cover unless replaced or explicitly removed
+      description: Remote cover upload failure returns 200 with saved metadata, coverUploadError and the previous cover.
       parameters:
       - name: id
         in: path
@@ -1077,6 +1087,67 @@ paths:
           description: Deleted
         '404':
           description: Record not found
+  /api/magazines/{id}/cover:
+    post:
+      tags: [Magazines]
+      summary: Upload or retry only the cover of an existing number
+      description: Does not change metadata or reading journeys. Remote upload failure preserves the previous cover and returns saved details with coverUploadError.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [cover]
+              properties:
+                cover: { type: string, format: binary, description: 'JPEG/PNG, at most 10 MB and 40 megapixels.' }
+      responses:
+        '200':
+          description: Saved details, including an optional remote upload error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MagazineDetails' }
+        '400': { description: Invalid image or missing cover }
+        '404': { description: Number not found }
+        '413': { description: Multipart limit exceeded }
+  /api/image-assets/{id}/content:
+    get:
+      tags: [Images]
+      summary: Retrieve a Visual Library asset through the Media Pulse backend
+      description: Existing references remain readable with uploads disabled when the Visual Library base URL remains configured. Up to 10 MB; no domain metadata lookup depends on this request.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: If-None-Match
+        in: header
+        schema: { type: string }
+      - name: If-Modified-Since
+        in: header
+        schema: { type: string }
+      responses:
+        '200':
+          description: Original image bytes with provider cache headers
+          headers:
+            Cache-Control: { schema: { type: string } }
+            ETag: { schema: { type: string } }
+            Last-Modified: { schema: { type: string } }
+            X-Content-Type-Options: { schema: { type: string, enum: [nosniff] } }
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+        '304': { description: Not modified }
+        '400': { description: Invalid UUID }
+        '404': { description: Asset or file not found }
+        '503': { description: Visual Library unavailable, unconfigured or response exceeds the image limit }
   /api/magazines/{id}/reads:
     post:
       tags:
@@ -5191,6 +5262,10 @@ components:
       - reads
       - comments
       properties:
+        coverUploadError:
+          type: string
+          nullable: true
+          description: Remote cover upload failed, but valid number data was saved. Retry only the cover; null on full success.
         issue:
           $ref: '#/components/schemas/MagazineIssue'
         reads:

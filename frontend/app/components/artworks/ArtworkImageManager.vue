@@ -20,7 +20,7 @@
     <div v-if="!artistId && visibleImages.length" class="art-gallery">
       <figure v-for="image in visibleImages" :key="image.id">
         <a :href="resolveMediaUrl(image.url) || undefined" target="_blank" rel="noopener"
-          ><img
+          ><MediaImage
             :src="resolveMediaUrl(image.url) || undefined"
             :alt="image.caption || title || 'Imagem da obra'"
             loading="lazy"

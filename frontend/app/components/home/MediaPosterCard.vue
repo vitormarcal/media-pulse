@@ -2,8 +2,13 @@
   <component :is="wrapperTag" :to="item.href || undefined" class="poster-link">
     <article class="poster-card" :class="[`type-${item.type}`, `variant-${variant}`]">
       <div class="poster">
-        <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy" />
-        <div v-else class="poster-fallback">{{ item.title.slice(0, 1) }}</div>
+        <MediaImage
+          :src="resolvedImageUrl"
+          :alt="item.title"
+          loading="lazy"
+          :fallback="item.title.slice(0, 1)"
+          fallback-class="poster-fallback"
+        />
       </div>
 
       <div class="body">

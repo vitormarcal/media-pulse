@@ -16,8 +16,12 @@
       <component :is="leadWrapper" v-if="lead || showEmptyLead" :to="lead?.href || undefined" class="lead-link">
         <article class="lead-card">
           <div class="lead-poster">
-            <img v-if="leadImageUrl" :src="leadImageUrl" :alt="lead?.title || title" />
-            <div v-else class="lead-fallback">{{ (lead?.title || 'F').slice(0, 1) }}</div>
+            <MediaImage
+              :src="leadImageUrl"
+              :alt="lead?.title || title"
+              :fallback="(lead?.title || 'F').slice(0, 1)"
+              fallback-class="lead-fallback"
+            />
           </div>
 
           <div class="lead-body">
@@ -35,12 +39,12 @@
         <NuxtLink v-if="item.href" :to="item.href" class="supporting-link">
           <article class="supporting-card">
             <div class="supporting-thumb">
-              <img
-                v-if="resolveMediaUrl(item.imageUrl)"
+              <MediaImage
                 :src="resolveMediaUrl(item.imageUrl) ?? undefined"
                 :alt="item.title"
+                :fallback="item.title.slice(0, 1)"
+                fallback-class="supporting-fallback"
               />
-              <div v-else class="supporting-fallback">{{ item.title.slice(0, 1) }}</div>
             </div>
 
             <div class="supporting-body">
@@ -54,12 +58,12 @@
         <div v-else class="supporting-link">
           <article class="supporting-card">
             <div class="supporting-thumb">
-              <img
-                v-if="resolveMediaUrl(item.imageUrl)"
+              <MediaImage
                 :src="resolveMediaUrl(item.imageUrl) ?? undefined"
                 :alt="item.title"
+                :fallback="item.title.slice(0, 1)"
+                fallback-class="supporting-fallback"
               />
-              <div v-else class="supporting-fallback">{{ item.title.slice(0, 1) }}</div>
             </div>
 
             <div class="supporting-body">

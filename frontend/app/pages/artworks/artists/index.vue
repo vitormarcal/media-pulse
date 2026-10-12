@@ -22,7 +22,7 @@
     <p v-if="data && !data.length" class="art-muted">Nenhum artista cadastrado.</p>
     <div class="art-directory">
       <NuxtLink v-for="artist in data" :key="artist.id" :to="`/artworks/artists/${artist.id}`" class="art-panel">
-        <img
+        <MediaImage
           v-if="artist.portraitUrl"
           class="art-portrait"
           :src="resolveMediaUrl(artist.portraitUrl) || undefined"

@@ -1,6 +1,6 @@
 # Magazines API
 
-Revistas são um domínio local, separado de livros. A migration `V64__add_magazines.sql` cria publicações, números e jornadas de leitura, com unicidade da identificação de um número e no máximo uma jornada em aberto por número. Nenhum provedor externo é consultado.
+Revistas são um domínio local, separado de livros. A migration `V64__add_magazines.sql` cria publicações, números e jornadas de leitura, com unicidade da identificação de um número e no máximo uma jornada em aberto por número. Não há provedor externo de metadados; imagens podem usar o armazenamento próprio opcional no Visual Library.
 
 ## Endpoints
 
@@ -14,6 +14,7 @@ Revistas são um domínio local, separado de livros. A migration `V64__add_magaz
 | `GET /api/magazines/{id}` | — | `{ issue, reads, comments }` |
 | `POST /api/magazines` | multipart `issue` JSON, `cover?` arquivo | `201`, detalhe salvo |
 | `PUT /api/magazines/{id}` | multipart `issue` JSON, `cover?` arquivo | detalhe atualizado |
+| `POST /api/magazines/{id}/cover` | multipart `cover` arquivo | detalhe salvo; retry somente da capa |
 | `DELETE /api/magazines/{id}` | — | `204` |
 | `POST /api/magazines/{id}/reads` | JSON da jornada | `201`, detalhe atualizado |
 | `PUT /api/magazines/{id}/reads/{readId}` | JSON da jornada | detalhe atualizado |
@@ -69,7 +70,9 @@ Busca textual por nome, número, mês/ano ou ISSN; filtros por publicação e es
 
 Página começa em zero, limite entre 1 e 100, `nextPage: null` encerra o arquivo. Paginação por offset: mudanças podem deslocar resultados; recarregue após alterações. Cards deduplicam números, independentemente da quantidade de releituras. O overview retorna até seis números em andamento por atividade de leitura e as seis jornadas concluídas mais recentes, incluindo releituras. `completedReadsCount` conta jornadas concluídas; `numbersCount` conta números distintos.
 
-Capas JPEG/PNG, até 10 MB e 40 megapixels, validadas pelo conteúdo real. Armazenadas em `magazines/` sob `media-pulse.storage.covers-path`, servidas em `/covers/magazines/{nome}`. Use o volume e backup de covers existentes; não há nova variável de configuração. Falha de persistência/commit remove a nova capa; substituição ou exclusão remove a antiga após o commit. Interrupção abrupta ou falha na remoção pós-commit pode deixar arquivo órfão. Limites globais de multipart também se aplicam.
+Com `VISUAL_LIBRARY_ENABLED=true`, novas capas vão para o Visual Library. Referência relativa `/api/image-assets/{uuid}/content`, leitura via backend. Falha de upload remoto preserva dados válidos do número e retorna `coverUploadError` no detalhe (201/200); uma capa anterior permanece. A UI permite tentar apenas a capa novamente em `POST /api/magazines/{id}/cover`, sem repetir cadastro ou leituras. Remoções remotas preservam o asset compartilhado. Validações locais de imagens inválidas continuam retornando 400. Veja [configuração e operação](visual-library-images.md).
+
+No modo local (default): capas JPEG/PNG, até 10 MB e 40 megapixels, validadas pelo conteúdo real. Armazenadas em `magazines/` sob `media-pulse.storage.covers-path`, servidas em `/covers/magazines/{nome}`. Use o volume e backup de covers existentes; não há nova variável de configuração. Falha de persistência/commit remove a nova capa; substituição ou exclusão remove a antiga após o commit. Interrupção abrupta ou falha na remoção pós-commit pode deixar arquivo órfão. Limites globais de multipart também se aplicam.
 
 Campos inválidos retornam `400`, registros inexistentes `404`, identidade repetida/jornada simultânea `409` e multipart excedido `413`. Erros de domínio incluem `detail` legível. O banco valida datas, estados, progresso e a unicidade das jornadas em aberto.
 
@@ -84,3 +87,7 @@ Testes de serviço cobrem datas, progresso, regras e compensação de capa; test
 `GET /api/magazines` aceita `unread=true`; ordena por publicação e número decrescentes por padrão, em qualquer recorte. `GET /api/magazines/publications` inclui `numbersCount` e `coverUrl` do último número publicado. `overview.recent` retorna pares `{issue, read}` das seis jornadas concluídas mais recentes, inclusive releituras e números com nova leitura ativa. Cards do acervo não mostram a data de atividade; cards de últimas leituras mostram o término da jornada.
 
 Links legados `/magazines?view=publications` e `/magazines?publicationId={id}` são redirecionados pela UI para as páginas próprias, preservando busca e leitura. O detalhe do número continua em `/magazines/{id}`. A grade regular preserva a leitura cronológica em linhas, reutilizando os cards existentes. O destaque do arquivo sempre usa o último número publicado, sem ser alterado pelos filtros.
+
+## Metadados de imagem no Visual Library 0.6.0
+
+Uploads remotos incluem sugestões de tags derivadas dos metadados existentes e referência à entidade com tipo e ID real em string. A referência é enviada também em substituições e novas tentativas, evitando reaplicar tags da mesma associação. Em revistas o tipo é `magazine_issue`; obras usam `artwork` e retratos `artwork_artist`. Omitir sugestões longas ou vazias não remove dados do Media Pulse. Ver [mapeamento, limites e tratamento de recusas](visual-library-images.md). Não há backfill automático nem sincronização contínua de tags.

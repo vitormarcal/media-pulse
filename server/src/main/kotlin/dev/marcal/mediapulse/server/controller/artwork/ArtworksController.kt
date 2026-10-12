@@ -117,19 +117,13 @@ class ArtworksController(
     fun portrait(
         @PathVariable id: Long,
         @RequestPart("image") image: MultipartFile,
-    ): ArtworkArtist {
-        service.artist(id)
-        return service.portrait(id, images.upload(image))
-    }
+    ): ArtworkArtist = service.portrait(id, images.upload(image, images.artistMetadata(id)))
 
     @PostMapping("/artists/{id}/portrait/url")
     fun portraitUrl(
         @PathVariable id: Long,
         @RequestBody request: ArtworkImageUrlRequest,
-    ): ArtworkArtist {
-        service.artist(id)
-        return service.portrait(id, images.download(request.url))
-    }
+    ): ArtworkArtist = service.portrait(id, images.download(request.url, images.artistMetadata(id)))
 
     @DeleteMapping("/artists/{id}/portrait")
     fun removePortrait(
@@ -163,20 +157,14 @@ class ArtworksController(
         @PathVariable id: Long,
         @RequestPart("image") image: MultipartFile,
         @RequestParam(required = false) caption: String?,
-    ): ArtworkImage {
-        service.work(id)
-        return images.attach(id, images.upload(image), null, caption)
-    }
+    ): ArtworkImage = images.attach(id, images.upload(image, images.artworkMetadata(id)), null, caption)
 
     @PostMapping("/{id}/images/url")
     @ResponseStatus(HttpStatus.CREATED)
     fun imageUrl(
         @PathVariable id: Long,
         @RequestBody request: ArtworkImageUrlRequest,
-    ): ArtworkImage {
-        service.work(id)
-        return images.attach(id, images.download(request.url), request.url.trim(), request.caption)
-    }
+    ): ArtworkImage = images.attach(id, images.download(request.url, images.artworkMetadata(id)), request.url.trim(), request.caption)
 
     @PutMapping("/{id}/images/{imageId}/primary")
     @ResponseStatus(HttpStatus.NO_CONTENT)

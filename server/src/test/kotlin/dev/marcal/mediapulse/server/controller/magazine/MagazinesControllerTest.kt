@@ -31,6 +31,18 @@ class MagazinesControllerTest {
         )
 
     @Test
+    fun `cover retry accepts only the cover and exposes partial success`() {
+        every { service.updateCover(7, any()) } returns result.copy(coverUploadError = "Tente novamente.")
+        mvc
+            .perform(multipart("/api/magazines/7/cover").file(MockMultipartFile("cover", byteArrayOf(1))))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.issue.id").value(7))
+            .andExpect(jsonPath("$.coverUploadError").value("Tente novamente."))
+        mvc.perform(multipart("/api/magazines/7/cover")).andExpect(status().isBadRequest)
+        verify(exactly = 0) { service.create(any(), any()) }
+    }
+
+    @Test
     fun `publication detail uses its dedicated route and unknown sort is rejected`() {
         every { service.publicationDetails(1) } returns
             MagazinePublicationDetailsDto(result.issue.publication.copy(numbersCount = 1), result.issue)

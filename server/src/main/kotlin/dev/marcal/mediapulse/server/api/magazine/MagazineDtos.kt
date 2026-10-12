@@ -45,6 +45,7 @@ data class MagazineDetailsDto(
     val issue: MagazineIssueDto,
     val reads: List<MagazineReadDto>,
     val comments: List<MediaCommentDto>,
+    val coverUploadError: String? = null,
 )
 
 data class MagazineLibraryDto(

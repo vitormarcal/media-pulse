@@ -342,11 +342,18 @@
   color: inherit;
   font-size: 1.1rem;
 }
-.art-creator-link img {
+.art-creator-link img,
+.art-creator-link .art-portrait-fallback {
   width: 48px;
   height: 48px;
   border-radius: 50%;
   object-fit: cover;
+}
+.art-portrait-fallback {
+  display: grid;
+  place-items: center;
+  color: var(--base-color-text-secondary);
+  background: var(--base-color-surface-soft);
 }
 .art-viewer {
   margin: 32px 0;

@@ -1,11 +1,15 @@
 package dev.marcal.mediapulse.server.service.magazine
 
 import dev.marcal.mediapulse.server.api.magazine.MagazineDetailsDto
-import dev.marcal.mediapulse.server.api.magazine.MagazineIssueRequest
 import dev.marcal.mediapulse.server.api.magazine.MagazineReadRequest
 import dev.marcal.mediapulse.server.model.magazine.MagazineIssue
+import dev.marcal.mediapulse.server.model.magazine.MagazinePublication
 import dev.marcal.mediapulse.server.model.magazine.MagazineRead
 import dev.marcal.mediapulse.server.model.magazine.MagazineReadStatus
+import dev.marcal.mediapulse.server.repository.MediaCommentQueryRepository
+import dev.marcal.mediapulse.server.repository.crud.MagazineIssueRepository
+import dev.marcal.mediapulse.server.repository.crud.MagazinePublicationRepository
+import dev.marcal.mediapulse.server.repository.crud.MagazineReadRepository
 import dev.marcal.mediapulse.server.util.TxUtil
 import io.mockk.every
 import io.mockk.mockk
@@ -14,13 +18,18 @@ import org.junit.jupiter.api.Test
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
+import java.util.Optional
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class MagazineServiceTest {
     private val tx = mockk<TxUtil>()
     private val covers = mockk<MagazineCoverService>(relaxed = true)
-    private val service = MagazineService(mockk(), mockk(), mockk(), mockk(), mockk(), mockk(), covers, tx)
+    private val issues = mockk<MagazineIssueRepository>()
+    private val publications = mockk<MagazinePublicationRepository>()
+    private val reads = mockk<MagazineReadRepository>()
+    private val comments = mockk<MediaCommentQueryRepository>()
+    private val service = MagazineService(publications, issues, reads, mockk(), comments, mockk(), covers, tx)
     private val issue = MagazineIssue(id = 7, publicationId = 1, number = "100", identityKey = "n:100", totalPages = 80)
     private val start = LocalDate.of(2026, 9, 1)
     private val end = LocalDate.of(2026, 9, 12)
@@ -147,9 +156,18 @@ class MagazineServiceTest {
     @Test
     fun `failed commit compensates uploaded cover`() {
         val cover = MockMultipartFile("cover", byteArrayOf(1))
-        every { covers.save(cover) } returns "/covers/magazines/test.jpg"
-        every { tx.inTx<MagazineDetailsDto>(any()) } throws IllegalStateException("commit failed")
-        assertFailsWith<IllegalStateException> { service.create(MagazineIssueRequest(), cover) }
+        every { covers.save(cover, any()) } returns "/covers/magazines/test.jpg"
+        every { issues.lockById(7) } returns issue
+        every { issues.findById(7) } returns Optional.of(issue)
+        every { issues.saveAndFlush(any()) } answers { firstArg() }
+        every { publications.findById(1) } returns Optional.of(MagazinePublication(id = 1, name = "Revista", normalizedName = "revista"))
+        every { reads.findByIssueIdOrderByIdDesc(7) } returns emptyList()
+        every { comments.findByEntity(any(), any()) } returns emptyList()
+        every { tx.inTx<MagazineDetailsDto>(any()) } answers {
+            firstArg<() -> MagazineDetailsDto>().invoke()
+            throw IllegalStateException("commit failed")
+        }
+        assertFailsWith<IllegalStateException> { service.updateCover(7, cover) }
         verify { covers.delete("/covers/magazines/test.jpg") }
     }
 }

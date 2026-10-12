@@ -5,6 +5,7 @@ import dev.marcal.mediapulse.server.api.artwork.ArtworkLibraryDto
 import dev.marcal.mediapulse.server.model.artwork.Artwork
 import dev.marcal.mediapulse.server.model.artwork.ArtworkArtist
 import dev.marcal.mediapulse.server.model.artwork.ArtworkImage
+import dev.marcal.mediapulse.server.model.visuallibrary.VisualLibraryUploadMetadata
 import dev.marcal.mediapulse.server.service.artwork.ArtworkImageService
 import dev.marcal.mediapulse.server.service.artwork.ArtworkService
 import io.mockk.every
@@ -85,8 +86,10 @@ class ArtworksControllerTest {
     @Test
     fun `file and URL image endpoints attach independently from work creation`() {
         every { service.work(1) } returns Artwork(id = 1, title = "Obra")
-        every { images.upload(any()) } returns "/covers/artworks/local.png"
-        every { images.download("https://example.com/image.png") } returns "/covers/artworks/download.png"
+        val metadata = VisualLibraryUploadMetadata.forEntity("artwork", 1, "Obra")
+        every { images.artworkMetadata(1) } returns metadata
+        every { images.upload(any(), metadata) } returns "/covers/artworks/local.png"
+        every { images.download("https://example.com/image.png", metadata) } returns "/covers/artworks/download.png"
         every { images.attach(any(), any(), any(), any()) } answers { ArtworkImage(id = 1, artworkId = firstArg(), url = secondArg()) }
         mvc
             .perform(multipart("/api/artworks/1/images").file(MockMultipartFile("image", "image.png", "image/png", byteArrayOf(1))))

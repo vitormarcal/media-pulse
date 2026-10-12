@@ -2,8 +2,13 @@
   <component :is="wrapperTag" :to="item.href || undefined" class="strip-link">
     <article class="strip-card" :class="`variant-${variant}`">
       <div class="thumb">
-        <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy" />
-        <div v-else class="thumb-fallback">{{ item.title.slice(0, 1) }}</div>
+        <MediaImage
+          :src="resolvedImageUrl"
+          :alt="item.title"
+          loading="lazy"
+          :fallback="item.title.slice(0, 1)"
+          fallback-class="thumb-fallback"
+        />
       </div>
 
       <div class="content">

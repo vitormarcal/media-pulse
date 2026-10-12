@@ -11,7 +11,13 @@
       <header class="art-work-heading">
         <h1>{{ data.artwork.title }}</h1>
         <NuxtLink v-if="data.artist" :to="`/artworks/artists/${data.artist.id}`" class="art-creator-link">
-          <img v-if="data.artist.portraitUrl" :src="resolveMediaUrl(data.artist.portraitUrl) || undefined" alt="" />
+          <MediaImage
+            v-if="data.artist.portraitUrl"
+            :src="resolveMediaUrl(data.artist.portraitUrl) || undefined"
+            alt=""
+            :fallback="data.artist.name.slice(0, 1)"
+            fallback-class="art-portrait-fallback"
+          />
           <span>{{ data.artist.name }}</span>
         </NuxtLink>
         <p v-if="data.artist?.countryOfOrigin || data.artwork.year != null" class="art-muted">

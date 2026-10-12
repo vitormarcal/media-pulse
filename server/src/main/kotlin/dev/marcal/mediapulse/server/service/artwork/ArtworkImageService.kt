@@ -1,7 +1,9 @@
 package dev.marcal.mediapulse.server.service.artwork
 
+import dev.marcal.mediapulse.server.integration.visuallibrary.VisualLibraryClient
 import dev.marcal.mediapulse.server.model.artwork.ArtworkImage
 import dev.marcal.mediapulse.server.model.image.ImageContent
+import dev.marcal.mediapulse.server.model.visuallibrary.VisualLibraryUploadMetadata
 import dev.marcal.mediapulse.server.repository.crud.ArtworkImageRepository
 import dev.marcal.mediapulse.server.service.image.ImageStorageService
 import org.springframework.http.HttpStatus
@@ -21,17 +23,44 @@ class ArtworkImageService(
     private val works: ArtworkService,
     private val images: ArtworkImageRepository,
     private val storage: ImageStorageService,
+    private val visualLibrary: VisualLibraryClient,
 ) {
     companion object {
         const val MAX_BYTES = 10 * 1024 * 1024
     }
 
-    fun upload(photo: MultipartFile): String {
-        if (photo.isEmpty || photo.size > MAX_BYTES) bad("Escolha uma imagem de até 10 MB.")
-        return save(photo.bytes)
+    fun artworkMetadata(id: Long): VisualLibraryUploadMetadata {
+        val work = works.work(id)
+        val artist = work.artistId?.let(works::artist)
+        return VisualLibraryUploadMetadata.forEntity(
+            "artwork",
+            work.id,
+            "arte visual",
+            work.title,
+            artist?.name,
+            work.type,
+            work.movement,
+            work.technique,
+        )
     }
 
-    fun download(value: String): String {
+    fun artistMetadata(id: Long): VisualLibraryUploadMetadata {
+        val artist = works.artist(id)
+        return VisualLibraryUploadMetadata.forEntity("artwork_artist", artist.id, "artista", artist.name, artist.countryOfOrigin)
+    }
+
+    fun upload(
+        photo: MultipartFile,
+        metadata: VisualLibraryUploadMetadata,
+    ): String {
+        if (photo.isEmpty || photo.size > MAX_BYTES) bad("Escolha uma imagem de até 10 MB.")
+        return save(photo.bytes, metadata)
+    }
+
+    fun download(
+        value: String,
+        metadata: VisualLibraryUploadMetadata,
+    ): String {
         val uri =
             try {
                 URI(value.trim())
@@ -71,7 +100,7 @@ class ArtworkImageService(
             if (connection.responseCode !in 200..299) bad("Use o link direto da imagem, sem redirecionamentos.")
             if (connection.contentLengthLong > MAX_BYTES) bad("Escolha uma imagem de até 10 MB.")
             val bytes = connection.inputStream.use { it.readNBytes(MAX_BYTES + 1) }
-            save(bytes)
+            save(bytes, metadata)
         } catch (
             error: ResponseStatusException,
         ) {
@@ -83,7 +112,10 @@ class ArtworkImageService(
         }
     }
 
-    private fun save(bytes: ByteArray): String {
+    private fun save(
+        bytes: ByteArray,
+        metadata: VisualLibraryUploadMetadata,
+    ): String {
         if (bytes.isEmpty() || bytes.size > MAX_BYTES) bad("Escolha uma imagem de até 10 MB.")
         val format =
             try {
@@ -105,19 +137,15 @@ class ArtworkImageService(
             } catch (_: Exception) {
                 bad("Escolha uma imagem JPEG ou PNG válida, com até 40 megapixels.")
             }
-        return storage.saveImageForArtwork(
-            ImageContent(
-                bytes,
-                if (format ==
-                    "jpeg"
-                ) {
-                    MediaType.IMAGE_JPEG
-                } else {
-                    MediaType.IMAGE_PNG
-                },
-            ),
-            UUID.randomUUID().toString(),
-        )
+        val image = ImageContent(bytes, if (format == "jpeg") MediaType.IMAGE_JPEG else MediaType.IMAGE_PNG)
+        return if (visualLibrary.enabled) {
+            visualLibrary.upload(
+                image,
+                metadata,
+            )
+        } else {
+            storage.saveImageForArtwork(image, UUID.randomUUID().toString())
+        }
     }
 
     @Transactional

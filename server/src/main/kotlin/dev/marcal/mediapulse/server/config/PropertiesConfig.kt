@@ -15,5 +15,6 @@ import org.springframework.context.annotation.Configuration
     IgdbProperties::class,
     SteamGridDbProperties::class,
     FrontendProperties::class,
+    VisualLibraryProperties::class,
 )
 class PropertiesConfig

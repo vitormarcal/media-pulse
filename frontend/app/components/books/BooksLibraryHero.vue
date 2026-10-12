@@ -24,8 +24,12 @@
     >
       <article class="spotlight-card">
         <div class="spotlight-poster">
-          <img v-if="spotlightImageUrl" :src="spotlightImageUrl" :alt="spotlight?.title || title" />
-          <div v-else class="spotlight-fallback">{{ (spotlight?.title || 'L').slice(0, 1) }}</div>
+          <MediaImage
+            :src="spotlightImageUrl"
+            :alt="spotlight?.title || title"
+            :fallback="(spotlight?.title || 'L').slice(0, 1)"
+            fallback-class="spotlight-fallback"
+          />
         </div>
 
         <div class="spotlight-body">

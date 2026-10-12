@@ -21,6 +21,8 @@ If useful data can be read from an external source and the product depends on it
 
 External providers enrich the archive. They must not become the archive.
 
+A centralização opcional de imagens no Visual Library é uma extensão do armazenamento próprio do arquivo, aprovada para revistas e artes visuais. Metadados e referências permanecem no Media Pulse; o banco e os arquivos do Visual Library integram o backup canônico. Indisponibilidade de imagens não deve impedir acesso ao restante do conteúdo. Ver [escopo aprovado](docs/features/visual-library-images.md).
+
 ## 2. Personal product, not SaaS
 
 Media Pulse is not intended to become a social network, a multi-tenant platform, or a commercial SaaS product in the near or medium term.

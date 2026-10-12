@@ -115,6 +115,9 @@ media-pulse:
     enabled: ${STEAMGRIDDB_ENABLED:true}
     api-base-url: ${STEAMGRIDDB_API_BASE_URL:https://www.steamgriddb.com/api/v2}
     api-key: ${STEAMGRIDDB_API_KEY:}
+  visual-library:
+    enabled: ${VISUAL_LIBRARY_ENABLED:false}
+    base-url: ${VISUAL_LIBRARY_BASE_URL:}
   storage:
     covers-path: "/data/covers"
     imports-path: "/data/imports"

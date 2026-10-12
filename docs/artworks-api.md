@@ -50,7 +50,9 @@ Artista tem `name`, `biography`, `countryOfOrigin`, `bornAt`, `diedAt`; datas op
 
 ## Imagens e operação
 
-Usar o armazenamento de capas existente, em `/covers/artworks/{uuid}.{jpg|png}`. Não há provedor novo nem novas variáveis obrigatórias. Arquivos e URLs aceitam JPEG/PNG reais, até 10 MB e 40 megapixels, preservando os bytes e proporções. Downloads exigem URL pública direta HTTP/HTTPS, sem credenciais ou redirecionamentos; tempo de conexão/leitura limitado a 10 segundos. A URL de origem é preservada nas imagens baixadas.
+Com `VISUAL_LIBRARY_ENABLED=true`, imagens de obras e retratos enviados por arquivo ou baixados de URL vão para o Visual Library, mantendo a URL de origem no Media Pulse. Referência `/api/image-assets/{uuid}/content`, leitura pelo backend; falha de envio retorna 503 e preserva registros e imagens anteriores. Remoções preservam o asset central. As validações abaixo continuam aplicáveis. Veja [configuração e operação](visual-library-images.md).
+
+No modo local (default), usar o armazenamento de capas existente, em `/covers/artworks/{uuid}.{jpg|png}`. Não há provedor novo nem novas variáveis obrigatórias. Arquivos e URLs aceitam JPEG/PNG reais, até 10 MB e 40 megapixels, preservando os bytes e proporções. Downloads exigem URL pública direta HTTP/HTTPS, sem credenciais ou redirecionamentos; tempo de conexão/leitura limitado a 10 segundos. A URL de origem é preservada nas imagens baixadas.
 
 Cada adição de imagem é independente do cadastro da obra. Uma falha preserva obra e imagens já salvas. A primeira imagem é principal; a seleção posterior pode ser alterada. Sem imagens, a UI usa fallback. Exclusões removem associações do banco; arquivos de imagem permanecem no storage, como arquivos não referenciados, sem rotina automática de limpeza nesta entrega.
 
@@ -69,3 +71,7 @@ A migration `V66__rename_artwork_artist_country.sql` renomeia `artwork_artists.n
 Tipo usa opções Pintura, Escultura, Fotografia artística, Desenho, Gravura e Outra. Outra permite texto próprio; tipos personalizados existentes continuam editáveis. Movimento e técnica têm exemplos nos campos. No cadastro, descrição, biografia e dados adicionais do artista são apresentados sob demanda.
 
 Nos detalhes, a galeria ampla reúne todas as imagens com navegação, miniaturas e ampliação na página. A seleção começa pela principal e navegar não altera essa preferência salva. O visualizador ocupa toda a tela com imagem ajustada à maior área disponível, sem recorte, e controles compactos sobrepostos nas bordas. Aceita Escape e setas e devolve o foco ao controle de origem. Descrição e biografia curtas aparecem completas; acima de 700 caracteres, um trecho inicial pode ser expandido e recolhido. Artista tem retrato opcional ao lado de nome, país, datas e biografia, com suas obras locais agrupadas por ano de criação e obras sem ano ao final; filtros ficam sob demanda. Gerenciar imagens abre a seleção de principal, remoção e adição por arquivo/URL; a visualização das imagens fica na galeria superior. Gerenciar listas abre os controles de vínculos, mantendo as listas atuais visíveis. Excluir obra/artista aparece ao abrir a edição. O cadastro permanece manual.
+
+## Metadados de imagem no Visual Library 0.6.0
+
+Uploads remotos incluem sugestões de tags derivadas dos metadados existentes e referência à entidade com tipo e ID real em string. A referência é enviada também em substituições e novas tentativas, evitando reaplicar tags da mesma associação. Em revistas o tipo é `magazine_issue`; obras usam `artwork` e retratos `artwork_artist`. Omitir sugestões longas ou vazias não remove dados do Media Pulse. Ver [mapeamento, limites e tratamento de recusas](visual-library-images.md). Não há backfill automático nem sincronização contínua de tags.

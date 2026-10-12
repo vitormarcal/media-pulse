@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.artwork.ArtworkArtistRequest
 import dev.marcal.mediapulse.server.api.artwork.ArtworkExperienceRequest
 import dev.marcal.mediapulse.server.api.artwork.ArtworkListRequest
 import dev.marcal.mediapulse.server.api.artwork.ArtworkRequest
+import dev.marcal.mediapulse.server.integration.visuallibrary.VisualLibraryClient
 import dev.marcal.mediapulse.server.model.artwork.ArtworkExperienceType
 import dev.marcal.mediapulse.server.repository.crud.ArtworkArtistRepository
 import dev.marcal.mediapulse.server.repository.crud.ArtworkExperienceRepository
@@ -86,7 +87,7 @@ class ArtworkIntegrationTest {
                 MediaRatingQueryRepository(ratingRepo),
                 ratingRepo,
             )
-        gallery = ArtworkImageService(service, imageRepo, mockk<ImageStorageService>())
+        gallery = ArtworkImageService(service, imageRepo, mockk<ImageStorageService>(), mockk<VisualLibraryClient>(relaxed = true))
         tx = TxUtil(JpaTransactionManager(emf))
         jdbc = JdbcTemplate(source)
     }

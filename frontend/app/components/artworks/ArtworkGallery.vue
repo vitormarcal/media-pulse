@@ -3,7 +3,7 @@
     <template v-if="current">
       <figure class="art-viewer-figure">
         <button ref="enlargeButton" type="button" class="art-viewer-image" aria-label="Ampliar imagem" @click="enlarge">
-          <img :src="resolveMediaUrl(current.url) || undefined" :alt="current.caption || title" />
+          <MediaImage :src="resolveMediaUrl(current.url) || undefined" :alt="current.caption || title" />
         </button>
         <figcaption v-if="current.caption" class="art-muted">{{ current.caption }}</figcaption>
       </figure>
@@ -43,7 +43,7 @@
           :aria-pressed="item.id === current.id"
           @click="selectedId = item.id"
         >
-          <img :src="resolveMediaUrl(item.url) || undefined" alt="" loading="lazy" />
+          <MediaImage :src="resolveMediaUrl(item.url) || undefined" alt="" loading="lazy" />
         </button>
       </div>
       <dialog
@@ -57,7 +57,7 @@
         @keydown.tab="trapFocus"
       >
         <div class="art-lightbox-content">
-          <img :src="resolveMediaUrl(current.url) || undefined" :alt="current.caption || title" />
+          <MediaImage :src="resolveMediaUrl(current.url) || undefined" :alt="current.caption || title" />
         </div>
         <span class="art-lightbox-count" role="status">{{ position + 1 }} / {{ images.length }}</span>
         <button type="button" class="art-button art-lightbox-close" autofocus @click="dialog?.close()">Fechar</button>

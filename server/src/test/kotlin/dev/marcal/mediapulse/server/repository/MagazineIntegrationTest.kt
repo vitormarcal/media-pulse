@@ -5,6 +5,7 @@ import dev.marcal.mediapulse.server.api.comments.UpdateMediaCommentRequest
 import dev.marcal.mediapulse.server.api.magazine.MagazineIssueRequest
 import dev.marcal.mediapulse.server.api.magazine.MagazinePublicationRequest
 import dev.marcal.mediapulse.server.api.magazine.MagazineReadRequest
+import dev.marcal.mediapulse.server.integration.visuallibrary.VisualLibraryUploadException
 import dev.marcal.mediapulse.server.model.magazine.MagazineReadStatus
 import dev.marcal.mediapulse.server.repository.crud.MagazineIssueRepository
 import dev.marcal.mediapulse.server.repository.crud.MagazinePublicationRepository
@@ -15,7 +16,10 @@ import dev.marcal.mediapulse.server.service.comment.MediaCommentService
 import dev.marcal.mediapulse.server.service.magazine.MagazineCoverService
 import dev.marcal.mediapulse.server.service.magazine.MagazineService
 import dev.marcal.mediapulse.server.util.TxUtil
+import io.mockk.clearMocks
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -27,6 +31,7 @@ import org.springframework.data.jpa.repository.support.JpaRepositoryFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.jdbc.datasource.DriverManagerDataSource
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.orm.jpa.JpaTransactionManager
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean
 import org.springframework.orm.jpa.SharedEntityManagerCreator
@@ -53,6 +58,7 @@ class MagazineIntegrationTest {
     private lateinit var comments: MediaCommentService
     private lateinit var tx: TxUtil
     private lateinit var jdbc: JdbcTemplate
+    private val covers = mockk<MagazineCoverService>(relaxed = true)
     private val day = LocalDate.of(2026, 10, 1)
 
     @BeforeAll
@@ -87,7 +93,7 @@ class MagazineIntegrationTest {
                 MagazineQueryRepository(NamedParameterJdbcTemplate(source)),
                 MediaCommentQueryRepository(commentRepo),
                 commentRepo,
-                mockk<MagazineCoverService>(relaxed = true),
+                covers,
                 tx,
             )
         comments = MediaCommentService(commentRepo, mockk(), mockk(), mockk(), mockk(), mockk(), issues)
@@ -95,12 +101,57 @@ class MagazineIntegrationTest {
 
     @BeforeEach
     fun clear() {
+        clearMocks(covers)
         jdbc.execute("TRUNCATE magazine_publications, magazine_issues, magazine_reads, media_comments RESTART IDENTITY CASCADE")
     }
 
     @AfterAll
     fun close() {
         factory.destroy()
+    }
+
+    @Test
+    fun `failed remote upload commits number and read and retry changes only its cover`() {
+        val cover = MockMultipartFile("cover", byteArrayOf(1))
+        every { covers.save(cover, any()) } throws VisualLibraryUploadException(IllegalStateException("offline"))
+        val request =
+            MagazineIssueRequest(
+                publication = MagazinePublicationRequest("Arquivo"),
+                number = "1",
+                read = MagazineReadRequest(MagazineReadStatus.WANT_TO_READ),
+            )
+        val partial = service.create(request, cover)
+        assertTrue(partial.coverUploadError != null)
+        val id = partial.issue.id
+        verify {
+            covers.save(
+                cover,
+                match {
+                    it.sourceReference.entityType == "magazine_issue" &&
+                        it.sourceReference.entityId == id.toString() &&
+                        it.tags == listOf("revista", "Arquivo")
+                },
+            )
+        }
+        assertEquals(null, service.details(id).issue.coverUrl)
+        assertEquals(1, service.details(id).reads.size)
+        assertEquals(1L, service.overview().numbersCount)
+        val remoteUrl = "/api/image-assets/00000000-0000-0000-0000-000000000001/content"
+        every { covers.save(cover, any()) } returns remoteUrl
+        val readsBefore = service.details(id).reads
+        val retried = service.updateCover(id, cover)
+        assertEquals(null, retried.coverUploadError)
+        assertEquals(remoteUrl, service.details(id).issue.coverUrl)
+        assertEquals(readsBefore, retried.reads)
+        assertEquals(1L, service.overview().numbersCount)
+        every { covers.save(cover, any()) } throws VisualLibraryUploadException(IllegalStateException("offline"))
+        val update = service.updateIssue(id, request.copy(number = "2", removeCover = true), cover)
+        assertTrue(update.coverUploadError != null)
+        assertEquals("2", service.details(id).issue.number)
+        assertEquals(remoteUrl, service.details(id).issue.coverUrl)
+        val failedRetry = service.updateCover(id, cover)
+        assertTrue(failedRetry.coverUploadError != null)
+        assertEquals(remoteUrl, service.details(id).issue.coverUrl)
     }
 
     @Test

@@ -44,6 +44,8 @@ Para iniciar o backend, configure o acesso ao PostgreSQL:
 
 Integrações, pipeline, storage, CORS e limites HTTP possuem defaults e opções documentados em `server/src/main/resources/application.yml`. Sobrescreva somente o necessário por variáveis de ambiente e nunca versione credenciais reais.
 
+Imagens novas de revistas e artes visuais podem usar o Visual Library: `VISUAL_LIBRARY_ENABLED=true` e `VISUAL_LIBRARY_BASE_URL=http://visual-library:3000`. A integração usa o contrato 0.6.0 e envia sugestões de tags e referência da entidade. A flag vem desligada; referências locais existentes permanecem. Consulte [configuração, falhas e backup](docs/visual-library-images.md).
+
 ## Documentação
 
 - APIs de domínio: `docs/books-api.md`, `docs/music-api.md`, `docs/movies-api.md`, `docs/shows-api.md`, `docs/games-api.md`, `docs/people-api.md`, `docs/magazines-api.md`, `docs/artworks-api.md` e `docs/workouts-api.md`

@@ -72,3 +72,7 @@ Seguir `DESIGN.md`: capas em destaque, grid responsivo, superfícies e neutros q
 `GET /api/magazines` aceita `unread=true`; ordena por mês/ano e número decrescentes em todos os recortes, sem data ao final. `GET /api/magazines/publications` inclui `numbersCount` e a capa representativa `coverUrl`. `overview.recent` retorna pares `{issue, read}` das seis jornadas concluídas mais recentes, inclusive releituras e números com nova leitura ativa. Cards do acervo não mostram a data de atividade; cards de últimas leituras mostram o término da jornada.
 
 O arquivo da publicação mantém o contexto ao buscar, limpar filtros e adicionar números. O hero identifica “Último número” e escolhe o mais recente publicado, independentemente do recorte atual. A grade regular conserva a ordem cronológica por linhas. O acervo geral identifica sua ordem como Publicação mais recente; outras opções de ordenação ficam para uma próxima evolução.
+
+## Armazenamento opcional de imagens
+
+A centralização de novas imagens no Visual Library estende o armazenamento local descrito neste MVP. Consulte o [escopo aprovado](visual-library-images.md) e a [operação](../visual-library-images.md). Os dados do domínio permanecem no Media Pulse; imagens locais existentes continuam disponíveis.

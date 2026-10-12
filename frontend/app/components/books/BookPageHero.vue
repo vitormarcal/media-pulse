@@ -3,8 +3,12 @@
     <NuxtLink class="back-link" :to="backLink">{{ backLabel }}</NuxtLink>
     <div class="hero-grid">
       <div class="cover-frame">
-        <img v-if="resolvedCoverUrl" :src="resolvedCoverUrl" :alt="title" />
-        <div v-else class="cover-fallback">{{ title.slice(0, 1) }}</div>
+        <MediaImage
+          :src="resolvedCoverUrl"
+          :alt="title"
+          :fallback="title.slice(0, 1)"
+          fallback-class="cover-fallback"
+        />
       </div>
       <div class="copy">
         <h1>{{ title }}</h1>

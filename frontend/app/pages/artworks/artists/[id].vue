@@ -9,7 +9,7 @@
     <template v-if="data">
       <ArtworkNav />
       <header class="art-artist-heading" :class="{ 'has-portrait': Boolean(data.portraitUrl) }">
-        <img
+        <MediaImage
           v-if="data.portraitUrl"
           class="art-artist-portrait"
           :src="resolveMediaUrl(data.portraitUrl) || undefined"

@@ -32,6 +32,7 @@ export interface MagazineIssue {
   latestRead: MagazineRead | null
 }
 export interface MagazineDetails {
+  coverUploadError?: string | null
   issue: MagazineIssue
   reads: MagazineRead[]
   comments: MediaCommentDto[]

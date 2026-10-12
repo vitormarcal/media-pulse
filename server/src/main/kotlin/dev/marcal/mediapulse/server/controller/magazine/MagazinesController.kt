@@ -86,6 +86,12 @@ class MagazinesController(
         @RequestPart("cover", required = false) cover: MultipartFile?,
     ) = service.updateIssue(id, request, cover)
 
+    @PostMapping("/{id}/cover", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun updateCover(
+        @PathVariable id: Long,
+        @RequestPart("cover") cover: MultipartFile,
+    ) = service.updateCover(id, cover)
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(
