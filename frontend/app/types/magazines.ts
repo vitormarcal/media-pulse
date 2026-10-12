@@ -6,6 +6,7 @@ export interface MagazinePublication {
   name: string
   issn: string | null
   numbersCount: number
+  coverUrl: string | null
 }
 export interface MagazineReadRequest {
   status: MagazineReadStatus
@@ -44,4 +45,9 @@ export interface MagazineOverview {
   recent: { issue: MagazineIssue; read: MagazineRead }[]
   numbersCount: number
   completedReadsCount: number
+}
+
+export interface MagazinePublicationDetails {
+  publication: MagazinePublication
+  latestIssue: MagazineIssue | null
 }

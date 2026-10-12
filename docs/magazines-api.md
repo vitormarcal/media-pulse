@@ -6,9 +6,10 @@ Revistas são um domínio local, separado de livros. A migration `V64__add_magaz
 
 | Método e path | Entrada | Resposta |
 | --- | --- | --- |
-| `GET /api/magazines` | `q?`, `publicationId?`, `status?`, `page=0`, `limit=24` | `{ items, nextPage }` |
+| `GET /api/magazines` | `q?`, `publicationId?`, `status?`, `unread=false`, `order=PUBLICATION_DATE`, `page=0`, `limit=24` | `{ items, nextPage }` |
 | `GET /api/magazines/overview` | — | `{ inProgress, recent, numbersCount, completedReadsCount }` |
 | `GET /api/magazines/publications` | — | publicações ordenadas por nome |
+| `GET /api/magazines/publications/{id}` | — | `{ publication, latestIssue }`; `404` quando inexistente |
 | `PUT /api/magazines/publications/{id}` | JSON `{ name, issn? }` | publicação atualizada |
 | `GET /api/magazines/{id}` | — | `{ issue, reads, comments }` |
 | `POST /api/magazines` | multipart `issue` JSON, `cover?` arquivo | `201`, detalhe salvo |
@@ -64,9 +65,9 @@ Estados: `WANT_TO_READ` (Quero ler), `CURRENTLY_READING` (Lendo), `READ` (Lida),
 
 ## Biblioteca e operação
 
-Busca textual por nome, número, mês/ano ou ISSN; filtros por publicação e estado da jornada atual. Ordem `activityDate DESC, id DESC`, calculada pelo dia mais recente de término/início entre as jornadas (para Quero ler, usa o dia UTC de cadastro). Página começa em zero, limite entre 1 e 100, `nextPage: null` encerra o histórico. Paginação por offset: mudanças podem deslocar resultados; recarregue após alterações. Cards deduplicam números, independentemente da quantidade de releituras.
+Busca textual por nome, número, mês/ano ou ISSN; filtros por publicação e estado da jornada atual. Ordem padrão `PUBLICATION_DATE`: mês de publicação decrescente (sem data ao final), número numérico decrescente, numeração textual e ID para desempate. Ex.: 71 de fevereiro, 70 de janeiro, 69 de janeiro. Numerações textuais permanecem válidas e usam ordem textual decrescente após as numéricas. `READING_ACTIVITY` usa a atividade mais recente e é usada no dashboard. Ler ou reler não muda a ordem cronológica do acervo.
 
-O overview retorna até seis números em andamento e seis com última jornada concluída. `completedReadsCount` conta jornadas concluídas, incluindo releituras; `numbersCount` conta números distintos.
+Página começa em zero, limite entre 1 e 100, `nextPage: null` encerra o arquivo. Paginação por offset: mudanças podem deslocar resultados; recarregue após alterações. Cards deduplicam números, independentemente da quantidade de releituras. O overview retorna até seis números em andamento por atividade de leitura e as seis jornadas concluídas mais recentes, incluindo releituras. `completedReadsCount` conta jornadas concluídas; `numbersCount` conta números distintos.
 
 Capas JPEG/PNG, até 10 MB e 40 megapixels, validadas pelo conteúdo real. Armazenadas em `magazines/` sob `media-pulse.storage.covers-path`, servidas em `/covers/magazines/{nome}`. Use o volume e backup de covers existentes; não há nova variável de configuração. Falha de persistência/commit remove a nova capa; substituição ou exclusão remove a antiga após o commit. Interrupção abrupta ou falha na remoção pós-commit pode deixar arquivo órfão. Limites globais de multipart também se aplicam.
 
@@ -78,6 +79,8 @@ Testes de serviço cobrem datas, progresso, regras e compensação de capa; test
 
 ### Navegação do acervo
 
-“Adicionar número” cadastra uma edição, reutilizando uma publicação ou criando-a quando necessário. O filtro “Leitura” mantém os estados de jornada e acrescenta “Não lida” (nenhuma jornada concluída). Publicações mostra contagens e abre o acervo daquela publicação, agrupado pelo ano de edição; números sem data ficam ao final. A paginação é mantida.
+“Adicionar número” cadastra uma edição, reutilizando uma publicação ou criando-a quando necessário. O filtro “Leitura” mantém os estados de jornada e acrescenta “Não lida” (nenhuma jornada concluída). Publicações mostra contagens e capas do último número publicado. `/magazines/publications` é o catálogo; `/magazines/publications/{id}` é o arquivo próprio, agrupado pelo ano de edição, com busca local e filtro de leitura. Limpar filtros mantém a publicação. Números sem data ficam ao final. A paginação é mantida.
 
-`GET /api/magazines` aceita `unread=true`; ao filtrar por publicação, ordena por mês de edição decrescente, sem data ao final. `GET /api/magazines/publications` inclui `numbersCount`. `overview.recent` retorna pares `{issue, read}` das seis jornadas concluídas mais recentes, inclusive releituras e números com nova leitura ativa. Cards do acervo não mostram a data de atividade; cards de últimas leituras mostram o término da jornada.
+`GET /api/magazines` aceita `unread=true`; ordena por publicação e número decrescentes por padrão, em qualquer recorte. `GET /api/magazines/publications` inclui `numbersCount` e `coverUrl` do último número publicado. `overview.recent` retorna pares `{issue, read}` das seis jornadas concluídas mais recentes, inclusive releituras e números com nova leitura ativa. Cards do acervo não mostram a data de atividade; cards de últimas leituras mostram o término da jornada.
+
+Links legados `/magazines?view=publications` e `/magazines?publicationId={id}` são redirecionados pela UI para as páginas próprias, preservando busca e leitura. O detalhe do número continua em `/magazines/{id}`. A grade regular preserva a leitura cronológica em linhas, reutilizando os cards existentes. O destaque do arquivo sempre usa o último número publicado, sem ser alterado pelos filtros.

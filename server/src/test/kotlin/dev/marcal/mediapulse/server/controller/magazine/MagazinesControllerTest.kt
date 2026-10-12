@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.controller.magazine
 
 import dev.marcal.mediapulse.server.api.magazine.MagazineDetailsDto
 import dev.marcal.mediapulse.server.api.magazine.MagazineIssueDto
+import dev.marcal.mediapulse.server.api.magazine.MagazinePublicationDetailsDto
 import dev.marcal.mediapulse.server.api.magazine.MagazinePublicationDto
 import dev.marcal.mediapulse.server.service.magazine.MagazineService
 import io.mockk.every
@@ -10,6 +11,7 @@ import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
 import org.springframework.mock.web.MockMultipartFile
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -27,6 +29,18 @@ class MagazinesControllerTest {
             emptyList(),
             emptyList(),
         )
+
+    @Test
+    fun `publication detail uses its dedicated route and unknown sort is rejected`() {
+        every { service.publicationDetails(1) } returns
+            MagazinePublicationDetailsDto(result.issue.publication.copy(numbersCount = 1), result.issue)
+        mvc
+            .perform(get("/api/magazines/publications/1"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.publication.numbersCount").value(1))
+            .andExpect(jsonPath("$.latestIssue.id").value(7))
+        mvc.perform(get("/api/magazines").param("order", "UNKNOWN")).andExpect(status().isBadRequest)
+    }
 
     @Test
     fun `multipart issue creation and metadata update bind optional image`() {

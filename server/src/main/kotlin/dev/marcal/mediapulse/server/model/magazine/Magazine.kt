@@ -13,6 +13,8 @@ import java.time.LocalDate
 
 enum class MagazineReadStatus { WANT_TO_READ, CURRENTLY_READING, READ, DID_NOT_FINISH }
 
+enum class MagazineIssueOrder { PUBLICATION_DATE, READING_ACTIVITY }
+
 @Entity
 @Table(name = "magazine_publications")
 data class MagazinePublication(

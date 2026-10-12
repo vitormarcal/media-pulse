@@ -7,6 +7,20 @@ import kotlin.test.assertEquals
 
 class SpaForwardControllerTest {
     @Test
+    fun `magazine publication routes support direct navigation and refresh`() {
+        val routes =
+            SpaForwardController::class.java
+                .getDeclaredMethod(
+                    "forwardToIndex",
+                ).getAnnotation(GetMapping::class.java)
+                .value
+                .toList()
+        assertContains(routes, "/magazines/publications")
+        assertContains(routes, "/magazines/publications/{id}")
+        assertContains(routes, "/magazines/publications/{id}/")
+    }
+
+    @Test
     fun `people index should be forwarded to the spa`() {
         val method = SpaForwardController::class.java.getDeclaredMethod("forwardToIndex")
         val routes = method.getAnnotation(GetMapping::class.java).value.toList()

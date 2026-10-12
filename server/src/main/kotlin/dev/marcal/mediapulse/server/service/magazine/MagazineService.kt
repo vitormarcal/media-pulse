@@ -5,6 +5,7 @@ import dev.marcal.mediapulse.server.api.magazine.MagazineIssueDto
 import dev.marcal.mediapulse.server.api.magazine.MagazineIssueRequest
 import dev.marcal.mediapulse.server.api.magazine.MagazineLibraryDto
 import dev.marcal.mediapulse.server.api.magazine.MagazineOverviewDto
+import dev.marcal.mediapulse.server.api.magazine.MagazinePublicationDetailsDto
 import dev.marcal.mediapulse.server.api.magazine.MagazinePublicationDto
 import dev.marcal.mediapulse.server.api.magazine.MagazinePublicationRequest
 import dev.marcal.mediapulse.server.api.magazine.MagazineReadDto
@@ -12,6 +13,7 @@ import dev.marcal.mediapulse.server.api.magazine.MagazineReadRequest
 import dev.marcal.mediapulse.server.api.magazine.MagazineRecentReadDto
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.magazine.MagazineIssue
+import dev.marcal.mediapulse.server.model.magazine.MagazineIssueOrder
 import dev.marcal.mediapulse.server.model.magazine.MagazinePublication
 import dev.marcal.mediapulse.server.model.magazine.MagazineRead
 import dev.marcal.mediapulse.server.model.magazine.MagazineReadStatus
@@ -44,7 +46,19 @@ class MagazineService(
 ) {
     fun publications(): List<MagazinePublicationDto> {
         val counts = query.publicationCounts()
-        return publications.findAllByOrderByNameAsc().map { it.toDto().copy(numbersCount = counts[it.id] ?: 0) }
+        val latest = cards(query.publicationLatestIssueIds()).associateBy { it.publication.id }
+        return publications.findAllByOrderByNameAsc().map {
+            it.toDto().copy(numbersCount = counts[it.id] ?: 0, coverUrl = latest[it.id]?.coverUrl)
+        }
+    }
+
+    fun publicationDetails(id: Long): MagazinePublicationDetailsDto {
+        val publication = publication(id)
+        val latest = library(null, id, null, 0, 1).items.firstOrNull()
+        return MagazinePublicationDetailsDto(
+            publication.toDto().copy(numbersCount = issues.countByPublicationId(id), coverUrl = latest?.coverUrl),
+            latest,
+        )
     }
 
     fun library(
@@ -54,15 +68,16 @@ class MagazineService(
         page: Int,
         limit: Int,
         unread: Boolean = false,
+        order: MagazineIssueOrder = MagazineIssueOrder.PUBLICATION_DATE,
     ): MagazineLibraryDto {
         if (page < 0 || limit !in 1..100) bad("Paginação inválida.")
-        val ids = query.issueIds(q, publicationId, status, page, limit, unread)
+        val ids = query.issueIds(q, publicationId, status, page, limit, unread, order)
         return MagazineLibraryDto(cards(ids.take(limit)), if (ids.size > limit) page + 1 else null)
     }
 
     fun overview(): MagazineOverviewDto =
         MagazineOverviewDto(
-            library(null, null, MagazineReadStatus.CURRENTLY_READING, 0, 6).items,
+            library(null, null, MagazineReadStatus.CURRENTLY_READING, 0, 6, order = MagazineIssueOrder.READING_ACTIVITY).items,
             reads.findTop6ByStatusOrderByFinishedAtDescIdDesc(MagazineReadStatus.READ).let { journeys ->
                 val issueCards = cards(journeys.map { it.issueId }).associateBy { it.id }
                 journeys.map { MagazineRecentReadDto(issueCards.getValue(it.issueId), it.toDto()) }

@@ -55,11 +55,15 @@ import type { MagazineDetails, MagazineIssue, MagazinePublication, MagazineReadR
 import { magazineError, readPayload } from '~/utils/magazines'
 import MagazineReadFields from './MagazineReadFields.vue'
 import MagazineMonthField from './MagazineMonthField.vue'
-const props = defineProps<{ publications: MagazinePublication[]; issue?: MagazineIssue }>()
+const props = defineProps<{
+  publications: MagazinePublication[]
+  issue?: MagazineIssue
+  initialPublicationId?: number
+}>()
 const emit = defineEmits<{ saved: [MagazineDetails]; cancel: [] }>()
 const config = useRuntimeConfig()
 const { resolveMediaUrl } = useMediaUrl()
-const publicationId = ref<number | ''>(props.issue?.publication.id || '')
+const publicationId = ref<number | ''>(props.issue?.publication.id || props.initialPublicationId || '')
 const name = ref('')
 const issn = ref('')
 const number = ref(props.issue?.number || '')

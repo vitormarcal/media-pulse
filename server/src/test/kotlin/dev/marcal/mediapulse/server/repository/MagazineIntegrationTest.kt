@@ -104,6 +104,51 @@ class MagazineIntegrationTest {
     }
 
     @Test
+    fun `archive sorts publication month and numeric issue number independently of reading activity`() {
+        fun create(
+            number: String,
+            date: String?,
+        ) = service
+            .create(
+                MagazineIssueRequest(
+                    publication = MagazinePublicationRequest("Noir et Blanc"),
+                    number = number,
+                    coverDate = date,
+                    read = MagazineReadRequest(MagazineReadStatus.WANT_TO_READ),
+                ),
+                null,
+            ).issue
+        val seventy = create("70", "2026-01")
+        val sixtyNine = create("69", "2026-01")
+        val seventyOne = create("71", "2026-02")
+        val ten = create("10", "2025-12")
+        val nine = create("9", "2025-12")
+        val undated = create("200", null)
+        val expected = listOf(seventyOne.id, seventy.id, sixtyNine.id, ten.id, nine.id, undated.id)
+        assertEquals(expected, service.library(null, null, null, 0, 24).items.map { it.id })
+        assertEquals(expected, service.library(null, seventy.publication.id, null, 0, 24).items.map { it.id })
+        val firstPage = service.library(null, seventy.publication.id, null, 0, 2)
+        val next = service.library(null, seventy.publication.id, null, firstPage.nextPage!!, 2)
+        assertEquals(expected.take(4), (firstPage.items + next.items).map { it.id })
+        jdbc.update("UPDATE magazine_issues SET cover_url = ? WHERE id = ?", "/covers/magazines/latest.jpg", seventyOne.id)
+        assertEquals("/covers/magazines/latest.jpg", service.publications().single().coverUrl)
+        val details = service.publicationDetails(seventy.publication.id)
+        assertEquals(6L, details.publication.numbersCount)
+        assertEquals(seventyOne.id, details.latestIssue?.id)
+        assertEquals(404, assertFailsWith<ResponseStatusException> { service.publicationDetails(999) }.statusCode.value())
+        service.updateRead(
+            sixtyNine.id,
+            service
+                .details(sixtyNine.id)
+                .reads
+                .single()
+                .id,
+            MagazineReadRequest(MagazineReadStatus.READ, finishedAt = day.plusDays(30)),
+        )
+        assertEquals(expected, service.library(null, null, null, 0, 24).items.map { it.id })
+    }
+
+    @Test
     fun `publication archive and recent journeys keep distinct projections`() {
         val first =
             service.create(

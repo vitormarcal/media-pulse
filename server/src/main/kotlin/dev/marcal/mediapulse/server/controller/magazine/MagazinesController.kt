@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.controller.magazine
 import dev.marcal.mediapulse.server.api.magazine.MagazineIssueRequest
 import dev.marcal.mediapulse.server.api.magazine.MagazinePublicationRequest
 import dev.marcal.mediapulse.server.api.magazine.MagazineReadRequest
+import dev.marcal.mediapulse.server.model.magazine.MagazineIssueOrder
 import dev.marcal.mediapulse.server.model.magazine.MagazineReadStatus
 import dev.marcal.mediapulse.server.service.magazine.MagazineService
 import org.springframework.http.HttpStatus
@@ -46,13 +47,19 @@ class MagazinesController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "24") limit: Int,
         @RequestParam(defaultValue = "false") unread: Boolean,
-    ) = service.library(q, publicationId, status, page, limit, unread)
+        @RequestParam(defaultValue = "PUBLICATION_DATE") order: MagazineIssueOrder,
+    ) = service.library(q, publicationId, status, page, limit, unread, order)
 
     @GetMapping("/overview")
     fun overview() = service.overview()
 
     @GetMapping("/publications")
     fun publications() = service.publications()
+
+    @GetMapping("/publications/{id}")
+    fun publicationDetails(
+        @PathVariable id: Long,
+    ) = service.publicationDetails(id)
 
     @PutMapping("/publications/{id}")
     fun updatePublication(

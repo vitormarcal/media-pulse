@@ -237,8 +237,10 @@ No histórico, a foto pessoal tem prioridade sobre a imagem fixa da categoria. C
 
 ## 11. Revistas
 
-Reutilizar os cabeçalhos de coleção/biblioteca, cards de capa e grid masonry existentes em livros e filmes. No detalhe, seguir o cabeçalho compacto e os comentários de livros. Usar títulos diretos (Revistas, Leituras, Comentários), sem frases decorativas ou explicações repetidas.
+Reutilizar os cabeçalhos de coleção/biblioteca, cards de capa existentes em livros e filmes. Revistas usa grid regular responsivo, autorizado para preservar a sequência cronológica por linhas; livros mantém seu layout atual. No detalhe, seguir o cabeçalho compacto e os comentários de livros. Usar títulos diretos (Revistas, Leituras, Comentários), sem frases decorativas ou explicações repetidas.
 
 Mês/ano de publicação usa seleção de mês e ano numérico, com a mesma apresentação em Firefox e Chromium. Editar uma leitura abre o formulário no próprio item do histórico; manter foco visível e rolagem suave apenas quando necessária, respeitando movimento reduzido. Ao salvar 100%, refletir a conclusão retornada pelo backend.
 
 No acervo de revistas, a ação é “Adicionar número” e o filtro é “Leitura”. Últimas leituras mostra jornadas concluídas em cards compactos, com data de término explícita; Todos os números mantém capas grandes sem data de atividade ambígua. Publicações oferece contagens do acervo e navegação por publicação, com números agrupados pelo ano da edição. Sem data fica ao final.
+
+Separar o dashboard de Revistas, o catálogo de Publicações e o arquivo de cada publicação em páginas próprias. No arquivo, usar o hero compartilhado com rótulo “Último número”, escolhido por mês/ano e numeração decrescentes. Mostrar apenas a contagem no hero; ISSN em detalhes recolhidos. Busca local e filtro Leitura não repetem o contexto Publicação; limpar mantém esse contexto. Mostrar porcentagem nos cards apenas para Lendo, evitando 0% junto de Quero ler e 100% junto de Lida.

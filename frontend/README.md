@@ -93,3 +93,5 @@ O comentário é exibido diretamente, sem contadores ou resumo de atividade. Esc
 Acesse “Treinos” (`/workouts`) para navegar pelo histórico e filtrar corrida, corda ou academia. “Registrar treino” abre a escolha visual da atividade, seguida de um card compacto com data/horário, duração e a métrica específica. Local e foto são opcionais; a foto escolhida tem prévia e prioridade sobre a ilustração da categoria. Fechar o diálogo preserva o rascunho enquanto a página estiver aberta.
 
 Imagens padrão ficam em `app/assets/images/workouts/`, empacotadas pelo Nuxt. Fotos próprias são persistidas pelo backend no storage de covers. Contrato e limites: [Workouts API](../docs/workouts-api.md).
+
+Revistas mantém `/magazines` como dashboard, `/magazines/publications` como catálogo visual e `/magazines/publications/{id}` como arquivo anual. Detalhes dos números permanecem em `/magazines/{id}`; os recortes legados por query redirecionam para as páginas próprias.

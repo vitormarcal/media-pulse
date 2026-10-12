@@ -12,6 +12,8 @@ interface MagazineIssueRepository : JpaRepository<MagazineIssue, Long> {
         identityKey: String,
     ): MagazineIssue?
 
+    fun countByPublicationId(publicationId: Long): Long
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select i from MagazineIssue i where i.id = :id")
     fun lockById(id: Long): MagazineIssue?

@@ -43,8 +43,15 @@ paths:
     get:
       tags:
       - Magazines
-      summary: List numbers by reading activity, or publication month when filtering a publication
+      summary: List archived numbers, newest publication month and issue number first
       parameters:
+      - name: order
+        in: query
+        schema:
+          type: string
+          enum: [PUBLICATION_DATE, READING_ACTIVITY]
+          default: PUBLICATION_DATE
+        description: Publication month and numeric issue number descending, missing dates last. Reading activity is used by the dashboard.
       - name: unread
         in: query
         schema:
@@ -164,6 +171,25 @@ paths:
         '409':
           description: Duplicate identity or another open journey
   /api/magazines/publications/{id}:
+    get:
+      tags: [Magazines]
+      summary: Read publication archive metadata and latest published issue
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MagazinePublicationDetails'
+        '404':
+          description: Publication not found
     put:
       tags:
       - Magazines
@@ -4239,7 +4265,12 @@ components:
       - name
       - issn
       - numbersCount
+      - coverUrl
       properties:
+        coverUrl:
+          type: string
+          nullable: true
+          description: Cover of the latest published issue in the publication listing; null when unavailable.
         numbersCount:
           type: integer
           format: int64
@@ -4251,6 +4282,16 @@ components:
           type: string
         issn:
           type: string
+          nullable: true
+    MagazinePublicationDetails:
+      type: object
+      required: [publication, latestIssue]
+      properties:
+        publication:
+          $ref: '#/components/schemas/MagazinePublication'
+        latestIssue:
+          allOf:
+          - $ref: '#/components/schemas/MagazineIssue'
           nullable: true
     MagazineReadRequest:
       description: Saving 100 percent or the final page completes the journey with today's server date when finishedAt is omitted, preserving startedAt. Explicit READ preserves an existing finish date.

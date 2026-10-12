@@ -33,7 +33,7 @@ export function magazineCard(issue: MagazineIssue): BookLibraryCardModel {
     imageUrl: issue.coverUrl,
     progressLabel: issue.latestRead ? magazineStates[issue.latestRead.status] : 'Sem leitura',
     activityLabel: '',
-    aside: issue.latestRead ? `${Math.round(issue.latestRead.progressPct)}%` : '',
+    aside: issue.latestRead?.status === 'CURRENTLY_READING' ? `${Math.round(issue.latestRead.progressPct)}%` : '',
   }
 }
 export function magazineError(error: unknown) {

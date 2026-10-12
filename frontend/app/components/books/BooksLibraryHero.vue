@@ -29,7 +29,7 @@
         </div>
 
         <div class="spotlight-body">
-          <p class="spotlight-kicker">Entrada do recorte</p>
+          <p class="spotlight-kicker">{{ spotlightLabel }}</p>
           <h2>{{ spotlight?.title || title }}</h2>
           <p v-if="spotlight" class="spotlight-subtitle">{{ spotlight.subtitle }}</p>
           <p v-if="spotlight" class="spotlight-meta">{{ spotlight.meta }}</p>
@@ -45,6 +45,7 @@ import { NuxtLink } from '#components'
 
 const props = withDefaults(
   defineProps<{
+    spotlightLabel?: string
     eyebrow?: string
     showEmptySpotlight?: boolean
     title: string
@@ -62,7 +63,7 @@ const props = withDefaults(
       note: string
     } | null
   }>(),
-  { eyebrow: 'Livros', showEmptySpotlight: true },
+  { eyebrow: 'Livros', showEmptySpotlight: true, spotlightLabel: 'Entrada do recorte' },
 )
 
 const { resolveMediaUrl } = useMediaUrl()

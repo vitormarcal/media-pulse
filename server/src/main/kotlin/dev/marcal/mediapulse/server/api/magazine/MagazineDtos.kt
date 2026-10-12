@@ -69,6 +69,7 @@ data class MagazinePublicationDto(
     val name: String,
     val issn: String?,
     val numbersCount: Long = 0,
+    val coverUrl: String? = null,
 )
 
 data class MagazineReadDto(
@@ -80,4 +81,9 @@ data class MagazineReadDto(
     val progressPct: Double,
     val currentPage: Int?,
     val createdAt: java.time.Instant,
+)
+
+data class MagazinePublicationDetailsDto(
+    val publication: MagazinePublicationDto,
+    val latestIssue: MagazineIssueDto?,
 )

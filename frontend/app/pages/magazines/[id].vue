@@ -16,9 +16,7 @@
         :hero-meta="heroMeta"
       />
       <div class="mag-actions">
-        <NuxtLink class="mag-button" :to="`/magazines?publicationId=${data.issue.publication.id}`"
-          >Ver números</NuxtLink
-        >
+        <NuxtLink class="mag-button" :to="`/magazines/publications/${data.issue.publication.id}`">Ver números</NuxtLink>
         <button class="mag-button primary" @click="openRead(openJourney)">
           {{ openJourney ? 'Atualizar leitura' : data.reads.length ? 'Reler' : 'Ler' }}
         </button>

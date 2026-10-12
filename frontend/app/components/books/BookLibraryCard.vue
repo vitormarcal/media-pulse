@@ -12,7 +12,7 @@
             <h3>{{ item.title }}</h3>
             <p class="subtitle">{{ item.subtitle }}</p>
           </div>
-          <span class="aside">{{ item.aside }}</span>
+          <span v-if="item.aside" class="aside">{{ item.aside }}</span>
         </div>
 
         <div class="meta-row">

@@ -6,7 +6,7 @@
       {{ emptyMessage || 'Nada para mostrar aqui ainda.' }}
     </p>
 
-    <div v-else class="masonry-grid">
+    <div v-else class="masonry-grid" :class="{ regular: layout === 'regular' }">
       <BookLibraryCard v-for="item in items" :key="item.id" :item="item" />
     </div>
   </section>
@@ -18,6 +18,7 @@ import BookLibraryCard from '~/components/books/BookLibraryCard.vue'
 import type { BookLibraryCardModel } from '~/types/books'
 
 defineProps<{
+  layout?: 'masonry' | 'regular'
   eyebrow: string
   title: string
   description: string
@@ -38,6 +39,15 @@ defineProps<{
   column-gap: 20px;
 }
 
+.masonry-grid.regular {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 24px 20px;
+}
+.masonry-grid.regular :deep(.library-card) {
+  margin-bottom: 0;
+}
+
 .empty-state {
   margin: 0;
   color: var(--base-color-text-secondary);
@@ -47,11 +57,17 @@ defineProps<{
   .masonry-grid {
     column-count: 4;
   }
+  .masonry-grid.regular {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 1100px) {
   .masonry-grid {
     column-count: 3;
+  }
+  .masonry-grid.regular {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -59,11 +75,17 @@ defineProps<{
   .masonry-grid {
     column-count: 2;
   }
+  .masonry-grid.regular {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 520px) {
   .masonry-grid {
     column-count: 1;
+  }
+  .masonry-grid.regular {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>
