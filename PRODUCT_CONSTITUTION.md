@@ -7,7 +7,7 @@ This document defines the product intent for Media Pulse. It should be read toge
 
 # Mission
 
-Media Pulse is a personal canonical archive of cultural consumption and physical activities, combining history, memories, curation, and discovery while preserving ownership of the data independently from Big Tech platforms.
+Media Pulse is a personal canonical archive of cultural consumption, discoveries and physical activities, combining history, memories, curation, and discovery while preserving ownership of the data independently from Big Tech platforms.
 
 The product exists for one primary user: its owner. Decisions should optimize for the owner's best experience, not for generic enterprise workflows, public growth, social engagement, or SaaS scalability.
 
@@ -157,6 +157,17 @@ MVP aprovado: [Revistas](docs/features/magazines.md).
 - datas, progresso em porcentagem ou páginas, releituras e comentários compartilhados
 - biblioteca visual e detalhe consistentes com os domínios existentes
 - artigos individuais, integrações externas e área conjunta Leituras ficam fora deste MVP
+
+## Artes visuais
+
+MVP aprovado: [Artes visuais](docs/features/artworks.md).
+
+- obras e artistas locais, com cadastro manual e dados parciais
+- experiências de contemplação digital ou presencial, com impressões e origem
+- avaliação e favorito na obra, múltiplas imagens locais por arquivo ou URL
+- listas pessoais, biblioteca sem recortes e páginas de artistas
+- busca futura no Wikimedia com seleção explícita de imagens
+- Descobertas transversal e catálogo externo completo ficam fora desta entrega
 
 ## Movies
 

@@ -1,0 +1,67 @@
+package dev.marcal.mediapulse.server.controller.artwork
+
+import dev.marcal.mediapulse.server.api.artwork.ArtworkDetailsDto
+import dev.marcal.mediapulse.server.model.artwork.Artwork
+import dev.marcal.mediapulse.server.model.artwork.ArtworkImage
+import dev.marcal.mediapulse.server.service.artwork.ArtworkImageService
+import dev.marcal.mediapulse.server.service.artwork.ArtworkService
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.junit.jupiter.api.Test
+import org.springframework.http.HttpStatus
+import org.springframework.mock.web.MockMultipartFile
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.web.server.ResponseStatusException
+
+class ArtworksControllerTest {
+    private val service = mockk<ArtworkService>()
+    private val images = mockk<ArtworkImageService>()
+    private val mvc = MockMvcBuilders.standaloneSetup(ArtworksController(service, images)).build()
+
+    @Test
+    fun `JSON creation accepts partial experience and returns canonical detail`() {
+        every { service.create(any()) } returns
+            ArtworkDetailsDto(Artwork(id = 1, title = "Obra"), null, emptyList(), emptyList(), emptyList(), null)
+        mvc
+            .perform(
+                post("/api/artworks").contentType("application/json").content("""{"title":"Obra","experience":{"notes":"Descoberta"}}"""),
+            ).andExpect(status().isCreated)
+            .andExpect(jsonPath("$.artwork.id").value(1))
+        verify { service.create(match { it.experience?.notes == "Descoberta" && it.experience?.experiencedAt == null }) }
+    }
+
+    @Test
+    fun `invalid dates and contact types do not enter service and missing detail is explicit`() {
+        mvc
+            .perform(post("/api/artworks/1/experiences").contentType("application/json").content("""{"experienceType":"WATCHING"}"""))
+            .andExpect(status().isBadRequest)
+        mvc
+            .perform(post("/api/artworks/1/experiences").contentType("application/json").content("""{"experiencedAt":"not-a-date"}"""))
+            .andExpect(status().isBadRequest)
+        verify(exactly = 0) { service.saveExperience(any(), any(), any()) }
+        every { service.details(404) } throws ResponseStatusException(HttpStatus.NOT_FOUND, "Obra não encontrada.")
+        mvc.perform(get("/api/artworks/404")).andExpect(status().isNotFound).andExpect(jsonPath("$.detail").value("Obra não encontrada."))
+    }
+
+    @Test
+    fun `file and URL image endpoints attach independently from work creation`() {
+        every { service.work(1) } returns Artwork(id = 1, title = "Obra")
+        every { images.upload(any()) } returns "/covers/artworks/local.png"
+        every { images.download("https://example.com/image.png") } returns "/covers/artworks/download.png"
+        every { images.attach(any(), any(), any(), any()) } answers { ArtworkImage(id = 1, artworkId = firstArg(), url = secondArg()) }
+        mvc
+            .perform(multipart("/api/artworks/1/images").file(MockMultipartFile("image", "image.png", "image/png", byteArrayOf(1))))
+            .andExpect(status().isCreated)
+        mvc
+            .perform(
+                post("/api/artworks/1/images/url").contentType("application/json").content("""{"url":"https://example.com/image.png"}"""),
+            ).andExpect(status().isCreated)
+        verify { images.attach(1, "/covers/artworks/download.png", "https://example.com/image.png", null) }
+    }
+}

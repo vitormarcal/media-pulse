@@ -95,3 +95,7 @@ Acesse “Treinos” (`/workouts`) para navegar pelo histórico e filtrar corrid
 Imagens padrão ficam em `app/assets/images/workouts/`, empacotadas pelo Nuxt. Fotos próprias são persistidas pelo backend no storage de covers. Contrato e limites: [Workouts API](../docs/workouts-api.md).
 
 Revistas mantém `/magazines` como dashboard, `/magazines/publications` como catálogo visual e `/magazines/publications/{id}` como arquivo anual. Detalhes dos números permanecem em `/magazines/{id}`; os recortes legados por query redirecionam para as páginas próprias.
+
+## Artes visuais
+
+`/artworks` reúne obras locais com busca e filtros por artista, tipo, movimento, favorito e lista. Cadastro manual combina metadados, criação/seleção de artista, primeira experiência opcional e múltiplas imagens por arquivo ou URL. O detalhe permite avaliação, favorito, galeria com imagem principal, experiências e listas. Artistas e listas têm diretórios e páginas próprias. Imagens preservam suas proporções; falhas de upload preservam a obra e permitem tentar somente as imagens pendentes. Contratos: [`artworks-api.md`](../docs/artworks-api.md).

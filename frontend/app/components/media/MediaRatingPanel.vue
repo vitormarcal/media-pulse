@@ -143,7 +143,7 @@ const anchors = [
 
 const props = withDefaults(
   defineProps<{
-    mediaType: 'movies' | 'shows' | 'episodes' | 'albums' | 'tracks' | 'games'
+    mediaType: 'movies' | 'shows' | 'episodes' | 'albums' | 'tracks' | 'games' | 'artworks'
     entityId: number
     initialRating: MediaRatingDto | null
     title?: string

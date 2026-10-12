@@ -1,11 +1,13 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.0.0-beta.100
+  version: 1.0.0
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
 tags:
+  - name: Artworks
+    description: Locally owned visual artworks, artists, contemplation experiences, galleries and lists.
   - name: Workouts
     description: Manual exercise records and locally owned memories.
   - name: Books
@@ -39,6 +41,771 @@ tags:
   - name: Magazines
     description: Local publications, numbers, reading journeys and rereads.
 paths:
+  /api/artworks:
+    get:
+      tags:
+      - Artworks
+      summary: List locally captured visual artworks, newest first
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+      - name: artistId
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: type
+        in: query
+        schema:
+          type: string
+      - name: movement
+        in: query
+        schema:
+          type: string
+      - name: favorite
+        in: query
+        schema:
+          type: boolean
+      - name: listId
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 24
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkLibraryDto'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+    post:
+      tags:
+      - Artworks
+      summary: Capture artwork and optional first experience
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkRequest'
+      responses:
+        '201':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkDetailsDto'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/filters:
+    get:
+      tags:
+      - Artworks
+      summary: List available local types and movements
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  types:
+                    type: array
+                    items:
+                      type: string
+                  movements:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/{id}:
+    get:
+      tags:
+      - Artworks
+      summary: Read artwork, gallery, experiences and personal curation
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkDetailsDto'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+    put:
+      tags:
+      - Artworks
+      summary: Replace metadata while preserving personal curation and experiences
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkRequest'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkDetailsDto'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+    delete:
+      tags:
+      - Artworks
+      summary: Delete artwork and dependents, preserving artist and lists
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: Success.
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/{id}/favorite:
+    put:
+      tags:
+      - Artworks
+      summary: Set personal favorite
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkFavoriteRequest'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkDetailsDto'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/artists:
+    get:
+      tags:
+      - Artworks
+      summary: List local artists
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArtworkArtist'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+    post:
+      tags:
+      - Artworks
+      summary: Create artists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkArtistRequest'
+      responses:
+        '201':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkArtist'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/artists/{id}:
+    get:
+      tags:
+      - Artworks
+      summary: Read artists
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkArtist'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+    put:
+      tags:
+      - Artworks
+      summary: Replace artists metadata
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkArtistRequest'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkArtist'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+    delete:
+      tags:
+      - Artworks
+      summary: Delete artists while preserving works
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: detach
+        in: query
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '204':
+          description: Success.
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+        '409':
+          description: Linked works require explicit detach=true.
+  /api/artworks/lists:
+    get:
+      tags:
+      - Artworks
+      summary: List local lists
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArtworkListSummaryDto'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+    post:
+      tags:
+      - Artworks
+      summary: Create lists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkListRequest'
+      responses:
+        '201':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkList'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/lists/{id}:
+    get:
+      tags:
+      - Artworks
+      summary: Read lists
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkList'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+    put:
+      tags:
+      - Artworks
+      summary: Replace lists metadata
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkListRequest'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkList'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+    delete:
+      tags:
+      - Artworks
+      summary: Delete lists while preserving works
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: Success.
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/{id}/experiences:
+    post:
+      tags:
+      - Artworks
+      summary: Record independent contemplation experience
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkExperienceRequest'
+      responses:
+        '201':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkExperience'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/{id}/experiences/{experienceId}:
+    put:
+      tags:
+      - Artworks
+      summary: Replace a contemplation experience
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: experienceId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkExperienceRequest'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkExperience'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+    delete:
+      tags:
+      - Artworks
+      summary: Remove experience, preserving artwork
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: experienceId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: Success.
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/{id}/images:
+    post:
+      tags:
+      - Artworks
+      summary: Add local JPEG/PNG image up to 10 MB
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: caption
+        in: query
+        schema:
+          type: string
+          maxLength: 500
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+              required:
+              - image
+      responses:
+        '201':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkImage'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/{id}/images/url:
+    post:
+      tags:
+      - Artworks
+      summary: Download public direct JPEG/PNG URL into local gallery
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkImageUrlRequest'
+      responses:
+        '201':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkImage'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/{id}/images/{imageId}/primary:
+    put:
+      tags:
+      - Artworks
+      summary: Choose primary artwork image
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: imageId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: Success.
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/{id}/images/{imageId}:
+    delete:
+      tags:
+      - Artworks
+      summary: Remove gallery association and select replacement primary if necessary
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: imageId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: Success.
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/artists/{id}/portrait:
+    post:
+      tags:
+      - Artworks
+      summary: Upload local artist portrait
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+              required:
+              - image
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkArtist'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+    delete:
+      tags:
+      - Artworks
+      summary: Remove portrait association
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkArtist'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/artists/{id}/portrait/url:
+    post:
+      tags:
+      - Artworks
+      summary: Download public direct URL into local portrait
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkImageUrlRequest'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkArtist'
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+  /api/artworks/{id}/lists/{listId}:
+    put:
+      tags:
+      - Artworks
+      summary: Idempotently add artwork to personal list
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: listId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: Success.
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
+    delete:
+      tags:
+      - Artworks
+      summary: Remove list membership, preserving artwork and list
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: listId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: Success.
+        '400':
+          description: Invalid input.
+        '404':
+          description: Entity not found.
   /api/magazines:
     get:
       tags:
@@ -4115,7 +4882,7 @@ paths:
   /api/ratings/{mediaType}/{entityId}:
     post:
       summary: Upsert media rating
-      description: Creates or updates a manual rating for a movie, show, episode, album, or track.
+      description: Creates or updates a manual rating for a movie, show, episode, album, track, game, or visual artwork.
       tags: [Ratings]
       parameters:
         - name: mediaType
@@ -4123,7 +4890,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [movies, shows, episodes, albums, tracks]
+            enum: [movies, shows, episodes, albums, tracks, games, artworks]
         - name: entityId
           in: path
           required: true
@@ -4149,7 +4916,7 @@ paths:
           description: Media not found.
     delete:
       summary: Clear media rating
-      description: Removes a manual rating from a movie, show, episode, album, or track.
+      description: Removes a manual rating from a movie, show, episode, album, track, game, or visual artwork.
       tags: [Ratings]
       parameters:
         - name: mediaType
@@ -4157,7 +4924,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [movies, shows, episodes, albums, tracks]
+            enum: [movies, shows, episodes, albums, tracks, games, artworks]
         - name: entityId
           in: path
           required: true
@@ -9488,3 +10255,363 @@ components:
       properties:
         includeFavorites: { type: boolean }
         includeAbandoned: { type: boolean }
+
+    ArtworkArtistRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        biography:
+          type: string
+          nullable: true
+          maxLength: 20000
+        nationality:
+          type: string
+          nullable: true
+          maxLength: 200
+        bornAt:
+          type: string
+          format: date
+          nullable: true
+        diedAt:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - name
+    ArtworkArtist:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          maxLength: 200
+        biography:
+          type: string
+          nullable: true
+          maxLength: 20000
+        nationality:
+          type: string
+          nullable: true
+          maxLength: 200
+        bornAt:
+          type: string
+          format: date
+          nullable: true
+        diedAt:
+          type: string
+          format: date
+          nullable: true
+        portraitUrl:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+    ArtworkExperienceRequest:
+      type: object
+      properties:
+        experiencedAt:
+          type: string
+          format: date
+          nullable: true
+        experienceType:
+          type: string
+          nullable: true
+          enum:
+          - DIGITAL_VIEWING
+          - IN_PERSON
+        notes:
+          type: string
+          nullable: true
+          maxLength: 20000
+        sourceName:
+          type: string
+          nullable: true
+          maxLength: 300
+        sourceUrl:
+          type: string
+          nullable: true
+          maxLength: 4000
+    ArtworkExperience:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        artworkId:
+          type: integer
+          format: int64
+        experiencedAt:
+          type: string
+          format: date
+          nullable: true
+        experienceType:
+          type: string
+          nullable: true
+          enum:
+          - DIGITAL_VIEWING
+          - IN_PERSON
+        notes:
+          type: string
+          nullable: true
+          maxLength: 20000
+        sourceName:
+          type: string
+          nullable: true
+          maxLength: 300
+        sourceUrl:
+          type: string
+          nullable: true
+          maxLength: 4000
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - artworkId
+      - createdAt
+    ArtworkRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 300
+        artistId:
+          type: integer
+          format: int64
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        type:
+          type: string
+          nullable: true
+          maxLength: 100
+        movement:
+          type: string
+          nullable: true
+          maxLength: 200
+        technique:
+          type: string
+          nullable: true
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+          maxLength: 20000
+        artist:
+          allOf:
+          - $ref: '#/components/schemas/ArtworkArtistRequest'
+          nullable: true
+        experience:
+          allOf:
+          - $ref: '#/components/schemas/ArtworkExperienceRequest'
+          nullable: true
+      required:
+      - title
+    Artwork:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+          maxLength: 300
+        artistId:
+          type: integer
+          format: int64
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        type:
+          type: string
+          nullable: true
+          maxLength: 100
+        movement:
+          type: string
+          nullable: true
+          maxLength: 200
+        technique:
+          type: string
+          nullable: true
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+          maxLength: 20000
+        favorite:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - title
+      - favorite
+      - createdAt
+    ArtworkCardDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        artist:
+          allOf:
+          - $ref: '#/components/schemas/ArtworkArtist'
+          nullable: true
+        year:
+          type: integer
+          nullable: true
+        type:
+          type: string
+          nullable: true
+        movement:
+          type: string
+          nullable: true
+        favorite:
+          type: boolean
+        imageUrl:
+          type: string
+          nullable: true
+      required:
+      - id
+      - title
+      - favorite
+    ArtworkLibraryDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtworkCardDto'
+        nextPage:
+          type: integer
+          nullable: true
+      required:
+      - items
+    ArtworkImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        artworkId:
+          type: integer
+          format: int64
+        url:
+          type: string
+        sourceUrl:
+          type: string
+          nullable: true
+        caption:
+          type: string
+          nullable: true
+          maxLength: 500
+        primary:
+          type: boolean
+      required:
+      - id
+      - artworkId
+      - url
+      - primary
+    ArtworkListRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+          maxLength: 20000
+      required:
+      - name
+    ArtworkList:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+    ArtworkListSummaryDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        count:
+          type: integer
+          format: int64
+      required:
+      - id
+      - name
+      - count
+    ArtworkDetailsDto:
+      type: object
+      properties:
+        artwork:
+          $ref: '#/components/schemas/Artwork'
+        artist:
+          allOf:
+          - $ref: '#/components/schemas/ArtworkArtist'
+          nullable: true
+        experiences:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtworkExperience'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtworkImage'
+        lists:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtworkList'
+        rating:
+          allOf:
+          - $ref: '#/components/schemas/MediaRatingDto'
+          nullable: true
+      required:
+      - artwork
+      - experiences
+      - images
+      - lists
+    ArtworkImageUrlRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          maxLength: 4000
+        caption:
+          type: string
+          nullable: true
+          maxLength: 500
+      required:
+      - url
+    ArtworkFavoriteRequest:
+      type: object
+      properties:
+        favorite:
+          type: boolean
+      required:
+      - favorite

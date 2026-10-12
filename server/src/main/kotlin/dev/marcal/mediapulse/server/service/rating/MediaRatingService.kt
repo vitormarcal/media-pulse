@@ -5,6 +5,7 @@ import dev.marcal.mediapulse.server.api.ratings.UpsertMediaRatingRequest
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.rating.MediaRating
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
+import dev.marcal.mediapulse.server.repository.crud.ArtworkRepository
 import dev.marcal.mediapulse.server.repository.crud.GameRepository
 import dev.marcal.mediapulse.server.repository.crud.MediaRatingRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
@@ -26,6 +27,7 @@ class MediaRatingService(
     private val albumRepository: AlbumRepository,
     private val trackRepository: TrackRepository,
     private val gameRepository: GameRepository,
+    private val artworkRepository: ArtworkRepository,
 ) {
     @Transactional
     fun upsert(
@@ -76,6 +78,7 @@ class MediaRatingService(
             "albums" -> EntityType.ALBUM
             "tracks" -> EntityType.TRACK
             "games" -> EntityType.GAME
+            "artworks" -> EntityType.ARTWORK
             else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "mediaType inválido")
         }
 
@@ -91,6 +94,7 @@ class MediaRatingService(
                 EntityType.ALBUM -> albumRepository.existsById(entityId)
                 EntityType.TRACK -> trackRepository.existsById(entityId)
                 EntityType.GAME -> gameRepository.existsById(entityId)
+                EntityType.ARTWORK -> artworkRepository.existsById(entityId)
                 else -> false
             }
         if (!exists) {

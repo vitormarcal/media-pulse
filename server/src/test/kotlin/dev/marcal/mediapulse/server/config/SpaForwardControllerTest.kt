@@ -21,6 +21,26 @@ class SpaForwardControllerTest {
     }
 
     @Test
+    fun `artwork library artist and list routes support direct navigation`() {
+        val routes =
+            SpaForwardController::class.java
+                .getDeclaredMethod("forwardToIndex")
+                .getAnnotation(GetMapping::class.java)
+                .value
+                .toList()
+        for (route in listOf(
+            "/artworks",
+            "/artworks/{id}",
+            "/artworks/artists",
+            "/artworks/artists/{id}",
+            "/artworks/lists",
+            "/artworks/lists/{id}/",
+        )) {
+            assertContains(routes, route)
+        }
+    }
+
+    @Test
     fun `people index should be forwarded to the spa`() {
         val method = SpaForwardController::class.java.getDeclaredMethod("forwardToIndex")
         val routes = method.getAnnotation(GetMapping::class.java).value.toList()

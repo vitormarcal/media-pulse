@@ -279,6 +279,17 @@ class ImageStorageService(
         return "/covers/${provider.lowercase()}/games/$gameId/$fileName"
     }
 
+    fun saveImageForArtwork(
+        image: ImageContent,
+        name: String,
+    ): String {
+        val directory = baseDir.resolve("artworks")
+        Files.createDirectories(directory)
+        val fileName = "${SlugTextUtil.normalize(name)}${extensionFromContentType(image.contentType)}"
+        Files.write(directory.resolve(fileName), image.bytes, StandardOpenOption.CREATE_NEW)
+        return "/covers/artworks/$fileName"
+    }
+
     private fun extensionFromContentType(contentType: MediaType?): String =
         when {
             contentType == null -> ".jpg"

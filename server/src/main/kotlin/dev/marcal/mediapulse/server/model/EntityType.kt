@@ -10,4 +10,5 @@ enum class EntityType {
     EPISODE,
     GAME,
     MAGAZINE_ISSUE,
+    ARTWORK,
 }

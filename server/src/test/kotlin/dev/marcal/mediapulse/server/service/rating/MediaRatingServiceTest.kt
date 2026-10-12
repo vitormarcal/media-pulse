@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.api.ratings.UpsertMediaRatingRequest
 import dev.marcal.mediapulse.server.model.EntityType
 import dev.marcal.mediapulse.server.model.rating.MediaRating
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
+import dev.marcal.mediapulse.server.repository.crud.ArtworkRepository
 import dev.marcal.mediapulse.server.repository.crud.GameRepository
 import dev.marcal.mediapulse.server.repository.crud.MediaRatingRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
@@ -27,6 +28,7 @@ class MediaRatingServiceTest {
     private val albumRepository = mockk<AlbumRepository>()
     private val trackRepository = mockk<TrackRepository>()
     private val gameRepository = mockk<GameRepository>()
+    private val artworkRepository = mockk<ArtworkRepository>()
 
     private val service =
         MediaRatingService(
@@ -37,7 +39,24 @@ class MediaRatingServiceTest {
             albumRepository = albumRepository,
             trackRepository = trackRepository,
             gameRepository = gameRepository,
+            artworkRepository = artworkRepository,
         )
+
+    @Test
+    fun `rates artworks using shared scale and requires an existing work`() {
+        every { artworkRepository.existsById(42L) } returns true
+        every { mediaRatingRepository.findByEntityTypeAndEntityId(EntityType.ARTWORK, 42L) } returns null
+        every { mediaRatingRepository.save(any()) } answers { firstArg() }
+        assertEquals(4, service.upsert("artworks", 42L, UpsertMediaRatingRequest(4)).rating)
+        verify { mediaRatingRepository.save(match { it.entityType == EntityType.ARTWORK && it.entityId == 42L }) }
+        every { artworkRepository.existsById(404L) } returns false
+        assertEquals(
+            HttpStatus.NOT_FOUND,
+            assertFailsWith<ResponseStatusException> {
+                service.upsert("artworks", 404L, UpsertMediaRatingRequest(4))
+            }.statusCode,
+        )
+    }
 
     @Test
     fun `creates new movie rating`() {

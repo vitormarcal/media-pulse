@@ -244,3 +244,9 @@ Mês/ano de publicação usa seleção de mês e ano numérico, com a mesma apre
 No acervo de revistas, a ação é “Adicionar número” e o filtro é “Leitura”. Últimas leituras mostra jornadas concluídas em cards compactos, com data de término explícita; Todos os números mantém capas grandes sem data de atividade ambígua. Publicações oferece contagens do acervo e navegação por publicação, com números agrupados pelo ano da edição. Sem data fica ao final.
 
 Separar o dashboard de Revistas, o catálogo de Publicações e o arquivo de cada publicação em páginas próprias. No arquivo, usar o hero compartilhado com rótulo “Último número”, escolhido por mês/ano e numeração decrescentes. Mostrar apenas a contagem no hero; ISSN em detalhes recolhidos. Busca local e filtro Leitura não repetem o contexto Publicação; limpar mantém esse contexto. Mostrar porcentagem nos cards apenas para Lendo, evitando 0% junto de Quero ler e 100% junto de Lida.
+
+## 12. Artes visuais
+
+A biblioteca usa galeria masonry responsiva com imagens em proporção original, sem recortes de composição. O detalhe mostra a imagem principal com `object-fit: contain` quando limitado à altura da tela; imagens adicionais mantêm altura automática e podem ser abertas integralmente. Reutilizar tokens, navegação, avaliação e padrões de formulário existentes. Artistas e listas têm diretórios e páginas próprias.
+
+Cadastro reúne título, artista e ano, metadados opcionais recolhidos, primeira experiência e imagens. Data e contato não são preenchidos automaticamente; impressões e origem podem ser registrados sem eles. Campos opcionais não bloqueiam captura. Histórico, galeria e listas têm ações com feedback de erro e gravação. Falhas de imagem preservam a obra, mostram as pendências e oferecem tentar novamente ou abrir a obra salva.
