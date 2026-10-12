@@ -78,3 +78,7 @@ A revisão dos detalhes segue [Detalhes de artista e obra](artworks-detail-layou
 ## Armazenamento opcional de imagens
 
 A centralização de novas imagens no Visual Library estende o armazenamento local descrito neste MVP. Consulte o [escopo aprovado](visual-library-images.md) e a [operação](../visual-library-images.md). Os dados do domínio permanecem no Media Pulse; imagens locais existentes continuam disponíveis.
+
+## Movimentos e estilos múltiplos
+
+[Spec aprovada](artwork-movements.md): lista com autocomplete aberto, sugestões iniciais + termos do acervo, filtro por pertencimento e correção automática das imagens remotas após salvar. A migration V67 preserva o texto legado como um item; listas pessoais permanecem independentes. Falhas de sincronização preservam dados locais e permitem retry.

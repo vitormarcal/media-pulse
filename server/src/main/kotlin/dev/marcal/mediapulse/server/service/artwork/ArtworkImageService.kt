@@ -32,16 +32,16 @@ class ArtworkImageService(
     fun artworkMetadata(id: Long): VisualLibraryUploadMetadata {
         val work = works.work(id)
         val artist = work.artistId?.let(works::artist)
-        return VisualLibraryUploadMetadata.forEntity(
-            "artwork",
-            work.id,
-            "arte visual",
-            work.title,
-            artist?.name,
-            work.type,
-            work.movement,
-            work.technique,
-        )
+        return VisualLibraryUploadMetadata
+            .forEntity(
+                "artwork",
+                work.id,
+                "arte visual",
+                work.title,
+                artist?.name,
+                work.type,
+                work.technique,
+            ).copy(movements = work.movements, movementsRevision = work.movementsRevision)
     }
 
     fun artistMetadata(id: Long): VisualLibraryUploadMetadata {

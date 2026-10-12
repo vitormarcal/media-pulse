@@ -16,11 +16,11 @@ VISUAL_LIBRARY_ENABLED=true
 VISUAL_LIBRARY_BASE_URL=http://visual-library:3000
 ```
 
-Não é necessário expor esse hostname ao navegador: ele consulta o backend do Media Pulse. Nenhuma credencial é enviada; a API atual do Visual Library não tem autenticação. Configuração inválida impede inicialização. Não são necessárias migrations. O backend inclui o [plugin ImageIO WebP do TwelveMonkeys](https://github.com/haraldk/TwelveMonkeys) para validar esse formato.
+Não é necessário expor esse hostname ao navegador: ele consulta o backend do Media Pulse. Nenhuma credencial é enviada; a API atual do Visual Library não tem autenticação. Configuração inválida impede inicialização. O armazenamento de imagens não exigiu migration; movimentos múltiplos acrescentam a V67 no Media Pulse. O backend inclui o [plugin ImageIO WebP do TwelveMonkeys](https://github.com/haraldk/TwelveMonkeys) para validar esse formato.
 
 ## Upload e leitura
 
-A integração usa o contrato de upload do Visual Library **0.6.0**.
+A integração partiu do contrato de upload do Visual Library **0.6.0**. Movimentos múltiplos exigem a extensão de grupos vinculados descrita ao final.
 
 O backend preserva as validações existentes de JPEG/PNG/WebP, 10 MB e 40 megapixels, então envia multipart para `POST /api/assets`, com `image`, `source=media-pulse`, `hiddenFromGallery=false`, `tags` (array JSON em campo texto) e `sourceReference` (objeto JSON em campo texto). As imagens ficam disponíveis na galeria central. Deduplicação aceita tanto 201 quanto 200; a origem e visibilidade retornadas podem ser as do primeiro envio dos mesmos bytes.
 
@@ -29,7 +29,7 @@ As referências usam o ID real do Media Pulse convertido em **string**. O tipo s
 | Imagem | `entityType` | Sugestões de tags, em ordem |
 | --- | --- | --- |
 | Capa de revista | `magazine_issue` | `revista`, nome da publicação |
-| Imagem de obra | `artwork` | `arte visual`, título, artista, tipo, movimento, técnica |
+| Imagem de obra | `artwork` | movimentos em grupo próprio; `arte visual`, título, artista, tipo e técnica como sugestões complementares |
 | Retrato de artista | `artwork_artist` | `artista`, nome, país de origem |
 
 Não enviar `url` na referência: a integração não exige uma URL pública do Media Pulse e não deve usar o endereço interno do backend como link público. O campo é opcional na API. Exemplo de referência: `{"entityType":"artwork","entityId":"123"}`.
@@ -85,3 +85,9 @@ No navegador, interromper uploads/leitura de imagens e conferir placeholders, me
 Revistas, obras e retratos aceitam JPEG, PNG e WebP nos dois destinos de armazenamento. Obras/retratos também aceitam WebP por URL pública direta. A validação identifica o formato pelos bytes, lê dimensões e decodifica pixels com ImageIO, usando `com.twelvemonkeys.imageio:imageio-webp:3.15.0` para WebP. Essa dependência permite manter a validação real de imagem sem escrever um decodificador próprio ou adicionar bibliotecas nativas. Limites continuam em 10 MB e 40 megapixels. MIME e extensão do cliente não determinam o formato. Os bytes são preservados; sem conversão para JPEG/PNG. Capas WebP locais usam `.webp` e participam da compensação e remoção existentes.
 
 Validação de WebP cobre imagens estáticas e animadas, MIME/extensão de cliente incorretos, dados truncados, dimensões declaradas acima de 40 megapixels, preservação dos bytes e remoção local. O smoke com `bootRun`, PostgreSQL e Visual Library confirmou envio de capa/obra/retrato, MIME `image/webp` na leitura pelo proxy e funcionamento local com a flag desligada, incluindo exclusão da capa.
+
+## Correções de movimentos
+
+Obras usam o novo contrato de tags vinculadas por referência (`managedTags.movements` no upload e `PUT /api/assets/{id}/references/tags` na edição), com revisão monotônica. A lista inteira é enviada e recebe prioridade sobre sugestões genéricas. Editar os movimentos atualiza todas as imagens remotas após commit, sem bloquear a leitura local. Pendência/mensagem ficam na obra e um endpoint de retry permite recuperar falhas. Consulte [contrato de obras](artworks-api.md) e [spec aprovada](features/artwork-movements.md). Esse contrato exige atualizar também o Visual Library; a 0.6.0 anterior não o possui.
+
+A regra anterior de não atualizar associações permanece para sugestões genéricas de título, artista, técnica e tipo; apenas movimentos têm sincronização nesta entrega. Tags pessoais e antigas sem procedência permanecem protegidas.

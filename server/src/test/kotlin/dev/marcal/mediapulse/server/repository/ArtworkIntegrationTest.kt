@@ -51,6 +51,7 @@ import kotlin.test.assertTrue
 class ArtworkIntegrationTest {
     private lateinit var factory: LocalContainerEntityManagerFactoryBean
     private lateinit var service: ArtworkService
+    private lateinit var workRepo: ArtworkRepository
     private lateinit var gallery: ArtworkImageService
     private lateinit var tx: TxUtil
     private lateinit var jdbc: JdbcTemplate
@@ -75,9 +76,10 @@ class ArtworkIntegrationTest {
         val repositories = JpaRepositoryFactory(SharedEntityManagerCreator.createSharedEntityManager(emf))
         val ratingRepo = repositories.getRepository(MediaRatingRepository::class.java)
         val imageRepo = repositories.getRepository(ArtworkImageRepository::class.java)
+        workRepo = repositories.getRepository(ArtworkRepository::class.java)
         service =
             ArtworkService(
-                repositories.getRepository(ArtworkRepository::class.java),
+                workRepo,
                 repositories.getRepository(ArtworkArtistRepository::class.java),
                 repositories.getRepository(ArtworkExperienceRepository::class.java),
                 imageRepo,
@@ -102,6 +104,67 @@ class ArtworkIntegrationTest {
     @AfterAll
     fun close() {
         factory.destroy()
+    }
+
+    @Test
+    fun `a stale synchronization response cannot clear a newer movement revision`() {
+        val saved = tx.inTx { service.create(ArtworkRequest(title = "X", movements = listOf("Simbolismo"))) }.artwork
+        val changed = tx.inTx { service.update(saved.id, ArtworkRequest(title = "X", movements = listOf("Cubismo"))) }.artwork
+        assertEquals(0, tx.inTx { workRepo.updateMovementSync(saved.id, saved.movementsRevision, false, null) })
+        assertTrue(service.details(saved.id).artwork.movementsSyncPending)
+        assertEquals(1, tx.inTx { workRepo.updateMovementSync(saved.id, changed.movementsRevision, false, null) })
+        assertEquals(false, service.details(saved.id).artwork.movementsSyncPending)
+    }
+
+    @Test
+    fun `multiple movements persist and membership filtering does not duplicate works`() {
+        val saved =
+            tx
+                .inTx {
+                    service.create(ArtworkRequest(title = "The Kiss", movements = listOf("Art Nouveau", "Simbolismo", "Secessão Vienense")))
+                }.artwork
+        assertEquals(listOf("Art Nouveau", "Simbolismo", "Secessão Vienense"), service.details(saved.id).artwork.movements)
+        assertEquals(listOf(saved.id), service.library(null, null, null, "simbolismo", null, null, 0, 24).items.map { it.id })
+        assertEquals(listOf(saved.id), service.library("secessão", null, null, null, null, null, 0, 24).items.map { it.id })
+        assertTrue(service.filters().getValue("movementSuggestions").contains("Cubismo"))
+        val updated = tx.inTx { service.update(saved.id, ArtworkRequest(title = "The Kiss", movements = listOf("Simbolismo"))) }.artwork
+        assertEquals(saved.movementsRevision + 1, updated.movementsRevision)
+        assertTrue(updated.movementsSyncPending)
+        assertEquals(emptyList(), service.library(null, null, null, "Art Nouveau", null, null, 0, 24).items)
+    }
+
+    @Test
+    fun `movement migration preserves whole legacy text and empty values`() {
+        val source = DriverManagerDataSource(postgres.jdbcUrl, postgres.username, postgres.password)
+        val schema = "movement_migration"
+        try {
+            Flyway
+                .configure()
+                .dataSource(source)
+                .schemas(schema)
+                .defaultSchema(schema)
+                .target("66")
+                .load()
+                .migrate()
+            jdbc.update("INSERT INTO $schema.artworks(title, movement) VALUES ('Kiss', 'Art Nouveau, Simbolismo'), ('Empty', NULL)")
+            Flyway
+                .configure()
+                .dataSource(source)
+                .schemas(schema)
+                .defaultSchema(schema)
+                .load()
+                .migrate()
+            assertEquals(
+                "[\"Art Nouveau, Simbolismo\"]",
+                jdbc.queryForObject("SELECT movements::text FROM $schema.artworks WHERE title = 'Kiss'", String::class.java),
+            )
+            assertEquals(
+                "[]",
+                jdbc.queryForObject("SELECT movements::text FROM $schema.artworks WHERE title = 'Empty'", String::class.java),
+            )
+        } finally {
+            jdbc.execute("DROP SCHEMA IF EXISTS $schema CASCADE")
+        }
     }
 
     @Test

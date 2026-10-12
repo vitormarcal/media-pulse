@@ -49,7 +49,7 @@ class VisualLibraryClient(
                 .map { it.trim().replace(Regex("(?U)\\s+"), " ") }
                 .filter { it.isNotBlank() && it.length <= 48 }
                 .distinctBy { it.lowercase(Locale.ROOT) }
-                .take(8)
+                .take((8 - metadata.movements.size).coerceAtLeast(0))
         try {
             return try {
                 sendUpload(image, metadata, tags)
@@ -83,6 +83,16 @@ class VisualLibraryClient(
         body.part("hiddenFromGallery", "false")
         body.part("tags", mapper.writeValueAsString(tags))
         body.part("sourceReference", mapper.writeValueAsString(metadata.sourceReference))
+        if (metadata.sourceReference.entityType == "artwork") {
+            body.part(
+                "managedTags",
+                mapper.writeValueAsString(
+                    mapOf(
+                        "movements" to mapOf("tags" to metadata.movements, "revision" to metadata.movementsRevision),
+                    ),
+                ),
+            )
+        }
         val asset =
             client
                 .post()
@@ -94,6 +104,55 @@ class VisualLibraryClient(
                 .block(Duration.ofSeconds(30))
                 ?: error("Visual Library retornou resposta vazia.")
         return "/api/image-assets/${asset.id}/content"
+    }
+
+    data class MovementSyncResponse(
+        val preservedTags: List<String> = emptyList(),
+        val legacyTagsPreserved: Boolean = false,
+    )
+
+    fun synchronizeMovements(
+        assetId: UUID,
+        artworkId: Long,
+        movements: List<String>,
+        revision: Long,
+    ): MovementSyncResponse {
+        if (properties.baseUrl.isBlank()) throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Visual Library não configurado.")
+        try {
+            return client
+                .put()
+                .uri("${properties.baseUrl.trimEnd('/')}/api/assets/$assetId/references/tags")
+                .bodyValue(
+                    mapOf(
+                        "application" to "media-pulse",
+                        "entityType" to "artwork",
+                        "entityId" to artworkId.toString(),
+                        "group" to "movements",
+                        "tags" to movements,
+                        "revision" to revision,
+                    ),
+                ).retrieve()
+                .bodyToMono(MovementSyncResponse::class.java)
+                .block(Duration.ofSeconds(30))
+                ?: error("Visual Library retornou resposta vazia.")
+        } catch (error: WebClientResponseException) {
+            val reason =
+                if (error.statusCode.value() == 409) {
+                    "O Visual Library recusou a classificação. Confira o limite de oito tags por imagem e 48 caracteres por tag."
+                } else {
+                    "Não foi possível atualizar os movimentos no Visual Library. Tente novamente."
+                }
+            throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, reason)
+        }
+    }
+
+    companion object {
+        fun assetId(url: String): UUID? =
+            if (Regex("/api/image-assets/[0-9a-fA-F-]{36}/content").matches(url)) {
+                runCatching { UUID.fromString(url.split('/')[3]) }.getOrNull()
+            } else {
+                null
+            }
     }
 
     // Existing references remain readable even when uploads are disabled.

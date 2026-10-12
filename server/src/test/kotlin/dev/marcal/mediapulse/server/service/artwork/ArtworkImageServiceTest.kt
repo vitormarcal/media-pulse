@@ -107,7 +107,7 @@ class ArtworkImageServiceTest {
                 title = "Abaporu",
                 artistId = 2,
                 type = "Pintura",
-                movement = "Modernismo",
+                movements = listOf("Modernismo"),
                 technique = "Óleo sobre tela",
             )
         every { works.artist(2) } returns ArtworkArtist(id = 2, name = "Tarsila do Amaral", countryOfOrigin = "Brasil")
@@ -115,7 +115,8 @@ class ArtworkImageServiceTest {
         val work = service.artworkMetadata(7)
         assertEquals("artwork", work.sourceReference.entityType)
         assertEquals("7", work.sourceReference.entityId)
-        assertEquals(listOf("arte visual", "Abaporu", "Tarsila do Amaral", "Pintura", "Modernismo", "Óleo sobre tela"), work.tags)
+        assertEquals(listOf("arte visual", "Abaporu", "Tarsila do Amaral", "Pintura", "Óleo sobre tela"), work.tags)
+        assertEquals(listOf("Modernismo"), work.movements)
         val portrait = service.artistMetadata(2)
         assertEquals("artwork_artist", portrait.sourceReference.entityType)
         assertEquals("2", portrait.sourceReference.entityId)

@@ -8,6 +8,8 @@ data class VisualLibrarySourceReference(
 data class VisualLibraryUploadMetadata(
     val sourceReference: VisualLibrarySourceReference,
     val tags: List<String?> = emptyList(),
+    val movements: List<String> = emptyList(),
+    val movementsRevision: Long = 1,
 ) {
     companion object {
         fun forEntity(

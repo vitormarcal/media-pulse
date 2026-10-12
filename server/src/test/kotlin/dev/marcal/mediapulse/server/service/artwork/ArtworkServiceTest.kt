@@ -37,6 +37,26 @@ class ArtworkServiceTest {
     private val service = ArtworkService(works, artists, experiences, images, lists, items, query, ratings, ratingRepository)
 
     @Test
+    fun `movement lists normalize whitespace deduplicate and retain the legacy input as one term`() {
+        assertEquals(
+            listOf("Art Nouveau", "Simbolismo"),
+            service.normalizeMovements(
+                ArtworkRequest(
+                    title = "The Kiss",
+                    movements = listOf("  Art   Nouveau ", "ART NOUVEAU", "", "Simbolismo"),
+                ),
+            ),
+        )
+        assertEquals(
+            listOf("Art Nouveau, Simbolismo"),
+            service.normalizeMovements(ArtworkRequest(title = "The Kiss", movement = "Art Nouveau, Simbolismo")),
+        )
+        assertFailsWith<ResponseStatusException> {
+            service.normalizeMovements(ArtworkRequest(title = "X", movement = "A", movements = listOf("B")))
+        }
+    }
+
+    @Test
     fun `minimal capture creates no invented experience and notes alone preserve unknown date and contact`() {
         every { works.save(any()) } answers { firstArg<Artwork>().copy(id = 1) }
         every { works.findById(1) } returns Optional.of(Artwork(id = 1, title = "Obra"))

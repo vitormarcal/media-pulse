@@ -78,3 +78,5 @@ make push VERSION=<versão> EXTRA_TAGS="latest"
 ```
 
 Por padrão, o `Makefile` usa o `Dockerfile` raiz.
+
+Artes visuais aceita múltiplos movimentos e estilos com sugestões e entrada livre. Correções atualizam as imagens remotas automaticamente e permitem retry em falhas; operação e migration V67 estão em [artworks-api.md](docs/artworks-api.md).

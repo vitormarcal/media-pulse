@@ -165,6 +165,7 @@ MVP aprovado: [Revistas](docs/features/magazines.md).
 MVP aprovado: [Artes visuais](docs/features/artworks.md).
 
 - obras e artistas locais, com cadastro manual e dados parciais
+- múltiplos movimentos/estilos, sugestões abertas e correção das classificações das imagens no armazenamento próprio
 - experiências de contemplação digital ou presencial, com impressões e origem
 - avaliação e favorito na obra, múltiplas imagens locais por arquivo ou URL
 - listas pessoais, biblioteca sem recortes e páginas de artistas

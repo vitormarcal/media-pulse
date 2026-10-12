@@ -8,6 +8,8 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.Instant
 import java.time.LocalDate
 
@@ -33,7 +35,11 @@ data class Artwork(
     @Column(name = "artist_id") val artistId: Long? = null,
     val year: Int? = null,
     val type: String? = null,
-    val movement: String? = null,
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb") val movements: List<String> = emptyList(),
+    @Column(name = "movements_revision") val movementsRevision: Long = 1,
+    @Column(name = "movements_sync_pending") val movementsSyncPending: Boolean = false,
+    @Column(name = "movements_sync_message") val movementsSyncMessage: String? = null,
     val technique: String? = null,
     val description: String? = null,
     val favorite: Boolean = false,

@@ -14,11 +14,14 @@ export interface Artwork {
   artistId: number | null
   year: number | null
   type: string | null
-  movement: string | null
+  movements: string[]
   technique: string | null
   description: string | null
   favorite: boolean
   createdAt: string
+  movementsRevision: number
+  movementsSyncPending: boolean
+  movementsSyncMessage: string | null
 }
 export interface ArtworkExperience {
   id: number
@@ -50,7 +53,7 @@ export interface ArtworkCard {
   artist: ArtworkArtist | null
   year: number | null
   type: string | null
-  movement: string | null
+  movements: string[]
   favorite: boolean
   imageUrl: string | null
 }

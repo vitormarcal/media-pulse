@@ -9,6 +9,7 @@ import dev.marcal.mediapulse.server.api.artwork.ArtworkRequest
 import dev.marcal.mediapulse.server.model.artwork.ArtworkArtist
 import dev.marcal.mediapulse.server.model.artwork.ArtworkImage
 import dev.marcal.mediapulse.server.service.artwork.ArtworkImageService
+import dev.marcal.mediapulse.server.service.artwork.ArtworkMaintenanceService
 import dev.marcal.mediapulse.server.service.artwork.ArtworkService
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -34,6 +35,7 @@ import org.springframework.web.server.ResponseStatusException
 class ArtworksController(
     private val service: ArtworkService,
     private val images: ArtworkImageService,
+    private val maintenance: ArtworkMaintenanceService,
 ) {
     @ExceptionHandler(ResponseStatusException::class)
     fun invalid(error: ResponseStatusException): ResponseEntity<ProblemDetail> =
@@ -72,7 +74,12 @@ class ArtworksController(
     fun update(
         @PathVariable id: Long,
         @RequestBody request: ArtworkRequest,
-    ) = service.update(id, request)
+    ) = maintenance.update(id, request)
+
+    @PostMapping("/{id}/movements/sync")
+    fun retryMovements(
+        @PathVariable id: Long,
+    ) = maintenance.retry(id)
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -157,14 +164,14 @@ class ArtworksController(
         @PathVariable id: Long,
         @RequestPart("image") image: MultipartFile,
         @RequestParam(required = false) caption: String?,
-    ): ArtworkImage = images.attach(id, images.upload(image, images.artworkMetadata(id)), null, caption)
+    ): ArtworkImage = maintenance.attach(id, images.upload(image, images.artworkMetadata(id)), null, caption)
 
     @PostMapping("/{id}/images/url")
     @ResponseStatus(HttpStatus.CREATED)
     fun imageUrl(
         @PathVariable id: Long,
         @RequestBody request: ArtworkImageUrlRequest,
-    ): ArtworkImage = images.attach(id, images.download(request.url, images.artworkMetadata(id)), request.url.trim(), request.caption)
+    ): ArtworkImage = maintenance.attach(id, images.download(request.url, images.artworkMetadata(id)), request.url.trim(), request.caption)
 
     @PutMapping("/{id}/images/{imageId}/primary")
     @ResponseStatus(HttpStatus.NO_CONTENT)

@@ -9,7 +9,7 @@
     />
     <h3>{{ item.title }} <span v-if="item.favorite" aria-label="Favorita">♥</span></h3>
     <p>{{ [hideArtist ? null : item.artist?.name, item.year].filter((part) => part != null).join(' · ') }}</p>
-    <p v-if="item.movement" class="art-muted">{{ item.movement }}</p>
+    <p v-if="item.movements.length" class="art-muted">{{ item.movements.join(' · ') }}</p>
   </NuxtLink>
 </template>
 <script setup lang="ts">

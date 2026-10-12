@@ -44,6 +44,33 @@ class VisualLibraryClientTest {
     }
 
     @Test
+    fun `classification update sends all movements with a string entity id and numeric revision`() {
+        server.createContext("/api/assets/$id/references/tags") { exchange ->
+            assertEquals("PUT", exchange.requestMethod)
+            val body = mapper.readTree(exchange.requestBody.readAllBytes())
+            assertEquals("media-pulse", body["application"].asText())
+            assertEquals("artwork", body["entityType"].asText())
+            assertEquals("7", body["entityId"].asText())
+            assertTrue(body["entityId"].isTextual)
+            assertEquals(4, body["revision"].asInt())
+            assertEquals(listOf("Art Nouveau", "Simbolismo"), body["tags"].map { it.asText() })
+            val bytes = """{"preservedTags":[],"legacyTagsPreserved":false}""".toByteArray()
+            exchange.responseHeaders.set("Content-Type", "application/json")
+            exchange.sendResponseHeaders(responseStatus, bytes.size.toLong())
+            exchange.responseBody.use { it.write(bytes) }
+        }
+        responseStatus = 200
+        assertEquals(false, client(false).synchronizeMovements(id, 7, listOf("Art Nouveau", "Simbolismo"), 4).legacyTagsPreserved)
+        responseStatus = 409
+        assertEquals(
+            503,
+            assertFailsWith<ResponseStatusException> {
+                client(false).synchronizeMovements(id, 7, listOf("Art Nouveau", "Simbolismo"), 4)
+            }.statusCode.value(),
+        )
+    }
+
+    @Test
     fun `tag suggestions are cleaned deduplicated and bounded without truncating names`() {
         var sentTags = emptyList<String>()
         server.createContext("/api/assets") { exchange ->

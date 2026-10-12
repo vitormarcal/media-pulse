@@ -37,17 +37,33 @@
       </header>
       <p v-if="error" class="art-error" role="alert">{{ error }}</p>
       <ArtworkForm v-if="editing" :initial="data.artwork" @saved="updated" @cancel="editing = false" />
+      <div
+        v-if="data.artwork.movementsSyncPending || data.artwork.movementsSyncMessage"
+        class="art-section"
+        role="status"
+      >
+        <p :class="data.artwork.movementsSyncPending ? 'art-error' : 'art-muted'">
+          {{ data.artwork.movementsSyncMessage || 'Movimentos salvos. A atualização no Visual Library está pendente.' }}
+        </p>
+        <button v-if="data.artwork.movementsSyncPending" class="art-button" :disabled="busy" @click="retryMovements">
+          Tentar sincronizar movimentos novamente
+        </button>
+      </div>
       <ArtworkGallery :images="data.images" :title="data.artwork.title" />
       <div class="art-reading-layout" :class="{ 'has-description': Boolean(data.artwork.description) }">
         <section class="art-work-facts" aria-label="Dados da obra">
-          <dl v-if="data.artwork.type || data.artwork.movement || data.artwork.technique" class="art-metadata">
+          <dl v-if="data.artwork.type || data.artwork.movements.length || data.artwork.technique" class="art-metadata">
             <template v-if="data.artwork.type"
               ><dt>Tipo</dt>
               <dd>{{ data.artwork.type }}</dd></template
             >
-            <template v-if="data.artwork.movement"
-              ><dt>Movimento</dt>
-              <dd>{{ data.artwork.movement }}</dd></template
+            <template v-if="data.artwork.movements.length"
+              ><dt>Movimentos e estilos</dt>
+              <dd>
+                <ul class="art-movement-chips">
+                  <li v-for="movement in data.artwork.movements" :key="movement">{{ movement }}</li>
+                </ul>
+              </dd></template
             >
             <template v-if="data.artwork.technique"
               ><dt>Técnica</dt>
@@ -97,6 +113,11 @@ const {
   refresh,
 } = await useAsyncData(`artwork-${route.params.id}`, () => request<ArtworkDetails>(`/${route.params.id}`))
 const editing = ref(false)
+async function retryMovements() {
+  await run(async () => {
+    data.value = await request<ArtworkDetails>(`/${route.params.id}/movements/sync`, { method: 'POST' })
+  })
+}
 async function updated() {
   editing.value = false
   await refresh()

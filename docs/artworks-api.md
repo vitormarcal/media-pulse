@@ -7,7 +7,7 @@ Artes visuais é um domínio local de obras descobertas e experiências de conte
 | Método e caminho | Comportamento |
 | --- | --- |
 | `GET /api/artworks` | Biblioteca paginada; `q`, `artistId`, `type`, `movement`, `favorite`, `listId`, `page=0`, `limit=24` (1–100), `sort=recent` ou `sort=year`. Retorna `{items, nextPage}`. |
-| `GET /api/artworks/filters` | Tipos e movimentos existentes: `{types, movements}`. |
+| `GET /api/artworks/filters` | Tipos e movimentos existentes: `{types, movements, movementSuggestions}`. |
 | `POST /api/artworks` | Cadastra obra e primeira experiência parcial; retorna detalhe, com status 201. |
 | `GET /api/artworks/{id}` | `{artwork, artist, experiences, images, lists, rating}`. |
 | `PUT /api/artworks/{id}` | Substitui metadados, preservando favorito, avaliação, imagens, listas e experiências. |
@@ -42,7 +42,7 @@ Deletes de obra, artista e experiência retornam 204. Entidades ausentes e exper
 
 ## Cadastro e experiências
 
-Obra exige somente `title`. Metadados opcionais: `artistId` **ou** `artist` (novo artista com `name`), `year`, `type`, `movement`, `technique`, `description`. Tipos e movimentos são textos livres; os filtros sugerem os valores locais. Não deduplicar artistas ou obras automaticamente por nomes. Atualização de metadados não aceita `experience`; usar o histórico.
+Obra exige somente `title`. Metadados opcionais: `artistId` **ou** `artist` (novo artista com `name`), `year`, `type`, `movements`, `technique`, `description`. Tipo é texto livre; movements é uma lista de termos livres, com autocomplete de sugestões iniciais e termos locais. Não deduplicar artistas ou obras automaticamente por nomes. Atualização de metadados não aceita `experience`; usar o histórico.
 
 `experience` no cadastro e o body dos endpoints de experiências têm `experiencedAt` (data ISO), `experienceType` (`DIGITAL_VIEWING` ou `IN_PERSON`), `notes`, `sourceName` e `sourceUrl`, todos opcionais. Cadastro omite a experiência quando todos os campos estiverem vazios. Registro independente exige ao menos um campo. Não inferir data ou tipo; link deve ser HTTP ou HTTPS, sem credenciais. Experiências são ordenadas por data decrescente, sem data ao final, depois por ID decrescente. Cadastro técnico não é data de contemplação.
 
@@ -75,3 +75,19 @@ Nos detalhes, a galeria ampla reúne todas as imagens com navegação, miniatura
 ## Metadados de imagem no Visual Library 0.6.0
 
 Uploads remotos incluem sugestões de tags derivadas dos metadados existentes e referência à entidade com tipo e ID real em string. A referência é enviada também em substituições e novas tentativas, evitando reaplicar tags da mesma associação. Em revistas o tipo é `magazine_issue`; obras usam `artwork` e retratos `artwork_artist`. Omitir sugestões longas ou vazias não remove dados do Media Pulse. Ver [mapeamento, limites e tratamento de recusas](visual-library-images.md). Não há backfill automático nem sincronização contínua de tags.
+
+## Movimentos e estilos múltiplos
+
+A migration `V67__artwork_movements.sql` substitui `artworks.movement` por JSONB `movements`, preservando o texto antigo como um item completo, inclusive vírgulas. Null vira `[]`. Campos de revisão, pendência e mensagem de sincronização também são persistidos. Respostas de obra e card usam `movements: string[]`. Entrada legada `movement` ainda é aceita como um item; não combinar ambos. Até 32 entradas brutas, 200 caracteres por termo; limpar espaços, omitir vazios e deduplicar sem caixa. O cadastro permite texto livre; não inferir pertencimento a partir do artista.
+
+`GET /api/artworks/filters` inclui `movementSuggestions`: lista inicial de movimentos comuns mais termos do acervo. `movements` contém somente termos usados, para filtros. `movement` na query continua singular e encontra a obra por pertencimento, ignorando caixa; busca também inclui todos os movimentos. Cards/detalhe apresentam termos separados.
+
+Editar confirma a transação local antes de atualizar todas as imagens remotas distintas. `movementsRevision` cresce quando a lista muda. `movementsSyncPending` e `movementsSyncMessage` informam falhas e preservações; `POST /api/artworks/{id}/movements/sync` tenta novamente com o estado atual, sem alterar os metadados. Imagens locais não precisam de sincronização. A associação de nova imagem remota também confere a revisão atual, para corrigir mudanças ocorridas durante seu upload.
+
+Movimentos vão em `managedTags.movements` no upload e em um grupo da referência na atualização. Eles não são truncados para caber entre tags genéricas. O Visual Library rejeita grupos/uniões acima de oito tags ou termos acima de 48 caracteres; dados locais permanecem e a pendência é exibida. Remover tags não essenciais no Visual Library e tentar novamente permite resolver a união. Os termos pessoais, removidos manualmente ou usados em outras referências são preservados pelas regras do novo contrato.
+
+**Deploy:** aplicar as mudanças de backend do Visual Library antes de usar os uploads/sincronização de obras desta entrega. A API 0.6.0 publicada anteriormente não aceita `managedTags` nem o endpoint de atualização. Versões antigas causam erro de imagem/pendência explícita, sem perda da obra.
+
+Tags antigas não possuem procedência. Ao adotar uma referência legada, classificações são registradas separadamente, mas as tags anteriores são preservadas e a UI informa isso. Não presumir que um termo antigo era automaticamente gerenciado. Nenhum backfill de imagens/remoção de tags legadas ocorre silenciosamente.
+
+Testes cobrem migration, listas, filtro sem duplicação, normalização, revisão e sincronização parcial com retry. Fluxo completo deve ser conferido com os dois serviços em acervos temporários, incluindo tags pessoais, referências compartilhadas, limite e indisponibilidade.

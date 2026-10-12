@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.1.1
+  version: 1.2.0
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -146,6 +146,10 @@ paths:
                     type: array
                     items:
                       type: string
+                  movementSuggestions:
+                    type: array
+                    description: Initial common movements plus locally used terms; free entry remains allowed.
+                    items: { type: string }
         '400':
           description: Invalid input.
         '404':
@@ -559,6 +563,23 @@ paths:
           description: Invalid input.
         '404':
           description: Entity not found.
+  /api/artworks/{id}/movements/sync:
+    post:
+      tags: [Artworks]
+      summary: Retry movement classification for all remote images of the work
+      description: Uses the current stored list and revision. Failures keep movementsSyncPending true and return saved local details with a readable message. Local images require no remote request.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Work details with synchronization state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArtworkDetailsDto' }
+        '404': { description: Work not found }
   /api/artworks/{id}/images:
     post:
       tags:
@@ -10475,9 +10496,16 @@ components:
           type: string
           nullable: true
           maxLength: 100
+        movements:
+          type: array
+          nullable: true
+          maxItems: 32
+          items: { type: string, maxLength: 200 }
         movement:
           type: string
           nullable: true
+          deprecated: true
+          description: Legacy scalar input; do not combine with movements.
           maxLength: 200
         technique:
           type: string
@@ -10517,10 +10545,10 @@ components:
           type: string
           nullable: true
           maxLength: 100
-        movement:
-          type: string
-          nullable: true
-          maxLength: 200
+        movements:
+          type: array
+          maxItems: 32
+          items: { type: string, maxLength: 200 }
         technique:
           type: string
           nullable: true
@@ -10529,6 +10557,9 @@ components:
           type: string
           nullable: true
           maxLength: 20000
+        movementsRevision: { type: integer, format: int64 }
+        movementsSyncPending: { type: boolean }
+        movementsSyncMessage: { type: string, nullable: true }
         favorite:
           type: boolean
         createdAt:
@@ -10537,6 +10568,7 @@ components:
       required:
       - id
       - title
+      - movements
       - favorite
       - createdAt
     ArtworkCardDto:
@@ -10557,9 +10589,10 @@ components:
         type:
           type: string
           nullable: true
-        movement:
-          type: string
-          nullable: true
+        movements:
+          type: array
+          maxItems: 32
+          items: { type: string, maxLength: 200 }
         favorite:
           type: boolean
         imageUrl:
@@ -10568,6 +10601,7 @@ components:
       required:
       - id
       - title
+      - movements
       - favorite
     ArtworkLibraryDto:
       type: object

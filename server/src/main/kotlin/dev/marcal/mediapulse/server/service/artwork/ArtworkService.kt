@@ -60,7 +60,46 @@ class ArtworkService(
         return ArtworkLibraryDto(ids.take(limit).map { card(byId.getValue(it)) }, if (ids.size > limit) page + 1 else null)
     }
 
-    fun filters() = query.filters()
+    fun filters(): Map<String, List<String>> {
+        val current = query.filters()
+        return current + (
+            "movementSuggestions" to
+                (INITIAL_MOVEMENTS + current.getValue("movements"))
+                    .distinctBy { it.lowercase() }
+                    .sorted()
+        )
+    }
+
+    companion object {
+        val INITIAL_MOVEMENTS =
+            listOf(
+                "Renascimento",
+                "Maneirismo",
+                "Barroco",
+                "Rococó",
+                "Neoclassicismo",
+                "Romantismo",
+                "Realismo",
+                "Impressionismo",
+                "Pós-impressionismo",
+                "Simbolismo",
+                "Art Nouveau",
+                "Arts and Crafts",
+                "Secessão Vienense",
+                "Fauvismo",
+                "Expressionismo",
+                "Cubismo",
+                "Futurismo",
+                "Dadaísmo",
+                "Surrealismo",
+                "Abstracionismo",
+                "Expressionismo abstrato",
+                "Pop Art",
+                "Minimalismo",
+                "Arte conceitual",
+                "Academicismo",
+            )
+    }
 
     fun artists(): List<ArtworkArtist> = artists.findAllByOrderByNameAscIdAsc()
 
@@ -107,9 +146,20 @@ class ArtworkService(
         id: Long,
         request: ArtworkRequest,
     ): ArtworkDetailsDto {
-        val current = work(id)
+        val current = works.lockById(id) ?: missing("Obra não encontrada.")
         if (request.experience != null) bad("Edite experiências pelo histórico da obra.")
-        works.save(toWork(request).copy(id = id, favorite = current.favorite, createdAt = current.createdAt))
+        val value = toWork(request)
+        val changed = value.movements != current.movements
+        works.save(
+            value.copy(
+                id = id,
+                favorite = current.favorite,
+                createdAt = current.createdAt,
+                movementsRevision = current.movementsRevision + if (changed) 1 else 0,
+                movementsSyncPending = changed || current.movementsSyncPending,
+                movementsSyncMessage = if (changed) null else current.movementsSyncMessage,
+            ),
+        )
         return details(id)
     }
 
@@ -122,7 +172,7 @@ class ArtworkService(
             artistId = artistId,
             year = request.year,
             type = clean(request.type, 100),
-            movement = clean(request.movement, 200),
+            movements = normalizeMovements(request),
             technique = clean(request.technique, 200),
             description = clean(request.description),
         )
@@ -285,10 +335,17 @@ class ArtworkService(
             work.artistId?.let(::artist),
             work.year,
             work.type,
-            work.movement,
+            work.movements,
             work.favorite,
             images.findByArtworkIdOrderByIdAsc(work.id).let { gallery -> (gallery.find { it.primary } ?: gallery.firstOrNull())?.url },
         )
+
+    internal fun normalizeMovements(request: ArtworkRequest): List<String> {
+        if (request.movements != null && request.movement != null) bad("Envie movements ou movement, não ambos.")
+        val values = request.movements ?: listOfNotNull(request.movement)
+        if (values.size > 32) bad("Informe até 32 movimentos.")
+        return values.mapNotNull { clean(it.replace(Regex("(?U)\\s+"), " "), 200) }.distinctBy { it.lowercase() }
+    }
 
     private fun required(
         value: String,

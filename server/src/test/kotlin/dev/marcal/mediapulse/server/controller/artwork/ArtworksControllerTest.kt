@@ -7,6 +7,7 @@ import dev.marcal.mediapulse.server.model.artwork.ArtworkArtist
 import dev.marcal.mediapulse.server.model.artwork.ArtworkImage
 import dev.marcal.mediapulse.server.model.visuallibrary.VisualLibraryUploadMetadata
 import dev.marcal.mediapulse.server.service.artwork.ArtworkImageService
+import dev.marcal.mediapulse.server.service.artwork.ArtworkMaintenanceService
 import dev.marcal.mediapulse.server.service.artwork.ArtworkService
 import io.mockk.every
 import io.mockk.mockk
@@ -25,7 +26,18 @@ import org.springframework.web.server.ResponseStatusException
 class ArtworksControllerTest {
     private val service = mockk<ArtworkService>()
     private val images = mockk<ArtworkImageService>()
-    private val mvc = MockMvcBuilders.standaloneSetup(ArtworksController(service, images)).build()
+    private val maintenance = mockk<ArtworkMaintenanceService>()
+    private val mvc = MockMvcBuilders.standaloneSetup(ArtworksController(service, images, maintenance)).build()
+
+    @Test
+    fun `movement payloads reject scalars null items and numeric items before saving`() {
+        for (value in listOf("\"Simbolismo\"", "[null]", "[7]")) {
+            mvc
+                .perform(post("/api/artworks").contentType("application/json").content("""{"title":"X","movements":$value}"""))
+                .andExpect(status().isBadRequest)
+        }
+        verify(exactly = 0) { service.create(any()) }
+    }
 
     @Test
     fun `library forwards chronological sorting and preserves recent default`() {
@@ -90,7 +102,7 @@ class ArtworksControllerTest {
         every { images.artworkMetadata(1) } returns metadata
         every { images.upload(any(), metadata) } returns "/covers/artworks/local.png"
         every { images.download("https://example.com/image.png", metadata) } returns "/covers/artworks/download.png"
-        every { images.attach(any(), any(), any(), any()) } answers { ArtworkImage(id = 1, artworkId = firstArg(), url = secondArg()) }
+        every { maintenance.attach(any(), any(), any(), any()) } answers { ArtworkImage(id = 1, artworkId = firstArg(), url = secondArg()) }
         mvc
             .perform(multipart("/api/artworks/1/images").file(MockMultipartFile("image", "image.png", "image/png", byteArrayOf(1))))
             .andExpect(status().isCreated)
@@ -98,6 +110,6 @@ class ArtworksControllerTest {
             .perform(
                 post("/api/artworks/1/images/url").contentType("application/json").content("""{"url":"https://example.com/image.png"}"""),
             ).andExpect(status().isCreated)
-        verify { images.attach(1, "/covers/artworks/download.png", "https://example.com/image.png", null) }
+        verify { maintenance.attach(1, "/covers/artworks/download.png", "https://example.com/image.png", null) }
     }
 }

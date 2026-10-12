@@ -677,3 +677,45 @@
     margin: 32px 0 48px;
   }
 }
+
+.art-movements-field {
+  display: grid;
+  gap: 8px;
+}
+.art-movement-input {
+  display: flex;
+  gap: 8px;
+}
+.art-movement-input input {
+  min-width: 0;
+  flex: 1;
+}
+.art-movement-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.art-movement-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: var(--base-color-surface-warm);
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.art-movement-chips button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.art-movement-chips button:focus-visible {
+  outline: 2px solid var(--base-color-focus);
+  outline-offset: 4px;
+}
