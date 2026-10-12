@@ -1,5 +1,5 @@
 <template>
-  <form class="art-panel" @submit.prevent="save">
+  <form ref="captureForm" class="art-panel" @submit.prevent="save">
     <h2>{{ initial ? 'Editar obra' : 'Adicionar obra' }}</h2>
     <fieldset :disabled="busy">
       <div class="art-fields">
@@ -14,21 +14,28 @@
         <label>Ano <input v-model="form.year" type="number" step="1" /></label>
       </div>
       <label class="art-check"><input v-model="newArtist" type="checkbox" /> Cadastrar novo artista</label>
-      <ArtworkArtistFields v-if="newArtist" v-model="artist" />
-      <details>
-        <summary>Metadados da obra</summary>
-        <div class="art-fields">
-          <label>Tipo <input v-model="form.type" list="artwork-types" maxlength="100" /></label>
-          <datalist id="artwork-types">
-            <option>Pintura</option>
-            <option>Escultura</option>
-            <option>Fotografia artística</option>
-            <option>Outra</option>
-          </datalist>
-          <label>Movimento <input v-model="form.movement" maxlength="200" /></label>
-          <label class="art-wide">Técnica <input v-model="form.technique" maxlength="200" /></label>
-          <label class="art-wide">Descrição <textarea v-model="form.description" rows="3" maxlength="20000" /></label>
-        </div>
+      <section v-if="newArtist" class="art-subform"><ArtworkArtistFields v-model="artist" /></section>
+      <div class="art-fields">
+        <label
+          >Tipo
+          <select v-model="typeChoice" aria-label="Tipo da obra">
+            <option value="">Não informado</option>
+            <option v-for="type in artworkTypes" :key="type">{{ type }}</option>
+            <option value="Outra">Outra</option>
+          </select>
+        </label>
+        <label v-if="typeChoice === 'Outra'">Outro tipo <input v-model="otherType" maxlength="100" /></label>
+        <label>Movimento <input v-model="form.movement" maxlength="200" placeholder="Academicismo francês" /></label>
+        <label class="art-wide"
+          >Técnica <input v-model="form.technique" maxlength="200" placeholder="Óleo sobre tela"
+        /></label>
+      </div>
+      <details class="art-form-details" :open="Boolean(initial?.description)">
+        <summary>Descrição</summary>
+        <label class="art-section"
+          ><span class="art-sr-only">Descrição da obra</span
+          ><textarea v-model="form.description" rows="4" maxlength="20000" placeholder="Tema e contexto da obra" />
+        </label>
       </details>
       <section v-if="!initial" class="art-section">
         <h3>Primeira experiência</h3>
@@ -36,9 +43,11 @@
       </section>
       <section v-if="!initial" class="art-section">
         <h3>Imagens</h3>
-        <label>Arquivos <input type="file" accept="image/jpeg,image/png" multiple @change="selectFiles" /></label>
-        <label>URLs das imagens (uma por linha) <textarea v-model="imageUrls" rows="3" /></label>
-        <p class="art-muted">JPEG ou PNG, até 10 MB por imagem. Você poderá escolher a principal na galeria.</p>
+        <div class="art-fields">
+          <label>Arquivos <input type="file" accept="image/jpeg,image/png" multiple @change="selectFiles" /></label>
+          <label>URLs das imagens <textarea v-model="imageUrls" rows="2" placeholder="Uma URL por linha" /></label>
+        </div>
+        <p class="art-muted art-caption">JPEG ou PNG · Até 10 MB por imagem</p>
       </section>
       <p v-if="error" class="art-error" role="alert">{{ error }}</p>
       <p v-if="imageErrors.length" class="art-error" role="alert">
@@ -72,10 +81,25 @@ const form = reactive({
   technique: props.initial?.technique || '',
   description: props.initial?.description || '',
 })
+const artworkTypes = ['Pintura', 'Escultura', 'Fotografia artística', 'Desenho', 'Gravura']
+const typeChoice = computed({
+  get: () => (!form.type ? '' : artworkTypes.includes(form.type) ? form.type : 'Outra'),
+  set: (value: string) => {
+    form.type = value === 'Outra' ? 'Outra' : value
+  },
+})
+const otherType = computed({
+  get: () => (form.type === 'Outra' ? '' : form.type),
+  set: (value: string) => {
+    form.type = value || 'Outra'
+  },
+})
+const captureForm = ref<HTMLFormElement>()
+onMounted(() => captureForm.value?.querySelector('input')?.focus())
 const newArtist = ref(false)
 const artist = ref({
   name: '',
-  nationality: null as string | null,
+  countryOfOrigin: null as string | null,
   bornAt: null as string | null,
   diedAt: null as string | null,
   biography: null as string | null,

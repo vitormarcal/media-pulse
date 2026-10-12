@@ -12,7 +12,7 @@ import java.time.LocalDate
 data class ArtworkArtistRequest(
     val name: String,
     val biography: String? = null,
-    val nationality: String? = null,
+    val countryOfOrigin: String? = null,
     val bornAt: LocalDate? = null,
     val diedAt: LocalDate? = null,
 )

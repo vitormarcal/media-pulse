@@ -1,8 +1,24 @@
 <template>
   <section class="art-panel">
-    <h2>{{ artistId ? 'Retrato' : 'Galeria' }}</h2>
-    <div v-if="!artistId" class="art-gallery">
-      <figure v-for="image in images" :key="image.id">
+    <div class="art-section-header">
+      <h2>
+        {{ artistId ? 'Retrato' : 'Galeria'
+        }}<span v-if="!artistId" class="art-count" aria-hidden="true">{{ images?.length || 0 }}</span>
+      </h2>
+      <button
+        class="art-button"
+        type="button"
+        :aria-expanded="managing"
+        :aria-controls="managerId"
+        @click="toggleManager"
+      >
+        {{
+          managing ? 'Fechar' : artistId ? (hasPortrait ? 'Alterar retrato' : 'Adicionar retrato') : 'Gerenciar imagens'
+        }}
+      </button>
+    </div>
+    <div v-if="!artistId && visibleImages.length" class="art-gallery">
+      <figure v-for="image in visibleImages" :key="image.id">
         <a :href="resolveMediaUrl(image.url) || undefined" target="_blank" rel="noopener"
           ><img
             :src="resolveMediaUrl(image.url) || undefined"
@@ -11,7 +27,7 @@
         /></a>
         <figcaption v-if="image.caption">{{ image.caption }}</figcaption>
         <a v-if="image.sourceUrl" :href="image.sourceUrl" target="_blank" rel="noopener">Origem</a>
-        <div class="art-actions">
+        <div v-if="managing" class="art-actions">
           <button class="art-button" :disabled="busy || image.primary" @click="changePrimary(image.id)">
             {{ image.primary ? 'Principal' : 'Usar como principal' }}
           </button>
@@ -19,7 +35,7 @@
         </div>
       </figure>
     </div>
-    <form @submit.prevent="add">
+    <form v-show="managing" :id="managerId" ref="managerForm" class="art-section" @submit.prevent="add">
       <fieldset :disabled="busy">
         <div class="art-fields">
           <label
@@ -29,24 +45,48 @@
           <label>URL da imagem <input v-model="url" type="url" maxlength="4000" /></label>
           <label v-if="!artistId" class="art-wide">Legenda <input v-model="caption" maxlength="500" /></label>
         </div>
-        <p class="art-muted">JPEG ou PNG, até 10 MB. Use a URL direta da imagem.</p>
+        <p class="art-muted">JPEG ou PNG · Até 10 MB</p>
         <div class="art-actions">
           <button class="art-button" :disabled="!files.length && !url">
             {{ busy ? 'Adicionando…' : 'Adicionar imagem' }}</button
-          ><button v-if="artistId" type="button" class="art-button" @click="removePortrait">Remover retrato</button>
+          ><button v-if="artistId && hasPortrait" type="button" class="art-button" @click="removePortrait">
+            Remover retrato
+          </button>
         </div>
       </fieldset>
     </form>
     <p v-if="error" class="art-error" role="alert">{{ error }}</p>
-    <p v-if="success" class="art-success" role="status">{{ success }}</p>
+    <p v-if="success && managing" class="art-success" role="status">{{ success }}</p>
   </section>
 </template>
 <script setup lang="ts">
 import type { ArtworkImage } from '~/types/artworks'
-const props = defineProps<{ artworkId?: number; artistId?: number; images?: ArtworkImage[]; title?: string }>()
+const props = defineProps<{
+  artworkId?: number
+  artistId?: number
+  images?: ArtworkImage[]
+  title?: string
+  hasPortrait?: boolean
+}>()
 const emit = defineEmits<{ changed: [] }>()
 const { request, run, busy, error, success } = useArtworkApi()
 const { resolveMediaUrl } = useMediaUrl()
+const managing = ref(false)
+const managerId = useId()
+const managerForm = ref<HTMLFormElement>()
+const visibleImages = computed(() => {
+  const gallery = props.images || []
+  if (managing.value) return gallery
+  const primaryId = gallery.find((image) => image.primary)?.id ?? gallery[0]?.id
+  return gallery.filter((image) => image.id !== primaryId)
+})
+async function toggleManager() {
+  managing.value = !managing.value
+  if (managing.value) {
+    await nextTick()
+    managerForm.value?.querySelector('input')?.focus()
+  }
+}
 const url = ref('')
 const caption = ref('')
 const files = ref<File[]>([])

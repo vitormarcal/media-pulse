@@ -12,7 +12,7 @@ Registrar localmente obras conhecidas ou em descoberta, seus artistas e as exper
 
 - Domínio próprio de artes visuais, separado dos modelos de livros, audiovisual e música.
 - Cadastro manual de obra com título obrigatório; artista, ano, tipo, movimento, técnica e descrição opcionais. Tipos incluem pintura, escultura, fotografia artística e outras manifestações visuais.
-- Artistas locais reutilizáveis, com nome obrigatório e informações opcionais, como biografia, nacionalidade, datas de nascimento/falecimento e retrato. Página própria com seus dados e somente as obras cadastradas no arquivo.
+- Artistas locais reutilizáveis, com nome obrigatório e informações opcionais, como biografia, país de origem, datas de nascimento/falecimento e retrato. Página própria com seus dados e somente as obras cadastradas no arquivo.
 - Cadastro da obra e da primeira experiência no mesmo fluxo. Oferecer data, contato digital ou presencial, impressões e origem da descoberta, com nome/local e link opcionais. Permitir salvar com informações parciais, sem exigir uma experiência completa.
 - Novas experiências independentes para contemplações posteriores, preservando o histórico da mesma obra.
 - Avaliação opcional e favorito vinculados à obra, independentes das experiências.
@@ -68,3 +68,9 @@ A implementação exigirá migration Flyway para obras, artistas, experiências,
 - Buscar obras e filtrar a biblioteca pelos recortes definidos, sem duplicar cards por experiência ou participação em listas.
 - Consultar todos os registros após recarregar a página, usando dados e imagens locais.
 - Navegar e registrar informações em celular e por teclado, com feedback de gravação e recuperação de erros consistentes com o produto.
+
+### Revisão de UX/UI
+
+Cadastro mantém título, artista e ano e torna tipo, movimento e técnica visíveis. Tipo oferece categorias comuns e Outra com texto próprio; exemplos curtos orientam movimento e técnica. País de origem usa nomes de países, com preservação dos valores anteriores na migration V66 para revisão manual.
+
+Detalhes priorizam imagem, ficha compacta e experiências. Descrição e biografia são expansíveis. Controles de galeria e listas aparecem por ações de gerenciamento; a galeria não repete a imagem principal durante a navegação normal. Tipos personalizados, dados preenchidos, múltiplas imagens, correções e histórico permanecem disponíveis. Integração com Wikipedia foi adiada; o cadastro continua manual.

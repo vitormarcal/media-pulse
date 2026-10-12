@@ -10,12 +10,17 @@
       <header class="art-header">
         <h1>{{ data.name }}</h1>
         <div class="art-actions">
-          <button class="art-button" @click="edit">Editar artista</button
-          ><button class="art-button" :disabled="busy" @click="remove">Excluir artista</button>
+          <button class="art-button" :aria-expanded="editing" @click="edit">
+            {{ editing ? 'Fechar edição' : 'Editar artista' }}</button
+          ><button v-if="editing" class="art-button" :disabled="busy" @click="remove">Excluir artista</button>
         </div>
       </header>
       <ArtworkNav />
-      <div class="art-detail-top">
+      <div
+        v-if="data.portraitUrl || data.countryOfOrigin || data.bornAt || data.diedAt || data.biography"
+        class="art-artist-profile"
+        :class="{ 'has-portrait': Boolean(data.portraitUrl) }"
+      >
         <img
           v-if="data.portraitUrl"
           class="art-portrait"
@@ -23,10 +28,21 @@
           :alt="data.name"
         />
         <section>
-          <p v-if="data.nationality">{{ data.nationality }}</p>
-          <p v-if="data.bornAt">Nascimento: {{ formatDate(data.bornAt) }}</p>
-          <p v-if="data.diedAt">Falecimento: {{ formatDate(data.diedAt) }}</p>
-          <p v-if="data.biography" class="art-preserve">{{ data.biography }}</p>
+          <dl class="art-metadata">
+            <template v-if="data.countryOfOrigin"
+              ><dt>País de origem</dt>
+              <dd>{{ data.countryOfOrigin }}</dd></template
+            >
+            <template v-if="data.bornAt"
+              ><dt>Nascimento</dt>
+              <dd>{{ formatDate(data.bornAt) }}</dd></template
+            >
+            <template v-if="data.diedAt"
+              ><dt>Falecimento</dt>
+              <dd>{{ formatDate(data.diedAt) }}</dd></template
+            >
+          </dl>
+          <ArtworkLongText title="Biografia" :text="data.biography" />
         </section>
       </div>
       <form v-if="editing" class="art-panel" @submit.prevent="save">
@@ -39,7 +55,7 @@
         </fieldset>
       </form>
       <p v-if="error" class="art-error" role="alert">{{ error }}</p>
-      <ArtworkImageManager :artist-id="data.id" @changed="refresh()" />
+      <ArtworkImageManager :artist-id="data.id" :has-portrait="Boolean(data.portraitUrl)" @changed="refresh()" />
       <h2>Obras cadastradas</h2>
       <ArtworkLibrary :artist-id="data.id" />
     </template>
@@ -47,6 +63,7 @@
 </template>
 <script setup lang="ts">
 import ArtworkNav from '~/components/artworks/ArtworkNav.vue'
+import ArtworkLongText from '~/components/artworks/ArtworkLongText.vue'
 import ArtworkArtistFields from '~/components/artworks/ArtworkArtistFields.vue'
 import ArtworkImageManager from '~/components/artworks/ArtworkImageManager.vue'
 import ArtworkLibrary from '~/components/artworks/ArtworkLibrary.vue'
@@ -65,7 +82,7 @@ const editing = ref(false)
 const form = ref({
   name: '',
   biography: null as string | null,
-  nationality: null as string | null,
+  countryOfOrigin: null as string | null,
   bornAt: null as string | null,
   diedAt: null as string | null,
 })
@@ -73,11 +90,15 @@ function formatDate(date: string) {
   return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`))
 }
 function edit() {
+  if (editing.value) {
+    editing.value = false
+    return
+  }
   if (!data.value) return
   form.value = {
     name: data.value.name,
     biography: data.value.biography,
-    nationality: data.value.nationality,
+    countryOfOrigin: data.value.countryOfOrigin,
     bornAt: data.value.bornAt,
     diedAt: data.value.diedAt,
   }

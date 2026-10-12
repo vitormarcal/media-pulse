@@ -1,11 +1,32 @@
 <template>
   <section class="art-panel">
-    <h2>Listas</h2>
-    <div v-for="list in selected" :key="list.id" class="art-actions art-section">
-      <NuxtLink :to="`/artworks/lists/${list.id}`">{{ list.name }}</NuxtLink>
-      <button class="art-button" :disabled="busy" @click="remove(list.id)">Remover da lista</button>
+    <div class="art-section-header">
+      <h2>
+        Listas<span class="art-count" aria-hidden="true">{{ selected.length }}</span>
+      </h2>
+      <button
+        class="art-button"
+        type="button"
+        :aria-expanded="managing"
+        :aria-controls="managerId"
+        @click="toggleManager"
+      >
+        {{ managing ? 'Fechar' : 'Gerenciar listas' }}
+      </button>
     </div>
-    <form @submit.prevent="add">
+    <div v-for="list in selected" :key="list.id" class="art-list-row">
+      <NuxtLink :to="`/artworks/lists/${list.id}`">{{ list.name }}</NuxtLink>
+      <button
+        v-if="managing"
+        class="art-button"
+        :aria-label="`Remover de ${list.name}`"
+        :disabled="busy"
+        @click="remove(list.id)"
+      >
+        Remover
+      </button>
+    </div>
+    <form v-show="managing" :id="managerId" ref="managerForm" class="art-section" @submit.prevent="add">
       <fieldset :disabled="busy">
         <div class="art-fields">
           <label
@@ -21,7 +42,7 @@
       </fieldset>
     </form>
     <p v-if="error" class="art-error" role="alert">{{ error }}</p>
-    <p v-if="success" class="art-success" role="status">{{ success }}</p>
+    <p v-if="success && managing" class="art-success" role="status">{{ success }}</p>
   </section>
 </template>
 <script setup lang="ts">
@@ -33,6 +54,16 @@ const { data: lists, refresh } = await useAsyncData('artwork-membership-lists', 
 const available = computed(() =>
   (lists.value || []).filter((list) => !props.selected.some((selected) => selected.id === list.id)),
 )
+const managing = ref(false)
+const managerId = useId()
+const managerForm = ref<HTMLFormElement>()
+async function toggleManager() {
+  managing.value = !managing.value
+  if (managing.value) {
+    await nextTick()
+    managerForm.value?.querySelector('select')?.focus()
+  }
+}
 const listId = ref<number | null>(null)
 const name = ref('')
 async function add() {

@@ -46,7 +46,7 @@ Obra exige somente `title`. Metadados opcionais: `artistId` **ou** `artist` (nov
 
 `experience` no cadastro e o body dos endpoints de experiências têm `experiencedAt` (data ISO), `experienceType` (`DIGITAL_VIEWING` ou `IN_PERSON`), `notes`, `sourceName` e `sourceUrl`, todos opcionais. Cadastro omite a experiência quando todos os campos estiverem vazios. Registro independente exige ao menos um campo. Não inferir data ou tipo; link deve ser HTTP ou HTTPS, sem credenciais. Experiências são ordenadas por data decrescente, sem data ao final, depois por ID decrescente. Cadastro técnico não é data de contemplação.
 
-Artista tem `name`, `biography`, `nationality`, `bornAt`, `diedAt`; datas opcionais, falecimento não pode anteceder nascimento. Limites: título 300; nome de artista/lista, nacionalidade, movimento e técnica 200; tipo 100; origem 300; legenda 500; notas, biografia e descrições 20.000 caracteres. Favorito e avaliação pertencem à obra. Listas não modificam movimento artístico e cada obra aparece uma vez na biblioteca, mesmo com múltiplas experiências/listas. Biblioteca é ordenada pelo cadastro mais recente (ID decrescente).
+Artista tem `name`, `biography`, `countryOfOrigin`, `bornAt`, `diedAt`; datas opcionais, falecimento não pode anteceder nascimento. Limites: título 300; nome de artista/lista, país de origem, movimento e técnica 200; tipo 100; origem 300; legenda 500; notas, biografia e descrições 20.000 caracteres. Favorito e avaliação pertencem à obra. Listas não modificam movimento artístico e cada obra aparece uma vez na biblioteca, mesmo com múltiplas experiências/listas. Biblioteca é ordenada pelo cadastro mais recente (ID decrescente).
 
 ## Imagens e operação
 
@@ -61,3 +61,11 @@ O frontend oferece `/artworks`, `/artworks/{id}`, `/artworks/artists`, `/artwork
 Testes de serviço/HTTP cobrem captura parcial, isolamento de experiências, exclusão com desvinculação, imagens inválidas e avaliação compartilhada. `ArtworkIntegrationTest` valida migration/JPA em PostgreSQL, experiências repetidas, filtros, paginação, múltiplas listas, troca de principal e exclusões em cascata.
 
 Em Docker recente com API mínima 1.44, a versão atual do cliente de Testcontainers pode não detectar o daemon com a API padrão. Sem alterar dependências ou configurações locais, validar com `JAVA_TOOL_OPTIONS=-Dapi.version=1.44 ./gradlew test --tests '*ArtworkIntegrationTest'` dentro de `server/`; conferir que o relatório não registra testes ignorados.
+
+## Revisão de cadastro e detalhes
+
+A migration `V66__rename_artwork_artist_country.sql` renomeia `artwork_artists.nationality` para `country_of_origin`. O contrato de artistas passa a usar `countryOfOrigin`. Os valores existentes são preservados literalmente para revisão manual; a migração não converte nacionalidades em países nem modifica obras ou vínculos.
+
+Tipo usa opções Pintura, Escultura, Fotografia artística, Desenho, Gravura e Outra. Outra permite texto próprio; tipos personalizados existentes continuam editáveis. Movimento e técnica têm exemplos nos campos. Descrição, biografia e dados adicionais do artista são apresentados sob demanda.
+
+Nos detalhes, imagem, ficha e experiências vêm antes dos controles de manutenção. Descrição e biografia são expansíveis. Gerenciar imagens abre a seleção de principal, remoção e adição por arquivo/URL; sem gerenciamento, a galeria mostra somente as imagens adicionais, evitando repetir a principal. Gerenciar listas abre os controles de vínculos, mantendo as listas atuais visíveis. Excluir obra/artista aparece ao abrir a edição. O cadastro permanece manual.

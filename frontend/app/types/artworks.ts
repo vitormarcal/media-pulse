@@ -3,7 +3,7 @@ export interface ArtworkArtist {
   id: number
   name: string
   biography: string | null
-  nationality: string | null
+  countryOfOrigin: string | null
   bornAt: string | null
   diedAt: string | null
   portraitUrl: string | null

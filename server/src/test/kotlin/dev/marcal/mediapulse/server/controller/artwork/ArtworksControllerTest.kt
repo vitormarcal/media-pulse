@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.controller.artwork
 
 import dev.marcal.mediapulse.server.api.artwork.ArtworkDetailsDto
 import dev.marcal.mediapulse.server.model.artwork.Artwork
+import dev.marcal.mediapulse.server.model.artwork.ArtworkArtist
 import dev.marcal.mediapulse.server.model.artwork.ArtworkImage
 import dev.marcal.mediapulse.server.service.artwork.ArtworkImageService
 import dev.marcal.mediapulse.server.service.artwork.ArtworkService
@@ -23,6 +24,19 @@ class ArtworksControllerTest {
     private val service = mockk<ArtworkService>()
     private val images = mockk<ArtworkImageService>()
     private val mvc = MockMvcBuilders.standaloneSetup(ArtworksController(service, images)).build()
+
+    @Test
+    fun `artist creation accepts country of origin in the public contract`() {
+        every { service.saveArtist(null, any()) } returns ArtworkArtist(id = 1, name = "Artista", countryOfOrigin = "França")
+        mvc
+            .perform(
+                post("/api/artworks/artists")
+                    .contentType("application/json")
+                    .content("""{"name":"Artista","countryOfOrigin":"França"}"""),
+            ).andExpect(status().isCreated)
+            .andExpect(jsonPath("$.countryOfOrigin").value("França"))
+        verify { service.saveArtist(null, match { it.countryOfOrigin == "França" }) }
+    }
 
     @Test
     fun `JSON creation accepts partial experience and returns canonical detail`() {

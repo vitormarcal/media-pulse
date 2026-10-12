@@ -159,7 +159,7 @@ class ArtworkService(
                 id = current?.id ?: 0,
                 name = required(request.name, 200, "Informe o nome do artista."),
                 biography = clean(request.biography),
-                nationality = clean(request.nationality, 200),
+                countryOfOrigin = clean(request.countryOfOrigin, 200),
                 bornAt = request.bornAt,
                 diedAt = request.diedAt,
                 portraitUrl = current?.portraitUrl,

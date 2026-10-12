@@ -10266,7 +10266,7 @@ components:
           type: string
           nullable: true
           maxLength: 20000
-        nationality:
+        countryOfOrigin:
           type: string
           nullable: true
           maxLength: 200
@@ -10293,7 +10293,7 @@ components:
           type: string
           nullable: true
           maxLength: 20000
-        nationality:
+        countryOfOrigin:
           type: string
           nullable: true
           maxLength: 200

@@ -1,6 +1,6 @@
 <template>
   <section class="art-panel">
-    <div class="art-header">
+    <div class="art-section-header">
       <h2>Experiências</h2>
       <button class="art-button" @click="start()">Registrar experiência</button>
     </div>

@@ -30,7 +30,7 @@
           loading="lazy"
         />
         <h2>{{ artist.name }}</h2>
-        <p class="art-muted">{{ artist.nationality }}</p>
+        <p class="art-muted">{{ artist.countryOfOrigin }}</p>
       </NuxtLink>
     </div>
   </main>
@@ -51,7 +51,7 @@ const adding = ref(false)
 const form = ref({
   name: '',
   biography: null as string | null,
-  nationality: null as string | null,
+  countryOfOrigin: null as string | null,
   bornAt: null as string | null,
   diedAt: null as string | null,
 })

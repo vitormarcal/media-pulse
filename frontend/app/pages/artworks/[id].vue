@@ -13,22 +13,27 @@
           <button class="art-button" :aria-pressed="data.artwork.favorite" :disabled="busy" @click="favorite">
             {{ data.artwork.favorite ? '♥ Favorita' : 'Favoritar' }}
           </button>
-          <button class="art-button" @click="editing = !editing">Editar obra</button>
-          <button class="art-button" :disabled="busy" @click="remove">Excluir obra</button>
+          <button class="art-button" :aria-expanded="editing" @click="editing = !editing">
+            {{ editing ? 'Fechar edição' : 'Editar obra' }}
+          </button>
+          <button v-if="editing" class="art-button" :disabled="busy" @click="remove">Excluir obra</button>
         </div>
       </header>
       <ArtworkNav />
       <p v-if="error" class="art-error" role="alert">{{ error }}</p>
       <ArtworkForm v-if="editing" :initial="data.artwork" @saved="updated" @cancel="editing = false" />
       <div class="art-detail-top">
-        <img
-          v-if="primary"
-          class="art-full-image"
-          :src="resolveMediaUrl(primary.url) || undefined"
-          :alt="primary.caption || data.artwork.title"
-        />
+        <figure v-if="primary" class="art-detail-figure">
+          <a :href="resolveMediaUrl(primary.url) || undefined" target="_blank" rel="noopener"
+            ><img
+              class="art-full-image"
+              :src="resolveMediaUrl(primary.url) || undefined"
+              :alt="primary.caption || data.artwork.title"
+          /></a>
+          <figcaption v-if="primary.caption" class="art-muted">{{ primary.caption }}</figcaption>
+        </figure>
         <div v-else class="art-image-fallback">Sem imagem</div>
-        <section class="art-panel">
+        <section class="art-panel art-fact-sheet" aria-label="Dados da obra">
           <dl class="art-metadata">
             <template v-if="data.artist"
               ><dt>Artista</dt>
@@ -53,7 +58,7 @@
               <dd>{{ data.artwork.technique }}</dd></template
             >
           </dl>
-          <p v-if="data.artwork.description" class="art-preserve">{{ data.artwork.description }}</p>
+          <ArtworkLongText title="Descrição" :text="data.artwork.description" />
           <MediaRatingPanel
             media-type="artworks"
             :entity-id="data.artwork.id"
@@ -63,19 +68,20 @@
           />
         </section>
       </div>
+      <ArtworkExperienceHistory :artwork-id="data.artwork.id" :experiences="data.experiences" @changed="refresh()" />
+      <ArtworkListMembership :artwork-id="data.artwork.id" :selected="data.lists" @changed="refresh()" />
       <ArtworkImageManager
         :artwork-id="data.artwork.id"
         :images="data.images"
         :title="data.artwork.title"
         @changed="refresh()"
       />
-      <ArtworkListMembership :artwork-id="data.artwork.id" :selected="data.lists" @changed="refresh()" />
-      <ArtworkExperienceHistory :artwork-id="data.artwork.id" :experiences="data.experiences" @changed="refresh()" />
     </template>
   </main>
 </template>
 <script setup lang="ts">
 import ArtworkNav from '~/components/artworks/ArtworkNav.vue'
+import ArtworkLongText from '~/components/artworks/ArtworkLongText.vue'
 import ArtworkForm from '~/components/artworks/ArtworkForm.vue'
 import ArtworkImageManager from '~/components/artworks/ArtworkImageManager.vue'
 import ArtworkListMembership from '~/components/artworks/ArtworkListMembership.vue'

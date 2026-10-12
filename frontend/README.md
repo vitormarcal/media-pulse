@@ -99,3 +99,5 @@ Revistas mantém `/magazines` como dashboard, `/magazines/publications` como cat
 ## Artes visuais
 
 `/artworks` reúne obras locais com busca e filtros por artista, tipo, movimento, favorito e lista. Cadastro manual combina metadados, criação/seleção de artista, primeira experiência opcional e múltiplas imagens por arquivo ou URL. O detalhe permite avaliação, favorito, galeria com imagem principal, experiências e listas. Artistas e listas têm diretórios e páginas próprias. Imagens preservam suas proporções; falhas de upload preservam a obra e permitem tentar somente as imagens pendentes. Contratos: [`artworks-api.md`](../docs/artworks-api.md).
+
+O cadastro de artes visuais usa seletor de tipo com opção Outra, exemplos de técnica/movimento e País de origem (`countryOfOrigin`). Detalhes priorizam obra e experiências; descrição/biografia são expansíveis e controles de imagens/listas aparecem sob demanda. A galeria mostra imagens adicionais sem repetir a principal; Gerenciar imagens permite escolher a principal, remover e adicionar.

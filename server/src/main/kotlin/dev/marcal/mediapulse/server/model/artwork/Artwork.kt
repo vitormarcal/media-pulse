@@ -19,7 +19,7 @@ data class ArtworkArtist(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long = 0,
     val name: String,
     val biography: String? = null,
-    val nationality: String? = null,
+    @Column(name = "country_of_origin") val countryOfOrigin: String? = null,
     @Column(name = "born_at") val bornAt: LocalDate? = null,
     @Column(name = "died_at") val diedAt: LocalDate? = null,
     @Column(name = "portrait_url") val portraitUrl: String? = null,

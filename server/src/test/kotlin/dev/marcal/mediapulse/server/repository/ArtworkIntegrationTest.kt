@@ -104,6 +104,45 @@ class ArtworkIntegrationTest {
     }
 
     @Test
+    fun `country migration preserves recorded artist values and work links`() {
+        val source = DriverManagerDataSource(postgres.jdbcUrl, postgres.username, postgres.password)
+        val schema = "ux_country_migration"
+        try {
+            Flyway
+                .configure()
+                .dataSource(source)
+                .schemas(schema)
+                .defaultSchema(schema)
+                .target("65")
+                .load()
+                .migrate()
+            jdbc.update(
+                "INSERT INTO $schema.artwork_artists(name, nationality, biography) VALUES ('Artista', 'Francesa', 'Biografia anterior')",
+            )
+            jdbc.update("INSERT INTO $schema.artworks(title, artist_id) VALUES ('Obra', 1)")
+            Flyway
+                .configure()
+                .dataSource(source)
+                .schemas(schema)
+                .defaultSchema(schema)
+                .target("66")
+                .load()
+                .migrate()
+            assertEquals(
+                "Francesa",
+                jdbc.queryForObject("SELECT country_of_origin FROM $schema.artwork_artists WHERE id = 1", String::class.java),
+            )
+            assertEquals(
+                "Biografia anterior",
+                jdbc.queryForObject("SELECT biography FROM $schema.artwork_artists WHERE id = 1", String::class.java),
+            )
+            assertEquals(1L, jdbc.queryForObject("SELECT artist_id FROM $schema.artworks WHERE id = 1", Long::class.java))
+        } finally {
+            jdbc.execute("DROP SCHEMA IF EXISTS $schema CASCADE")
+        }
+    }
+
+    @Test
     fun `partial capture and repeated experiences persist with local artist works`() {
         val captured =
             tx.inTx {
@@ -113,7 +152,7 @@ class ArtworkIntegrationTest {
                         year = 1873,
                         type = "Pintura",
                         movement = "Academicismo francês",
-                        artist = ArtworkArtistRequest(name = "William-Adolphe Bouguereau", nationality = "Francesa"),
+                        artist = ArtworkArtistRequest(name = "William-Adolphe Bouguereau", countryOfOrigin = "França"),
                         experience = ArtworkExperienceRequest(sourceName = "Historia Arte", notes = "Descobri estudando arte"),
                     ),
                 )
