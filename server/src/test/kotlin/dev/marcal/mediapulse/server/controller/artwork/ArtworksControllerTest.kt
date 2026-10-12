@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.controller.artwork
 
 import dev.marcal.mediapulse.server.api.artwork.ArtworkDetailsDto
+import dev.marcal.mediapulse.server.api.artwork.ArtworkLibraryDto
 import dev.marcal.mediapulse.server.model.artwork.Artwork
 import dev.marcal.mediapulse.server.model.artwork.ArtworkArtist
 import dev.marcal.mediapulse.server.model.artwork.ArtworkImage
@@ -24,6 +25,24 @@ class ArtworksControllerTest {
     private val service = mockk<ArtworkService>()
     private val images = mockk<ArtworkImageService>()
     private val mvc = MockMvcBuilders.standaloneSetup(ArtworksController(service, images)).build()
+
+    @Test
+    fun `library forwards chronological sorting and preserves recent default`() {
+        every { service.library(null, 7, null, null, null, null, 1, 2, "year") } returns ArtworkLibraryDto(emptyList(), null)
+        every { service.library(null, null, null, null, null, null, 0, 24, "recent") } returns ArtworkLibraryDto(emptyList(), null)
+        mvc
+            .perform(
+                get("/api/artworks")
+                    .param("artistId", "7")
+                    .param("sort", "year")
+                    .param("page", "1")
+                    .param("limit", "2"),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.items").isArray)
+        mvc.perform(get("/api/artworks")).andExpect(status().isOk)
+        verify { service.library(null, 7, null, null, null, null, 1, 2, "year") }
+        verify { service.library(null, null, null, null, null, null, 0, 24, "recent") }
+    }
 
     @Test
     fun `artist creation accepts country of origin in the public contract`() {

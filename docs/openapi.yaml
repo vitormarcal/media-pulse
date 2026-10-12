@@ -45,7 +45,8 @@ paths:
     get:
       tags:
       - Artworks
-      summary: List locally captured visual artworks, newest first
+      summary: List locally captured visual artworks
+      description: Defaults to newest capture first. sort=year uses creation year ascending, ID ascending for ties, and undated works last, before pagination.
       parameters:
       - name: q
         in: query
@@ -73,6 +74,12 @@ paths:
         schema:
           type: integer
           format: int64
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum: [recent, year]
+          default: recent
       - name: page
         in: query
         schema:

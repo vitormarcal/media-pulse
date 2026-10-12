@@ -247,7 +247,9 @@ Separar o dashboard de Revistas, o catálogo de Publicações e o arquivo de cad
 
 ## 12. Artes visuais
 
-A biblioteca usa galeria masonry responsiva com imagens em proporção original, sem recortes. O detalhe prioriza a imagem principal, ficha compacta, avaliação e experiências. Descrição e biografia são expansíveis. Imagens adicionais podem ser abertas integralmente; a galeria não repete a principal durante a navegação normal. Artistas sem retrato usam o espaço completo da ficha, sem coluna vazia.
+A biblioteca usa galeria masonry responsiva com imagens em proporção original, sem recortes. No detalhe da obra, o cabeçalho centralizado reúne título, artista com retrato opcional e ano; a galeria ampla vem antes da ficha técnica e descrição. Navegação, miniaturas e ampliação na própria página preservam a composição integral e não alteram a imagem principal salva. A ampliação ocupa toda a tela sobre superfície escura quente; a imagem usa a maior área disponível sem recorte, com controles discretos sobrepostos nas bordas e legenda compacta. Não limitar a imagem ampliada a uma altura menor que a da galeria. Aceitar Escape, navegação por teclado e devolver o foco ao controle de origem.
+
+No artista, retrato e nome abrem a página com país e datas, seguidos da biografia. Sem retrato, não reservar coluna vazia. Textos curtos aparecem completos; textos longos mostram um trecho inicial com Continuar leitura e Recolher. Usar largura confortável de leitura e fundo livre de painéis nessas áreas. As obras locais são agrupadas pelo ano de criação em grid cronológico, autorizado para preservar a ordem por linhas e entre páginas; Sem ano fica ao final. Nascimento e falecimento aparecem como contexto quando informados. Favorito, avaliação, experiências e listas continuam acessíveis.
 
 Cadastro mostra título, artista, ano, tipo, movimento e técnica. Tipo usa seletor com categorias comuns e Outra com texto próprio. Técnica e movimento usam exemplos curtos nos campos. País de origem usa nomes de países. Dados adicionais do artista e descrição são revelados sob demanda. Data e contato não são preenchidos automaticamente; dados opcionais não bloqueiam o registro.
 

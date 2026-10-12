@@ -209,6 +209,34 @@ class ArtworkIntegrationTest {
     }
 
     @Test
+    fun `chronology orders creation years across pages with stable ties and undated works last`() {
+        val artist = tx.inTx { service.saveArtist(null, ArtworkArtistRequest("Artista")) }
+
+        fun create(
+            title: String,
+            year: Int?,
+        ) = tx.inTx { service.create(ArtworkRequest(title, artistId = artist.id, year = year)) }.artwork.id
+        val undated = create("Sem ano", null)
+        val later = create("Posterior", 1900)
+        val earlier = create("Anterior", 1800)
+        val sameYear = create("Mesmo ano", 1800)
+        tx.inTx { service.create(ArtworkRequest("Outro artista", year = 1700)) }
+        val first = service.library(null, artist.id, null, null, null, null, 0, 2, "year")
+        assertEquals(listOf(earlier, sameYear), first.items.map { it.id })
+        assertEquals(1, first.nextPage)
+        val second = service.library(null, artist.id, null, null, null, null, first.nextPage!!, 2, "year")
+        assertEquals(listOf(later, undated), second.items.map { it.id })
+        assertNull(second.nextPage)
+        assertEquals(
+            listOf(sameYear, earlier, later, undated),
+            service.library(null, artist.id, null, null, null, null, 0, 24).items.map { it.id },
+        )
+        assertFailsWith<ResponseStatusException> {
+            service.library(null, artist.id, null, null, null, null, 0, 24, "invalid")
+        }
+    }
+
+    @Test
     fun `gallery maintains one primary image and cascade deletion preserves artist and list`() {
         val captured =
             tx.inTx {

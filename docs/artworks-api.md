@@ -6,7 +6,7 @@ Artes visuais é um domínio local de obras descobertas e experiências de conte
 
 | Método e caminho | Comportamento |
 | --- | --- |
-| `GET /api/artworks` | Biblioteca paginada; `q`, `artistId`, `type`, `movement`, `favorite`, `listId`, `page=0`, `limit=24` (1–100). Retorna `{items, nextPage}`. |
+| `GET /api/artworks` | Biblioteca paginada; `q`, `artistId`, `type`, `movement`, `favorite`, `listId`, `page=0`, `limit=24` (1–100), `sort=recent` ou `sort=year`. Retorna `{items, nextPage}`. |
 | `GET /api/artworks/filters` | Tipos e movimentos existentes: `{types, movements}`. |
 | `POST /api/artworks` | Cadastra obra e primeira experiência parcial; retorna detalhe, com status 201. |
 | `GET /api/artworks/{id}` | `{artwork, artist, experiences, images, lists, rating}`. |
@@ -46,7 +46,7 @@ Obra exige somente `title`. Metadados opcionais: `artistId` **ou** `artist` (nov
 
 `experience` no cadastro e o body dos endpoints de experiências têm `experiencedAt` (data ISO), `experienceType` (`DIGITAL_VIEWING` ou `IN_PERSON`), `notes`, `sourceName` e `sourceUrl`, todos opcionais. Cadastro omite a experiência quando todos os campos estiverem vazios. Registro independente exige ao menos um campo. Não inferir data ou tipo; link deve ser HTTP ou HTTPS, sem credenciais. Experiências são ordenadas por data decrescente, sem data ao final, depois por ID decrescente. Cadastro técnico não é data de contemplação.
 
-Artista tem `name`, `biography`, `countryOfOrigin`, `bornAt`, `diedAt`; datas opcionais, falecimento não pode anteceder nascimento. Limites: título 300; nome de artista/lista, país de origem, movimento e técnica 200; tipo 100; origem 300; legenda 500; notas, biografia e descrições 20.000 caracteres. Favorito e avaliação pertencem à obra. Listas não modificam movimento artístico e cada obra aparece uma vez na biblioteca, mesmo com múltiplas experiências/listas. Biblioteca é ordenada pelo cadastro mais recente (ID decrescente).
+Artista tem `name`, `biography`, `countryOfOrigin`, `bornAt`, `diedAt`; datas opcionais, falecimento não pode anteceder nascimento. Limites: título 300; nome de artista/lista, país de origem, movimento e técnica 200; tipo 100; origem 300; legenda 500; notas, biografia e descrições 20.000 caracteres. Favorito e avaliação pertencem à obra. Listas não modificam movimento artístico e cada obra aparece uma vez na biblioteca, mesmo com múltiplas experiências/listas. Biblioteca usa `sort=recent` por padrão (ID decrescente). `sort=year` ordena pelo ano de criação crescente, com ID crescente para desempate e anos não informados ao final; a ordenação ocorre antes da paginação. Outras ordenações retornam 400.
 
 ## Imagens e operação
 
@@ -66,6 +66,6 @@ Em Docker recente com API mínima 1.44, a versão atual do cliente de Testcontai
 
 A migration `V66__rename_artwork_artist_country.sql` renomeia `artwork_artists.nationality` para `country_of_origin`. O contrato de artistas passa a usar `countryOfOrigin`. Os valores existentes são preservados literalmente para revisão manual; a migração não converte nacionalidades em países nem modifica obras ou vínculos.
 
-Tipo usa opções Pintura, Escultura, Fotografia artística, Desenho, Gravura e Outra. Outra permite texto próprio; tipos personalizados existentes continuam editáveis. Movimento e técnica têm exemplos nos campos. Descrição, biografia e dados adicionais do artista são apresentados sob demanda.
+Tipo usa opções Pintura, Escultura, Fotografia artística, Desenho, Gravura e Outra. Outra permite texto próprio; tipos personalizados existentes continuam editáveis. Movimento e técnica têm exemplos nos campos. No cadastro, descrição, biografia e dados adicionais do artista são apresentados sob demanda.
 
-Nos detalhes, imagem, ficha e experiências vêm antes dos controles de manutenção. Descrição e biografia são expansíveis. Gerenciar imagens abre a seleção de principal, remoção e adição por arquivo/URL; sem gerenciamento, a galeria mostra somente as imagens adicionais, evitando repetir a principal. Gerenciar listas abre os controles de vínculos, mantendo as listas atuais visíveis. Excluir obra/artista aparece ao abrir a edição. O cadastro permanece manual.
+Nos detalhes, a galeria ampla reúne todas as imagens com navegação, miniaturas e ampliação na página. A seleção começa pela principal e navegar não altera essa preferência salva. O visualizador ocupa toda a tela com imagem ajustada à maior área disponível, sem recorte, e controles compactos sobrepostos nas bordas. Aceita Escape e setas e devolve o foco ao controle de origem. Descrição e biografia curtas aparecem completas; acima de 700 caracteres, um trecho inicial pode ser expandido e recolhido. Artista tem retrato opcional ao lado de nome, país, datas e biografia, com suas obras locais agrupadas por ano de criação e obras sem ano ao final; filtros ficam sob demanda. Gerenciar imagens abre a seleção de principal, remoção e adição por arquivo/URL; a visualização das imagens fica na galeria superior. Gerenciar listas abre os controles de vínculos, mantendo as listas atuais visíveis. Excluir obra/artista aparece ao abrir a edição. O cadastro permanece manual.

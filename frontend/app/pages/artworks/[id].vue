@@ -7,8 +7,18 @@
       <button class="art-button" @click="refresh()">Tentar novamente</button>
     </p>
     <template v-if="data">
-      <header class="art-header">
+      <ArtworkNav />
+      <header class="art-work-heading">
         <h1>{{ data.artwork.title }}</h1>
+        <NuxtLink v-if="data.artist" :to="`/artworks/artists/${data.artist.id}`" class="art-creator-link">
+          <img v-if="data.artist.portraitUrl" :src="resolveMediaUrl(data.artist.portraitUrl) || undefined" alt="" />
+          <span>{{ data.artist.name }}</span>
+        </NuxtLink>
+        <p v-if="data.artist?.countryOfOrigin || data.artwork.year != null" class="art-muted">
+          {{
+            [data.artist?.countryOfOrigin, data.artwork.year].filter((part) => part != null && part !== '').join(' · ')
+          }}
+        </p>
         <div class="art-actions">
           <button class="art-button" :aria-pressed="data.artwork.favorite" :disabled="busy" @click="favorite">
             {{ data.artwork.favorite ? '♥ Favorita' : 'Favoritar' }}
@@ -19,32 +29,12 @@
           <button v-if="editing" class="art-button" :disabled="busy" @click="remove">Excluir obra</button>
         </div>
       </header>
-      <ArtworkNav />
       <p v-if="error" class="art-error" role="alert">{{ error }}</p>
       <ArtworkForm v-if="editing" :initial="data.artwork" @saved="updated" @cancel="editing = false" />
-      <div class="art-detail-top">
-        <figure v-if="primary" class="art-detail-figure">
-          <a :href="resolveMediaUrl(primary.url) || undefined" target="_blank" rel="noopener"
-            ><img
-              class="art-full-image"
-              :src="resolveMediaUrl(primary.url) || undefined"
-              :alt="primary.caption || data.artwork.title"
-          /></a>
-          <figcaption v-if="primary.caption" class="art-muted">{{ primary.caption }}</figcaption>
-        </figure>
-        <div v-else class="art-image-fallback">Sem imagem</div>
-        <section class="art-panel art-fact-sheet" aria-label="Dados da obra">
-          <dl class="art-metadata">
-            <template v-if="data.artist"
-              ><dt>Artista</dt>
-              <dd>
-                <NuxtLink :to="`/artworks/artists/${data.artist.id}`">{{ data.artist.name }}</NuxtLink>
-              </dd></template
-            >
-            <template v-if="data.artwork.year != null"
-              ><dt>Ano</dt>
-              <dd>{{ data.artwork.year }}</dd></template
-            >
+      <ArtworkGallery :images="data.images" :title="data.artwork.title" />
+      <div class="art-reading-layout" :class="{ 'has-description': Boolean(data.artwork.description) }">
+        <section class="art-work-facts" aria-label="Dados da obra">
+          <dl v-if="data.artwork.type || data.artwork.movement || data.artwork.technique" class="art-metadata">
             <template v-if="data.artwork.type"
               ><dt>Tipo</dt>
               <dd>{{ data.artwork.type }}</dd></template
@@ -58,7 +48,6 @@
               <dd>{{ data.artwork.technique }}</dd></template
             >
           </dl>
-          <ArtworkLongText title="Descrição" :text="data.artwork.description" />
           <MediaRatingPanel
             media-type="artworks"
             :entity-id="data.artwork.id"
@@ -67,6 +56,7 @@
             @changed="refresh()"
           />
         </section>
+        <ArtworkLongText title="Descrição" :text="data.artwork.description" />
       </div>
       <ArtworkExperienceHistory :artwork-id="data.artwork.id" :experiences="data.experiences" @changed="refresh()" />
       <ArtworkListMembership :artwork-id="data.artwork.id" :selected="data.lists" @changed="refresh()" />
@@ -74,6 +64,7 @@
         :artwork-id="data.artwork.id"
         :images="data.images"
         :title="data.artwork.title"
+        management-only
         @changed="refresh()"
       />
     </template>
@@ -81,6 +72,7 @@
 </template>
 <script setup lang="ts">
 import ArtworkNav from '~/components/artworks/ArtworkNav.vue'
+import ArtworkGallery from '~/components/artworks/ArtworkGallery.vue'
 import ArtworkLongText from '~/components/artworks/ArtworkLongText.vue'
 import ArtworkForm from '~/components/artworks/ArtworkForm.vue'
 import ArtworkImageManager from '~/components/artworks/ArtworkImageManager.vue'
@@ -98,7 +90,6 @@ const {
   error: loadError,
   refresh,
 } = await useAsyncData(`artwork-${route.params.id}`, () => request<ArtworkDetails>(`/${route.params.id}`))
-const primary = computed(() => data.value?.images.find((image) => image.primary) || data.value?.images[0])
 const editing = ref(false)
 async function updated() {
   editing.value = false

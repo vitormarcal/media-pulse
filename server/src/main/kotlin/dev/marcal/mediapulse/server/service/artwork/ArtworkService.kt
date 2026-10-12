@@ -51,9 +51,11 @@ class ArtworkService(
         listId: Long?,
         page: Int,
         limit: Int,
+        sort: String = "recent",
     ): ArtworkLibraryDto {
         if (page < 0 || limit !in 1..100) bad("Paginação inválida.")
-        val ids = query.ids(q, artistId, clean(type, 100), clean(movement, 200), favorite, listId, page, limit)
+        if (sort !in setOf("recent", "year")) bad("Ordenação inválida.")
+        val ids = query.ids(q, artistId, clean(type, 100), clean(movement, 200), favorite, listId, page, limit, sort == "year")
         val byId = works.findAllById(ids.take(limit)).associateBy { it.id }
         return ArtworkLibraryDto(ids.take(limit).map { card(byId.getValue(it)) }, if (ids.size > limit) page + 1 else null)
     }

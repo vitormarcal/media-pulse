@@ -51,7 +51,8 @@ class ArtworksController(
         @RequestParam(required = false) listId: Long?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "24") limit: Int,
-    ) = service.library(q, artistId, type, movement, favorite, listId, page, limit)
+        @RequestParam(defaultValue = "recent") sort: String,
+    ) = service.library(q, artistId, type, movement, favorite, listId, page, limit, sort)
 
     @GetMapping("/filters")
     fun filters() = service.filters()

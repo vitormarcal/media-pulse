@@ -2,7 +2,7 @@
   <section class="art-panel">
     <div class="art-section-header">
       <h2>
-        {{ artistId ? 'Retrato' : 'Galeria'
+        {{ artistId ? 'Retrato' : managementOnly ? 'Imagens' : 'Galeria'
         }}<span v-if="!artistId" class="art-count" aria-hidden="true">{{ images?.length || 0 }}</span>
       </h2>
       <button
@@ -67,6 +67,7 @@ const props = defineProps<{
   images?: ArtworkImage[]
   title?: string
   hasPortrait?: boolean
+  managementOnly?: boolean
 }>()
 const emit = defineEmits<{ changed: [] }>()
 const { request, run, busy, error, success } = useArtworkApi()
@@ -77,6 +78,7 @@ const managerForm = ref<HTMLFormElement>()
 const visibleImages = computed(() => {
   const gallery = props.images || []
   if (managing.value) return gallery
+  if (props.managementOnly) return []
   const primaryId = gallery.find((image) => image.primary)?.id ?? gallery[0]?.id
   return gallery.filter((image) => image.id !== primaryId)
 })

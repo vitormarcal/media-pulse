@@ -16,6 +16,7 @@ class ArtworkQueryRepository(
         listId: Long?,
         page: Int,
         limit: Int,
+        chronological: Boolean = false,
     ): List<Long> =
         jdbc.query(
             """
@@ -28,7 +29,9 @@ class ArtworkQueryRepository(
               AND (CAST(:favorite AS BOOLEAN) IS NULL OR a.favorite = :favorite)
               AND (CAST(:list AS BIGINT) IS NULL OR EXISTS
                 (SELECT 1 FROM artwork_list_items i WHERE i.artwork_id = a.id AND i.list_id = :list))
-            ORDER BY a.id DESC LIMIT :limit OFFSET :offset
+            ORDER BY CASE WHEN :chronological THEN a.year END ASC NULLS LAST,
+              CASE WHEN :chronological THEN a.id END ASC, a.id DESC
+            LIMIT :limit OFFSET :offset
             """.trimIndent(),
             mapOf(
                 "q" to q?.trim()?.lowercase()?.ifBlank { null },
@@ -37,6 +40,7 @@ class ArtworkQueryRepository(
                 "movement" to movement,
                 "favorite" to favorite,
                 "list" to listId,
+                "chronological" to chronological,
                 "limit" to limit + 1,
                 "offset" to page.toLong() * limit,
             ),
