@@ -24,7 +24,7 @@ interface GameImageCrudRepository : CrudRepository<GameImage, Long> {
         url: String,
         kind: String,
         isPrimary: Boolean,
-    )
+    ): Int
 
     @Transactional
     @Query(

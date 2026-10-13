@@ -143,6 +143,50 @@ class ManualGameCatalogServiceTest {
         verify(exactly = 0) { steamGridDbApiClient.searchGames(any()) }
     }
 
+    @Test
+    fun `explicit image import uses saved SteamGridDB id and preserves existing cover`() {
+        val existing = game(steamGridDbId = "5258").copy(coverUrl = "/covers/manual.png")
+        val image = ImageContent(byteArrayOf(1), null)
+        every { gameRepository.findById(42) } returns Optional.of(existing)
+        every { steamGridDbApiClient.fetchGrids(5258) } returns listOf(SteamGridDbGridResponse(1, "https://example.com/grid.png"))
+        every { steamGridDbApiClient.downloadImage(any()) } returns image
+        every { imageStorageService.saveGame(image, 42, "Hades", "STEAMGRIDDB", any()) } returns "/covers/grid.png"
+        every { gameImageCrudRepository.insertIgnore(42, "/covers/grid.png", "GRID", false) } returns 1
+        val result = service.importImages(42)
+        assertEquals(1, result.savedImagesCount)
+        assertFalse(result.coverAssigned)
+        verify(exactly = 0) { gameRepository.save(any()) }
+        verify(exactly = 0) { gameImageCrudRepository.clearPrimaryForGame(any()) }
+        verify(exactly = 0) { steamGridDbApiClient.searchGames(any()) }
+        every { gameImageCrudRepository.insertIgnore(42, "/covers/grid.png", "GRID", false) } returns 0
+        assertEquals(0, service.importImages(42).savedImagesCount)
+    }
+
+    @Test
+    fun `explicit image import exposes total failures and missing games`() {
+        val existing = game(steamGridDbId = "5258")
+        every { gameRepository.findById(42) } returns Optional.of(existing)
+        every { steamGridDbApiClient.fetchGrids(5258) } returns listOf(SteamGridDbGridResponse(1, "https://example.com/grid.png"))
+        every { steamGridDbApiClient.downloadImage(any()) } throws IllegalStateException("offline")
+        assertEquals(
+            503,
+            kotlin.test
+                .assertFailsWith<org.springframework.web.server.ResponseStatusException> {
+                    service.importImages(42)
+                }.statusCode
+                .value(),
+        )
+        every { gameRepository.findById(404) } returns Optional.empty()
+        assertEquals(
+            404,
+            kotlin.test
+                .assertFailsWith<org.springframework.web.server.ResponseStatusException> {
+                    service.importImages(404)
+                }.statusCode
+                .value(),
+        )
+    }
+
     private fun game(
         igdbId: String? = null,
         steamGridDbId: String? = null,

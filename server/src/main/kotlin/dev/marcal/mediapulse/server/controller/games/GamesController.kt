@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.controller.games
 
 import dev.marcal.mediapulse.server.api.games.GameDetailsResponse
+import dev.marcal.mediapulse.server.api.games.GameImagesImportResponse
 import dev.marcal.mediapulse.server.api.games.GameSessionCreateRequest
 import dev.marcal.mediapulse.server.api.games.GameSessionCreateResponse
 import dev.marcal.mediapulse.server.api.games.GameSessionDto
@@ -10,6 +11,7 @@ import dev.marcal.mediapulse.server.api.games.GamesSearchResponse
 import dev.marcal.mediapulse.server.api.games.GamesStatsResponse
 import dev.marcal.mediapulse.server.repository.GameQueryRepository
 import dev.marcal.mediapulse.server.service.game.GameSessionService
+import dev.marcal.mediapulse.server.service.game.ManualGameCatalogService
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -26,6 +28,7 @@ import kotlin.math.min
 class GamesController(
     private val repository: GameQueryRepository,
     private val gameSessionService: GameSessionService,
+    private val catalog: ManualGameCatalogService,
 ) {
     @GetMapping("/library")
     fun library(
@@ -51,6 +54,11 @@ class GamesController(
 
     @GetMapping("/stats")
     fun stats(): GamesStatsResponse = repository.stats()
+
+    @PostMapping("/{gameId}/images/import")
+    fun importImages(
+        @PathVariable gameId: Long,
+    ): GameImagesImportResponse = catalog.importImages(gameId)
 
     @PostMapping("/{gameId}/sessions")
     fun addSession(

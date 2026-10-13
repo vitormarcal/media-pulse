@@ -1,6 +1,6 @@
 <template>
   <main class="game-page">
-    <div v-if="status === 'pending'" class="state-card">
+    <div v-if="status === 'pending' && !data" class="state-card">
       <p>Carregando...</p>
     </div>
 
@@ -20,6 +20,8 @@
       />
 
       <MediaCoverUpload media-type="games" :entity-id="data.gameId" @saved="handleCoverSaved" />
+
+      <GameImagesPanel :game-id="data.gameId" @imported="refresh()" />
 
       <section class="context-grid">
         <article class="context-card">
@@ -54,6 +56,7 @@
 </template>
 
 <script setup lang="ts">
+import GameImagesPanel from '~/components/games/GameImagesPanel.vue'
 import GameAddSessionPanel from '~/components/games/GameAddSessionPanel.vue'
 import GamePageHero from '~/components/games/GamePageHero.vue'
 import GameSessionsTimeline from '~/components/games/GameSessionsTimeline.vue'

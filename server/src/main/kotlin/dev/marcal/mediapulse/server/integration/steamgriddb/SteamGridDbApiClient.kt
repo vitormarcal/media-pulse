@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.integration.steamgriddb
 import dev.marcal.mediapulse.server.config.SteamGridDbProperties
 import dev.marcal.mediapulse.server.model.image.ImageContent
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
@@ -32,7 +33,8 @@ private data class SteamGridDbEnvelope<T>(
 @Component
 class SteamGridDbApiClient(
     private val props: SteamGridDbProperties,
-    private val steamGridDbWebClient: WebClient,
+    @Qualifier("steamGridDbWebClient") private val steamGridDbWebClient: WebClient,
+    @Qualifier("steamGridDbImageWebClient") private val steamGridDbImageWebClient: WebClient,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -56,13 +58,20 @@ class SteamGridDbApiClient(
     }
 
     fun downloadImage(url: String): ImageContent =
-        steamGridDbWebClient
+        steamGridDbImageWebClient
             .get()
             .uri(url)
             .accept(MediaType.IMAGE_JPEG, MediaType.IMAGE_PNG, MediaType.ALL)
             .exchangeToMono { response ->
-                val contentType = response.headers().contentType().orElse(null)
-                response.bodyToMono<ByteArray>().map { bytes -> ImageContent(bytes = bytes, contentType = contentType) }
+                if (response.statusCode().isError) {
+                    response.createException().flatMap {
+                        reactor.core.publisher.Mono
+                            .error<ImageContent>(it)
+                    }
+                } else {
+                    val contentType = response.headers().contentType().orElse(null)
+                    response.bodyToMono<ByteArray>().map { bytes -> ImageContent(bytes = bytes, contentType = contentType) }
+                }
             }.block() ?: error("SteamGridDB image download failed: $url")
 
     private inline fun <reified T> getEnvelope(

@@ -260,3 +260,5 @@ Movimentos e estilos usa seleção múltipla: autocomplete nativo com sugestões
 ## 13. Capas de livros e jogos
 
 “Alterar capa” revela seleção de arquivo, prévia e salvar na própria página. Preservar arquivo e prévia em erro para nova tentativa; sucesso atualiza a imagem exibida sem esconder o feedback. Usar superfícies quentes, controles de 16px, foco acessível e placeholders existentes. Upload manual de livro troca a capa canônica; a edição da leitura continua prioritária na apresentação dos dados de edição.
+
+No detalhe de jogos, o card de Catálogo usa o padrão de ação de enriquecimento de filmes e séries: título direto, superfície quente, botão vermelho “Buscar imagens”, estado Buscando, feedback de sucesso/erro e nova tentativa no mesmo controle. Busca acrescenta imagens e mantém a capa atual; atualiza a galeria após sucesso.

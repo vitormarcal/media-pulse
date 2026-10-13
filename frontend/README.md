@@ -109,3 +109,5 @@ Revistas, artes visuais, livros e jogos podem usar Visual Library conforme [conf
 Movimentos e estilos usa um campo múltiplo com datalist nativo, lista inicial + termos do acervo e chips removíveis. O último termo digitado é incluído ao salvar. Detalhe apresenta lista e estado de sincronização; falhas remotas não apagam a correção local e oferecem retry.
 
 Livros e jogos oferecem “Alterar capa” no detalhe, com seleção de arquivo, prévia e envio manual. Erro mantém o arquivo para repetir somente o upload; sucesso atualiza a capa exibida. Capas do Hardcover (livros/edições), SteamGridDB e IGDB passam pelo armazenamento configurado quando ausentes. Imagens já salvas são preservadas, sem migração automática.
+
+A página do jogo também oferece “Buscar imagens” em um card de Catálogo no padrão de filmes/séries. A ação usa os vínculos existentes, acrescenta imagens e preserva a capa. Exibe carregamento, imagens novas/ausentes e falhas com retry, atualizando a galeria após sucesso.

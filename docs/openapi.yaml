@@ -41,6 +41,37 @@ tags:
   - name: Magazines
     description: Local publications, numbers, reading journeys and rereads.
 paths:
+  /api/games/{gameId}/images/import:
+    post:
+      tags: [Games]
+      summary: Import provider images for an existing game
+      description: Uses stored provider IDs or title lookup. Preserves the current cover and sessions. Returns new image and failure counts; repeated images are not counted as new.
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Import completed, possibly with partial image failures or no new images.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [savedImagesCount, coverAssigned, failedImagesCount]
+                properties:
+                  savedImagesCount:
+                    type: integer
+                  coverAssigned:
+                    type: boolean
+                  failedImagesCount:
+                    type: integer
+        "404":
+          description: Game not found
+        "503":
+          description: All attempted image imports failed; existing cover preserved
   /api/books/{bookId}/cover:
     post:
       tags: [Books]

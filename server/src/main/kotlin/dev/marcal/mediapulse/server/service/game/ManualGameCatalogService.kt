@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.service.game
 
+import dev.marcal.mediapulse.server.api.games.GameImagesImportResponse
 import dev.marcal.mediapulse.server.integration.igdb.IgdbApiClient
 import dev.marcal.mediapulse.server.integration.igdb.IgdbGameResponse
 import dev.marcal.mediapulse.server.integration.steamgriddb.SteamGridDbApiClient
@@ -13,6 +14,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import java.time.ZoneOffset
@@ -71,22 +73,44 @@ class ManualGameCatalogService(
         val gameAfterMetadata = fillMissingMetadata(game, resolvedTitle, resolvedYear, resolvedDescription, slug)
         val gameAfterIgdb = normalizedIgdbId?.let { linkIgdbId(gameAfterMetadata, it) } ?: gameAfterMetadata
 
-        val coverAssigned = maybeAssignImages(gameAfterIgdb, resolvedTitle, igdbSnapshot)
+        val coverAssigned = maybeAssignImages(gameAfterIgdb, resolvedTitle, igdbSnapshot).coverAssigned
         val refreshed = gameRepository.findById(gameAfterIgdb.id).orElse(gameAfterIgdb)
         return GameCatalogResult(game = refreshed, created = created, coverAssigned = coverAssigned)
     }
 
     fun buildIgdbCoverUrl(game: IgdbGameResponse): String? = igdbApiClient.buildCoverUrl(game.cover)
 
+    @Transactional
+    fun importImages(gameId: Long): GameImagesImportResponse {
+        val game =
+            gameRepository.findById(gameId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Jogo não encontrado.")
+            }
+        val snapshot = game.igdbId?.let { igdbApiClient.fetchGame(it) }
+        return maybeAssignImages(game, game.title, snapshot, allowExisting = true)
+    }
+
     private fun maybeAssignImages(
         game: Game,
         title: String,
         igdbSnapshot: IgdbGameResponse?,
-    ): Boolean {
-        if (game.coverUrl != null || gameImageCrudRepository.existsByGameIdAndIsPrimaryTrue(game.id)) return false
+        allowExisting: Boolean = false,
+    ): GameImagesImportResponse {
+        if (!allowExisting && (game.coverUrl != null || gameImageCrudRepository.existsByGameIdAndIsPrimaryTrue(game.id))) {
+            return GameImagesImportResponse()
+        }
         val savedImages = mutableListOf<String>()
+        var savedCount = 0
+        var failedCount = 0
 
-        val steamGame = steamGridDbApiClient.searchGames(title).firstOrNull()
+        val steamGridDbId = game.steamGridDbId
+        val steamGame =
+            if (steamGridDbId != null) {
+                dev.marcal.mediapulse.server.integration.steamgriddb
+                    .SteamGridDbGameResponse(steamGridDbId.toLong(), title)
+            } else {
+                steamGridDbApiClient.searchGames(title).firstOrNull()
+            }
         if (steamGame != null) {
             linkSteamGridDbId(game, steamGame.id.toString())
             steamGridDbApiClient
@@ -98,10 +122,13 @@ class ManualGameCatalogService(
                             val image = steamGridDbApiClient.downloadImage(grid.url)
                             val fileHint = "${game.title}_${DigestUtils.sha1Hex(grid.url).take(12)}"
                             imageStorageService.saveGame(image, game.id, game.title, "STEAMGRIDDB", fileHint)
-                        }.onFailure { logger.warn("Falha ao armazenar imagem SteamGridDB do jogo {}", game.id, it) }.getOrNull()
+                        }.onFailure {
+                            failedCount++
+                            logger.warn("Falha ao armazenar imagem SteamGridDB do jogo {}", game.id, it)
+                        }.getOrNull()
                             ?: return@forEach
                     savedImages += localPath
-                    gameImageCrudRepository.insertIgnore(game.id, localPath, "GRID", false)
+                    savedCount += gameImageCrudRepository.insertIgnore(game.id, localPath, "GRID", false)
                 }
         }
 
@@ -112,24 +139,31 @@ class ManualGameCatalogService(
                     runCatching {
                         val image = imageStorageService.downloadProviderImage(coverUrl)
                         imageStorageService.saveGame(image, game.id, game.title, "IGDB", DigestUtils.sha1Hex(coverUrl).take(12))
-                    }.onFailure { logger.warn("Falha ao armazenar capa IGDB do jogo {}", game.id, it) }.getOrNull()
+                    }.onFailure {
+                        failedCount++
+                        logger.warn("Falha ao armazenar capa IGDB do jogo {}", game.id, it)
+                    }.getOrNull()
                 if (storedUrl != null) {
                     savedImages += storedUrl
-                    gameImageCrudRepository.insertIgnore(game.id, storedUrl, "COVER", false)
+                    savedCount += gameImageCrudRepository.insertIgnore(game.id, storedUrl, "COVER", false)
                 }
             }
         }
 
-        if (savedImages.isEmpty() || gameImageCrudRepository.existsByGameIdAndIsPrimaryTrue(game.id)) return false
+        if (allowExisting && savedImages.isEmpty() && failedCount > 0) {
+            throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Não foi possível trazer as imagens. Tente novamente.")
+        }
+        val result = GameImagesImportResponse(savedCount, failedImagesCount = failedCount)
+        if (savedImages.isEmpty() || game.coverUrl != null || gameImageCrudRepository.existsByGameIdAndIsPrimaryTrue(game.id)) return result
 
         val primary = savedImages.first()
         gameImageCrudRepository.lockGameRowForPrimaryUpdate(game.id)
-        if (gameImageCrudRepository.existsByGameIdAndIsPrimaryTrue(game.id)) return false
+        val current = gameRepository.findById(game.id).orElse(game)
+        if (current.coverUrl != null || gameImageCrudRepository.existsByGameIdAndIsPrimaryTrue(game.id)) return result
         gameImageCrudRepository.clearPrimaryForGame(game.id)
         gameImageCrudRepository.markPrimaryForGame(game.id, primary)
-        val current = gameRepository.findById(game.id).orElse(game)
         gameRepository.save(current.copy(coverUrl = primary, updatedAt = Instant.now()))
-        return true
+        return result.copy(coverAssigned = true)
     }
 
     private fun linkIgdbId(

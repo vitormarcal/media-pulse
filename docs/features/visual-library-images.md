@@ -69,3 +69,7 @@ Reutilizar flag, proxy, validações, deduplicação e retenção remota existen
 - Imagens existentes permanecem válidas e capas manuais sobrevivem à importação, inclusive quando ela começou antes do upload.
 - Falhas não apagam registros, capas nem a seleção de principal; retry manual salva somente a capa.
 - JPEG/PNG/WebP válidos preservam bytes; dados inválidos são rejeitados; leitura indisponível mostra placeholder.
+
+### Nova tentativa na página do jogo
+
+Ação autorizada: oferecer “Buscar imagens” no detalhe do jogo, usando o card de Catálogo de filmes/séries. Reutilizar os provedores, vínculos e armazenamento existentes; acrescentar imagens, preservar a capa atual, informar carregamento e falhas e atualizar a galeria após sucesso. Endpoint `POST /api/games/{gameId}/images/import`; sem migration, sem alterar sessões/metadados e sem migração do acervo. Aceite: funciona com e sem capa, preserva principal manual, deduplica vínculos e permite retry de falha no mesmo botão.
