@@ -29,7 +29,7 @@ Revistas retornam `coverUploadError` em sucessos parciais de criação/edição.
 
 ## Fora do escopo
 
-Migração de imagens existentes, seleção de assets já presentes, sincronização contínua de tags, limpeza automática, exclusão externa e integração com outros domínios.
+Migração de imagens existentes, seleção de assets já presentes, sincronização contínua de tags, limpeza automática, exclusão externa e integração com domínios além dos descritos nesta spec.
 
 ## Critérios de aceite
 
@@ -45,3 +45,27 @@ Detalhes de configuração, retenção, erros e validação: [operação](../vis
 ## Evolução para Visual Library 0.6.0
 
 Novos uploads incluem sugestões de tags dos metadados locais e `sourceReference` com tipo e ID real como string: `magazine_issue`, `artwork` ou `artwork_artist`. Referências são enviadas em criação, substituição e retry de capa/retrato, por arquivo ou URL. O reenvio da mesma associação respeita edições pessoais de tags no Visual Library. Sugestões vazias/longas são omitidas; recusas HTTP 400 com sugestões recebem uma tentativa sem tags, mantendo a referência. Sem backfill ou novos domínios. Não altera configuração, frontend, contratos públicos do Media Pulse ou schema.
+
+## Extensão aprovada: livros e jogos
+
+### Problema e objetivo
+
+Livros e jogos precisam centralizar novas imagens dos provedores e permitir escolher uma capa própria, usando o mesmo armazenamento de revistas e artes visuais.
+
+### Escopo e API/UI
+
+- Capas de livros e edições novas/ausentes do Hardcover e imagens novas do SteamGridDB/IGDB usam Visual Library quando habilitado; com a flag desligada, ficam no storage local.
+- “Alterar capa” nos detalhes de livro/jogo revela upload manual, prévia e feedback. Em erro, mantém o arquivo para nova tentativa e preserva a capa anterior.
+- `POST /api/books/{bookId}/cover` e `POST /api/games/{gameId}/cover`, multipart `cover`, retornam `{coverUrl}`. Capa de livro altera o livro canônico; capas de edições permanecem independentes. Em jogos, a nova capa torna-se principal e imagens anteriores continuam disponíveis.
+- Sugestões de tags: `livro` + título para `book`/`book_edition`; `jogo` + título para `game`. Referências usam IDs reais como strings.
+
+### Regras e fora do escopo
+
+Reutilizar flag, proxy, validações, deduplicação e retenção remota existentes. Não fazer backfill/migração do acervo, sincronização de tags ou exclusão remota. Sem novas dependências ou migration. Capas já salvas não são substituídas automaticamente pelas importações; imagens ausentes são elegíveis à nova tentativa. Upload manual altera apenas a capa, sem modificar leituras ou sessões.
+
+### Critérios de aceite
+
+- Novas imagens dos provedores e uploads manuais usam o destino definido pela flag, sem cópia local de novos assets remotos.
+- Imagens existentes permanecem válidas e capas manuais sobrevivem à importação, inclusive quando ela começou antes do upload.
+- Falhas não apagam registros, capas nem a seleção de principal; retry manual salva somente a capa.
+- JPEG/PNG/WebP válidos preservam bytes; dados inválidos são rejeitados; leitura indisponível mostra placeholder.

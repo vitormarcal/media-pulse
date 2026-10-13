@@ -22,12 +22,11 @@
         </div>
 
         <NuxtLink v-if="data.hero.spotlight" class="spotlight" :to="data.hero.spotlight.href">
-          <img
-            v-if="resolveMediaUrl(data.hero.spotlight.imageUrl)"
-            :src="resolveMediaUrl(data.hero.spotlight.imageUrl) ?? undefined"
+          <MediaImage
+            :src="resolveMediaUrl(data.hero.spotlight.imageUrl)"
             :alt="data.hero.spotlight.title"
+            fallback-class="spotlight-fallback"
           />
-          <div v-else class="spotlight-fallback">Sem imagem</div>
           <div>
             <strong>{{ data.hero.spotlight.title }}</strong>
             <span>{{ data.hero.spotlight.subtitle }}</span>
@@ -60,12 +59,12 @@
 
         <div v-if="displayItems.length" class="games-grid">
           <NuxtLink v-for="item in displayItems" :key="item.id" class="game-card" :to="item.href">
-            <img
-              v-if="resolveMediaUrl(item.imageUrl)"
-              :src="resolveMediaUrl(item.imageUrl) ?? undefined"
+            <MediaImage
+              :src="resolveMediaUrl(item.imageUrl)"
               :alt="item.title"
+              fallback-class="game-fallback"
+              loading="lazy"
             />
-            <div v-else class="game-fallback">Sem imagem</div>
             <strong>{{ item.title }}</strong>
             <span>{{ item.subtitle }}</span>
             <p>{{ item.meta }}</p>

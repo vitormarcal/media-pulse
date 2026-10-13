@@ -6,10 +6,11 @@ import dev.marcal.mediapulse.server.integration.steamgriddb.SteamGridDbApiClient
 import dev.marcal.mediapulse.server.model.game.Game
 import dev.marcal.mediapulse.server.repository.crud.GameImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.GameRepository
-import dev.marcal.mediapulse.server.service.image.ImageStorageService
+import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.SlugTextUtil
 import org.apache.commons.codec.digest.DigestUtils
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -22,8 +23,10 @@ class ManualGameCatalogService(
     private val gameImageCrudRepository: GameImageCrudRepository,
     private val igdbApiClient: IgdbApiClient,
     private val steamGridDbApiClient: SteamGridDbApiClient,
-    private val imageStorageService: ImageStorageService,
+    private val imageStorageService: LibraryImageStorageService,
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     data class GameCatalogUpsertRequest(
         val title: String,
         val year: Int? = null,
@@ -80,6 +83,7 @@ class ManualGameCatalogService(
         title: String,
         igdbSnapshot: IgdbGameResponse?,
     ): Boolean {
+        if (game.coverUrl != null || gameImageCrudRepository.existsByGameIdAndIsPrimaryTrue(game.id)) return false
         val savedImages = mutableListOf<String>()
 
         val steamGame = steamGridDbApiClient.searchGames(title).firstOrNull()
@@ -93,8 +97,9 @@ class ManualGameCatalogService(
                         runCatching {
                             val image = steamGridDbApiClient.downloadImage(grid.url)
                             val fileHint = "${game.title}_${DigestUtils.sha1Hex(grid.url).take(12)}"
-                            imageStorageService.saveImageForGame(image, "STEAMGRIDDB", game.id, fileHint)
-                        }.getOrNull() ?: return@forEach
+                            imageStorageService.saveGame(image, game.id, game.title, "STEAMGRIDDB", fileHint)
+                        }.onFailure { logger.warn("Falha ao armazenar imagem SteamGridDB do jogo {}", game.id, it) }.getOrNull()
+                            ?: return@forEach
                     savedImages += localPath
                     gameImageCrudRepository.insertIgnore(game.id, localPath, "GRID", false)
                 }
@@ -103,8 +108,15 @@ class ManualGameCatalogService(
         if (savedImages.isEmpty()) {
             val coverUrl = igdbSnapshot?.let { igdbApiClient.buildCoverUrl(it.cover) }
             if (coverUrl != null) {
-                savedImages += coverUrl
-                gameImageCrudRepository.insertIgnore(game.id, coverUrl, "COVER", false)
+                val storedUrl =
+                    runCatching {
+                        val image = imageStorageService.downloadProviderImage(coverUrl)
+                        imageStorageService.saveGame(image, game.id, game.title, "IGDB", DigestUtils.sha1Hex(coverUrl).take(12))
+                    }.onFailure { logger.warn("Falha ao armazenar capa IGDB do jogo {}", game.id, it) }.getOrNull()
+                if (storedUrl != null) {
+                    savedImages += storedUrl
+                    gameImageCrudRepository.insertIgnore(game.id, storedUrl, "COVER", false)
+                }
             }
         }
 
@@ -112,9 +124,11 @@ class ManualGameCatalogService(
 
         val primary = savedImages.first()
         gameImageCrudRepository.lockGameRowForPrimaryUpdate(game.id)
+        if (gameImageCrudRepository.existsByGameIdAndIsPrimaryTrue(game.id)) return false
         gameImageCrudRepository.clearPrimaryForGame(game.id)
         gameImageCrudRepository.markPrimaryForGame(game.id, primary)
-        gameRepository.save(game.copy(coverUrl = primary, updatedAt = Instant.now()))
+        val current = gameRepository.findById(game.id).orElse(game)
+        gameRepository.save(current.copy(coverUrl = primary, updatedAt = Instant.now()))
         return true
     }
 

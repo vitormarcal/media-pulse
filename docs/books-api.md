@@ -1,6 +1,6 @@
 # Books API
 
-A Books API fornece visão read-only da biblioteca e das jornadas de leitura consolidadas.
+A Books API fornece consultas da biblioteca e das jornadas de leitura consolidadas.
 
 ## Modelo de leitura
 
@@ -17,6 +17,7 @@ As leituras são armazenadas como sessões consolidadas, não como eventos bruto
 | `GET /api/books/library` | `limit=20`, `cursor?` | `BooksLibraryResponse` |
 | `GET /api/books/stats` | - | `BooksStatsResponse` |
 | `GET /api/books/year/{year}` | `year` | `YearReadsResponse` |
+| `POST /api/books/{bookId}/cover` | multipart `cover` | `{coverUrl}` |
 | `GET /api/books/{bookId}` | `bookId` | `BookDetailsResponse` |
 | `GET /api/books/slug/{slug}` | `slug` | `BookDetailsResponse` |
 | `GET /api/books/authors/{authorId}` | `authorId` | `AuthorDetailsResponse` |
@@ -77,7 +78,7 @@ Lista sessões de leitura em ordem de atividade.
 
 ## Invariantes
 
-- a API é read-only para livros
+- consultas e leituras permanecem read-only; upload de capa é a exceção de manutenção
 - leituras são sessões consolidadas, não eventos crus de provider
 - ISBN-10 e ISBN-13 pertencem à edição e são armazenados diretamente em `book_editions.isbn_10` e `book_editions.isbn_13`
 - cada edição admite no máximo um valor de cada tipo de ISBN; esses identificadores não pertencem ao livro canônico
@@ -93,3 +94,7 @@ Lista sessões de leitura em ordem de atividade.
 - endpoints documentados existem em `BooksController`
 - responses usam DTOs em `api/books`
 - cursor é tratado como contrato opaco
+
+## Capa manual
+
+`POST /api/books/{bookId}/cover` recebe JPEG/PNG/WebP em multipart `cover`, até 10 MB e 40 megapixels. Retorna 200 com `{coverUrl}` e altera somente a capa do livro canônico. Capas de edições e leituras permanecem independentes. Flag Visual Library define armazenamento remoto ou local; capas existentes não são migradas. Falhas de envio preservam a capa anterior e permitem repetir a mesma operação. Erros: 400 (imagem inválida), 404 (livro ausente), 413 (multipart acima do limite global), 503 (Visual Library indisponível). Consulte [armazenamento e retry de provedores](visual-library-images.md#livros-e-jogos).

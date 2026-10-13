@@ -17,6 +17,7 @@ Sem credenciais, a entrada mínima continua funcionando, mas sugestões/metadado
 | `GET /api/games/library` | `limit=24`, `cursor?` | `GamesLibraryResponse` |
 | `GET /api/games/stats` | - | `GamesStatsResponse` |
 | `GET /api/games/search` | `q`, `limit=40` | `GamesSearchResponse` |
+| `POST /api/games/{gameId}/cover` | multipart `cover` | `{coverUrl}` |
 | `GET /api/games/{gameId}` | `gameId` | `GameDetailsResponse` |
 | `GET /api/games/slug/{slug}` | `slug` | `GameDetailsResponse` |
 | `POST /api/games/catalog/suggestions` | `q` | `GameCatalogSuggestionsResponse` |
@@ -100,3 +101,9 @@ Para finalizar ou abandonar um ciclo em andamento, atualize a mesma sessão com 
 - endpoints documentados existem em `GamesController` ou `GameCatalogController`
 - status aceitos batem com `GameSessionStatusDto`
 - cursor é tratado como contrato opaco
+
+## Imagens e capa manual
+
+Imagens novas do SteamGridDB e capa de fallback do IGDB são baixadas, validadas e armazenadas localmente ou no Visual Library conforme a flag existente. Imagens já salvas não são migradas. Falha de imagem não impede cadastro; repetir a criação deduplicada permite tentar novamente quando não houver capa/principal.
+
+`POST /api/games/{gameId}/cover` recebe JPEG/PNG/WebP em multipart `cover`, até 10 MB e 40 megapixels. Retorna 200 com `{coverUrl}`, torna a imagem principal e preserva imagens anteriores, sessões e metadados. Falha de envio mantém a capa e a principal anteriores; repetir tenta somente a capa. Erros: 400 (imagem inválida), 404 (jogo ausente), 413 (limite multipart global), 503 (Visual Library indisponível). [Operação, referências e retenção](visual-library-images.md#livros-e-jogos).

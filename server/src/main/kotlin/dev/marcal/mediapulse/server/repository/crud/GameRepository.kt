@@ -1,10 +1,18 @@
 package dev.marcal.mediapulse.server.repository.crud
 
 import dev.marcal.mediapulse.server.model.game.Game
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 
 interface GameRepository : CrudRepository<Game, Long> {
+    @Modifying
+    @Query(nativeQuery = true, value = "UPDATE games SET cover_url = :url, updated_at = NOW() WHERE id = :id")
+    fun updateCover(
+        id: Long,
+        url: String,
+    ): Int
+
     fun findByFingerprint(fingerprint: String): Game?
 
     fun findBySlug(slug: String): Game?

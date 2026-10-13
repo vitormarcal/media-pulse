@@ -1,6 +1,6 @@
 # Armazenamento de imagens no Visual Library
 
-O Visual Library pode ser usado como armazenamento próprio do arquivo pessoal. Nesta primeira entrega, apenas novas capas de revistas, imagens de obras e retratos de artistas participam. Metadados, leituras, experiências, legendas, origem e imagem principal continuam no banco do Media Pulse.
+O Visual Library pode ser usado como armazenamento próprio do arquivo pessoal. Novas capas de revistas, imagens de obras, retratos de artistas, capas de livros/edições e imagens de jogos participam. Metadados, leituras, experiências, legendas, origem e imagem principal continuam no banco do Media Pulse.
 
 ## Configuração
 
@@ -31,6 +31,9 @@ As referências usam o ID real do Media Pulse convertido em **string**. O tipo s
 | Capa de revista | `magazine_issue` | `revista`, nome da publicação |
 | Imagem de obra | `artwork` | movimentos em grupo próprio; `arte visual`, título, artista, tipo e técnica como sugestões complementares |
 | Retrato de artista | `artwork_artist` | `artista`, nome, país de origem |
+| Capa de livro | `book` | `livro`, título |
+| Capa de edição | `book_edition` | `livro`, título da edição |
+| Imagem/capa de jogo | `game` | `jogo`, título |
 
 Não enviar `url` na referência: a integração não exige uma URL pública do Media Pulse e não deve usar o endereço interno do backend como link público. O campo é opcional na API. Exemplo de referência: `{"entityType":"artwork","entityId":"123"}`.
 
@@ -42,7 +45,7 @@ Na 0.6.0, tags são aditivas; origem e visibilidade do primeiro upload continuam
 
 Em revistas novas, validar e persistir o número e a jornada dentro da transação antes do upload para obter um ID real. A transação confirma mesmo se o upload remoto falhar, retornando `coverUploadError`; erros de validação/banco continuam revertendo dados locais. Capas locais continuam sendo compensadas após rollback, e referências remotas podem permanecer sem vínculo após rollback.
 
-Os campos de imagem guardam `/api/image-assets/{uuid}/content`, uma referência relativa que identifica o provedor e o ID estável, sem hostname. A URL base pode mudar sem alterar o banco. Imagens antigas `/covers/...` permanecem locais. Não há migração automática do acervo.
+Os campos de imagem guardam `/api/image-assets/{uuid}/content`, uma referência relativa que identifica o provedor e o ID estável, sem hostname. A URL base pode mudar sem alterar o banco. Imagens antigas `/covers/...` permanecem locais. Não há migração automática do acervo. Livros/edições que já possuem capa preservam o vínculo atual, inclusive capas locais e externas, sem baixar novamente durante a sincronização.
 
 `GET /api/image-assets/{id}/content` recupera os bytes pelo backend. Preserva Content-Type, Cache-Control, ETag, Last-Modified e respostas condicionais 304. Encaminha If-None-Match e If-Modified-Since. UUID inválido retorna 400; asset ausente retorna 404; serviço sem configuração, indisponível ou resposta ilegível retorna 503. Download é limitado a 10 MB em memória por requisição, adequado às imagens aceitas nesta entrega; sem transformações ou miniaturas. Cada chamada usa o cliente de imagens existente e um limite de 30 segundos.
 
@@ -91,3 +94,15 @@ Validação de WebP cobre imagens estáticas e animadas, MIME/extensão de clien
 Obras usam o novo contrato de tags vinculadas por referência (`managedTags.movements` no upload e `PUT /api/assets/{id}/references/tags` na edição), com revisão monotônica. A lista inteira é enviada e recebe prioridade sobre sugestões genéricas. Editar os movimentos atualiza todas as imagens remotas após commit, sem bloquear a leitura local. Pendência/mensagem ficam na obra e um endpoint de retry permite recuperar falhas. Consulte [contrato de obras](artworks-api.md) e [spec aprovada](features/artwork-movements.md). Esse contrato exige atualizar também o Visual Library; a 0.6.0 anterior não o possui.
 
 A regra anterior de não atualizar associações permanece para sugestões genéricas de título, artista, técnica e tipo; apenas movimentos têm sincronização nesta entrega. Tags pessoais e antigas sem procedência permanecem protegidas.
+
+## Livros e jogos
+
+Hardcover encaminha capas ausentes de livros e edições ao armazenamento compartilhado depois de persistir os registros. Falhas de download/validação/upload são registradas no log e não revertem metadados ou leituras; uma sincronização posterior tenta preencher capas ainda ausentes. A atualização condicional só preenche `cover_url IS NULL`, preservando uma capa manual salva enquanto o download ocorria.
+
+Jogos usam até três grids do SteamGridDB; sem grid salvo, tentam a capa do IGDB. Os bytes de ambos passam pelas validações de JPEG/PNG/WebP, 10 MB e 40 megapixels. Mesmo com a flag desligada, a capa do IGDB passa a ser armazenada localmente. Uma falha deixa a capa ausente, preserva o cadastro e não grava a URL externa como fallback. Repetir `POST /api/games/catalog` com os mesmos dados tenta novamente se não houver capa/principal; a deduplicação existente mantém o mesmo jogo. Sugestões de catálogo do IGDB continuam usando URLs transitórias do provedor, pois ainda não representam entidades locais.
+
+Uploads manuais usam `POST /api/books/{bookId}/cover` ou `POST /api/games/{gameId}/cover` com multipart `cover`. Sucesso retorna 200 e `{coverUrl}`; inválidos retornam 400, entidade ausente 404, limite multipart 413 e falha remota 503. A imagem é validada/enviada antes da transação de troca do vínculo. Falha preserva a imagem anterior; o formulário mantém arquivo e prévia para repetir a mesma operação. A capa de livro altera apenas `books.cover_url`, não as capas independentes das edições. Em jogos, a transação trava a linha do jogo e troca a seleção de principal junto com a capa. Não modifica histórico, comentários ou notas.
+
+Substituições manuais não excluem imagens anteriores: assets remotos podem ser compartilhados; arquivos locais ficam retidos. Uma falha de banco depois do envio pode deixar uma imagem sem vínculo, como nos demais domínios; sem limpeza automática. Os backups devem continuar incluindo os volumes locais e o Visual Library.
+
+Validação adicional: `LibraryImageStorageServiceTest`, `HardcoverArtworkServiceTest`, `ManualGameCatalogServiceTest`, `LibraryCoversControllerTest` e `LibraryCoversIntegrationTest` (PostgreSQL) cobrem os dois destinos, referências, validação, falhas, retries e seleção única de principal.

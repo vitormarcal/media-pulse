@@ -256,3 +256,7 @@ Cadastro mostra título, artista, ano, tipo, movimento e técnica. Tipo usa sele
 Gerenciar imagens e Gerenciar listas abrem os controles de manutenção e movem o foco para o formulário. Excluir obra/artista aparece durante edição, preservando a leitura como estado padrão. Listas atuais permanecem visíveis; remoção e escolha de principal aparecem durante gerenciamento. Preservar campos, feedback e novas tentativas em caso de erro. Reutilizar tokens, tipografia, cantos arredondados e foco acessível existentes. Usar rótulos diretos e evitar prosa decorativa.
 
 Movimentos e estilos usa seleção múltipla: autocomplete nativo com sugestões iniciais e termos do acervo, entrada livre, Adicionar/Enter e chips removíveis por teclado. Salvar inclui o último termo digitado. Preservar tokens, espaçamento, cantos e foco existentes. Detalhe mostra termos separados e pendências de atualização das imagens com ação de nova tentativa, sem impedir a leitura da obra.
+
+## 13. Capas de livros e jogos
+
+“Alterar capa” revela seleção de arquivo, prévia e salvar na própria página. Preservar arquivo e prévia em erro para nova tentativa; sucesso atualiza a imagem exibida sem esconder o feedback. Usar superfícies quentes, controles de 16px, foco acessível e placeholders existentes. Upload manual de livro troca a capa canônica; a edição da leitura continua prioritária na apresentação dos dados de edição.

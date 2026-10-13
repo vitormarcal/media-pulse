@@ -188,6 +188,20 @@ class HardcoverNativeRepository {
         return id
     }
 
+    fun storedBookCover(bookId: Long): String? =
+        em
+            .createNativeQuery("SELECT cover_url FROM books WHERE id = :id")
+            .setParameter("id", bookId)
+            .resultList
+            .firstOrNull() as String?
+
+    fun storedEditionCover(editionId: Long): String? =
+        em
+            .createNativeQuery("SELECT cover_url FROM book_editions WHERE id = :id")
+            .setParameter("id", editionId)
+            .resultList
+            .firstOrNull() as String?
+
     @Transactional
     fun updateBookCover(
         bookId: Long,
@@ -199,7 +213,7 @@ class HardcoverNativeRepository {
                 UPDATE books
                    SET cover_url = :coverUrl,
                        updated_at = NOW()
-                 WHERE id = :id
+                 WHERE id = :id AND cover_url IS NULL
                 """.trimIndent(),
             ).setParameter("coverUrl", coverUrl)
             .setParameter("id", bookId)
@@ -217,7 +231,7 @@ class HardcoverNativeRepository {
                 UPDATE book_editions
                    SET cover_url = :coverUrl,
                        updated_at = NOW()
-                 WHERE id = :id
+                 WHERE id = :id AND cover_url IS NULL
                 """.trimIndent(),
             ).setParameter("coverUrl", coverUrl)
             .setParameter("id", editionId)

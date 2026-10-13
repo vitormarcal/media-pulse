@@ -19,6 +19,8 @@
         :hero-meta="data.heroMeta"
       />
 
+      <MediaCoverUpload media-type="books" :entity-id="data.bookId" @saved="handleCoverSaved" />
+
       <BookReadTimeline :reads="data.recentReads" compact />
 
       <BookEditorialPanel
@@ -40,10 +42,17 @@ import BookPageHero from '~/components/books/BookPageHero.vue'
 import BookReadTimeline from '~/components/books/BookReadTimeline.vue'
 import { useBookPageData } from '~/composables/useBookPageData'
 
+import MediaCoverUpload from '~/components/media/MediaCoverUpload.vue'
+
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
 
 const { data, error, status } = await useBookPageData(slug.value)
+
+function handleCoverSaved(coverUrl: string) {
+  if (!data.value) return
+  data.value.coverUrl = coverUrl
+}
 
 useHead(() => ({
   title: data.value ? `${data.value.title} · Media Pulse` : 'Livro · Media Pulse',

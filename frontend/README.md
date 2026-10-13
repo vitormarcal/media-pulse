@@ -104,6 +104,8 @@ O cadastro de artes visuais usa seletor de tipo com opção Outra, exemplos de t
 
 ## Imagens centralizadas
 
-Revistas e artes visuais podem usar Visual Library conforme [configuração do backend](../docs/visual-library-images.md). A interface continua usando `NUXT_PUBLIC_API_BASE`; nenhuma URL adicional precisa ser configurada no frontend. Referências `/api/image-assets/{id}/content` são resolvidas no backend. Falhas de leitura mostram placeholders e mantêm dados e ações. O formulário de revistas preserva o ID/arquivo após sucesso parcial com `coverUploadError` e tenta apenas a capa novamente, sem criar outro número.
+Revistas, artes visuais, livros e jogos podem usar Visual Library conforme [configuração do backend](../docs/visual-library-images.md). A interface continua usando `NUXT_PUBLIC_API_BASE`; nenhuma URL adicional precisa ser configurada no frontend. Referências `/api/image-assets/{id}/content` são resolvidas no backend. Falhas de leitura mostram placeholders e mantêm dados e ações. O formulário de revistas preserva o ID/arquivo após sucesso parcial com `coverUploadError` e tenta apenas a capa novamente, sem criar outro número.
 
 Movimentos e estilos usa um campo múltiplo com datalist nativo, lista inicial + termos do acervo e chips removíveis. O último termo digitado é incluído ao salvar. Detalhe apresenta lista e estado de sincronização; falhas remotas não apagam a correção local e oferecem retry.
+
+Livros e jogos oferecem “Alterar capa” no detalhe, com seleção de arquivo, prévia e envio manual. Erro mantém o arquivo para repetir somente o upload; sucesso atualiza a capa exibida. Capas do Hardcover (livros/edições), SteamGridDB e IGDB passam pelo armazenamento configurado quando ausentes. Imagens já salvas são preservadas, sem migração automática.

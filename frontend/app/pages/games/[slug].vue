@@ -19,6 +19,8 @@
         :identifiers="data.identifiers"
       />
 
+      <MediaCoverUpload media-type="games" :entity-id="data.gameId" @saved="handleCoverSaved" />
+
       <section class="context-grid">
         <article class="context-card">
           <p>Sessões</p>
@@ -59,6 +61,8 @@ import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
 import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import { useGamePageData } from '~/composables/useGamePageData'
 
+import MediaCoverUpload from '~/components/media/MediaCoverUpload.vue'
+
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
 
@@ -75,6 +79,11 @@ const heroSubtitle = computed(() => {
 
 async function handleSessionChanged() {
   await refresh()
+}
+
+function handleCoverSaved(coverUrl: string) {
+  if (!data.value) return
+  data.value.gallery = [coverUrl, ...data.value.gallery.filter((url) => url !== coverUrl)].slice(0, 4)
 }
 
 useHead(() => ({
