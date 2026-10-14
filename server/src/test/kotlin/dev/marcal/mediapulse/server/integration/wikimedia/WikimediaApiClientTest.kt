@@ -2,6 +2,8 @@ package dev.marcal.mediapulse.server.integration.wikimedia
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -105,6 +107,64 @@ class WikimediaApiClientTest {
             assertEquals("/Portrait_%28contrast%29.jpg", request?.url()?.rawPath)
             assertTrue(image.bytes.isNotEmpty())
         }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["upload.wikimedia.org", "thumb.wikimedia.org"])
+    fun `downloads images from the explicit Wikimedia hosts`(host: String) =
+        runBlocking {
+            var request: ClientRequest? = null
+            val webClient =
+                WebClient
+                    .builder()
+                    .exchangeFunction {
+                        request = it
+                        Mono.just(
+                            ClientResponse
+                                .create(HttpStatus.OK)
+                                .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_JPEG_VALUE)
+                                .body("image bytes")
+                                .build(),
+                        )
+                    }.build()
+            val url = "https://$host/wikipedia/commons/thumb/portrait_%C3%B6.jpg?utm_source=commons.wikimedia.org"
+
+            WikimediaApiClient(webClient).downloadImage(imageMetadata(url))
+
+            assertEquals(url, request?.url()?.toASCIIString())
+        }
+
+    @ParameterizedTest
+    @ValueSource(
+        strings = [
+            "https://example.org/image.jpg",
+            "https://thumb.wikimedia.org.example.org/image.jpg",
+            "https://upload.wikimedia.org@example.org/image.jpg",
+            "http://thumb.wikimedia.org/image.jpg",
+            "https://thumb.wikimedia.org:8443/image.jpg",
+            "https://user@thumb.wikimedia.org/image.jpg",
+        ],
+    )
+    fun `rejects unexpected image URLs before making a request`(url: String) =
+        runBlocking {
+            var requested = false
+            val client = clientReturning(HttpStatus.OK, "", onRequest = { requested = true })
+
+            assertFailsWith<IllegalArgumentException> { client.downloadImage(imageMetadata(url)) }
+
+            assertEquals(false, requested)
+        }
+
+    private fun imageMetadata(url: String) =
+        WikimediaImageMetadata(
+            fileName = "portrait.jpg",
+            downloadUrl = url,
+            originalUrl = url,
+            descriptionUrl = null,
+            mimeType = MediaType.IMAGE_JPEG_VALUE,
+            author = null,
+            license = null,
+            licenseUrl = null,
+        )
 
     private fun clientReturning(
         status: HttpStatus,

@@ -24,6 +24,7 @@ class WikimediaApiClient(
     companion object {
         private const val MAX_IMAGE_BYTES = 10 * 1024 * 1024
         private const val MAX_ERROR_BODY_CHARS = 2_000
+        private val imageHosts = setOf("upload.wikimedia.org", "thumb.wikimedia.org")
         private val supportedTypes = setOf("image/jpeg", "image/png", "image/webp")
     }
 
@@ -118,7 +119,12 @@ class WikimediaApiClient(
 
     suspend fun downloadImage(metadata: WikimediaImageMetadata): ImageContent {
         val downloadUri = URI.create(metadata.downloadUrl)
-        require(downloadUri.host == "upload.wikimedia.org") { "Unexpected Wikimedia image host" }
+        require(
+            downloadUri.scheme == "https" &&
+                downloadUri.host?.lowercase() in imageHosts &&
+                downloadUri.userInfo == null &&
+                downloadUri.port in setOf(-1, 443),
+        ) { "Unexpected Wikimedia image URL: ${metadata.downloadUrl}" }
         val expectedType = metadata.mimeType?.substringBefore(';')?.lowercase()
         require(expectedType == null || expectedType in supportedTypes) { "Unsupported Wikimedia image type: $expectedType" }
         val response =

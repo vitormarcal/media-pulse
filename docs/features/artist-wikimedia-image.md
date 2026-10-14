@@ -22,6 +22,8 @@ Durante a validação em container, `Special:EntityData/{id}.json` devolveu `400
 
 URLs de download devolvidas por `imageinfo` já estão percent-encoded. Elas são entregues ao WebClient como `URI`, preservando sequências como `%28` e evitando dupla codificação (`%2528`), que faria o servidor de imagens responder `404`.
 
+Em 14/10/2026, o enriquecimento de `Q542745` falhou com `Unexpected Wikimedia image host`: a consulta `imageinfo` retornou `thumburl` em `thumb.wikimedia.org`, enquanto o cliente permitia somente `upload.wikimedia.org`. O download agora aceita exclusivamente esses dois hosts via HTTPS, sem credenciais na URL e com porta padrão ou 443. Não há liberação genérica de subdomínios. Os limites de tamanho e MIME permanecem. Testes cobrem ambos os hosts, preservação da codificação e rejeição de URLs externas ou com autoridade inesperada.
+
 Para validar:
 
 1. vincule ou atualize individualmente um artista sem foto;
