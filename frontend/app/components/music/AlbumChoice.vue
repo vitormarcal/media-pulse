@@ -6,12 +6,14 @@
       <strong>{{ album.title }}</strong
       ><span
         >{{ album.year ?? 'Ano desconhecido' }} · {{ album.trackCount }} faixas · {{ album.playbackCount }} plays</span
+      ><span v-if="album.artists?.length">{{ albumArtistLabel(album.artists) }}</span
       ><small>#{{ album.albumId }} · {{ providerSummary }}</small>
     </div>
     <span v-if="suggested" class="suggested">Principal sugerido</span>
   </div>
 </template>
 <script setup lang="ts">
+import { albumArtistLabel } from '~/utils/musicCredits'
 import type { AlbumMergeCandidateResponse } from '~/types/music'
 const props = defineProps<{ album: AlbumMergeCandidateResponse; suggested?: boolean }>()
 const { resolveMediaUrl } = useMediaUrl()

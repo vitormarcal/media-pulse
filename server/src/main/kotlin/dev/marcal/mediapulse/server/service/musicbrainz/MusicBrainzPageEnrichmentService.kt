@@ -232,7 +232,7 @@ class MusicBrainzPageEnrichmentService(
     suspend fun getArtistDiscography(artistId: Long): MusicBrainzDiscographyPreviewResponse {
         requireArtist(artistId)
         val artistMbid = requireArtistMbid(artistId)
-        val localAlbums = albums.findAllByArtistId(artistId)
+        val localAlbums = albums.findAllCreditedToArtist(artistId)
         val items = client.getArtistReleaseGroups(artistMbid).map { classifyDiscographyItem(it, localAlbums) }
         return MusicBrainzDiscographyPreviewResponse(
             artistId = artistId,
@@ -259,7 +259,7 @@ class MusicBrainzPageEnrichmentService(
         val skipped = mutableListOf<String>()
         requested.forEach { mbid ->
             val candidate = remoteById.getValue(mbid)
-            val classified = classifyDiscographyItem(candidate, albums.findAllByArtistId(artistId))
+            val classified = classifyDiscographyItem(candidate, albums.findAllCreditedToArtist(artistId))
             if (classified.status != MusicBrainzDiscographyStatus.MISSING) {
                 skipped += mbid
                 return@forEach

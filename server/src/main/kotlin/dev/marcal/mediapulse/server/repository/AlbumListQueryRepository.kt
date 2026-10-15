@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.repository
 import dev.marcal.mediapulse.server.api.music.AlbumListDetailsResponse
 import dev.marcal.mediapulse.server.api.music.AlbumListItemDto
 import dev.marcal.mediapulse.server.api.music.AlbumListSummaryDto
+import dev.marcal.mediapulse.server.repository.query.AlbumArtistQueryRepository
 import jakarta.persistence.EntityManager
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
@@ -12,6 +13,7 @@ import java.time.Instant
 @Repository
 class AlbumListQueryRepository(
     private val entityManager: EntityManager,
+    private val albumArtistQuery: AlbumArtistQueryRepository,
 ) {
     fun listAll(): List<AlbumListSummaryDto> = listSummaries()
 
@@ -75,7 +77,9 @@ class AlbumListQueryRepository(
                 .firstOrNull() as Array<*>?
                 ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Album list not found")
         val listId = (base[0] as Number).toLong()
-        val items = items(listId)
+        val rawItems = items(listId)
+        val credits = albumArtistQuery.findByAlbumIds(rawItems.map { it.albumId })
+        val items = rawItems.map { it.copy(artists = credits[it.albumId].orEmpty()) }
         return AlbumListDetailsResponse(
             listId = listId,
             name = base[1] as String,

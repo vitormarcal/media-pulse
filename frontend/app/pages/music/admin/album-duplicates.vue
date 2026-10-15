@@ -79,7 +79,7 @@
       <div>
         <p class="kicker">Controle manual</p>
         <h2>Mesclar fora das sugestões</h2>
-        <p>Busque um artista ou álbum e selecione ao menos dois álbuns do mesmo artista.</p>
+        <p>Busque um artista ou álbum e selecione ao menos dois álbuns que compartilhem um artista.</p>
       </div>
       <div class="manual-search">
         <input
@@ -92,15 +92,13 @@
       <div v-for="artist in catalog" :key="artist.artistId" class="catalog-artist">
         <h3>{{ artist.artistName }}</h3>
         <label v-for="album in artist.albums" :key="album.albumId" class="catalog-row">
-          <input
-            v-model="manualSelection"
-            type="checkbox"
-            :value="album.albumId"
-            @change="selectManualArtist(artist.artistId)"
-          />
+          <input v-model="manualSelection" type="checkbox" :value="album.albumId" />
           <span
             >{{ album.title }}
-            <small>{{ album.year ?? 'Ano desconhecido' }} · {{ album.trackCount }} faixas</small></span
+            <small
+              >{{ album.year ?? 'Ano desconhecido' }} · {{ album.trackCount }} faixas ·
+              {{ albumArtistLabel(album.artists) }}</small
+            ></span
           >
         </label>
       </div>
@@ -124,7 +122,7 @@
       <div class="field-grid">
         <label
           ><span>Álbum principal</span
-          ><select v-model.number="mergeForm.targetAlbumId" @change="refreshPreview">
+          ><select v-model.number="mergeForm.targetAlbumId" :disabled="previewPending" @change="refreshPreview">
             <option v-for="album in preview.candidates" :key="album.albumId" :value="album.albumId">
               {{ album.title }} (#{{ album.albumId }})
             </option>
@@ -132,7 +130,7 @@
         >
         <label
           ><span>Título</span
-          ><select v-model.number="mergeForm.titleFromAlbumId">
+          ><select v-model.number="mergeForm.titleFromAlbumId" :disabled="previewPending">
             <option v-for="album in preview.candidates" :key="album.albumId" :value="album.albumId">
               {{ album.title }}
             </option>
@@ -140,7 +138,7 @@
         >
         <label
           ><span>Capa</span
-          ><select v-model.number="mergeForm.coverFromAlbumId">
+          ><select v-model.number="mergeForm.coverFromAlbumId" :disabled="previewPending">
             <option v-for="album in preview.candidates" :key="album.albumId" :value="album.albumId">
               {{ album.title }}{{ album.coverUrl ? '' : ' (sem capa)' }}
             </option>
@@ -148,7 +146,7 @@
         >
         <label
           ><span>Ano</span
-          ><select v-model.number="mergeForm.yearFromAlbumId">
+          ><select v-model.number="mergeForm.yearFromAlbumId" :disabled="previewPending">
             <option v-for="album in preview.candidates" :key="album.albumId" :value="album.albumId">
               {{ album.title }} · {{ album.year ?? 'sem ano' }}
             </option>
@@ -156,7 +154,7 @@
         >
         <label
           ><span>Avaliação</span
-          ><select v-model="ratingChoice">
+          ><select v-model="ratingChoice" :disabled="previewPending">
             <option value="">Sem avaliação</option>
             <option v-for="album in preview.candidates" :key="album.albumId" :value="String(album.albumId)">
               {{ album.title }} · {{ album.rating ? `${album.rating}/5` : 'sem avaliação' }}
@@ -165,13 +163,22 @@
         >
         <label
           ><span>Usar ordem das faixas de</span
-          ><select v-model.number="mergeForm.trackOrderFromAlbumId" @change="refreshPreview">
+          ><select v-model.number="mergeForm.trackOrderFromAlbumId" :disabled="previewPending" @change="refreshPreview">
             <option v-for="album in preview.candidates" :key="album.albumId" :value="album.albumId">
               {{ album.title }} (#{{ album.albumId }})
             </option>
           </select></label
         >
       </div>
+      <label class="credit-choice">
+        <span>Preservar créditos de artistas de</span>
+        <select v-model.number="mergeForm.artistCreditsFromAlbumId" :disabled="previewPending" @change="refreshPreview">
+          <option v-for="album in preview.candidates" :key="album.albumId" :value="album.albumId">
+            {{ album.title }} (#{{ album.albumId }}) · {{ albumArtistLabel(album.artists) }}
+          </option>
+        </select>
+      </label>
+      <p>Artistas após a mesclagem: {{ albumArtistLabel(preview.artists) }}</p>
       <div class="track-order-summary">
         <strong>{{ preview.trackOrder.positionedTrackCount }} faixa(s) manterão uma posição</strong>
         <span>{{ preview.trackOrder.unpositionedTrackCount }} ficarão sem número</span>
@@ -182,7 +189,7 @@
       <ul>
         <li v-for="warning in preview.warnings" :key="warning">{{ warning }}</li>
       </ul>
-      <button class="primary danger" type="button" :disabled="mergePending" @click="confirmMerge">
+      <button class="primary danger" type="button" :disabled="mergePending || previewPending" @click="confirmMerge">
         {{ mergePending ? 'Mesclando...' : 'Confirmar mesclagem definitiva' }}
       </button>
     </section>
@@ -192,6 +199,7 @@
 </template>
 
 <script setup lang="ts">
+import { albumArtistLabel } from '~/utils/musicCredits'
 import type {
   AlbumMergeCandidateResponse,
   AlbumMergeCatalogResponse,
@@ -216,9 +224,9 @@ const suggestionsError = ref('')
 const catalogQuery = ref(contextualArtistName)
 const catalog = ref<AlbumMergeCatalogResponse['artists']>([])
 const manualSelection = ref<number[]>([])
-const manualArtistId = ref<number | null>(null)
 const preview = ref<AlbumMergePreviewResponse | null>(null)
 const mergePending = ref(false)
+const previewPending = ref(false)
 const notice = ref('')
 const ratingChoice = ref('')
 const mergeForm = reactive({
@@ -227,6 +235,7 @@ const mergeForm = reactive({
   coverFromAlbumId: 0,
   yearFromAlbumId: 0,
   trackOrderFromAlbumId: 0,
+  artistCreditsFromAlbumId: null as number | null,
 })
 
 async function loadSuggestions() {
@@ -253,20 +262,12 @@ async function searchCatalog() {
   })
   catalog.value = response.artists
   manualSelection.value = []
-  manualArtistId.value = null
-}
-
-function selectManualArtist(artistId: number) {
-  manualArtistId.value = artistId
-  const allowed = new Set(
-    catalog.value.find((item) => item.artistId === artistId)?.albums.map((album) => album.albumId) ?? [],
-  )
-  manualSelection.value = manualSelection.value.filter((id) => allowed.has(id))
 }
 
 function prepareManualMerge() {
-  const artist = catalog.value.find((item) => item.artistId === manualArtistId.value)
-  const albums = artist?.albums.filter((album) => manualSelection.value.includes(album.albumId)) ?? []
+  const albums = catalog.value
+    .flatMap((artist) => artist.albums)
+    .filter((album) => manualSelection.value.includes(album.albumId))
   if (albums.length >= 2) prepareMerge(albums, albums[0]!.albumId)
 }
 
@@ -277,29 +278,51 @@ async function prepareMerge(albums: AlbumMergeCandidateResponse[], targetId: num
   mergeForm.coverFromAlbumId = suggested.albumId
   mergeForm.yearFromAlbumId = suggested.albumId
   mergeForm.trackOrderFromAlbumId = suggested.albumId
+  mergeForm.artistCreditsFromAlbumId = null
   ratingChoice.value = suggested.rating ? String(suggested.albumId) : ''
-  await fetchPreview(albums.map((album) => album.albumId))
-  nextTick(() => document.querySelector('.merge-editor')?.scrollIntoView({ behavior: 'smooth' }))
+  preview.value = null
+  notice.value = ''
+  try {
+    await fetchPreview(albums.map((album) => album.albumId))
+    nextTick(() => document.querySelector('.merge-editor')?.scrollIntoView({ behavior: 'smooth' }))
+  } catch {
+    notice.value =
+      'Não foi possível preparar a mesclagem. Confira se os álbuns compartilham um artista e tente novamente.'
+  }
 }
 
 async function fetchPreview(allIds: number[]) {
-  preview.value = await $fetch<AlbumMergePreviewResponse>('/api/admin/music/album-duplicates/preview', {
-    baseURL: config.public.apiBase,
-    method: 'POST',
-    body: {
-      targetAlbumId: mergeForm.targetAlbumId,
-      sourceAlbumIds: allIds.filter((id) => id !== mergeForm.targetAlbumId),
-      trackOrderFromAlbumId: mergeForm.trackOrderFromAlbumId,
-    },
-  })
+  previewPending.value = true
+  try {
+    preview.value = await $fetch<AlbumMergePreviewResponse>('/api/admin/music/album-duplicates/preview', {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+      body: {
+        targetAlbumId: mergeForm.targetAlbumId,
+        sourceAlbumIds: allIds.filter((id) => id !== mergeForm.targetAlbumId),
+        trackOrderFromAlbumId: mergeForm.trackOrderFromAlbumId,
+        artistCreditsFromAlbumId: mergeForm.artistCreditsFromAlbumId,
+      },
+    })
+    mergeForm.artistCreditsFromAlbumId = preview.value.artistCreditsFromAlbumId
+  } finally {
+    previewPending.value = false
+  }
 }
 
 async function refreshPreview() {
-  if (preview.value) await fetchPreview(preview.value.candidates.map((album) => album.albumId))
+  if (!preview.value) return
+  try {
+    await fetchPreview(preview.value.candidates.map((album) => album.albumId))
+  } catch {
+    preview.value = null
+    notice.value = 'Não foi possível atualizar a prévia. Revise a seleção e tente novamente.'
+  }
 }
 
 async function confirmMerge() {
-  if (!preview.value || !window.confirm('Esta mesclagem é definitiva. Deseja continuar?')) return
+  if (previewPending.value || !preview.value || !window.confirm('Esta mesclagem é definitiva. Deseja continuar?'))
+    return
   mergePending.value = true
   try {
     const allIds = preview.value.candidates.map((album) => album.albumId)
@@ -422,7 +445,8 @@ useHead({
   align-items: end;
 }
 .filters label,
-.field-grid label {
+.field-grid label,
+.credit-choice {
   display: grid;
   gap: 6px;
   font-size: 12px;

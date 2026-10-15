@@ -93,10 +93,13 @@ class DuplicateAlbumReviewService(
         validateSelectedAlbum(request.trackOrderFromAlbumId, resolved.candidates)
         val target = resolved.candidates.first { it.albumId == request.targetAlbumId }
         val trackOrder = planTrackOrder(resolved.candidates, request.trackOrderFromAlbumId)
+        val creditPlan = AlbumCreditMergePlanner.plan(resolved.candidates, request.targetAlbumId, request.artistCreditsFromAlbumId)
         return AlbumMergePreviewResponse(
             artistId = resolved.artistId,
             artistName = resolved.artistName,
             targetAlbumId = target.albumId,
+            artistCreditsFromAlbumId = creditPlan.fromAlbumId,
+            artists = creditPlan.artists,
             candidates = resolved.candidates,
             totalTracks = resolved.candidates.sumOf { it.trackCount },
             totalPlaybacks = resolved.candidates.sumOf { it.playbackCount },
@@ -104,6 +107,15 @@ class DuplicateAlbumReviewService(
             warnings =
                 buildList {
                     add("A operação é definitiva.")
+                    add(
+                        "Preservar os créditos do álbum #${creditPlan.fromAlbumId}: " +
+                            creditPlan.artists.joinToString("") { it.creditedName + it.joinPhrase },
+                    )
+                    if (creditPlan.requiresChoice) {
+                        add(
+                            "Há créditos diferentes. Revise a origem escolhida; os demais créditos serão substituídos.",
+                        )
+                    }
                     add("Faixas com títulos iguais serão mantidas separadas.")
                     if (trackOrder.conflictedTrackCount > 0) {
                         add("${trackOrder.conflictedTrackCount} faixa(s) adicional(is) perderão a posição por conflito.")
@@ -123,6 +135,7 @@ class DuplicateAlbumReviewService(
                 request.yearFromAlbumId,
                 request.ratingFromAlbumId,
                 request.trackOrderFromAlbumId,
+                request.artistCreditsFromAlbumId,
             )
         if (selectedIds.any { it !in allowed }) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Os campos escolhidos devem vir de um dos álbuns da mesclagem")
@@ -131,6 +144,10 @@ class DuplicateAlbumReviewService(
         repository.lockAlbums(allowed.keys)
         val fresh = resolve(request.targetAlbumId, request.sourceAlbumIds)
         val freshById = fresh.candidates.associateBy { it.albumId }
+        val creditPlan = AlbumCreditMergePlanner.plan(fresh.candidates, request.targetAlbumId, request.artistCreditsFromAlbumId)
+        if (creditPlan.requiresChoice && request.artistCreditsFromAlbumId == null) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "Há créditos diferentes; escolha de qual álbum preservar os artistas")
+        }
         val target =
             albumRepository.findById(request.targetAlbumId).orElseThrow {
                 ResponseStatusException(HttpStatus.NOT_FOUND, "álbum principal não encontrado")
@@ -150,6 +167,7 @@ class DuplicateAlbumReviewService(
                 request.ratingFromAlbumId,
                 trackOrder.links,
                 migratedTrackLinks,
+                creditPlan.fromAlbumId,
             )
         val titleKey = TitleKeyUtil.albumTitleKey(titleChoice.title).ifBlank { "unknown" }
         albumRepository.save(
@@ -182,9 +200,22 @@ class DuplicateAlbumReviewService(
         if (ids.size != sourceIds.distinct().size + 1) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "IDs de álbuns duplicados")
         val rows = repository.findCandidates(ids)
         if (rows.size != ids.size) throw ResponseStatusException(HttpStatus.NOT_FOUND, "Um ou mais álbuns não foram encontrados")
-        val artists = rows.map { it.first }.distinctBy { it.first }
-        if (artists.size != 1) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Só é possível mesclar álbuns do mesmo artista")
-        return ResolvedMerge(artists.single().first, artists.single().second, rows.map { it.second })
+        val legacyArtists = rows.map { it.first.first }.distinct()
+        val commonCredits =
+            rows
+                .map {
+                    it.second.artists
+                        .map { credit -> credit.artistId }
+                        .toSet()
+                }.reduce { left, right ->
+                    left intersect
+                        right
+                }
+        if (legacyArtists.size != 1 && commonCredits.isEmpty()) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Os álbuns devem compartilhar ao menos um artista creditado")
+        }
+        val target = rows.first { it.second.albumId == targetId }
+        return ResolvedMerge(target.first.first, target.first.second, rows.map { it.second })
     }
 
     private fun score(candidate: AlbumMergeCandidateResponse): Long =

@@ -1,5 +1,7 @@
 package dev.marcal.mediapulse.server.repository
 
+import dev.marcal.mediapulse.server.api.music.AlbumMergePreviewRequest
+import dev.marcal.mediapulse.server.api.music.AlbumMergeRequest
 import dev.marcal.mediapulse.server.api.music.MusicBrainzAlbumArtistDto
 import dev.marcal.mediapulse.server.controller.webhook.dto.PlexWebhookPayload
 import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzApiClient
@@ -15,6 +17,7 @@ import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyArtist
 import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyExtendedHistoryItem
 import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyRecentlyPlayedItem
 import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyTrack
+import dev.marcal.mediapulse.server.model.music.AlbumArtistCredit
 import dev.marcal.mediapulse.server.model.music.AlbumArtistSource
 import dev.marcal.mediapulse.server.repository.crud.AlbumArtistRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumMusicBrainzReleaseIdRepository
@@ -28,6 +31,7 @@ import dev.marcal.mediapulse.server.repository.crud.TrackRepository
 import dev.marcal.mediapulse.server.repository.crud.TrackSpotifyIdRepository
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
 import dev.marcal.mediapulse.server.service.music.AlbumArtistCreditsService
+import dev.marcal.mediapulse.server.service.music.DuplicateAlbumReviewService
 import dev.marcal.mediapulse.server.service.musicbrainz.MusicBrainzPageEnrichmentService
 import dev.marcal.mediapulse.server.service.plex.PlexMusicPlaybackService
 import dev.marcal.mediapulse.server.service.plex.import.PlexMusicImportService
@@ -47,6 +51,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.data.jpa.repository.support.JpaRepositoryFactory
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.jdbc.datasource.DriverManagerDataSource
 import org.springframework.orm.jpa.JpaTransactionManager
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean
@@ -71,6 +76,7 @@ class AlbumArtistCreditsIntegrationTest {
     private lateinit var credits: AlbumArtistRepository
     private lateinit var artists: ArtistRepository
     private lateinit var albums: AlbumRepository
+    private lateinit var creditQuery: dev.marcal.mediapulse.server.repository.query.AlbumArtistQueryRepository
     private lateinit var query: MusicQueryRepository
     private lateinit var service: AlbumArtistCreditsService
     private lateinit var canonical: CanonicalizationService
@@ -135,7 +141,12 @@ class AlbumArtistCreditsIntegrationTest {
                 service,
             )
 
-        query = MusicQueryRepository(em, mockk(relaxed = true), mockk(relaxed = true), albums, mockk(relaxed = true))
+        creditQuery =
+            dev.marcal.mediapulse.server.repository.query.AlbumArtistQueryRepository(
+                org.springframework.jdbc.core.namedparam
+                    .NamedParameterJdbcTemplate(source),
+            )
+        query = MusicQueryRepository(em, mockk(relaxed = true), mockk(relaxed = true), albums, mockk(relaxed = true), creditQuery)
     }
 
     @AfterAll
@@ -261,10 +272,7 @@ class AlbumArtistCreditsIntegrationTest {
             service.applyMusicBrainz(source, listOf(MusicBrainzAlbumArtistDto("legacy-mbid", "Legacy Artist", "Legacy Artist", "", 0)))
         }
         val merger =
-            AlbumMergeRepository(
-                org.springframework.jdbc.core.namedparam
-                    .NamedParameterJdbcTemplate(jdbc.dataSource!!),
-            )
+            AlbumMergeRepository(NamedParameterJdbcTemplate(jdbc.dataSource!!), creditQuery)
         assertFailsWith<ResponseStatusException> {
             tx.inTx { merger.merge(target, listOf(source), legacyArtist, null, emptyList(), 0) }
         }
@@ -400,16 +408,156 @@ class AlbumArtistCreditsIntegrationTest {
         val target = insertAlbum(legacyArtist, "Spotify target")
         tx.inTx { service.applySpotify(source, listOf(SpotifyArtist("protected-spotify", "Protected Spotify artist"))) }
         val merger =
-            AlbumMergeRepository(
-                org.springframework.jdbc.core.namedparam
-                    .NamedParameterJdbcTemplate(jdbc.dataSource!!),
-            )
+            AlbumMergeRepository(NamedParameterJdbcTemplate(jdbc.dataSource!!), creditQuery)
         assertFailsWith<ResponseStatusException> {
             tx.inTx { merger.merge(target, listOf(source), legacyArtist, null, emptyList(), 0) }
         }
         assertEquals(AlbumArtistSource.SPOTIFY, credits.findByAlbumId(source).single().source)
         assertEquals(true, albums.existsById(source))
     }
+
+    @Test
+    fun `secondary credited artists find the album without multiplying pages tracks or plays`() {
+        val first = insertArtist("Navigation main")
+        val second = insertArtist("Navigation guest")
+        val album = insertAlbum(first, "Navigation album")
+        tx.inTx {
+            credits.replace(
+                album,
+                listOf(
+                    AlbumArtistCredit(album, 0, first, "Navigation main", " & ", AlbumArtistSource.MUSICBRAINZ_CONFIRMED),
+                    AlbumArtistCredit(album, 1, second, "Guest navigation alias", " / ", AlbumArtistSource.MUSICBRAINZ_CONFIRMED),
+                    AlbumArtistCredit(album, 2, second, "Guest navigation alias", "", AlbumArtistSource.MUSICBRAINZ_CONFIRMED),
+                ),
+            )
+        }
+        val track =
+            jdbc.queryForObject(
+                "INSERT INTO tracks(artist_id,title,fingerprint) VALUES (?, 'Navigation track', 'navigation-track') RETURNING id",
+                Long::class.java,
+                first,
+            )!!
+        val otherTrack =
+            jdbc.queryForObject(
+                "INSERT INTO tracks(artist_id,title,fingerprint) VALUES (?, 'Another track', 'navigation-track-2') RETURNING id",
+                Long::class.java,
+                first,
+            )!!
+        jdbc.update(
+            "INSERT INTO album_tracks(album_id,track_id,disc_number,track_number) VALUES (?,?,1,1), (?,?,1,2)",
+            album,
+            track,
+            album,
+            otherTrack,
+        )
+        jdbc.update(
+            "INSERT INTO track_playbacks(track_id,album_id,source,played_at) VALUES (?,?,'SPOTIFY','2025-01-02T00:00:00Z')",
+            track,
+            album,
+        )
+        val guestPage = query.getArtistPage(second)
+        val mainPage = query.getArtistPage(first)
+        assertEquals(listOf(album), albums.findAllCreditedToArtist(second).map { it.id })
+        assertEquals(1L, guestPage.libraryAlbumsCount)
+        assertEquals(0L, guestPage.totalPlays)
+        assertEquals(1L, mainPage.totalPlays)
+        val row = guestPage.albums.single()
+        assertEquals(album, row.albumId)
+        assertEquals(2L, row.totalTracks)
+        assertEquals(1L, row.playedTracks)
+        assertEquals(1L, row.playCount)
+        assertEquals(3, row.artists.size)
+        assertEquals(1, query.search("Navigation guest", 50).albums.count { it.id == album })
+        assertEquals(1, query.search("Guest navigation alias", 50).albums.count { it.id == album })
+        assertEquals(
+            1L,
+            query
+                .getArtistLibrary(200, null)
+                .items
+                .single { it.artistId == second }
+                .albumsCount,
+        )
+        val visited = mutableListOf<Long>()
+        var cursor: String? = null
+        do {
+            val page = query.getAlbumLibrary(1, cursor)
+            visited += page.items.map { it.albumId }
+            cursor = page.nextCursor
+            assertEquals(visited.size, visited.distinct().size)
+        } while (cursor != null)
+        assertEquals(1, visited.count { it == album })
+        val listId = createList("navigation-list")
+        jdbc.update("INSERT INTO album_list_items(list_id,album_id,position) VALUES (?,?,1)", listId, album)
+        val list = AlbumListQueryRepository(entityManager, creditQuery).details("navigation-list")
+        assertEquals(1, list.itemCount)
+        assertEquals(query.getAlbumArtists(album), list.items.single().artists)
+    }
+
+    @Test
+    fun `merge explicitly preserves chosen credits across different legacy artists and retains history and lists`() {
+        val first = insertArtist("Merge credited main")
+        val second = insertArtist("Merge credited guest")
+        val target = insertAlbum(first, "Credit merge target")
+        val source = insertAlbum(second, "Credit merge source")
+        tx.inTx {
+            credits.replace(target, listOf(AlbumArtistCredit(target, 0, first, "Merge credited main", "", AlbumArtistSource.SPOTIFY)))
+            credits.replace(
+                source,
+                listOf(
+                    AlbumArtistCredit(source, 0, first, "Main alias", " & ", AlbumArtistSource.MUSICBRAINZ_CONFIRMED),
+                    AlbumArtistCredit(source, 1, second, "Guest alias", "", AlbumArtistSource.MUSICBRAINZ_CONFIRMED),
+                ),
+            )
+        }
+        val desired = query.getAlbumArtists(source)
+        val track =
+            jdbc.queryForObject(
+                "INSERT INTO tracks(artist_id,title,fingerprint) VALUES (?, 'Merge track', 'credit-merge-track') RETURNING id",
+                Long::class.java,
+                first,
+            )!!
+        jdbc.update(
+            "INSERT INTO album_tracks(album_id,track_id,disc_number,track_number) VALUES (?,?,1,1), (?,?,1,1)",
+            target,
+            track,
+            source,
+            track,
+        )
+        jdbc.update(
+            "INSERT INTO track_playbacks(track_id,album_id,source,played_at) VALUES (?,?,'SPOTIFY','2025-02-01T00:00:00Z'), (?,?,'PLEX','2025-02-02T00:00:00Z')",
+            track,
+            target,
+            track,
+            source,
+        )
+        val listId = createList("credit-merge-list")
+        jdbc.update("INSERT INTO album_list_items(list_id,album_id,position) VALUES (?,?,1), (?,?,2)", listId, target, listId, source)
+        val mergeService =
+            DuplicateAlbumReviewService(AlbumMergeRepository(NamedParameterJdbcTemplate(jdbc.dataSource!!), creditQuery), albums)
+        val preview = mergeService.preview(AlbumMergePreviewRequest(target, listOf(source)))
+        assertEquals(source, preview.artistCreditsFromAlbumId)
+        assertEquals(desired, preview.artists)
+        assertFailsWith<ResponseStatusException> { tx.inTx { mergeService.merge(AlbumMergeRequest(target, listOf(source))) } }
+        assertEquals(true, albums.existsById(source))
+        tx.inTx { mergeService.merge(AlbumMergeRequest(target, listOf(source), artistCreditsFromAlbumId = source)) }
+        assertEquals(false, albums.existsById(source))
+        assertEquals(desired, query.getAlbumArtists(target))
+        assertEquals(first, albums.findById(target).orElseThrow().artistId)
+        assertEquals(2L, jdbc.queryForObject("SELECT COUNT(*) FROM track_playbacks WHERE album_id=?", Long::class.java, target))
+        val list = AlbumListQueryRepository(entityManager, creditQuery).details("credit-merge-list")
+        assertEquals(1, list.itemCount)
+        assertEquals(target, list.items.single().albumId)
+        assertEquals(desired, list.items.single().artists)
+    }
+
+    private fun createList(slug: String): Long =
+        jdbc.queryForObject(
+            "INSERT INTO album_lists(name,normalized_name,slug) VALUES (?,?,?) RETURNING id",
+            Long::class.java,
+            slug,
+            slug,
+            slug,
+        )!!
 
     private fun insertArtist(
         name: String,

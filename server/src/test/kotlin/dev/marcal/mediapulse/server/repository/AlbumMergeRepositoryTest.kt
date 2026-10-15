@@ -18,7 +18,7 @@ class AlbumMergeRepositoryTest {
         val batch = slot<Array<MapSqlParameterSource>>()
         every { jdbc.batchUpdate(any(), capture(batch)) } returns intArrayOf(1)
         every { jdbc.queryForObject(any<String>(), any<MapSqlParameterSource>(), Long::class.java) } returns 0L
-        val repository = AlbumMergeRepository(jdbc)
+        val repository = AlbumMergeRepository(jdbc, mockk(relaxed = true))
         val createdAt = Instant.parse("2026-08-25T12:00:00Z")
 
         repository.merge(

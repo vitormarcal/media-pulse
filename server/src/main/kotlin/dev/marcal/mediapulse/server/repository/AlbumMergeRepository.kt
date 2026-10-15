@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.repository
 
 import dev.marcal.mediapulse.server.api.music.AlbumMergeCandidateResponse
+import dev.marcal.mediapulse.server.repository.query.AlbumArtistQueryRepository
 import org.springframework.http.HttpStatus
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -12,6 +13,7 @@ import java.time.Instant
 @Repository
 class AlbumMergeRepository(
     private val jdbc: NamedParameterJdbcTemplate,
+    private val albumArtistQuery: AlbumArtistQueryRepository,
 ) {
     data class SuggestionRow(
         val leftAlbumId: Long,
@@ -46,6 +48,8 @@ class AlbumMergeRepository(
             FROM albums a
             JOIN artists ar ON ar.id = a.artist_id
             WHERE ar.name ILIKE :pattern OR a.title ILIKE :pattern
+               OR EXISTS (SELECT 1 FROM album_artists aa JOIN artists ca ON ca.id = aa.artist_id
+                          WHERE aa.album_id = a.id AND (ca.name ILIKE :pattern OR aa.credited_name ILIKE :pattern))
             ORDER BY ar.name, a.year NULLS LAST, a.title, a.id
             LIMIT :limit
             """.trimIndent(),
@@ -58,7 +62,14 @@ class AlbumMergeRepository(
         artistQuery: String?,
         albumQuery: String?,
     ): List<SuggestionRow> {
-        val artistFilter = if (artistQuery.isNullOrBlank()) "" else "AND ar.name ILIKE :artistPattern"
+        val artistFilter =
+            if (artistQuery.isNullOrBlank()) {
+                ""
+            } else {
+                """AND (ar.name ILIKE :artistPattern OR EXISTS (
+            SELECT 1 FROM album_artists aa JOIN artists ca ON ca.id = aa.artist_id
+            WHERE aa.album_id = a.id AND (ca.name ILIKE :artistPattern OR aa.credited_name ILIKE :artistPattern)))"""
+            }
         val albumFilter = if (albumQuery.isNullOrBlank()) "" else "AND a.title ILIKE :albumPattern"
         val sql =
             """
@@ -98,7 +109,10 @@ class AlbumMergeRepository(
               COUNT(DISTINCT CASE WHEN lt.title_key = rt.title_key AND lt.title_key <> '' THEN lt.title_key END) AS shared_tracks,
               LEAST(l.track_count, r.track_count) AS smaller_track_count
             FROM album_keys l
-            JOIN album_keys r ON r.artist_id = l.artist_id AND r.id > l.id
+            JOIN album_keys r ON r.id > l.id AND (r.artist_id = l.artist_id OR EXISTS (
+                SELECT 1 FROM album_artists la JOIN album_artists ra ON ra.artist_id = la.artist_id
+                WHERE la.album_id = l.id AND ra.album_id = r.id
+            ))
             LEFT JOIN track_keys lt ON lt.album_id = l.id
             LEFT JOIN track_keys rt ON rt.album_id = r.id AND rt.title_key = lt.title_key
             GROUP BY l.id, r.id, l.edition_key, r.edition_key, l.track_count, r.track_count
@@ -127,6 +141,7 @@ class AlbumMergeRepository(
 
     fun findCandidates(albumIds: Collection<Long>): List<Pair<Pair<Long, String>, AlbumMergeCandidateResponse>> {
         if (albumIds.isEmpty()) return emptyList()
+        val credits = albumArtistQuery.findByAlbumIds(albumIds)
         val sql =
             """
             SELECT a.id, a.artist_id, ar.name AS artist_name, a.title, a.year, a.cover_url,
@@ -147,6 +162,7 @@ class AlbumMergeRepository(
             val artist = rs.getLong("artist_id") to rs.getString("artist_name")
             artist to
                 AlbumMergeCandidateResponse(
+                    artists = credits[rs.getLong("id")].orEmpty(),
                     albumId = rs.getLong("id"),
                     title = rs.getString("title"),
                     year = rs.getObject("year") as Int?,
@@ -167,6 +183,7 @@ class AlbumMergeRepository(
             jdbc.query("SELECT pg_advisory_xact_lock(:id)", mapOf("id" to id)) { resultSet ->
                 resultSet.next()
             }
+            jdbc.query("SELECT id FROM albums WHERE id = :id FOR UPDATE", mapOf("id" to id)) { it.next() }
         }
     }
 
@@ -199,6 +216,7 @@ class AlbumMergeRepository(
         ratingAlbumId: Long?,
         trackLinks: List<TrackLink>,
         migratedTrackLinks: Int,
+        artistCreditsFromAlbumId: Long? = null,
     ): MergeStats {
         val params = MapSqlParameterSource().addValue("targetId", targetId).addValue("sourceIds", sourceIds).addValue("artistId", artistId)
         // Share row locks with credit confirmation before checking for protected source credits.
@@ -211,10 +229,26 @@ class AlbumMergeRepository(
                 params,
                 Long::class.java,
             ) ?: 0L
-        if (protectedSources > 0) {
+        if (protectedSources > 0 && artistCreditsFromAlbumId == null) {
             throw ResponseStatusException(
                 HttpStatus.CONFLICT,
                 "Um álbum de origem possui créditos de artistas de um provedor. Preserve-o como principal; conciliação de créditos estará disponível em uma próxima versão.",
+            )
+        }
+
+        val creditsFrom = artistCreditsFromAlbumId ?: targetId
+        require(creditsFrom == targetId || creditsFrom in sourceIds) { "Credits must come from a selected album" }
+        if (creditsFrom != targetId) {
+            jdbc.update("DELETE FROM album_artists WHERE album_id = :targetId", params)
+            jdbc.update(
+                """INSERT INTO album_artists(album_id, position, artist_id, credited_name, join_phrase, source)
+                   SELECT :targetId, position, artist_id, credited_name, join_phrase, source
+                   FROM album_artists WHERE album_id = :creditsFrom
+                   UNION ALL
+                   SELECT :targetId, 0, a.id, a.name, '', 'LEGACY'
+                   FROM albums al JOIN artists a ON a.id = al.artist_id
+                   WHERE al.id = :creditsFrom AND NOT EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al.id)""",
+                MapSqlParameterSource().addValue("targetId", targetId).addValue("creditsFrom", creditsFrom),
             )
         }
 

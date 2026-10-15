@@ -5562,6 +5562,11 @@ components:
       type: object
       required: [albumId, albumTitle, artistId, artistName, position]
       properties:
+        artists:
+          type: array
+          description: Ordered album credits; singular artist fields retain their legacy meaning.
+          items:
+            $ref: "#/components/schemas/AlbumArtistCredit"
         albumId:
           type: integer
           format: int64
@@ -6295,6 +6300,11 @@ components:
     AlbumLibraryRow:
       type: object
       properties:
+        artists:
+          type: array
+          description: Ordered album credits; singular artist fields retain their legacy meaning.
+          items:
+            $ref: "#/components/schemas/AlbumArtistCredit"
         albumId:
           type: integer
           format: int64
@@ -6572,6 +6582,11 @@ components:
     SearchAlbumRow:
       type: object
       properties:
+        artists:
+          type: array
+          description: Ordered album credits; singular artist fields retain their legacy meaning.
+          items:
+            $ref: "#/components/schemas/AlbumArtistCredit"
         id:
           type: integer
           format: int64
@@ -6928,6 +6943,11 @@ components:
     ArtistAlbumRow:
       type: object
       properties:
+        artists:
+          type: array
+          description: Ordered album credits; singular artist fields retain their legacy meaning.
+          items:
+            $ref: "#/components/schemas/AlbumArtistCredit"
         albumId:
           type: integer
           format: int64
@@ -7258,6 +7278,11 @@ components:
     AlbumMergeCandidateResponse:
       type: object
       properties:
+        artists:
+          type: array
+          description: Ordered album credits; singular artist fields retain their legacy meaning.
+          items:
+            $ref: "#/components/schemas/AlbumArtistCredit"
         albumId: { type: integer, format: int64 }
         title: { type: string }
         year: { type: integer, nullable: true }
@@ -7325,6 +7350,11 @@ components:
     AlbumMergePreviewRequest:
       type: object
       properties:
+        artistCreditsFromAlbumId:
+          type: integer
+          format: int64
+          nullable: true
+          description: Selected album whose full artist credits are preserved. Required on merge when candidates have different credits.
         targetAlbumId: { type: integer, format: int64 }
         sourceAlbumIds: { type: array, items: { type: integer, format: int64 } }
         trackOrderFromAlbumId:
@@ -7351,6 +7381,12 @@ components:
     AlbumMergePreviewResponse:
       type: object
       properties:
+        artistCreditsFromAlbumId: { type: integer, format: int64 }
+        artists:
+          type: array
+          description: Ordered album credits; singular artist fields retain their legacy meaning.
+          items:
+            $ref: "#/components/schemas/AlbumArtistCredit"
         artistId: { type: integer, format: int64 }
         artistName: { type: string }
         targetAlbumId: { type: integer, format: int64 }
@@ -7366,6 +7402,8 @@ components:
         warnings: { type: array, items: { type: string } }
       required:
         [
+          artists,
+          artistCreditsFromAlbumId,
           artistId,
           artistName,
           targetAlbumId,
@@ -7378,6 +7416,11 @@ components:
     AlbumMergeRequest:
       type: object
       properties:
+        artistCreditsFromAlbumId:
+          type: integer
+          format: int64
+          nullable: true
+          description: Selected album whose full artist credits are preserved. Required on merge when candidates have different credits.
         targetAlbumId: { type: integer, format: int64 }
         sourceAlbumIds: { type: array, items: { type: integer, format: int64 } }
         titleFromAlbumId: { type: integer, format: int64 }

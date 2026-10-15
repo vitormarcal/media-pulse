@@ -16,6 +16,7 @@ data class SearchAlbumRow(
     val title: String,
     val artistName: String,
     val year: Int?,
+    val artists: List<AlbumArtistDto> = emptyList(),
 )
 
 data class SearchTrackRow(

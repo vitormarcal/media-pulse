@@ -56,7 +56,8 @@
               <span
                 ><strong>{{ album.title }}</strong
                 ><small
-                  >{{ album.artistName }}<template v-if="album.year"> · {{ album.year }}</template></small
+                  >{{ albumArtistLabel(album.artists, album.artistName)
+                  }}<template v-if="album.year"> · {{ album.year }}</template></small
                 ></span
               >
               <b>Adicionar</b>
@@ -103,7 +104,12 @@
             <NuxtLink :to="`/music/albums/${item.albumId}`"
               ><h3>{{ item.albumTitle }}</h3></NuxtLink
             >
-            <NuxtLink :to="`/music/artists/${item.artistId}`" class="artist">{{ item.artistName }}</NuxtLink>
+            <AlbumArtistLinks
+              class="artist"
+              :artists="item.artists"
+              :fallback-id="item.artistId"
+              :fallback-name="item.artistName"
+            />
             <div class="item-meta">
               <span>{{
                 item.rating ? `${'★'.repeat(item.rating)}${'☆'.repeat(5 - item.rating)}` : 'Sem avaliação'
@@ -143,6 +149,8 @@
 </template>
 
 <script setup lang="ts">
+import AlbumArtistLinks from '~/components/music/AlbumArtistLinks.vue'
+import { albumArtistLabel } from '~/utils/musicCredits'
 import type { AlbumListDetailsResponse, AlbumListItemDto, MusicSearchResponse } from '~/types/music'
 
 const route = useRoute()

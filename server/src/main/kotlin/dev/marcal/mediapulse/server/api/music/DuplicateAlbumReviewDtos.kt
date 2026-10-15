@@ -37,12 +37,14 @@ data class AlbumMergeCandidateResponse(
     val musicBrainzReleaseIds: List<String>,
     val musicBrainzReleaseGroupId: String?,
     val rating: Int?,
+    val artists: List<AlbumArtistDto> = emptyList(),
 )
 
 data class AlbumMergePreviewRequest(
     val targetAlbumId: Long,
     val sourceAlbumIds: List<Long>,
     val trackOrderFromAlbumId: Long = targetAlbumId,
+    val artistCreditsFromAlbumId: Long? = null,
 )
 
 data class AlbumTrackOrderPreviewResponse(
@@ -61,6 +63,8 @@ data class AlbumMergePreviewResponse(
     val totalPlaybacks: Long,
     val trackOrder: AlbumTrackOrderPreviewResponse,
     val warnings: List<String>,
+    val artistCreditsFromAlbumId: Long = targetAlbumId,
+    val artists: List<AlbumArtistDto> = emptyList(),
 )
 
 data class AlbumMergeRequest(
@@ -71,6 +75,7 @@ data class AlbumMergeRequest(
     val yearFromAlbumId: Long = targetAlbumId,
     val ratingFromAlbumId: Long? = targetAlbumId,
     val trackOrderFromAlbumId: Long = targetAlbumId,
+    val artistCreditsFromAlbumId: Long? = null,
 )
 
 data class AlbumMergeResponse(

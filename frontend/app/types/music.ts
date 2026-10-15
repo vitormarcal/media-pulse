@@ -158,6 +158,7 @@ export interface ArtistPageResponse {
   libraryTracksCount: number
   lastPlayed: string | null
   albums: Array<{
+    artists?: AlbumArtistCredit[]
     albumId: number
     albumTitle: string
     year: number | null
@@ -216,6 +217,7 @@ export interface ArtistMusicBrainzProfile {
 }
 
 export interface AlbumMergeCandidateResponse {
+  artists?: AlbumArtistCredit[]
   albumId: number
   title: string
   year: number | null
@@ -251,6 +253,8 @@ export interface AlbumMergeCatalogResponse {
 }
 
 export interface AlbumMergePreviewResponse {
+  artistCreditsFromAlbumId: number
+  artists: AlbumArtistCredit[]
   artistId: number
   artistName: string
   targetAlbumId: number
@@ -384,6 +388,7 @@ export interface ArtistLibraryPageResponse {
 }
 
 export interface AlbumLibraryRow {
+  artists?: AlbumArtistCredit[]
   albumId: number
   albumTitle: string
   artistId: number
@@ -424,6 +429,7 @@ export interface MusicSearchResponse {
     name: string
   }>
   albums: Array<{
+    artists?: AlbumArtistCredit[]
     id: number
     title: string
     artistName: string
@@ -449,6 +455,7 @@ export interface AlbumListSummaryDto {
 }
 
 export interface AlbumListItemDto {
+  artists?: AlbumArtistCredit[]
   albumId: number
   albumTitle: string
   artistId: number

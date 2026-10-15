@@ -1,3 +1,4 @@
+import { albumArtistLabel } from '~/utils/musicCredits'
 import type {
   EditorialHighlight,
   EditorialShelfItem,
@@ -311,11 +312,12 @@ function albumAside(item: AlbumLibraryRow) {
 }
 
 function albumCard(item: AlbumLibraryRow): MusicLibraryCardModel {
+  const artistLabel = albumArtistLabel(item.artists, item.artistName)
   return {
     id: `album-${item.albumId}`,
     kind: 'albums',
     title: item.albumTitle,
-    subtitle: item.year ? `${item.artistName} · ${item.year}` : item.artistName,
+    subtitle: item.year ? `${artistLabel} · ${item.year}` : artistLabel,
     href: `/music/albums/${item.albumId}`,
     imageUrl: item.coverUrl,
     primaryMeta: `${formatShortNumber(item.playCount)} plays · ${formatShortNumber(item.playedTracks)}/${formatShortNumber(item.totalTracks)} faixas`,
@@ -357,11 +359,12 @@ function searchArtistCard(item: MusicSearchResponse['artists'][number]): MusicLi
 }
 
 function searchAlbumCard(item: MusicSearchResponse['albums'][number]): MusicLibraryCardModel {
+  const artistLabel = albumArtistLabel(item.artists, item.artistName)
   return {
     id: `search-album-${item.id}`,
     kind: 'albums',
     title: item.title,
-    subtitle: item.year ? `${item.artistName} · ${item.year}` : item.artistName,
+    subtitle: item.year ? `${artistLabel} · ${item.year}` : artistLabel,
     href: `/music/albums/${item.id}`,
     imageUrl: null,
     primaryMeta: 'Entrada localizada pela busca',
@@ -785,6 +788,7 @@ export function buildArtistPageData(artist: ArtistPageResponse): ArtistPageData 
       albumTitle: album.albumTitle,
       artistId: artist.artistId,
       artistName: artist.artistName,
+      artists: album.artists,
       coverUrl: album.coverUrl,
       year: album.year,
       totalTracks: album.totalTracks,

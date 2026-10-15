@@ -9,6 +9,16 @@ import org.springframework.data.repository.query.Param
 interface AlbumRepository : JpaRepository<Album, Long> {
     fun findAllByArtistId(artistId: Long): List<Album>
 
+    @Query(
+        """SELECT al.* FROM albums al
+           WHERE EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al.id AND aa.artist_id = :artistId)
+              OR (al.artist_id = :artistId AND NOT EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al.id))""",
+        nativeQuery = true,
+    )
+    fun findAllCreditedToArtist(
+        @Param("artistId") artistId: Long,
+    ): List<Album>
+
     fun findByFingerprint(fingerprint: String): Album?
 
     fun findByMusicbrainzReleaseGroupId(musicbrainzReleaseGroupId: String): Album?

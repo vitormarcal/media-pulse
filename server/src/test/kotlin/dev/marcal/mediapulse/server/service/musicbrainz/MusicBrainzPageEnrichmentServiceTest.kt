@@ -223,7 +223,7 @@ class MusicBrainzPageEnrichmentServiceTest {
         runBlocking {
             val missing = candidate.copy(id = "rg-2", title = "Another Album", firstReleaseDate = "2005")
             every { artists.findById(20) } returns Optional.of(artist)
-            every { albums.findAllByArtistId(20) } returns listOf(album.copy(year = 2001))
+            every { albums.findAllCreditedToArtist(20) } returns listOf(album.copy(year = 2001))
             every { albums.findByMusicbrainzReleaseGroupId("rg-1") } returns null
             every { albums.findByMusicbrainzReleaseGroupId("rg-2") } returns null
             coEvery { client.getArtistReleaseGroups("artist-1") } returns listOf(candidate, missing)
@@ -239,7 +239,7 @@ class MusicBrainzPageEnrichmentServiceTest {
     fun `discography import skips an already linked release group`() =
         runBlocking {
             every { artists.findById(20) } returns Optional.of(artist)
-            every { albums.findAllByArtistId(20) } returns listOf(album)
+            every { albums.findAllCreditedToArtist(20) } returns listOf(album)
             every { albums.findByMusicbrainzReleaseGroupId("rg-1") } returns album.copy(musicbrainzReleaseGroupId = "rg-1")
             coEvery { client.getArtistReleaseGroups("artist-1") } returns listOf(candidate)
 

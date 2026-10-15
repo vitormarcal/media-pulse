@@ -72,6 +72,7 @@ data class ArtistAlbumRow(
     val playedTracks: Long,
     val playCount: Long,
     val lastPlayed: Instant?,
+    val artists: List<AlbumArtistDto> = emptyList(),
 )
 
 data class ArtistTrackRow(

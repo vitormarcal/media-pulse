@@ -1,6 +1,6 @@
 # Múltiplos artistas por álbum
 
-Status: spec aprovada. Versões 1 a 3 implementadas, com validação em produção pendente; versões 4 e 5 planejadas.
+Status: spec aprovada. Beta.3 validada pelo owner com Elis & Tom. Beta.4 validada pelo owner; etapa 5 planejada.
 
 ## Problema
 
@@ -50,8 +50,11 @@ Principais arquivos e áreas: `SpotifyPlaybackService`, `CanonicalizationService
 - Spotify só atualiza créditos quando o payload contém ID e nome do álbum e uma lista não vazia de artistas com IDs e nomes válidos. Usa apenas `album.artists`, nunca artistas da tracklist ou do histórico estendido.
 - A primeira lista válida do Spotify pode substituir créditos `LEGACY`. Listas seguintes podem reordenar, atualizar nomes e acrescentar artistas, mas não omitir artistas locais já creditados pelo Spotify. A confirmação MusicBrainz tem prioridade e pode substituir a lista automática.
 - Identidades Spotify conflitantes ou homônimos incompatíveis com a unicidade de nomes do catálogo preservam os créditos atuais; a atualização automática é ignorada sem criar artistas parcialmente. Separadores de exibição são `, ` entre créditos do Spotify, que não fornece join phrases.
-- `albums.artist_id` permanece como vínculo legado de compatibilidade e pode diferir do primeiro crédito confirmado. Créditos não reatribuem esse campo ou fingerprints. Consultas e rankings legados continuam usando esse vínculo até suas evoluções previstas.
-- Na versão 2, mesclar artistas transfere as referências dos créditos e preserva nomes creditados e posições. Mesclar álbuns bloqueia a operação se algum álbum de origem tiver créditos confirmados, para não perdê-los. É possível preservar como principal o único álbum com créditos confirmados. Conciliação completa fica para a versão 4.
+- `albums.artist_id` permanece como vínculo legado de compatibilidade e pode diferir do primeiro crédito confirmado. Créditos não reatribuem esse campo ou fingerprints. Rankings e identidade mantêm suas regras anteriores; a navegação passa a usar os créditos na etapa 4.
+- A mesclagem de artistas transfere os créditos preservando nomes e posições. Na etapa 4, a mesclagem de álbuns permite escolher uma lista editorial completa de um dos álbuns. A recomendação prioriza MusicBrainz confirmado, depois Spotify, depois legado; entre listas de mesma origem, prefere mais artistas distintos e, no empate, o principal.
+- Créditos divergentes exigem seleção explícita no pedido de mesclagem. A prévia mostra os créditos finais e avisa que as outras listas serão substituídas; não se concatenam listas editoriais automaticamente. A origem da lista escolhida é preservada.
+- Álbuns com artistas legados diferentes podem ser mesclados se compartilharem ao menos um artista creditado. O principal mantém seu artista legado e sua identidade.
+- Discografias, contagens de álbuns na biblioteca e busca usam os créditos com fallback legado apenas quando não houver lista armazenada. A busca considera nomes canônicos e creditados. Leitura em lote e `EXISTS` evitam resultados repetidos; estatísticas de reprodução e rankings de artistas não recebem todas as escutas dos álbuns colaborativos.
 - Não há restrição de unicidade por artista no álbum: o mesmo artista pode aparecer em mais de uma posição de um crédito editorial.
 - A origem deve distinguir o vínculo migrado dos créditos recebidos dos provedores e confirmados pelo usuário.
 - Atualizações devem ser transacionais e idempotentes.

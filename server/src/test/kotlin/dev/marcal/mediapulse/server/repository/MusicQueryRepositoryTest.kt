@@ -26,7 +26,14 @@ class MusicQueryRepositoryTest {
     @BeforeEach
     fun setUp() {
         repository =
-            MusicQueryRepository(em, mediaCommentQueryRepository, mediaRatingQueryRepository, albumRepository, artistProfileRepository)
+            MusicQueryRepository(
+                em,
+                mediaCommentQueryRepository,
+                mediaRatingQueryRepository,
+                albumRepository,
+                artistProfileRepository,
+                mockk(relaxed = true),
+            )
         every { em.createQuery(any<String>(), any<Class<*>>()) } returns mockk(relaxed = true)
         every { em.createNativeQuery(any<String>()) } returns query
         every { query.setParameter(any<String>(), any()) } returns query

@@ -50,8 +50,8 @@ import dev.marcal.mediapulse.server.api.music.TrackPlayRow
 import dev.marcal.mediapulse.server.api.music.TrendingGenreResponse
 import dev.marcal.mediapulse.server.api.music.UnderplayedGenreResponse
 import dev.marcal.mediapulse.server.model.EntityType
-import dev.marcal.mediapulse.server.model.music.AlbumArtistSource
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
+import dev.marcal.mediapulse.server.repository.query.AlbumArtistQueryRepository
 import jakarta.persistence.EntityManager
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
@@ -68,6 +68,7 @@ class MusicQueryRepository(
     private val mediaRatingQueryRepository: MediaRatingQueryRepository,
     private val albumRepository: AlbumRepository,
     private val artistProfileRepository: ArtistProfileRepository,
+    private val albumArtistQuery: AlbumArtistQueryRepository,
 ) {
     private companion object {
         private const val REDISCOVERED_RECENT_WINDOW_DAYS = 30L
@@ -109,7 +110,8 @@ class MusicQueryRepository(
                           SELECT al2.cover_url
                           FROM albums al2
                           LEFT JOIN track_playbacks tp2 ON tp2.album_id = al2.id
-                          WHERE al2.artist_id = a.id
+                          WHERE EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al2.id AND aa.artist_id = a.id)
+                             OR (al2.artist_id = a.id AND NOT EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al2.id))
                           GROUP BY al2.id, al2.cover_url
                           ORDER BY MAX(tp2.played_at) DESC NULLS LAST, COUNT(tp2.id) DESC, al2.id DESC
                           LIMIT 1
@@ -120,7 +122,7 @@ class MusicQueryRepository(
                           JOIN tracks t ON t.id = tp.track_id
                           WHERE t.artist_id = a.id
                         ) AS total_plays,
-                        (SELECT COUNT(*) FROM albums al WHERE al.artist_id = a.id) AS albums_count,
+                        (SELECT COUNT(*) FROM albums al WHERE (EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al.id AND aa.artist_id = a.id) OR (al.artist_id = a.id AND NOT EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al.id)))) AS albums_count,
                         (SELECT COUNT(*) FROM tracks t WHERE t.artist_id = a.id) AS tracks_count,
                         (
                           SELECT MAX(tp.played_at)
@@ -251,7 +253,11 @@ class MusicQueryRepository(
         val hasMore = rows.size > resolvedLimit
         val items = rows.take(resolvedLimit)
         val nextCursor = items.lastOrNull()?.let { buildRecentCursor(it.lastPlayed, it.albumId) }
-        return AlbumLibraryPageResponse(items = items, nextCursor = if (hasMore) nextCursor else null)
+        val credits = albumArtistQuery.findByAlbumIds(items.map { it.albumId })
+        return AlbumLibraryPageResponse(
+            items = items.map { it.copy(artists = credits[it.albumId].orEmpty()) },
+            nextCursor = if (hasMore) nextCursor else null,
+        )
     }
 
     fun getTrackLibrary(
@@ -1093,31 +1099,7 @@ class MusicQueryRepository(
         )
     }
 
-    fun getAlbumArtists(albumId: Long): List<AlbumArtistDto> =
-        entityManager
-            .createNativeQuery(
-                """SELECT aa.artist_id, a.name, aa.position, aa.credited_name, aa.join_phrase, aa.source
-               FROM album_artists aa JOIN artists a ON a.id = aa.artist_id
-               WHERE aa.album_id = :albumId
-               UNION ALL
-               SELECT a.id, a.name, 0, a.name, '', 'LEGACY'
-               FROM albums al JOIN artists a ON a.id = al.artist_id
-               WHERE al.id = :albumId AND NOT EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al.id)
-               ORDER BY 3""",
-            ).setParameter("albumId", albumId)
-            .resultList
-            .map {
-                val row = it as Array<*>
-                AlbumArtistDto(
-                    (row[0] as Number).toLong(),
-                    row[1] as String,
-                    (row[2] as Number).toInt(),
-                    row[3] as String,
-                    row[4] as String,
-                    AlbumArtistSource
-                        .valueOf(row[5] as String),
-                )
-            }
+    fun getAlbumArtists(albumId: Long): List<AlbumArtistDto> = albumArtistQuery.findByAlbumIds(listOf(albumId))[albumId].orEmpty()
 
     fun getAlbumTerms(albumId: Long): List<AlbumTermDto> =
         entityManager
@@ -1305,7 +1287,7 @@ class MusicQueryRepository(
                       (SELECT COUNT(*) FROM track_playbacks tp JOIN tracks t ON t.id = tp.track_id WHERE t.artist_id = a.id) AS total_plays,
                       (SELECT COUNT(DISTINCT tp.track_id) FROM track_playbacks tp JOIN tracks t ON t.id = tp.track_id WHERE t.artist_id = a.id) AS unique_tracks_played,
                       (SELECT COUNT(DISTINCT tp.album_id) FROM track_playbacks tp JOIN tracks t ON t.id = tp.track_id WHERE t.artist_id = a.id) AS unique_albums_played,
-                      (SELECT COUNT(*) FROM albums al WHERE al.artist_id = a.id) AS library_albums_count,
+                      (SELECT COUNT(*) FROM albums al WHERE (EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al.id AND aa.artist_id = a.id) OR (al.artist_id = a.id AND NOT EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al.id)))) AS library_albums_count,
                       (SELECT COUNT(*) FROM tracks t WHERE t.artist_id = a.id) AS library_tracks_count,
                       (SELECT MAX(tp.played_at) FROM track_playbacks tp JOIN tracks t ON t.id = tp.track_id WHERE t.artist_id = a.id) AS last_played,
                       a.musicbrainz_artist_id
@@ -1332,8 +1314,9 @@ class MusicQueryRepository(
                       MAX(tp.played_at) AS last_played
                     FROM albums al
                     LEFT JOIN album_tracks at ON at.album_id = al.id
-                    LEFT JOIN track_playbacks tp ON tp.album_id = al.id
-                    WHERE al.artist_id = :artistId
+                    LEFT JOIN track_playbacks tp ON tp.album_id = al.id AND tp.track_id = at.track_id
+                    WHERE EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al.id AND aa.artist_id = :artistId)
+                       OR (al.artist_id = :artistId AND NOT EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al.id))
                     GROUP BY al.id, al.title, al.year, al.cover_url
                     ORDER BY COUNT(tp.id) DESC, MAX(tp.played_at) DESC NULLS LAST, al.year DESC NULLS LAST, al.title
                     """.trimIndent(),
@@ -1415,6 +1398,7 @@ class MusicQueryRepository(
                     )
                 }
 
+        val discographyCredits = albumArtistQuery.findByAlbumIds(albums.map { it.albumId })
         return ArtistPageResponse(
             artistId = (summaryRow[0] as Number).toLong(),
             artistName = summaryRow[1] as String,
@@ -1424,7 +1408,7 @@ class MusicQueryRepository(
             libraryAlbumsCount = (summaryRow[5] as Number).toLong(),
             libraryTracksCount = (summaryRow[6] as Number).toLong(),
             lastPlayed = summaryRow[7] as Instant?,
-            albums = albums,
+            albums = albums.map { it.copy(artists = discographyCredits[it.albumId].orEmpty()) },
             topTracks = topTracks,
             playsByDay = days,
             musicBrainz =
@@ -1597,22 +1581,27 @@ class MusicQueryRepository(
                 .resultList
                 .map { IdName(it[0] as Long, it[1] as String) }
 
-        val albums =
+        val albumRows =
             entityManager
-                .createQuery(
-                    """
-            SELECT al.id, al.title, ar.name, al.year
-            FROM Album al JOIN Artist ar ON ar.id = al.artistId
-            WHERE LOWER(al.title) LIKE :q OR LOWER(ar.name) LIKE :q
-            ORDER BY al.title
-            """,
-                    Array<Any>::class.java,
+                .createNativeQuery(
+                    """SELECT al.id, al.title, ar.name, al.year
+               FROM albums al JOIN artists ar ON ar.id = al.artist_id
+               WHERE LOWER(al.title) LIKE :q
+                  OR EXISTS (
+                      SELECT 1 FROM album_artists aa JOIN artists ca ON ca.id = aa.artist_id
+                      WHERE aa.album_id = al.id AND (LOWER(ca.name) LIKE :q OR LOWER(aa.credited_name) LIKE :q)
+                  )
+                  OR (LOWER(ar.name) LIKE :q AND NOT EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al.id))
+               ORDER BY al.title, al.id""",
                 ).setParameter("q", like)
                 .setMaxResults(limit)
                 .resultList
                 .map {
-                    SearchAlbumRow(it[0] as Long, it[1] as String, it[2] as String, it[3] as Int?)
+                    val row = it as Array<*>
+                    SearchAlbumRow((row[0] as Number).toLong(), row[1] as String, row[2] as String, (row[3] as Number?)?.toInt())
                 }
+        val albumCredits = albumArtistQuery.findByAlbumIds(albumRows.map { it.id })
+        val albums = albumRows.map { it.copy(artists = albumCredits[it.id].orEmpty()) }
 
         // tracks: agora Track tem artistId, mas não tem albumId.
         // Mostrar "albumTitle" aqui é mais caro: precisa escolher um álbum (ex: o mais ouvido).

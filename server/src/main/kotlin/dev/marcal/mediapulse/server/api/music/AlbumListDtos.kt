@@ -41,6 +41,7 @@ data class AlbumListItemDto(
     val position: Int,
     val listenedAt: Instant?,
     val rating: Int?,
+    val artists: List<AlbumArtistDto> = emptyList(),
 )
 
 data class AlbumListDetailsResponse(
