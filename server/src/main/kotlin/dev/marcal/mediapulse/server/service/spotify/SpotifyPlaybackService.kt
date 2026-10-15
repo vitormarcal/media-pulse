@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyRecentlyPlaye
 import dev.marcal.mediapulse.server.model.music.PlaybackSource
 import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
 import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
+import dev.marcal.mediapulse.server.service.music.AlbumArtistCreditsService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -13,6 +14,7 @@ class SpotifyPlaybackService(
     private val canonical: CanonicalizationService,
     private val trackPlaybackRepo: TrackPlaybackCrudRepository,
     private val spotifyArtworkService: SpotifyArtworkService,
+    private val albumArtistCredits: AlbumArtistCreditsService,
 ) {
     @Transactional
     suspend fun processRecentlyPlayedItem(
@@ -64,6 +66,10 @@ class SpotifyPlaybackService(
                 coverUrl = null,
                 spotifyId = albumSpotifyId,
             )
+
+        if (!albumSpotifyId.isNullOrBlank() && !album.name.isNullOrBlank()) {
+            albumArtistCredits.applySpotify(albumEntity.id, album.artists)
+        }
 
         val trackEntity =
             canonical.ensureTrackInAlbum(

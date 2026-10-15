@@ -1,6 +1,6 @@
 package dev.marcal.mediapulse.server.model.music
 
-enum class AlbumArtistSource { LEGACY, MUSICBRAINZ_CONFIRMED }
+enum class AlbumArtistSource { LEGACY, SPOTIFY, MUSICBRAINZ_CONFIRMED }
 
 data class AlbumArtistCredit(
     val albumId: Long,

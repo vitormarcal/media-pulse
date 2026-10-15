@@ -23,7 +23,7 @@ export interface AlbumArtistCredit {
   position: number
   creditedName: string
   joinPhrase: string
-  source: 'LEGACY' | 'MUSICBRAINZ_CONFIRMED'
+  source: 'LEGACY' | 'SPOTIFY' | 'MUSICBRAINZ_CONFIRMED'
 }
 
 export interface MusicBrainzAlbumArtist {

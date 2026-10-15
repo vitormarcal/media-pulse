@@ -31,6 +31,9 @@ class SpotifyPlaybackServiceTest {
 
     @MockK lateinit var spotifyArtworkService: SpotifyArtworkService
 
+    @MockK(relaxed = true)
+    lateinit var albumArtistCredits: dev.marcal.mediapulse.server.service.music.AlbumArtistCreditsService
+
     private lateinit var service: SpotifyPlaybackService
 
     @BeforeEach
@@ -41,6 +44,7 @@ class SpotifyPlaybackServiceTest {
                 canonical = canonical,
                 trackPlaybackRepo = trackPlaybackRepo,
                 spotifyArtworkService = spotifyArtworkService,
+                albumArtistCredits = albumArtistCredits,
             )
         stubEnsureTrackInAlbumThroughEnsureTrack()
     }
@@ -203,6 +207,7 @@ class SpotifyPlaybackServiceTest {
             } just runs
 
             repeat(2) { service.processRecentlyPlayedItem(item = item, eventId = 999L) }
+            verify(exactly = 2) { albumArtistCredits.applySpotify(20L, item.track!!.album!!.artists) }
 
             verify(exactly = 2) {
                 canonical.ensureArtist(

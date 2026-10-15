@@ -6709,7 +6709,7 @@ components:
         position: { type: integer, minimum: 0 }
         creditedName: { type: string }
         joinPhrase: { type: string, description: Text following this credited name, including spaces }
-        source: { type: string, enum: [LEGACY, MUSICBRAINZ_CONFIRMED] }
+        source: { type: string, enum: [LEGACY, SPOTIFY, MUSICBRAINZ_CONFIRMED] }
     MusicBrainzAlbumArtist:
       type: object
       required: [artistMbid, artistName, creditedName, joinPhrase, position]

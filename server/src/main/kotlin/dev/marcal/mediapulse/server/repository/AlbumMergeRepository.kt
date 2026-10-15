@@ -205,16 +205,16 @@ class AlbumMergeRepository(
         (sourceIds + targetId).sorted().forEach { id ->
             jdbc.query("SELECT id FROM albums WHERE id = :id FOR UPDATE", mapOf("id" to id)) { resultSet -> resultSet.next() }
         }
-        val confirmedSources =
+        val protectedSources =
             jdbc.queryForObject(
-                "SELECT COUNT(*) FROM album_artists WHERE album_id IN (:sourceIds) AND source = 'MUSICBRAINZ_CONFIRMED'",
+                "SELECT COUNT(*) FROM album_artists WHERE album_id IN (:sourceIds) AND source <> 'LEGACY'",
                 params,
                 Long::class.java,
             ) ?: 0L
-        if (confirmedSources > 0) {
+        if (protectedSources > 0) {
             throw ResponseStatusException(
                 HttpStatus.CONFLICT,
-                "Um álbum de origem possui créditos confirmados. Preserve-o como principal; conciliação de créditos estará disponível em uma próxima versão.",
+                "Um álbum de origem possui créditos de artistas de um provedor. Preserve-o como principal; conciliação de créditos estará disponível em uma próxima versão.",
             )
         }
 

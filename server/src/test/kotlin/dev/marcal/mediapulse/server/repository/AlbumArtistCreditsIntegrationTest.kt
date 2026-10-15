@@ -1,21 +1,43 @@
 package dev.marcal.mediapulse.server.repository
 
 import dev.marcal.mediapulse.server.api.music.MusicBrainzAlbumArtistDto
+import dev.marcal.mediapulse.server.controller.webhook.dto.PlexWebhookPayload
 import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzApiClient
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistCredit
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistRef
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbReleaseGroupCandidate
+import dev.marcal.mediapulse.server.integration.plex.PlexApiClient
+import dev.marcal.mediapulse.server.integration.plex.dto.PlexAlbum
+import dev.marcal.mediapulse.server.integration.plex.dto.PlexArtist
+import dev.marcal.mediapulse.server.integration.plex.dto.PlexGuid
+import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyAlbum
+import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyArtist
+import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyExtendedHistoryItem
+import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyRecentlyPlayedItem
+import dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyTrack
 import dev.marcal.mediapulse.server.model.music.AlbumArtistSource
 import dev.marcal.mediapulse.server.repository.crud.AlbumArtistRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumMusicBrainzReleaseIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
+import dev.marcal.mediapulse.server.repository.crud.AlbumSpotifyIdRepository
+import dev.marcal.mediapulse.server.repository.crud.AlbumTrackCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.ArtistRepository
+import dev.marcal.mediapulse.server.repository.crud.TrackMusicBrainzRecordingIdRepository
+import dev.marcal.mediapulse.server.repository.crud.TrackPlaybackCrudRepository
+import dev.marcal.mediapulse.server.repository.crud.TrackRepository
+import dev.marcal.mediapulse.server.repository.crud.TrackSpotifyIdRepository
+import dev.marcal.mediapulse.server.service.canonical.CanonicalizationService
 import dev.marcal.mediapulse.server.service.music.AlbumArtistCreditsService
 import dev.marcal.mediapulse.server.service.musicbrainz.MusicBrainzPageEnrichmentService
+import dev.marcal.mediapulse.server.service.plex.PlexMusicPlaybackService
+import dev.marcal.mediapulse.server.service.plex.import.PlexMusicImportService
+import dev.marcal.mediapulse.server.service.spotify.SpotifyExtendedPlaybackService
+import dev.marcal.mediapulse.server.service.spotify.SpotifyPlaybackService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.TxUtil
 import io.mockk.coEvery
 import io.mockk.mockk
+import jakarta.persistence.EntityManager
 import kotlinx.coroutines.runBlocking
 import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.AfterAll
@@ -34,6 +56,7 @@ import org.springframework.web.server.ResponseStatusException
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
@@ -50,6 +73,10 @@ class AlbumArtistCreditsIntegrationTest {
     private lateinit var albums: AlbumRepository
     private lateinit var query: MusicQueryRepository
     private lateinit var service: AlbumArtistCreditsService
+    private lateinit var canonical: CanonicalizationService
+    private lateinit var spotify: SpotifyPlaybackService
+    private lateinit var playbacks: TrackPlaybackCrudRepository
+    private lateinit var entityManager: EntityManager
     private var legacyArtist = 0L
     private var legacyAlbum = 0L
 
@@ -80,12 +107,34 @@ class AlbumArtistCreditsIntegrationTest {
             }
         val emf = factory.`object`!!
         val em = SharedEntityManagerCreator.createSharedEntityManager(emf)
+        entityManager = em
         val repositories = JpaRepositoryFactory(em)
         artists = repositories.getRepository(ArtistRepository::class.java)
         albums = repositories.getRepository(AlbumRepository::class.java)
         tx = TxUtil(JpaTransactionManager(emf))
         credits = AlbumArtistRepository(jdbc)
         service = AlbumArtistCreditsService(credits, artists)
+        canonical =
+            CanonicalizationService(
+                credits,
+                artists,
+                albums,
+                repositories.getRepository(TrackRepository::class.java),
+                repositories.getRepository(AlbumTrackCrudRepository::class.java),
+                repositories.getRepository(AlbumSpotifyIdRepository::class.java),
+                repositories.getRepository(AlbumMusicBrainzReleaseIdRepository::class.java),
+                repositories.getRepository(TrackSpotifyIdRepository::class.java),
+                repositories.getRepository(TrackMusicBrainzRecordingIdRepository::class.java),
+            )
+        playbacks = repositories.getRepository(TrackPlaybackCrudRepository::class.java)
+        spotify =
+            SpotifyPlaybackService(
+                canonical,
+                playbacks,
+                mockk(relaxed = true),
+                service,
+            )
+
         query = MusicQueryRepository(em, mockk(relaxed = true), mockk(relaxed = true), albums, mockk(relaxed = true))
     }
 
@@ -220,6 +269,145 @@ class AlbumArtistCreditsIntegrationTest {
             tx.inTx { merger.merge(target, listOf(source), legacyArtist, null, emptyList(), 0) }
         }
         assertEquals(1, credits.findByAlbumId(source).size)
+        assertEquals(true, albums.existsById(source))
+    }
+
+    @Test
+    fun `Spotify replay and Plex import retain a single album and all Spotify credits`() {
+        val anchor = tx.inTx { canonical.ensureArtist("Spotify main", spotifyId = "sp-main") }
+        val album =
+            tx.inTx {
+                canonical.ensureAlbum(anchor, "Shared album", 2025, null, spotifyId = "sp-album", musicbrainzReleaseGroupId = "shared-rg")
+            }
+        val incoming = listOf(SpotifyArtist("sp-main", "Spotify main"), SpotifyArtist("sp-guest", "Spotify guest"))
+        val item =
+            SpotifyRecentlyPlayedItem(
+                "2025-01-01T00:00:00Z",
+                SpotifyTrack(
+                    "sp-track",
+                    "Shared track",
+                    120000,
+                    1,
+                    1,
+                    listOf(incoming.first()),
+                    SpotifyAlbum("sp-album", "Shared album", "2025", null, incoming),
+                ),
+            )
+        repeat(2) { tx.inTx { runBlocking { spotify.processRecentlyPlayedItem(item, null) } } }
+        val stored = query.getAlbumArtists(album.id)
+        assertEquals(listOf("Spotify main", "Spotify guest"), stored.map { it.creditedName })
+        assertEquals(listOf(", ", ""), stored.map { it.joinPhrase })
+        assertEquals(setOf(AlbumArtistSource.SPOTIFY), stored.map { it.source }.toSet())
+        assertEquals(1L, jdbc.queryForObject("SELECT COUNT(*) FROM track_playbacks WHERE album_id = ?", Long::class.java, album.id))
+        val plex = mockk<PlexApiClient>()
+        val mb = mockk<MusicBrainzApiClient>()
+        coEvery { plex.listArtistsPaged("music", 0, 200) } returns (listOf(PlexArtist("plex-artist", "Plex partial artist")) to 1)
+        coEvery { plex.listAlbumsByArtistPaged("music", "plex-artist", 0, 200) } returns (
+            listOf(
+                PlexAlbum(ratingKey = "plex-album", title = "Shared album", year = 2025, guids = listOf(PlexGuid("mbid://shared-release"))),
+            ) to
+                1
+        )
+        coEvery { mb.resolveReleaseGroupFromRelease("shared-release") } returns "shared-rg"
+        coEvery { plex.listTracksByAlbumPaged("music", "plex-album", 0, 200) } returns
+            (emptyList<dev.marcal.mediapulse.server.integration.plex.dto.PlexTrack>() to 0)
+        val importer = PlexMusicImportService(plex, canonical, mockk(relaxed = true), mockk(relaxed = true), mb)
+        tx.inTx { runBlocking { importer.importAllMusicLibrary("music") } }
+        assertEquals(stored, query.getAlbumArtists(album.id))
+        assertEquals(album.id, canonical.findAlbumByMusicBrainzReleaseId("shared-release")!!.id)
+        val webhook = PlexMusicPlaybackService(canonical, playbacks, mockk(relaxed = true), mockk(relaxed = true))
+        val payload =
+            PlexWebhookPayload(
+                "media.scrobble",
+                PlexWebhookPayload.PlexMetadata(
+                    type = "track",
+                    title = "Shared track",
+                    grandparentTitle = "Spotify main",
+                    parentTitle = "Shared album",
+                    parentYear = 2025,
+                    parentIndex = 1,
+                    index = 1,
+                    lastViewedAt = Instant.parse("2025-01-01T00:03:00Z"),
+                ),
+            )
+        repeat(2) { tx.inTx { runBlocking { webhook.processScrobble(payload) } } }
+        assertEquals(stored, query.getAlbumArtists(album.id))
+        assertEquals(
+            1L,
+            jdbc.queryForObject("SELECT COUNT(*) FROM track_playbacks WHERE album_id = ? AND source = 'PLEX'", Long::class.java, album.id),
+        )
+        val extended = SpotifyExtendedPlaybackService(canonical, playbacks, tx, entityManager)
+        extended.processChunk(
+            listOf(
+                SpotifyExtendedHistoryItem(
+                    ts = "2025-01-01T00:05:00Z",
+                    trackName = "Shared track",
+                    artistName = "Spotify main",
+                    albumName = "Shared album",
+                    spotifyTrackUri = "spotify:track:sp-track",
+                ),
+            ),
+            null,
+        )
+        assertEquals(stored, query.getAlbumArtists(album.id))
+
+        assertEquals(1L, jdbc.queryForObject("SELECT COUNT(*) FROM albums WHERE title = 'Shared album'", Long::class.java))
+    }
+
+    @Test
+    fun `Spotify partial lists preserve credits and confirmed MusicBrainz wins`() {
+        val artistId = insertArtist("Partial main")
+        val id = insertAlbum(artistId, "Partial album")
+        val full = listOf(SpotifyArtist("partial-main", "Partial main"), SpotifyArtist("partial-guest", "Partial guest"))
+        tx.inTx { service.applySpotify(id, full) }
+        val stored = query.getAlbumArtists(id)
+        for (partial in listOf(null, emptyList(), full.take(1), listOf(SpotifyArtist("missing", null)))) {
+            tx.inTx { service.applySpotify(id, partial) }
+            assertEquals(stored, query.getAlbumArtists(id))
+        }
+        tx.inTx { service.applySpotify(id, full.reversed()) }
+        assertEquals(stored.map { it.artistId }.reversed(), query.getAlbumArtists(id).map { it.artistId })
+        tx.inTx {
+            service.applyMusicBrainz(id, listOf(MusicBrainzAlbumArtistDto("confirmed-main", "Partial main", "Confirmed alias", "", 0)))
+        }
+        val confirmed = query.getAlbumArtists(id)
+        tx.inTx { service.applySpotify(id, full + SpotifyArtist("ignored-artist", "Ignored artist")) }
+        assertEquals(confirmed, query.getAlbumArtists(id))
+        assertNull(artists.findBySpotifyId("ignored-artist"))
+    }
+
+    @Test
+    fun `Spotify ambiguous identities preserve legacy credits without partial writes`() {
+        val anchor = insertArtist("Conflict Spotify main", "conflict-spotify-mbid")
+        jdbc.update("UPDATE artists SET spotify_id = 'original-spotify-id' WHERE id = ?", anchor)
+        val id = insertAlbum(anchor, "Conflicting Spotify album")
+        tx.inTx { credits.initializeLegacy(id) }
+        val before = query.getAlbumArtists(id)
+        tx.inTx {
+            service.applySpotify(
+                id,
+                listOf(SpotifyArtist("would-be-new", "Would be new"), SpotifyArtist("wrong-id", "Conflict Spotify main")),
+            )
+        }
+        assertEquals(before, query.getAlbumArtists(id))
+        assertNull(artists.findBySpotifyId("would-be-new"))
+        assertEquals("original-spotify-id", artists.findById(anchor).orElseThrow().spotifyId)
+    }
+
+    @Test
+    fun `album merge also protects Spotify credits on source albums`() {
+        val source = insertAlbum(legacyArtist, "Spotify source")
+        val target = insertAlbum(legacyArtist, "Spotify target")
+        tx.inTx { service.applySpotify(source, listOf(SpotifyArtist("protected-spotify", "Protected Spotify artist"))) }
+        val merger =
+            AlbumMergeRepository(
+                org.springframework.jdbc.core.namedparam
+                    .NamedParameterJdbcTemplate(jdbc.dataSource!!),
+            )
+        assertFailsWith<ResponseStatusException> {
+            tx.inTx { merger.merge(target, listOf(source), legacyArtist, null, emptyList(), 0) }
+        }
+        assertEquals(AlbumArtistSource.SPOTIFY, credits.findByAlbumId(source).single().source)
         assertEquals(true, albums.existsById(source))
     }
 
