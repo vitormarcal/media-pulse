@@ -23,6 +23,9 @@
         <dd>{{ albumArtistLabel(item.after) }}</dd>
       </div>
     </dl>
+    <p v-if="sameDisplayedCredits && item.status === 'READY'" class="item-note">
+      Os nomes exibidos permanecem iguais. Aplicar registra os créditos e sua origem no {{ providerName }}.
+    </p>
     <p v-if="item.status === 'UNDONE'" class="item-note">A lista anterior de créditos foi restaurada.</p>
     <p v-if="item.status === 'PENDING'" class="item-note">
       A consulta não terminou. Gere uma nova prévia para este álbum.
@@ -36,6 +39,12 @@ import { albumArtistLabel } from '~/utils/musicCredits'
 const props = defineProps<{ item: AlbumCreditBackfillItem }>()
 const proposedLabel = computed(() =>
   props.item.proposed.map((artist) => artist.creditedName + artist.joinPhrase).join(''),
+)
+const sameDisplayedCredits = computed(
+  () =>
+    props.item.before.length === props.item.proposed.length &&
+    proposedLabel.value !== '' &&
+    albumArtistLabel(props.item.before) === proposedLabel.value,
 )
 const providerName = computed(() => (props.item.provider === 'SPOTIFY' ? 'Spotify' : 'MusicBrainz'))
 const providerUrl = computed(() => {
