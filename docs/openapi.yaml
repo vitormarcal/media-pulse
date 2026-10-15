@@ -1627,6 +1627,110 @@ paths:
           {
             description: Missing albums created; linked or possible matches skipped,
           }
+  /api/admin/music/album-artist-backfills:
+    get:
+      tags:
+      - Music
+      summary: List the 20 most recent album credit backfill batches
+      responses:
+        '200':
+          description: Batch audit and per-album outcomes; no catalog changes during
+            preview
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlbumCreditBackfillBatch'
+  /api/admin/music/album-artist-backfills/preview:
+    post:
+      tags:
+      - Music
+      summary: Preview up to ten legacy albums using existing external identifiers;
+        only audit is written
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlbumCreditBackfillPreviewRequest'
+      responses:
+        '200':
+          description: Batch audit and per-album outcomes; no catalog changes during
+            preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlbumCreditBackfillBatch'
+        '400':
+          description: Invalid limit or album IDs
+  /api/admin/music/album-artist-backfills/{batchId}:
+    get:
+      tags:
+      - Music
+      summary: Inspect a persisted batch
+      parameters:
+      - in: path
+        name: batchId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Batch audit and per-album outcomes; no catalog changes during
+            preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlbumCreditBackfillBatch'
+        '404':
+          description: Batch not found
+  /api/admin/music/album-artist-backfills/{batchId}/apply:
+    post:
+      tags:
+      - Music
+      summary: Confirm stored proposals; resume write errors without reapplying successes
+      parameters:
+      - in: path
+        name: batchId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Batch audit and per-album outcomes; no catalog changes during
+            preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlbumCreditBackfillBatch'
+        '404':
+          description: Batch not found
+  /api/admin/music/album-artist-backfills/{batchId}/undo:
+    post:
+      tags:
+      - Music
+      summary: Restore prior credits only when credits revision and provider identity
+        still match
+      parameters:
+      - in: path
+        name: batchId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Batch audit and per-album outcomes; no catalog changes during
+            preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlbumCreditBackfillBatch'
+        '404':
+          description: Batch not found
   /api/music/albums/{albumId}/musicbrainz/candidates:
     post:
       tags: [Music]
@@ -6715,6 +6819,119 @@ components:
           playedTracks,
           coveragePercent,
         ]
+    AlbumCreditBackfillPreviewRequest:
+      type: object
+      properties:
+        albumIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          maxItems: 10
+          default: []
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+      description: Explicit local album IDs, or bounded automatic selection when albumIds
+        is empty. No catalog writes.
+    AlbumCreditBackfillStatus:
+      type: string
+      enum:
+      - PENDING
+      - READY
+      - SKIPPED
+      - ERROR
+      - APPLIED
+      - CONFLICT
+      - UNDONE
+      - UNDO_CONFLICT
+    AlbumCreditBackfillArtist:
+      type: object
+      properties:
+        externalId:
+          type: string
+        name:
+          type: string
+        creditedName:
+          type: string
+        joinPhrase:
+          type: string
+      required:
+      - externalId
+      - name
+      - creditedName
+      - joinPhrase
+    AlbumCreditBackfillItem:
+      type: object
+      properties:
+        albumId:
+          type: integer
+          format: int64
+        albumTitle:
+          type: string
+        status:
+          $ref: '#/components/schemas/AlbumCreditBackfillStatus'
+        reason:
+          type: string
+          nullable: true
+        before:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlbumArtistCredit'
+        hadStoredCredits:
+          type: boolean
+        beforeRevision:
+          type: integer
+          format: int64
+        provider:
+          type: string
+          enum:
+          - SPOTIFY
+          - MUSICBRAINZ_CONFIRMED
+          nullable: true
+        providerId:
+          type: string
+          nullable: true
+        proposed:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlbumCreditBackfillArtist'
+        after:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlbumArtistCredit'
+          nullable: true
+        afterRevision:
+          type: integer
+          format: int64
+          nullable: true
+      required:
+      - albumId
+      - albumTitle
+      - status
+      - before
+      - hadStoredCredits
+      - beforeRevision
+      - proposed
+    AlbumCreditBackfillBatch:
+      type: object
+      properties:
+        batchId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlbumCreditBackfillItem'
+      required:
+      - batchId
+      - createdAt
+      - items
     AlbumArtistCredit:
       type: object
       required: [artistId, artistName, position, creditedName, joinPhrase, source]

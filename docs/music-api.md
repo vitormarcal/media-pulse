@@ -63,6 +63,49 @@ Validação em produção: abrir *Elis & Tom* pelas páginas de Elis Regina e An
 
 Rollback para a beta.3 preserva o banco e os créditos escolhidos; a interface e a navegação voltam às limitações daquela versão. Não há rollback automático de mesclagens definitivas.
 
+## Completar créditos do acervo existente (etapa 5)
+
+A migração `V70__add_album_credit_backfill_audit.sql` adiciona `albums.artist_credits_revision` e as tabelas de auditoria `album_credit_backfill_batches` e `album_credit_backfill_items`. A revisão é gerenciada por SQL e não é um campo editável do modelo JPA. Escritas de créditos, confirmações manuais e mesclagens a atualizam. Os registros de auditoria guardam IDs históricos sem FK para álbuns/artistas, de modo que mesclagens não apaguem ou bloqueiem o histórico dos lotes.
+
+A página `/music/admin/album-artist-backfills`, acessível pelos painéis administrativos de música, permite seleção automática de 1 a 10 álbuns (padrão 1 na interface) ou busca pelo nome de álbum/artista e seleção de até 10. Gerar prévia consulta os provedores sem alterar o catálogo; aplicar é uma ação separada após revisar os itens. A tela mostra as listas anteriores, propostas, aplicadas e os motivos de preservação/conflito, além dos lotes recentes. Falhas de gravação podem ser retomadas; consultas interrompidas ou conflitos corrigidos podem gerar uma nova prévia dos pendentes. Desfazer exige confirmação na própria página e informa os resultados por álbum. Os pedidos não são disparados automaticamente ao abrir a página ou um lote.
+
+As APIs permanecem disponíveis para operação por HTTP. Exemplos completos: `server/src/main/kotlin/dev/marcal/mediapulse/server/controller/music/album-credit-backfill.http`.
+
+| Método | Endpoint | Resultado |
+|---|---|---|
+| `POST` | `/api/admin/music/album-artist-backfills/preview` | Cria e consulta uma prévia limitada; body `{ "albumIds": [7], "limit": 1 }`. |
+| `GET` | `/api/admin/music/album-artist-backfills` | Recupera os 20 lotes mais recentes, incluindo resultados por álbum. |
+| `GET` | `/api/admin/music/album-artist-backfills/{batchId}` | Consulta o lote e suas listas antes/proposta/depois. |
+| `POST` | `/api/admin/music/album-artist-backfills/{batchId}/apply` | Confirma e aplica propostas prontas; pode retomar falhas de gravação. |
+| `POST` | `/api/admin/music/album-artist-backfills/{batchId}/undo` | Restaura as listas anteriores quando não houve edição posterior. |
+
+`albumIds` é opcional, com até 10 IDs positivos (duplicados são deduplicados). Sem IDs, `limit` seleciona de 1 a 10 álbuns, padrão 5, em ordem de ID local. A seleção automática inclui somente créditos legados ou ausentes com Spotify ID ou release group canônico MusicBrainz conhecido. Com IDs explícitos, são processados os IDs fornecidos, até 10; `limit` governa somente a seleção automática. Álbuns inexistentes, sem esses IDs ou com créditos de provedor já preenchidos retornam `SKIPPED`. Isso inclui créditos confirmados: o lote não revisa confirmações anteriores.
+
+O provedor preferido é o release group MusicBrainz já vinculado; sem ele, usa-se o menor alias Spotify armazenado em ordem lexical. Não há busca por nome, resolução automática de release sem release group, mesclagem, troca de identidade do álbum ou varredura de todas as edições. Falha no provedor escolhido não muda silenciosamente para outro. O cliente Spotify usa `GET /albums/{id}` e a autenticação/retry existentes.
+
+A prévia grava a auditoria, mas não cria artistas nem altera o catálogo. Ela retorna créditos anteriores, revisão, identidade do provedor e proposta ordenada. Conflitos de identidade, homônimos incompatíveis e respostas parciais são sinalizados antes de qualquer gravação no catálogo. A confirmação aplica a proposta armazenada, sem consultar o provedor novamente. MusicBrainz recebe origem `MUSICBRAINZ_CONFIRMED`, pois o owner confirmou o lote. Spotify recebe `SPOTIFY`. Artistas são resolvidos pelas regras existentes; os IDs associados aos artistas são preservados após desfazer, pois podem ser compartilhados por outros registros.
+
+Cada álbum é aplicado em sua própria transação, junto do registro do resultado e das listas antes/depois. Um erro não desfaz sucessos dos outros álbuns. Não são modificados IDs de álbum, reproduções, título, capa, ano, gêneros, tags, tracklist ou listas pessoais. Revisão, créditos e vínculo externo são verificados novamente sob lock; uma prévia antiga não sobrescreve alterações recentes.
+
+Estados por álbum:
+
+- `PENDING`: prévia ainda sem proposta concluída; nunca é aplicada. Após uma consulta interrompida, gere nova prévia para esses IDs.
+- `READY`: proposta pronta para confirmação.
+- `SKIPPED`: créditos já preenchidos, álbum sem identidade suficiente ou atualização preservada pelas regras existentes.
+- `ERROR`: falha de consulta ou gravação. Com proposta armazenada, repetir `apply` retoma a tentativa; sem proposta, gerar nova prévia para o álbum.
+- `APPLIED`: gravação concluída; repetir `apply` não a executa novamente.
+- `CONFLICT`: identidade ou estado mudou; corrigir/revisar e gerar nova prévia.
+- `UNDONE`: créditos anteriores restaurados; repetir `undo` não altera o álbum.
+- `UNDO_CONFLICT`: álbum removido, vínculo externo alterado ou edição posterior; o desfazimento foi recusado sem sobrescrever dados.
+
+Desfazer verifica lista, revisão e vínculo externo. Restaura a lista original (ou a ausência original de vínculos), incluindo nomes, separadores e origens. Não remove entidades de artistas criadas, não desfaz IDs externos ligados aos artistas e não impede futuras ingestões de preencher novamente o álbum. Uma nova confirmação manual incrementa a revisão mesmo se mantiver os mesmos nomes, protegendo-a de um desfazimento antigo. As revisões não mudam os contratos normais de navegação nem a idempotência dos créditos exibidos.
+
+**Piloto em produção:** abrir `/music/admin/album-artist-backfills`, manter a quantidade 1 ou buscar um álbum antigo com crédito legado e vínculo externo conhecido. Gerar prévia, conferir os créditos antes/propostos e o provedor, só então clicar em Aplicar propostas. Pela API, usar o único ID e revisar `before`, `proposed`, `provider` e `providerId` antes de chamar `apply`. Conferir o mesmo ID no catálogo, artistas e número de reproduções. Repetir `apply` e consultar o lote após recarregar: não deve duplicar vínculos. Se desejar testar reversão, chamar `undo` antes de outras edições e conferir a lista anterior e o histórico intacto. Só depois ampliar o próximo lote. `GET` dos lotes recentes permite recuperar o ID se a resposta original tiver sido perdida.
+
+Rollback de aplicação para a beta.4 mantém tabela/revisão/auditoria, mas perde os endpoints de lote. Não retome lotes antigos após alternar com uma versão que não mantenha revisões; gere novas prévias. Desfazer lotes aplicados deve ser feito na versão que mantém revisões, antes do downgrade. A limitação de origem `SPOTIFY` para beta.2 continua válida.
+
+Validação automatizada: `JAVA_TOOL_OPTIONS=-Dapi.version=1.44 ./server/gradlew -p server test --tests '*AlbumCreditBackfill*Test' --tests '*SpotifyAlbumApiClientTest' --tests '*AlbumArtistCreditsIntegrationTest' --tests '*ArtistMergeRepository*'`. Inclui transação de catálogo/auditoria, retomada após erro, conflitos, proteção de confirmação manual posterior e preservação de histórico ao desfazer. Não precisa acessar contas reais.
+
 ## Listas de álbuns
 
 Listas são recortes pessoais e mutáveis formados por álbuns já presentes no acervo local. A ordem editorial fica armazenada em `album_list_items.position`; ordenar a interface por marcação ou avaliação não altera essa sequência.

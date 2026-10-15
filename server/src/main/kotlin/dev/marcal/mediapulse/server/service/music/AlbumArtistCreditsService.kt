@@ -115,7 +115,12 @@ class AlbumArtistCreditsService(
                     AlbumArtistSource.MUSICBRAINZ_CONFIRMED,
                 )
             }
-        if (credits.findByAlbumId(albumId) != resolved) credits.replace(albumId, resolved)
+        if (credits.findByAlbumId(albumId) != resolved) {
+            credits.replace(albumId, resolved)
+        } else {
+            // A new explicit confirmation must protect a later undo, even when names are unchanged.
+            credits.bumpRevision(albumId)
+        }
     }
 
     private fun resolveArtist(credit: MusicBrainzAlbumArtistDto): Artist {

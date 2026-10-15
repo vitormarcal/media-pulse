@@ -168,6 +168,11 @@ class ArtistMergeRepository(
             """.trimIndent(),
             p,
         )
+        jdbc.update(
+            """UPDATE albums SET artist_credits_revision = artist_credits_revision + 1
+               WHERE id IN (SELECT album_id FROM album_artists WHERE artist_id IN (:sourceIds))""",
+            p,
+        )
         jdbc.update("UPDATE album_artists SET artist_id=:targetId WHERE artist_id IN (:sourceIds)", p)
         val albums = jdbc.update("UPDATE albums SET artist_id=:targetId WHERE artist_id IN (:sourceIds)", p)
         jdbc.update(

@@ -1,6 +1,6 @@
 # Múltiplos artistas por álbum
 
-Status: spec aprovada. Beta.3 validada pelo owner com Elis & Tom. Beta.4 validada pelo owner; etapa 5 planejada.
+Status: spec aprovada. Beta.3 validada pelo owner com Elis & Tom. Beta.4 validada pelo owner. Etapa 5 implementada, com validação em produção pendente.
 
 ## Problema
 
@@ -16,7 +16,7 @@ Preservar localmente os artistas creditados no álbum e permitir sua exibição 
 2. **Versão 2 — armazenar e mostrar créditos:** criar `album_artists` com artista, posição, nome creditado, separador e origem; preencher os vínculos existentes a partir de `albums.artist_id`. Preservar essa coluna e os contratos atuais. Permitir aplicar todos os créditos pela prévia e confirmação do enriquecimento MusicBrainz. Migração Flyway aditiva.
 3. **Versão 3 — automatizar Spotify e preservar no Plex:** persistir todos os artistas do álbum recebidos do Spotify, mantendo ordem e idempotência. Importações parciais do Plex não removem créditos completos. A migração `V69` amplia a restrição de origem para aceitar `SPOTIFY`; a necessidade foi identificada ao implementar esta versão.
 4. **Versão 4 — navegar por todos os artistas:** atualizar discografias, busca, filtros, biblioteca, listas e mesclagem de álbuns. Preservar créditos na mesclagem, sem duplicar resultados. Índices adicionais somente se necessários. Rankings mantêm a regra atual.
-5. **Versão 5 — completar o acervo existente:** processar lotes pequenos com prévia, usando identificadores externos armazenados. Registrar alterações por álbum para retomada, auditoria e reversão. Conflitos exigem revisão. Migração aditiva se necessária para registrar execuções.
+5. **Versão 5 — completar o acervo existente:** processar lotes pequenos com prévia, usando identificadores externos armazenados. Registrar alterações por álbum para retomada, auditoria e reversão. Conflitos exigem revisão. Migração aditiva `V70`: auditoria dos lotes e revisão dos créditos para proteger aplicação e desfazimento.
 
 Cada versão é implantada e validada em produção antes da seguinte. A versão 3 introduz o valor de origem `SPOTIFY`; após gravá-lo, rollback para a beta.2 exige uma build de compatibilidade que reconheça esse valor ou restauração do backup anterior. Não basta voltar o binário da beta.2, cujo enum não reconhece essa origem. Voltar a aplicação deve preservar as estruturas aditivas e os dados coletados; isso não desfaz alterações já persistidas. Correções da versão 1 podem exigir ajuste pontual, e os lotes da versão 5 devem permitir desfazer seus próprios vínculos adicionados.
 
@@ -26,7 +26,7 @@ Cada versão é implantada e validada em produção antes da seguinte. A versão
 - Versão 2: adicionar `artists[]` aos contratos relevantes sem remover os campos atuais; mostrar créditos ordenados e links no detalhe do álbum e na prévia MusicBrainz.
 - Versão 3: reutilizar os fluxos de importação existentes.
 - Versão 4: propagar créditos para a navegação e revisão de duplicados existentes.
-- Versão 5: disponibilizar operação administrativa com prévia, execução e resultado por álbum; definir o contrato ao detalhar essa versão.
+- Versão 5: página `/music/admin/album-artist-backfills` para seleção automática ou busca de álbuns, prévia, aplicação, resultados por álbum, recuperação de lotes e desfazimento; usa as APIs administrativas existentes.
 - Seguir `DESIGN.md` e os componentes existentes em qualquer alteração visual.
 
 Principais arquivos e áreas: `SpotifyPlaybackService`, `CanonicalizationService`, `MusicBrainzPageEnrichmentService`, DTOs dos provedores, modelos e repositórios musicais, consultas e serviços de duplicados, contratos da API, páginas/componentes de música, migrações Flyway e documentação de música/OpenAPI.
@@ -58,6 +58,11 @@ Principais arquivos e áreas: `SpotifyPlaybackService`, `CanonicalizationService
 - Não há restrição de unicidade por artista no álbum: o mesmo artista pode aparecer em mais de uma posição de um crédito editorial.
 - A origem deve distinguir o vínculo migrado dos créditos recebidos dos provedores e confirmados pelo usuário.
 - Atualizações devem ser transacionais e idempotentes.
+- A etapa 5 tem página administrativa em `/music/admin/album-artist-backfills`, usando as APIs de lote. Não há agendamento ou fila novos. Aceita até 10 IDs locais ou seleciona até 10 álbuns legados com ID externo conhecido; o padrão da API é 5 e o da página é 1. O lote usa release group canônico MusicBrainz quando disponível, senão um alias Spotify conhecido. Não faz busca por nome nem adivinha edições.
+- Prévia persiste somente auditoria; aplicação exige um segundo pedido e usa a proposta armazenada, sem nova consulta externa. Álbuns com créditos de provedor já preenchidos são ignorados. Uma confirmação de lote MusicBrainz registra créditos `MUSICBRAINZ_CONFIRMED`.
+- Cada álbum tem transação e status próprios. Repetir aplicação não reaplica sucessos e pode retomar erros de gravação com proposta válida; erros de consulta, conflitos ou propostas pendentes exigem nova prévia.
+- Desfazer restaura apenas a lista anterior de créditos quando a lista, revisão e vínculo externo ainda coincidem com o resultado do lote. Não apaga artistas criados nem desfaz IDs externos associados a eles. Confirmações manuais posteriores, mesmo com créditos iguais, incrementam a revisão e impedem o desfazimento antigo.
+- Mesclagens incrementam revisões de créditos; auditoria não possui FK para álbuns, preservando seus registros após exclusão por mesclagem. Sem atualização em massa de IDs, histórico, título, capa, ano, termos ou tracklist.
 - Atualizar a spec existente de enriquecimento MusicBrainz quando a versão 2 alterar sua regra atual de preservar o artista.
 
 ## Acceptance criteria mínimos

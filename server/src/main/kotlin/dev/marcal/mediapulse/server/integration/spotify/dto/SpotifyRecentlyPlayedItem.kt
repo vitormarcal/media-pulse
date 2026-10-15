@@ -30,6 +30,7 @@ data class SpotifyArtist(
     val name: String?,
 )
 
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 data class SpotifyAlbum(
     val id: String?,
     val name: String?,

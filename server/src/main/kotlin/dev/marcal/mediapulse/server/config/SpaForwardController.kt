@@ -60,6 +60,8 @@ class SpaForwardController {
         "/music/terms/{kind}/{slug}",
         "/music/admin/duplicates",
         "/music/admin/album-duplicates",
+        "/music/admin/album-artist-backfills",
+        "/music/admin/album-artist-backfills/",
     )
     fun forwardToIndex(): String = "forward:/index.html"
 }

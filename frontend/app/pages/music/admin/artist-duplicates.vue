@@ -9,6 +9,7 @@
         <NuxtLink to="/music">Música</NuxtLink>
         <NuxtLink to="/music/admin/duplicates">Faixas</NuxtLink>
         <NuxtLink to="/music/admin/album-duplicates">Álbuns</NuxtLink>
+        <NuxtLink to="/music/admin/album-artist-backfills">Créditos dos álbuns</NuxtLink>
         <span>Artistas</span>
       </nav>
     </section>

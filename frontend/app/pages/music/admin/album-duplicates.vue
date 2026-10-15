@@ -9,6 +9,7 @@
         <NuxtLink :to="artistReturnUrl">{{ contextualArtistId ? 'Voltar ao artista' : 'Música' }}</NuxtLink>
         <NuxtLink to="/music/admin/duplicates">Faixas duplicadas</NuxtLink>
         <NuxtLink to="/music/admin/artist-duplicates">Artistas duplicados</NuxtLink>
+        <NuxtLink to="/music/admin/album-artist-backfills">Créditos dos álbuns</NuxtLink>
         <span>Álbuns duplicados</span>
       </nav>
     </section>

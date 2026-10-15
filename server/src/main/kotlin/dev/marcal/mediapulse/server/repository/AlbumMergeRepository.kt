@@ -236,6 +236,7 @@ class AlbumMergeRepository(
             )
         }
 
+        jdbc.update("UPDATE albums SET artist_credits_revision = artist_credits_revision + 1 WHERE id = :targetId", params)
         val creditsFrom = artistCreditsFromAlbumId ?: targetId
         require(creditsFrom == targetId || creditsFrom in sourceIds) { "Credits must come from a selected album" }
         if (creditsFrom != targetId) {

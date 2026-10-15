@@ -115,3 +115,5 @@ A página do jogo também oferece “Buscar imagens” em um card de Catálogo n
 ## Créditos de artistas em música
 
 A biblioteca, a busca e as discografias exibem créditos completos de álbuns. Listas têm links individuais para os artistas. Na revisão de duplicados, a prévia permite escolher o álbum de origem dos créditos e mostra a lista final antes da confirmação. Contratos e validação: `docs/music-api.md`, na raiz do projeto.
+
+A página `/music/admin/album-artist-backfills` completa créditos do acervo em lotes de até 10 álbuns. Permite busca e seleção ou seleção automática, revisão antes de aplicar, consulta dos lotes recentes, novas tentativas e desfazimento com confirmação. O padrão visual e a navegação seguem os painéis administrativos de música. A página exige as APIs e a migração V70 da beta.5 do backend.

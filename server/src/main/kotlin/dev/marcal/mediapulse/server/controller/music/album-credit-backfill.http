@@ -1,0 +1,27 @@
+# Configure host without credentials in this versioned example.
+@host = http://localhost:8080
+@batchId = 00000000-0000-0000-0000-000000000000
+
+### 1. Pilot preview: replace 7 with one existing local album ID.
+POST {{host}}/api/admin/music/album-artist-backfills/preview
+Content-Type: application/json
+
+{"albumIds": [7], "limit": 1}
+
+### Alternative: preview up to five eligible legacy albums, without applying.
+POST {{host}}/api/admin/music/album-artist-backfills/preview
+Content-Type: application/json
+
+{"limit": 5}
+
+### 2. Recover recent batch IDs, including interrupted requests.
+GET {{host}}/api/admin/music/album-artist-backfills
+
+### 3. Review before/proposed/provider; set batchId from the preview response.
+GET {{host}}/api/admin/music/album-artist-backfills/{{batchId}}
+
+### 4. Confirm the reviewed proposals. Repeating resumes write errors, skips successes.
+POST {{host}}/api/admin/music/album-artist-backfills/{{batchId}}/apply
+
+### 5. Optional undo: succeeds only if the album has not been edited since application.
+POST {{host}}/api/admin/music/album-artist-backfills/{{batchId}}/undo

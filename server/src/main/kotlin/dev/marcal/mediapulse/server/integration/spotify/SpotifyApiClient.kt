@@ -43,6 +43,19 @@ class SpotifyApiClient(
         }
     }
 
+    suspend fun getAlbum(spotifyAlbumId: String): dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyAlbum {
+        val accessToken = authService.getValidAccessToken()
+        return executeWith429Retry {
+            spotifyApiWebClient
+                .get()
+                .uri("/albums/{id}", spotifyAlbumId)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer $accessToken")
+                .retrieve()
+                .bodyToMono(dev.marcal.mediapulse.server.integration.spotify.dto.SpotifyAlbum::class.java)
+                .awaitSingle()
+        }
+    }
+
     /**
      * Returns ALL album tracks (paginates using offset/limit).
      * Endpoint: GET /albums/{id}/tracks
