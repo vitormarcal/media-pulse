@@ -1,6 +1,8 @@
 # Múltiplos artistas por álbum
 
-Status: spec aprovada. Beta.3 validada pelo owner com Elis & Tom. Beta.4 validada pelo owner. Etapa 5 implementada, com validação em produção pendente.
+Status: cinco etapas implementadas e incluídas na versão 1.4.0. Beta.3 validada pelo owner com Elis & Tom. Beta.4 validada pelo owner. Na etapa 5, o owner conferiu prévias MusicBrainz para Pandora’s Piñata e 6 Brandenburg Concertos / 4 Orchestral Suites; validação completa de aplicação, retomada e desfazimento em produção ainda não foi registrada.
+
+A versão estável consolida as etapas abaixo, sem migração adicional em relação à beta.5. Instalações anteriores precisam das migrações V68 (créditos ordenados), V69 (origem Spotify) e V70 (auditoria dos lotes e revisão dos créditos), aplicadas pelo Flyway. A operação dos lotes, o piloto em produção e as limitações de rollback estão documentados em [API de música](../music-api.md).
 
 ## Problema
 
