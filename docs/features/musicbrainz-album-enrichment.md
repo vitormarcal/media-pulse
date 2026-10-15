@@ -42,10 +42,10 @@ Na página do artista, o primeiro incremento deve apenas permitir estabelecer ou
 5. Mostrar uma prévia das mudanças antes de persistir.
 6. Após confirmação:
    - vincular o álbum ao `release-group` escolhido;
-   - vincular o artista local ao `artist` correspondente, quando a correspondência for inequívoca no candidato;
+   - resolver e armazenar todos os créditos de artistas, preservando ordem, nome creditado e separadores, conforme [versão 2 de créditos](album-artist-credits.md);
    - preencher o ano somente se estiver ausente localmente;
    - adicionar gêneros e tags provenientes do MusicBrainz, preservando sua origem;
-   - manter intactos título, artista, capa e tracklist.
+   - manter intactos título, vínculo legado `albums.artist_id`, capa e tracklist; os créditos ordenados são atualizados mediante confirmação.
 
 ### Artista
 
@@ -80,7 +80,7 @@ Na interface, a ação deve integrar-se ao modo de edição e aos componentes ex
 
 - criar álbuns automaticamente;
 - escolher automaticamente uma edição específica;
-- substituir título, artista ou capa;
+- substituir título, vínculo legado `albums.artist_id` ou capa;
 - criar ou substituir tracklist;
 - integrar Cover Art Archive, Wikimedia, Last.fm ou outros provedores;
 - criar um framework genérico de enriquecimento multi-provider;
@@ -92,8 +92,9 @@ Na interface, a ação deve integrar-se ao modo de edição e aos componentes ex
 - A busca deve priorizar título e artista e retornar uma lista curta e compreensível.
 - `release-group` é a identidade principal MusicBrainz do álbum canônico.
 - `release` identifica somente uma edição e pode orientar resolução de release group, tracklist, formato, país ou capas específicas.
-- Dados locais preenchidos não devem ser sobrescritos silenciosamente.
+- Dados locais preenchidos não devem ser sobrescritos silenciosamente. A prévia explicita a substituição dos créditos de artistas mediante confirmação.
 - O ano do MusicBrainz só preenche um ano local ausente.
+- Na versão 2 de créditos, `album_artists` preserva a lista ordenada confirmada e sua origem; `albums.artist_id` permanece como vínculo legado de compatibilidade.
 - Gêneros e tags devem manter informação de origem para permitir inspeção e correção.
 - A confirmação deve ser idempotente: reaplicar a mesma correspondência não cria vínculos nem termos duplicados.
 - Trocar uma correspondência existente exige confirmação explícita.
@@ -106,7 +107,7 @@ O enriquecimento de gêneros prefere o release group canônico e pode usar um re
 - Nenhuma busca ou prévia altera dados locais.
 - O owner consegue selecionar, revisar e confirmar um `release-group`.
 - A confirmação persiste o release group na coluna canônica sem ambiguidade.
-- O artista correspondente pode ser vinculado ao MBID de `artist`.
+- Todos os artistas creditados são resolvidos por MBID ou correspondência local sem conflito, sem vincular arbitrariamente o primeiro crédito ao artista legado.
 - Ano ausente e gêneros/tags são enriquecidos sem sobrescrever os demais dados canônicos.
 - Repetir a confirmação é idempotente.
 - Releases conhecidos são preservados como aliases técnicos sem substituir o release group canônico.

@@ -8,7 +8,14 @@
       <div class="copy">
         <p class="eyebrow">Álbum</p>
         <h1>{{ title }}</h1>
-        <NuxtLink class="subtitle subtitle-link" :to="artistHref">{{ artistName }}</NuxtLink>
+        <p class="subtitle artist-credits">
+          <template v-for="artist in artists" :key="artist.position">
+            <NuxtLink class="subtitle-link" :to="`/music/artists/${artist.artistId}`">{{
+              artist.creditedName
+            }}</NuxtLink
+            ><span class="join-phrase">{{ artist.joinPhrase }}</span>
+          </template>
+        </p>
 
         <div class="meta-list">
           <span v-for="item in heroMeta" :key="item" class="meta-pill">{{ item }}</span>
@@ -41,8 +48,7 @@ const props = defineProps<{
   albumId: number
   editing: boolean
   title: string
-  artistName: string
-  artistHref: string
+  artists: AlbumPageData['artists']
   coverUrl: string | null
   heroMeta: string[]
   terms: AlbumPageData['terms']
@@ -125,6 +131,14 @@ h1 {
   margin: 0;
   color: var(--base-color-text-secondary);
   font-size: 1.05rem;
+}
+
+.join-phrase {
+  white-space: pre-wrap;
+}
+
+.artist-credits {
+  overflow-wrap: anywhere;
 }
 
 .subtitle-link {

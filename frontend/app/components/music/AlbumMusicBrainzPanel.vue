@@ -22,17 +22,19 @@
         @click="previewCandidate(candidate)"
       >
         <strong>{{ candidate.title }}</strong>
-        <span>{{ candidate.artistName }} · {{ candidate.firstReleaseYear || 'ano desconhecido' }}</span>
+        <span>{{ creditLabel(candidate) }} · {{ candidate.firstReleaseYear || 'ano desconhecido' }}</span>
         <small>{{ [candidate.primaryType, candidate.disambiguation].filter(Boolean).join(' · ') }}</small>
       </button>
     </div>
 
     <div v-if="preview" class="preview">
       <h3>Prévia</h3>
+      <p><strong>Artistas:</strong> {{ creditLabel(preview.candidate) }}</p>
       <ul>
         <li v-for="change in preview.changes" :key="change">{{ change }}</li>
       </ul>
-      <p><strong>Preservados:</strong> título, artista, capa e tracklist.</p>
+      <p><strong>Preservados:</strong> título, capa e tracklist.</p>
+      <p v-if="preview.candidate.artists?.length">Os créditos do álbum serão substituídos pelos artistas acima.</p>
       <button class="primary" type="button" :disabled="loading" @click="apply">Confirmar enriquecimento</button>
     </div>
   </section>
@@ -48,6 +50,12 @@ const candidates = ref<MusicBrainzAlbumCandidate[]>([])
 const preview = ref<MusicBrainzAlbumPreview | null>(null)
 const loading = ref(false)
 const message = ref('')
+
+function creditLabel(candidate: MusicBrainzAlbumCandidate) {
+  return candidate.artists?.length
+    ? candidate.artists.map((artist) => artist.creditedName + artist.joinPhrase).join('')
+    : candidate.artistName
+}
 
 async function search() {
   loading.value = true

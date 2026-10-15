@@ -1637,7 +1637,14 @@ paths:
           required: true
           schema: { type: integer, format: int64 }
       responses:
-        "200": { description: Candidate list; no local data is changed }
+        "200":
+          description: Candidate list; no local data is changed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MusicBrainzAlbumCandidate"
   /api/music/albums/{albumId}/musicbrainz/preview:
     post:
       tags: [Music]
@@ -1652,7 +1659,13 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        "200": { description: Read-only enrichment preview }
+        "200":
+          description: Read-only enrichment preview, including all ordered artist credits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MusicBrainzAlbumPreview"
+        "409": { description: Incomplete artist credits from MusicBrainz }
   /api/music/albums/{albumId}/musicbrainz:
     post:
       tags: [Music]
@@ -1672,7 +1685,8 @@ paths:
               properties:
                 releaseGroupMbid: { type: string }
       responses:
-        "200": { description: Enrichment applied }
+        "200": { description: Enrichment and confirmed artist credits applied atomically; legacy artistId is preserved }
+        "409": { description: Artist or release-group identity conflict, or incomplete credits; no partial enrichment is applied }
   /api/music/artists/{artistId}/musicbrainz/candidates:
     post:
       tags: [Music]
@@ -6686,6 +6700,53 @@ components:
           playedTracks,
           coveragePercent,
         ]
+    AlbumArtistCredit:
+      type: object
+      required: [artistId, artistName, position, creditedName, joinPhrase, source]
+      properties:
+        artistId: { type: integer, format: int64 }
+        artistName: { type: string }
+        position: { type: integer, minimum: 0 }
+        creditedName: { type: string }
+        joinPhrase: { type: string, description: Text following this credited name, including spaces }
+        source: { type: string, enum: [LEGACY, MUSICBRAINZ_CONFIRMED] }
+    MusicBrainzAlbumArtist:
+      type: object
+      required: [artistMbid, artistName, creditedName, joinPhrase, position]
+      properties:
+        artistMbid: { type: string }
+        artistName: { type: string }
+        creditedName: { type: string }
+        joinPhrase: { type: string }
+        position: { type: integer, minimum: 0 }
+    MusicBrainzAlbumCandidate:
+      type: object
+      required: [releaseGroupMbid, title, artistName, artists]
+      properties:
+        releaseGroupMbid: { type: string }
+        title: { type: string }
+        artistName: { type: string, description: First artist credit for compatibility }
+        artistMbid: { type: string, nullable: true }
+        firstReleaseYear: { type: integer, nullable: true }
+        primaryType: { type: string, nullable: true }
+        disambiguation: { type: string, nullable: true }
+        artists:
+          type: array
+          items:
+            $ref: "#/components/schemas/MusicBrainzAlbumArtist"
+    MusicBrainzAlbumPreview:
+      type: object
+      required: [candidate, genres, tags, changes, preservedFields]
+      properties:
+        candidate:
+          $ref: "#/components/schemas/MusicBrainzAlbumCandidate"
+        genres: { type: array, items: { type: string } }
+        tags: { type: array, items: { type: string } }
+        changes: { type: array, items: { type: string } }
+        preservedFields:
+          type: array
+          items: { type: string }
+          description: title, artistId (legacy association), coverUrl, tracklist
     AlbumPageResponse:
       type: object
       properties:
@@ -6694,6 +6755,11 @@ components:
           format: int64
         albumTitle:
           type: string
+        artists:
+          type: array
+          description: Ordered album credits; legacy artistId and artistName retain their previous meaning.
+          items:
+            $ref: "#/components/schemas/AlbumArtistCredit"
         artistId:
           type: integer
           format: int64
@@ -6732,6 +6798,7 @@ components:
         [
           albumId,
           albumTitle,
+          artists,
           artistId,
           artistName,
           totalPlays,

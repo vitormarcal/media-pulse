@@ -13,6 +13,7 @@ data class MusicBrainzAlbumCandidateDto(
     val firstReleaseYear: Int?,
     val primaryType: String?,
     val disambiguation: String?,
+    val artists: List<MusicBrainzAlbumArtistDto> = emptyList(),
 )
 
 data class MusicBrainzArtistCandidateDto(
@@ -27,7 +28,7 @@ data class MusicBrainzAlbumPreviewResponse(
     val genres: List<String>,
     val tags: List<String>,
     val changes: List<String>,
-    val preservedFields: List<String> = listOf("title", "artist", "coverUrl", "tracklist"),
+    val preservedFields: List<String> = listOf("title", "artistId", "coverUrl", "tracklist"),
 )
 
 data class MusicBrainzAlbumApplyRequest(
@@ -88,4 +89,12 @@ data class MusicBrainzEnrichmentResult(
     val yearAdded: Boolean = false,
     val genresAdded: Int = 0,
     val tagsAdded: Int = 0,
+)
+
+data class MusicBrainzAlbumArtistDto(
+    val artistMbid: String,
+    val artistName: String,
+    val creditedName: String,
+    val joinPhrase: String,
+    val position: Int,
 )

@@ -654,17 +654,32 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
   const visibleTerms = album.terms.filter((term) => term.active)
   const hiddenTerms = album.terms.filter((term) => !term.active)
 
+  const artists = album.artists?.length
+    ? album.artists
+    : [
+        {
+          artistId: album.artistId,
+          artistName: album.artistName,
+          creditedName: album.artistName,
+          joinPhrase: '',
+          position: 0,
+          source: 'LEGACY' as const,
+        },
+      ]
+  const artistLabel = artists.map((artist) => artist.creditedName + artist.joinPhrase).join('')
+
   return {
+    artists,
     id: String(album.albumId),
     title: album.albumTitle,
-    artistName: album.artistName,
+    artistName: artistLabel,
     artistHref: `/music/artists/${album.artistId}`,
     year: album.year,
     coverUrl: album.coverUrl,
     rating: album.rating,
     heroMeta: [
       album.year ? String(album.year) : null,
-      album.artistName,
+      artistLabel,
       `${album.totalPlays} plays`,
       album.lastPlayed ? `Último ${formatRelativeDate(album.lastPlayed)}` : 'Sem play recente',
     ].filter(Boolean) as string[],

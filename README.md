@@ -53,6 +53,7 @@ Imagens novas de revistas, artes visuais, livros e jogos podem usar o Visual Lib
 - Contrato HTTP publicado: `docs/openapi.yaml`
 - Descoberta de novas features: `docs/feature-discovery.md`
 - Decisões de enriquecimento MusicBrainz: `docs/features/musicbrainz-album-enrichment.md`
+- Créditos de artistas por álbum e versões incrementais: `docs/features/album-artist-credits.md`
 
 ## Frontend
 

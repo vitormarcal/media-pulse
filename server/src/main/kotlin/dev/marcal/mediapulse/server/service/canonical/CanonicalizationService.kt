@@ -7,6 +7,7 @@ import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.model.music.Track
 import dev.marcal.mediapulse.server.model.music.TrackMusicBrainzRecordingId
 import dev.marcal.mediapulse.server.model.music.TrackSpotifyId
+import dev.marcal.mediapulse.server.repository.crud.AlbumArtistRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumMusicBrainzReleaseIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumSpotifyIdRepository
@@ -24,6 +25,7 @@ import java.time.Instant
 
 @Service
 class CanonicalizationService(
+    private val albumArtists: AlbumArtistRepository,
     private val artistRepo: ArtistRepository,
     private val albumRepo: AlbumRepository,
     private val trackRepo: TrackRepository,
@@ -163,6 +165,7 @@ class CanonicalizationService(
         musicbrainzId?.let { linkAlbumMusicBrainzRelease(albumWithReleaseGroup.id, it) }
         spotifyId?.let { linkAlbumSpotifyId(albumWithReleaseGroup.id, it) }
 
+        albumArtists.initializeLegacy(albumWithReleaseGroup.id)
         return albumWithReleaseGroup
     }
 

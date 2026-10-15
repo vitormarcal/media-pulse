@@ -1,9 +1,11 @@
 package dev.marcal.mediapulse.server.repository
 
 import dev.marcal.mediapulse.server.api.music.AlbumMergeCandidateResponse
+import org.springframework.http.HttpStatus
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
+import org.springframework.web.server.ResponseStatusException
 import java.sql.Timestamp
 import java.time.Instant
 
@@ -199,6 +201,22 @@ class AlbumMergeRepository(
         migratedTrackLinks: Int,
     ): MergeStats {
         val params = MapSqlParameterSource().addValue("targetId", targetId).addValue("sourceIds", sourceIds).addValue("artistId", artistId)
+        // Share row locks with credit confirmation before checking for protected source credits.
+        (sourceIds + targetId).sorted().forEach { id ->
+            jdbc.query("SELECT id FROM albums WHERE id = :id FOR UPDATE", mapOf("id" to id)) { resultSet -> resultSet.next() }
+        }
+        val confirmedSources =
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM album_artists WHERE album_id IN (:sourceIds) AND source = 'MUSICBRAINZ_CONFIRMED'",
+                params,
+                Long::class.java,
+            ) ?: 0L
+        if (confirmedSources > 0) {
+            throw ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "Um álbum de origem possui créditos confirmados. Preserve-o como principal; conciliação de créditos estará disponível em uma próxima versão.",
+            )
+        }
 
         val aliases =
             jdbc.update(

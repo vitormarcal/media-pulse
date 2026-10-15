@@ -39,6 +39,7 @@ class ArtistMergeRepositoryIntegrationTest {
                 )
             }!!
 
+        assertEquals(1, count("SELECT COUNT(*) FROM album_artists WHERE album_id=11 AND artist_id=1 AND credited_name='Source credit'"))
         assertEquals(1, result.movedAlbums)
         assertEquals(1, result.movedTracks)
         assertEquals(1, result.movedComments)
@@ -64,6 +65,8 @@ class ArtistMergeRepositoryIntegrationTest {
             INSERT INTO albums(id,artist_id,title,title_key,year,fingerprint) VALUES
               (10,1,'Same album','same-album',2020,'target-album'),
               (11,2,'Same album','same-album',2020,'source-album');
+            INSERT INTO album_artists(album_id,position,artist_id,credited_name,join_phrase,source)
+              VALUES (11,0,2,'Source credit','','MUSICBRAINZ_CONFIRMED');
             INSERT INTO tracks(id,artist_id,title,fingerprint) VALUES
               (20,1,'Target track','target-track'),
               (21,2,'Source track','source-track');

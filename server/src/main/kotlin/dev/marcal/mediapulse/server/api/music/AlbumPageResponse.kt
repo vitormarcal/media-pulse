@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.api.music
 
 import dev.marcal.mediapulse.server.api.comments.MediaCommentDto
 import dev.marcal.mediapulse.server.api.ratings.MediaRatingDto
+import dev.marcal.mediapulse.server.model.music.AlbumArtistSource
 import java.time.Instant
 import java.time.LocalDate
 
@@ -21,6 +22,7 @@ data class AlbumPageResponse(
     val comments: List<MediaCommentDto> = emptyList(),
     val musicBrainz: MusicBrainzLinkDto? = null,
     val lists: List<AlbumListSummaryDto> = emptyList(),
+    val artists: List<AlbumArtistDto> = emptyList(),
 )
 
 data class AlbumTrackRow(
@@ -36,4 +38,13 @@ data class AlbumTrackRow(
 data class PlaysByDayRow(
     val day: LocalDate,
     val plays: Long,
+)
+
+data class AlbumArtistDto(
+    val artistId: Long,
+    val artistName: String,
+    val position: Int,
+    val creditedName: String,
+    val joinPhrase: String,
+    val source: AlbumArtistSource,
 )

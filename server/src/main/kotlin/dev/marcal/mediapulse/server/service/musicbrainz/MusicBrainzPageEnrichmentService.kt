@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.service.musicbrainz
 
+import dev.marcal.mediapulse.server.api.music.MusicBrainzAlbumArtistDto
 import dev.marcal.mediapulse.server.api.music.MusicBrainzAlbumCandidateDto
 import dev.marcal.mediapulse.server.api.music.MusicBrainzAlbumPreviewResponse
 import dev.marcal.mediapulse.server.api.music.MusicBrainzArtistCandidateDto
@@ -13,14 +14,17 @@ import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzApiClient
 import dev.marcal.mediapulse.server.model.music.Album
 import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.repository.ArtistProfileRepository
+import dev.marcal.mediapulse.server.repository.crud.AlbumArtistRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumMusicBrainzReleaseIdRepository
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import dev.marcal.mediapulse.server.repository.crud.ArtistRepository
+import dev.marcal.mediapulse.server.service.music.AlbumArtistCreditsService
 import dev.marcal.mediapulse.server.service.music.AlbumTermsService
 import dev.marcal.mediapulse.server.service.music.ArtistGenresService
 import dev.marcal.mediapulse.server.service.music.ArtistWikimediaImageService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.TitleKeyUtil
+import dev.marcal.mediapulse.server.util.TxUtil
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -36,6 +40,9 @@ class MusicBrainzPageEnrichmentService(
     private val artistProfiles: ArtistProfileRepository,
     private val artistGenresService: ArtistGenresService,
     private val artistImageService: ArtistWikimediaImageService,
+    private val albumArtistCredits: AlbumArtistCreditsService,
+    private val albumArtists: AlbumArtistRepository,
+    private val tx: TxUtil,
 ) {
     suspend fun searchNewArtist(query: String): List<MusicBrainzArtistCandidateDto> {
         val normalized = query.trim()
@@ -71,6 +78,9 @@ class MusicBrainzPageEnrichmentService(
     ): MusicBrainzAlbumPreviewResponse {
         val album = requireAlbum(albumId)
         val candidate = client.getReleaseGroup(releaseGroupMbid)
+        if (candidate.artistCredit.any { it.artist == null || it.artist.id.isBlank() || it.artist.name.isBlank() }) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "MusicBrainz returned incomplete artist credits")
+        }
         val genres = candidate.genres.mapNotNull { it.name }.normalized()
         val tags =
             candidate.tags
@@ -81,10 +91,14 @@ class MusicBrainzPageEnrichmentService(
         val changes =
             buildList {
                 add("Vincular release group ${candidate.id}")
-                candidate.artistCredit
-                    .firstOrNull()
-                    ?.artist
-                    ?.let { add("Vincular artista ${it.id}") }
+                if (candidate.artistCredit.isNotEmpty()) {
+                    add(
+                        "Atualizar créditos do álbum: " +
+                            candidate.artistCredit.joinToString("") {
+                                (it.name?.takeIf(String::isNotBlank) ?: it.artist!!.name) + it.joinPhrase
+                            },
+                    )
+                }
                 if (album.year == null && year != null) add("Preencher ano com $year")
                 if (genres.isNotEmpty()) add("Adicionar ${genres.size} gêneros")
                 if (tags.isNotEmpty()) add("Adicionar ${tags.size} tags")
@@ -97,24 +111,29 @@ class MusicBrainzPageEnrichmentService(
         releaseGroupMbid: String,
     ): MusicBrainzEnrichmentResult {
         val preview = previewAlbum(albumId, releaseGroupMbid)
-        val album = requireAlbum(albumId)
-        linkReleaseGroup(album.id, preview.candidate.releaseGroupMbid)
-        preview.candidate.artistMbid?.let { linkArtist(album.artistId, it) }
-        val yearAdded =
-            album.year == null &&
-                preview.candidate.firstReleaseYear != null &&
-                albums.promoteNullYear(album.id, preview.candidate.firstReleaseYear) > 0
-        albumTermsService.addMusicBrainzTerms(album, preview.genres, preview.tags)
-        reconcileReleaseGroup(album.id)
-        return MusicBrainzEnrichmentResult(
-            albumId = album.id,
-            artistId = album.artistId,
-            releaseGroupMbid = preview.candidate.releaseGroupMbid,
-            artistMbid = preview.candidate.artistMbid,
-            yearAdded = yearAdded,
-            genresAdded = preview.genres.size,
-            tagsAdded = preview.tags.size,
-        )
+        val result =
+            tx.inTx {
+                albumArtists.lockAlbum(albumId)
+                val album = requireAlbum(albumId)
+                linkReleaseGroup(album.id, preview.candidate.releaseGroupMbid)
+                albumArtistCredits.applyMusicBrainz(album.id, preview.candidate.artists)
+                val yearAdded =
+                    album.year == null &&
+                        preview.candidate.firstReleaseYear != null &&
+                        albums.promoteNullYear(album.id, preview.candidate.firstReleaseYear) > 0
+                albumTermsService.addMusicBrainzTerms(album, preview.genres, preview.tags)
+                MusicBrainzEnrichmentResult(
+                    albumId = album.id,
+                    artistId = album.artistId,
+                    releaseGroupMbid = preview.candidate.releaseGroupMbid,
+                    artistMbid = requireArtist(album.artistId).musicbrainzArtistId,
+                    yearAdded = yearAdded,
+                    genresAdded = preview.genres.size,
+                    tagsAdded = preview.tags.size,
+                )
+            }
+        reconcileReleaseGroup(albumId)
+        return result
     }
 
     suspend fun searchArtist(artistId: Long): List<MusicBrainzArtistCandidateDto> {
@@ -255,17 +274,22 @@ class MusicBrainzPageEnrichmentService(
                     .normalized()
                     .filterNot { it in genres }
             val album =
-                albums.save(
-                    Album(
-                        artistId = artist.id,
-                        title = candidate.title,
-                        titleKey = titleKey,
-                        year = year,
-                        fingerprint = FingerprintUtil.albumFp(titleKey, artist.id),
-                    ),
-                )
-            linkReleaseGroup(album.id, mbid)
-            albumTermsService.addMusicBrainzTerms(album, genres, tags)
+                tx.inTx {
+                    val created =
+                        albums.save(
+                            Album(
+                                artistId = artist.id,
+                                title = candidate.title,
+                                titleKey = titleKey,
+                                year = year,
+                                fingerprint = FingerprintUtil.albumFp(titleKey, artist.id),
+                            ),
+                        )
+                    albumArtists.initializeLegacy(created.id)
+                    linkReleaseGroup(created.id, mbid)
+                    albumTermsService.addMusicBrainzTerms(created, genres, tags)
+                    created
+                }
             createdIds += album.id
         }
         return MusicBrainzDiscographyImportResult(artistId, createdIds, skipped)
@@ -360,6 +384,18 @@ class MusicBrainzPageEnrichmentService(
             firstReleaseYear = firstReleaseDate?.take(4)?.toIntOrNull(),
             primaryType = primaryType,
             disambiguation = disambiguation,
+            artists =
+                artistCredit.mapIndexedNotNull { position, entry ->
+                    entry.artist?.let { artist ->
+                        MusicBrainzAlbumArtistDto(
+                            artist.id,
+                            artist.name,
+                            entry.name?.takeIf(String::isNotBlank) ?: artist.name,
+                            entry.joinPhrase,
+                            position,
+                        )
+                    }
+                },
         )
     }
 

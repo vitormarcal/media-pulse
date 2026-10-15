@@ -69,6 +69,7 @@ class CanonicalizationServiceTest {
         every { trackMusicBrainzRecordingIds.save(any()) } answers { firstArg() }
         service =
             CanonicalizationService(
+                albumArtists = io.mockk.mockk(relaxed = true),
                 artistRepo = artistRepo,
                 albumRepo = albumRepo,
                 trackRepo = trackRepo,

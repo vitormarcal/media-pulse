@@ -22,14 +22,12 @@ class SpotifyPlaybackService(
         val track = item.track ?: return
         val playedAt = Instant.parse(item.playedAt)
 
-        val mainArtist =
-            track.artists?.firstOrNull()
-                ?: track.album?.artists?.firstOrNull()
-
-        val artistName = mainArtist?.name ?: "Unknown"
-        val artistSpotifyId = mainArtist?.id
-
         val album = track.album
+        val trackArtist = track.artists?.firstOrNull { !it.name.isNullOrBlank() }
+        val albumArtist = album?.artists?.firstOrNull { !it.name.isNullOrBlank() }
+        val resolvedTrackArtist = trackArtist ?: albumArtist
+        val resolvedAlbumArtist = albumArtist ?: trackArtist
+
         val albumTitle = album?.name ?: "Unknown"
         val albumSpotifyId = album?.id
         val albumYear = album?.releaseDate?.take(4)?.toIntOrNull()
@@ -41,16 +39,26 @@ class SpotifyPlaybackService(
         val discNumber = track.discNumber
         val durationMs = track.durationMs
 
-        val artistEntity =
+        val trackArtistEntity =
             canonical.ensureArtist(
-                name = artistName,
-                spotifyId = artistSpotifyId,
+                name = resolvedTrackArtist?.name ?: "Unknown",
+                spotifyId = resolvedTrackArtist?.id,
                 musicbrainzId = null,
             )
+        val albumArtistEntity =
+            if (resolvedAlbumArtist == resolvedTrackArtist) {
+                trackArtistEntity
+            } else {
+                canonical.ensureArtist(
+                    name = resolvedAlbumArtist?.name ?: "Unknown",
+                    spotifyId = resolvedAlbumArtist?.id,
+                    musicbrainzId = null,
+                )
+            }
 
         val albumEntity =
             canonical.ensureAlbum(
-                artist = artistEntity,
+                artist = albumArtistEntity,
                 title = albumTitle,
                 year = albumYear,
                 coverUrl = null,
@@ -60,7 +68,7 @@ class SpotifyPlaybackService(
         val trackEntity =
             canonical.ensureTrackInAlbum(
                 album = albumEntity,
-                artist = artistEntity,
+                artist = trackArtistEntity,
                 title = trackTitle,
                 durationMs = durationMs,
                 discNumber = discNumber,
@@ -84,7 +92,7 @@ class SpotifyPlaybackService(
         )
 
         spotifyArtworkService.ensureAlbumCoverFromSpotifyUrl(
-            artist = artistEntity,
+            artist = albumArtistEntity,
             album = albumEntity,
             spotifyImageUrl = coverUrl,
         )

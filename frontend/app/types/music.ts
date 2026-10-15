@@ -17,9 +17,27 @@ export interface PlaysByDayRow {
   plays: number
 }
 
+export interface AlbumArtistCredit {
+  artistId: number
+  artistName: string
+  position: number
+  creditedName: string
+  joinPhrase: string
+  source: 'LEGACY' | 'MUSICBRAINZ_CONFIRMED'
+}
+
+export interface MusicBrainzAlbumArtist {
+  artistMbid: string
+  artistName: string
+  creditedName: string
+  joinPhrase: string
+  position: number
+}
+
 export interface AlbumPageResponse {
   albumId: number
   albumTitle: string
+  artists?: AlbumArtistCredit[]
   artistId: number
   artistName: string
   year: number | null
@@ -41,6 +59,7 @@ export interface MusicBrainzLink {
 }
 
 export interface MusicBrainzAlbumCandidate {
+  artists?: MusicBrainzAlbumArtist[]
   releaseGroupMbid: string
   title: string
   artistName: string
@@ -553,6 +572,7 @@ export interface AlbumDayModel {
 }
 
 export interface AlbumPageData {
+  artists: AlbumArtistCredit[]
   id: string
   title: string
   artistName: string

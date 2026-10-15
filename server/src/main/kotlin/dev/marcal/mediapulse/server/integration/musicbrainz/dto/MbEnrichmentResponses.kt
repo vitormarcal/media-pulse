@@ -24,6 +24,7 @@ data class MbReleaseGroupCandidate(
 data class MbArtistCredit(
     val name: String? = null,
     val artist: MbArtistRef? = null,
+    @JsonProperty("joinphrase") val joinPhrase: String = "",
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

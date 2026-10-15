@@ -1,5 +1,29 @@
 # Music API
 
+## Artistas na ingestão Spotify
+
+A ingestão de reproduções recentes resolve o álbum pelo primeiro artista com nome não vazio em `album.artists` e a faixa pelo primeiro artista com nome não vazio em `track.artists`. Se uma lista não tiver artista válido, usa o artista da outra; se ambas estiverem ausentes ou inválidas, usa `Unknown`, sem associar IDs de entradas sem nome. A capa usa o artista resolvido para o álbum.
+
+Antes dessa separação, o artista da faixa também era usado para resolver o álbum, podendo atribuir compilações ou colaborações ao artista errado. A mudança vale para novas resoluções: IDs externos existentes continuam prioritários, sem reatribuir automaticamente artistas de registros históricos. Não há migração nem mudança de contrato HTTP. O vínculo legado ainda persiste um artista por álbum e por faixa; os créditos adicionais de álbum estão descritos abaixo.
+
+Para validar em produção, importar uma faixa cujo artista difere do artista do álbum e conferir ambos no catálogo, preferindo um álbum ainda não importado. Reprocessar o mesmo evento deve manter IDs e quantidade de reproduções. Álbuns já existentes com atribuição incorreta precisam de revisão separada; reimportar não os corrige. Conferir também um álbum solo. Plano das próximas versões: [múltiplos artistas por álbum](features/album-artist-credits.md).
+
+## Créditos de artistas do álbum (versão 2)
+
+A migração `V68__add_album_artist_credits.sql` cria `album_artists` e preenche cada álbum existente com seu artista atual, posição zero e origem `LEGACY`. Novos álbuns criados pela ingestão canônica ou importação de discografia recebem o mesmo vínculo inicial. Uma leitura sem créditos armazenados retorna o artista legado como fallback.
+
+`GET /api/music/albums/{albumId}` acrescenta `artists[]`, ordenado por `position`, com `artistId`, `artistName` (nome canônico), `creditedName`, `joinPhrase` e `source` (`LEGACY` ou `MUSICBRAINZ_CONFIRMED`). `artistId` e `artistName` no nível do álbum permanecem com o significado anterior, assim como IDs, fingerprints, histórico e rankings. A página do álbum apresenta os créditos com links individuais. Biblioteca, busca e discografias por todos os artistas ficam para a versão 4.
+
+Candidatos e prévias MusicBrainz acrescentam `candidate.artists[]` (na busca, cada item tem `artists[]`), com `artistMbid`, `artistName`, `creditedName`, `joinPhrase` e `position`. Os campos singulares dos candidatos continuam representando o primeiro crédito por compatibilidade. `preservedFields` da prévia passa a ser `title`, `artistId`, `coverUrl`, `tracklist`: o vínculo legado é preservado, mas os créditos ordenados são substituídos após confirmação. A prévia mostra todos os nomes creditados e separadores antes de salvar.
+
+Antes, a confirmação vinculava o primeiro MBID ao artista legado, mesmo quando representavam pessoas diferentes. Agora, cada crédito resolve o artista pelo MBID; sem vínculo, reutiliza o nome canônico local se não houver conflito de MBID ou cria o artista. Homônimos com outra identidade retornam `409` sem aplicar parcialmente o enriquecimento. Não são baixados perfis completos dos novos artistas nesse fluxo. Uma lista vazia não apaga créditos existentes; créditos incompletos retornam `409`. A consulta externa ocorre antes da transação; vínculo do release group, artistas, créditos, ano e termos são aplicados juntos. Reaplicação é idempotente.
+
+Mesclagens de artistas transferem as referências dos créditos. Até a versão 4, mesclar álbuns retorna `409` se um álbum de origem tiver créditos confirmados; mantenha como principal o único álbum com créditos confirmados. Isso evita apagar seus créditos enquanto a conciliação não está implementada.
+
+Validação em produção: abrir um álbum conhecido de dois artistas, acessar **Enriquecer dados**, selecionar o release group correto, conferir os dois créditos na prévia e confirmar. Ambos devem aparecer no cabeçalho com links próprios e na ordem do MusicBrainz. Repetir a confirmação não deve criar artistas ou posições extras. Conferir que IDs, reproduções, título, capa e tracklist permanecem, assim como o funcionamento de um álbum antigo sem enriquecimento. A migração é aditiva; rollback da aplicação mantém a tabela e os créditos, mas a versão antiga não os exibe. Não remover a tabela ao voltar o código.
+
+Testes: `JAVA_TOOL_OPTIONS=-Dapi.version=1.44 ./server/gradlew -p server test --tests '*AlbumArtistCreditsIntegrationTest' --tests '*MusicBrainzPageEnrichmentServiceTest' --tests '*CanonicalizationServiceTest' --tests '*MusicQueryRepositoryTest' --tests '*AlbumMerge*' --tests '*ArtistMerge*'`. A opção de API é necessária neste ambiente com Docker recente, conforme o padrão já documentado nos outros domínios; conferir zero testes ignorados no relatório de integração.
+
 ## Listas de álbuns
 
 Listas são recortes pessoais e mutáveis formados por álbuns já presentes no acervo local. A ordem editorial fica armazenada em `album_list_items.position`; ordenar a interface por marcação ou avaliação não altera essa sequência.

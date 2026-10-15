@@ -1,5 +1,6 @@
 package dev.marcal.mediapulse.server.repository
 
+import dev.marcal.mediapulse.server.api.music.AlbumArtistDto
 import dev.marcal.mediapulse.server.api.music.AlbumCoverageResponse
 import dev.marcal.mediapulse.server.api.music.AlbumHeaderRow
 import dev.marcal.mediapulse.server.api.music.AlbumLibraryPageResponse
@@ -49,6 +50,7 @@ import dev.marcal.mediapulse.server.api.music.TrackPlayRow
 import dev.marcal.mediapulse.server.api.music.TrendingGenreResponse
 import dev.marcal.mediapulse.server.api.music.UnderplayedGenreResponse
 import dev.marcal.mediapulse.server.model.EntityType
+import dev.marcal.mediapulse.server.model.music.AlbumArtistSource
 import dev.marcal.mediapulse.server.repository.crud.AlbumRepository
 import jakarta.persistence.EntityManager
 import org.springframework.http.HttpStatus
@@ -1070,6 +1072,7 @@ class MusicQueryRepository(
         val rating = mediaRatingQueryRepository.findByEntity(EntityType.ALBUM, albumId)
 
         return AlbumPageResponse(
+            artists = getAlbumArtists(albumId),
             albumId = header.albumId,
             albumTitle = header.albumTitle,
             artistId = header.artistId,
@@ -1089,6 +1092,32 @@ class MusicQueryRepository(
                 },
         )
     }
+
+    fun getAlbumArtists(albumId: Long): List<AlbumArtistDto> =
+        entityManager
+            .createNativeQuery(
+                """SELECT aa.artist_id, a.name, aa.position, aa.credited_name, aa.join_phrase, aa.source
+               FROM album_artists aa JOIN artists a ON a.id = aa.artist_id
+               WHERE aa.album_id = :albumId
+               UNION ALL
+               SELECT a.id, a.name, 0, a.name, '', 'LEGACY'
+               FROM albums al JOIN artists a ON a.id = al.artist_id
+               WHERE al.id = :albumId AND NOT EXISTS (SELECT 1 FROM album_artists aa WHERE aa.album_id = al.id)
+               ORDER BY 3""",
+            ).setParameter("albumId", albumId)
+            .resultList
+            .map {
+                val row = it as Array<*>
+                AlbumArtistDto(
+                    (row[0] as Number).toLong(),
+                    row[1] as String,
+                    (row[2] as Number).toInt(),
+                    row[3] as String,
+                    row[4] as String,
+                    AlbumArtistSource
+                        .valueOf(row[5] as String),
+                )
+            }
 
     fun getAlbumTerms(albumId: Long): List<AlbumTermDto> =
         entityManager

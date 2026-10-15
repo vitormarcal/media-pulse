@@ -100,7 +100,7 @@ class SpotifyPlaybackServiceTest {
         }
 
     @Test
-    fun `should process item end-to-end using track artists and biggest cover image`() =
+    fun `should preserve album and track identities on replay and use biggest cover image`() =
         runBlocking {
             val playedAtStr = "2020-01-01T00:00:01Z"
             val playedAt = Instant.parse(playedAtStr)
@@ -133,10 +133,13 @@ class SpotifyPlaybackServiceTest {
                 )
 
             val artistEntity = Artist(id = 10L, name = "Main Artist", fingerprint = "fpA")
+            val albumArtistEntity = Artist(id = 11L, name = "Album Artist", fingerprint = "fpAlbumArtist")
+            every { canonical.ensureArtist(name = "Album Artist", spotifyId = "albumArtist", musicbrainzId = null) } returns
+                albumArtistEntity
             val albumEntity =
                 Album(
                     id = 20L,
-                    artistId = 10L,
+                    artistId = 11L,
                     title = "Album Name",
                     titleKey = "album-name",
                     year = 1999,
@@ -155,7 +158,7 @@ class SpotifyPlaybackServiceTest {
 
             every {
                 canonical.ensureAlbum(
-                    artist = artistEntity,
+                    artist = albumArtistEntity,
                     title = "Album Name",
                     year = 1999,
                     coverUrl = null,
@@ -193,31 +196,31 @@ class SpotifyPlaybackServiceTest {
 
             coEvery {
                 spotifyArtworkService.ensureAlbumCoverFromSpotifyUrl(
-                    artist = artistEntity,
+                    artist = albumArtistEntity,
                     album = albumEntity,
                     spotifyImageUrl = "biggest",
                 )
             } just runs
 
-            service.processRecentlyPlayedItem(item = item, eventId = 999L)
+            repeat(2) { service.processRecentlyPlayedItem(item = item, eventId = 999L) }
 
-            verify(exactly = 1) {
+            verify(exactly = 2) {
                 canonical.ensureArtist(
                     name = "Main Artist",
                     spotifyId = "a_spotify",
                     musicbrainzId = null,
                 )
             }
-            verify(exactly = 1) {
+            verify(exactly = 2) {
                 canonical.ensureAlbum(
-                    artist = artistEntity,
+                    artist = albumArtistEntity,
                     title = "Album Name",
                     year = 1999,
                     coverUrl = null,
                     spotifyId = "al_spotify",
                 )
             }
-            verify(exactly = 1) {
+            verify(exactly = 2) {
                 canonical.ensureTrack(
                     artist = artistEntity,
                     title = "Track Name",
@@ -225,7 +228,7 @@ class SpotifyPlaybackServiceTest {
                     spotifyId = "t_spotify",
                 )
             }
-            verify(exactly = 1) {
+            verify(exactly = 2) {
                 canonical.linkTrackToAlbum(
                     album = albumEntity,
                     track = trackEntity,
@@ -233,7 +236,7 @@ class SpotifyPlaybackServiceTest {
                     trackNumber = 7,
                 )
             }
-            verify(exactly = 1) {
+            verify(exactly = 2) {
                 trackPlaybackRepo.insertIgnore(
                     trackId = 30L,
                     albumId = 20L,
@@ -242,9 +245,9 @@ class SpotifyPlaybackServiceTest {
                     playedAt = playedAt,
                 )
             }
-            coVerify(exactly = 1) {
+            coVerify(exactly = 2) {
                 spotifyArtworkService.ensureAlbumCoverFromSpotifyUrl(
-                    artist = artistEntity,
+                    artist = albumArtistEntity,
                     album = albumEntity,
                     spotifyImageUrl = "biggest",
                 )
@@ -329,6 +332,60 @@ class SpotifyPlaybackServiceTest {
             verify(exactly = 1) { canonical.linkTrackToAlbum(albumEntity, trackEntity, null, null) }
             verify(exactly = 1) { trackPlaybackRepo.insertIgnore(3L, 2L, PlaybackSource.SPOTIFY.name, null, playedAt) }
             coVerify(exactly = 1) { spotifyArtworkService.ensureAlbumCoverFromSpotifyUrl(artistEntity, albumEntity, null) }
+        }
+
+    @Test
+    fun `should use first named artist and fallback for incomplete artist lists`() =
+        runBlocking {
+            val known = SpotifyArtist("known", "Known")
+            val invalid = listOf(SpotifyArtist("missing", null), SpotifyArtist("blank", "  "))
+            val cases =
+                listOf(
+                    null to listOf(known),
+                    emptyList<SpotifyArtist>() to listOf(known),
+                    invalid to listOf(known),
+                    listOf(known) to null,
+                    listOf(known) to emptyList(),
+                    listOf(known) to invalid,
+                    (invalid + known) to (invalid + known),
+                    invalid to invalid,
+                )
+            val artist = Artist(id = 1L, name = "Known", fingerprint = "artist")
+            val unknown = Artist(id = 2L, name = "Unknown", fingerprint = "unknown")
+            every { canonical.ensureArtist(name = "Known", spotifyId = "known", musicbrainzId = null) } returns artist
+            every { canonical.ensureArtist("Unknown", null, null) } returns unknown
+            every { canonical.ensureAlbum(any(), any(), any(), any(), any(), any(), any()) } answers {
+                Album(id = 3L, artistId = firstArg<Artist>().id, title = "Album", titleKey = "album", fingerprint = "album")
+            }
+            every { canonical.ensureTrack(any(), any(), any(), any(), any()) } answers {
+                Track(id = 4L, artistId = firstArg<Artist>().id, title = "Track", fingerprint = "track")
+            }
+            every { canonical.linkTrackToAlbum(any(), any(), any(), any()) } just runs
+            every { trackPlaybackRepo.insertIgnore(any(), any(), any(), any(), any()) } just runs
+            coEvery { spotifyArtworkService.ensureAlbumCoverFromSpotifyUrl(any(), any(), any()) } just runs
+
+            for ((trackArtists, albumArtists) in cases) {
+                val expected = if (trackArtists == invalid && albumArtists == invalid) unknown else artist
+                val item =
+                    SpotifyRecentlyPlayedItem(
+                        playedAt = "2020-01-01T00:00:01Z",
+                        track =
+                            SpotifyTrack(
+                                id = "track",
+                                name = "Track",
+                                durationMs = null,
+                                trackNumber = 1,
+                                discNumber = 1,
+                                artists = trackArtists,
+                                album = SpotifyAlbum("album", "Album", null, null, albumArtists),
+                            ),
+                    )
+                service.processRecentlyPlayedItem(item, 123L)
+                verify { canonical.ensureAlbum(expected, "Album", null, null, null, "album", null) }
+                verify { canonical.ensureTrack(expected, "Track", null, null, "track") }
+            }
+            verify(exactly = 0) { canonical.ensureArtist(name = any(), spotifyId = "missing", musicbrainzId = any()) }
+            verify(exactly = 0) { canonical.ensureArtist(name = any(), spotifyId = "blank", musicbrainzId = any()) }
         }
 
     private fun stubEnsureTrackInAlbumThroughEnsureTrack() {

@@ -42,7 +42,26 @@ class MusicBrainzPageEnrichmentServiceTest {
     private val profiles = mockk<ArtistProfileRepository>(relaxed = true)
     private val artistGenres = mockk<ArtistGenresService>(relaxed = true)
     private val artistImages = mockk<ArtistWikimediaImageService>(relaxed = true)
-    private val service = MusicBrainzPageEnrichmentService(client, albums, artists, releaseIds, terms, profiles, artistGenres, artistImages)
+    private val credits = mockk<dev.marcal.mediapulse.server.service.music.AlbumArtistCreditsService>(relaxed = true)
+    private val albumArtists = mockk<dev.marcal.mediapulse.server.repository.crud.AlbumArtistRepository>(relaxed = true)
+    private val tx =
+        mockk<dev.marcal.mediapulse.server.util.TxUtil> {
+            every { inTx<Any>(any()) } answers { firstArg<() -> Any>().invoke() }
+        }
+    private val service =
+        MusicBrainzPageEnrichmentService(
+            client,
+            albums,
+            artists,
+            releaseIds,
+            terms,
+            profiles,
+            artistGenres,
+            artistImages,
+            credits,
+            albumArtists,
+            tx,
+        )
     private val album = Album(id = 10, artistId = 20, title = "Album", titleKey = "album", fingerprint = "album:20")
     private val artist = Artist(id = 20, name = "Artist", fingerprint = "artist", musicbrainzArtistId = "artist-1")
     private val candidate =
@@ -64,10 +83,43 @@ class MusicBrainzPageEnrichmentServiceTest {
 
             val result = service.previewAlbum(10, "rg-1")
 
-            assertEquals(listOf("title", "artist", "coverUrl", "tracklist"), result.preservedFields)
+            assertEquals(listOf("title", "artistId", "coverUrl", "tracklist"), result.preservedFields)
             assertEquals(2001, result.candidate.firstReleaseYear)
             verify(exactly = 0) { albums.save(any()) }
             verify(exactly = 0) { albums.promoteNullYear(any(), any()) }
+        }
+
+    @Test
+    fun `preview preserves ordered credited names and join phrases without linking artists`() =
+        runBlocking {
+            every { albums.findById(10) } returns Optional.of(album)
+            val payload = """{
+                "id": "rg-1", "title": "Album", "artist-credit": [
+                    {"name": "Artist alias", "joinphrase": " & ", "artist": {"id": "artist-1", "name": "Artist"}},
+                    {"name": "Guest", "joinphrase": "", "artist": {"id": "artist-2", "name": "Guest"}}
+                ]
+            }"""
+            coEvery { client.getReleaseGroup("rg-1") } returns
+                com.fasterxml.jackson.module.kotlin
+                    .jacksonObjectMapper()
+                    .readValue(payload, MbReleaseGroupCandidate::class.java)
+            val result = service.previewAlbum(10, "rg-1")
+            assertEquals(listOf("artist-1", "artist-2"), result.candidate.artists.map { it.artistMbid })
+            assertEquals(
+                "Artist alias",
+                result.candidate.artists
+                    .first()
+                    .creditedName,
+            )
+            assertEquals(
+                " & ",
+                result.candidate.artists
+                    .first()
+                    .joinPhrase,
+            )
+            verify(exactly = 0) { artists.save(any()) }
+            verify(exactly = 0) { credits.applyMusicBrainz(any(), any()) }
+            verify(exactly = 0) { albumArtists.lockAlbum(any()) }
         }
 
     @Test
