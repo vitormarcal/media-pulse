@@ -35,6 +35,8 @@ Principais arquivos e áreas: `SpotifyPlaybackService`, `CanonicalizationService
 
 ## Non-goals
 
+Os limites abaixo descrevem a entrega 1.4.0. A proposta futura para remover o vínculo único legado está em [créditos do álbum como fonte única](album-artists-source-of-truth.md); ela não altera o comportamento atual.
+
 - Múltiplos artistas por faixa nesta sequência.
 - Atribuir todas as reproduções de um álbum a cada artista creditado.
 - Remover `albums.artist_id` ou redefinir globalmente fingerprints nesta sequência.

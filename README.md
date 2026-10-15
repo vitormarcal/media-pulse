@@ -54,6 +54,7 @@ Imagens novas de revistas, artes visuais, livros e jogos podem usar o Visual Lib
 - Descoberta de novas features: `docs/feature-discovery.md`
 - Decisões de enriquecimento MusicBrainz: `docs/features/musicbrainz-album-enrichment.md`
 - Créditos de artistas por álbum e versões incrementais: `docs/features/album-artist-credits.md`
+- Proposta de migração para créditos como fonte única, com remoção do artista legado: `docs/features/album-artists-source-of-truth.md`
 - Lotes administrativos de créditos com prévia/aplicação/desfazimento: `docs/music-api.md` (etapa 5)
 
 ## Frontend

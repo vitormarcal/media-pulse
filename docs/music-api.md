@@ -1,5 +1,7 @@
 # Music API
 
+A 1.4.0 mantém `albums.artist_id` para compatibilidade, enquanto `album_artists` representa os créditos ordenados. A [proposta de migração para créditos como fonte única](features/album-artists-source-of-truth.md) descreve a retirada incremental dessa dependência; ainda não altera os contratos ou as regras documentadas abaixo.
+
 ## Artistas na ingestão Spotify
 
 A ingestão de reproduções recentes resolve o álbum pelo primeiro artista com nome não vazio em `album.artists` e a faixa pelo primeiro artista com nome não vazio em `track.artists`. Se uma lista não tiver artista válido, usa o artista da outra; se ambas estiverem ausentes ou inválidas, usa `Unknown`, sem associar IDs de entradas sem nome. A capa usa o artista resolvido para o álbum.
