@@ -70,7 +70,7 @@ class LocalImageMigrationIntegrationTest {
     @BeforeEach
     fun reset() {
         jdbc.execute(
-            "TRUNCATE local_image_migrations, games, magazine_publications, artworks, artwork_artists, books RESTART IDENTITY CASCADE",
+            "TRUNCATE local_image_migrations, games, magazine_publications, artworks, artwork_artists, books, artists RESTART IDENTITY CASCADE",
         )
         Files.walk(root).use { paths -> paths.filter { it != root }.sorted(Comparator.reverseOrder()).forEach(Files::deleteIfExists) }
         clearMocks(remote, artworks)
@@ -148,8 +148,8 @@ class LocalImageMigrationIntegrationTest {
         jdbc.update("INSERT INTO artwork_artists(name, portrait_url) VALUES ('Artista', ?)", url)
         jdbc.update("INSERT INTO artworks(title, movements) VALUES ('Obra', '[\"Simbolismo\"]')")
         jdbc.update("INSERT INTO artwork_images(artwork_id, url, caption, is_primary) VALUES (1, ?, 'Legenda', TRUE)", url)
-        val bookUrl = file("book.png")
-        jdbc.update("INSERT INTO books(title, slug, fingerprint, cover_url) VALUES ('Livro', 'livro', 'book', ?)", bookUrl)
+        val musicUrl = file("music.png")
+        jdbc.update("INSERT INTO artists(name, fingerprint, profile_image_url) VALUES ('Músico', 'artist', ?)", musicUrl)
         service().runBatch()
         assertEquals(asset, cover(id))
         for ((table, column) in listOf(
@@ -163,8 +163,8 @@ class LocalImageMigrationIntegrationTest {
         assertEquals("Legenda", jdbc.queryForObject("SELECT caption FROM artwork_images WHERE id = 1 AND is_primary", String::class.java))
         assertTrue(jdbc.queryForObject("SELECT is_primary FROM game_images WHERE id = 1", Boolean::class.java)!!)
         assertFalse(exists(url))
-        assertTrue(exists(bookUrl))
-        assertEquals(bookUrl, jdbc.queryForObject("SELECT cover_url FROM books", String::class.java))
+        assertTrue(exists(musicUrl))
+        assertEquals(musicUrl, jdbc.queryForObject("SELECT profile_image_url FROM artists", String::class.java))
         verify {
             remote.upload(
                 match { it.bytes.contentEquals(bytes) },
@@ -177,6 +177,113 @@ class LocalImageMigrationIntegrationTest {
         verify { remote.upload(any(), match { it.movements == listOf("Simbolismo") && it.movementsRevision == 1L }) }
         service().runBatch()
         verify(exactly = 5) { remote.upload(any(), any()) }
+    }
+
+    private fun bookAndEdition(url: String) {
+        jdbc.update("INSERT INTO books(id, title, slug, fingerprint, cover_url) VALUES (100, 'Livro', 'livro', 'book', ?)", url)
+        jdbc.update("INSERT INTO book_editions(id, book_id, title, fingerprint, cover_url) VALUES (200, 100, 'Edição', 'edition', ?)", url)
+    }
+
+    @Test
+    fun `book and editions share migration safely with independent real entity references`() {
+        val url = file("hardcover/shared.png")
+        bookAndEdition(url)
+        jdbc.update("INSERT INTO book_editions(id, book_id, fingerprint, cover_url) VALUES (201, 100, 'untitled', ?)", url)
+        game(url)
+        service().runBatch()
+        assertEquals(asset, jdbc.queryForObject("SELECT cover_url FROM books WHERE id = 100", String::class.java))
+        for (id in listOf(200, 201)) {
+            assertEquals(asset, jdbc.queryForObject("SELECT cover_url FROM book_editions WHERE id = ?", String::class.java, id))
+            assertEquals(100L, jdbc.queryForObject("SELECT book_id FROM book_editions WHERE id = ?", Long::class.java, id))
+        }
+        verify {
+            remote.upload(
+                any(),
+                match {
+                    it.sourceReference.entityType == "book" &&
+                        it.sourceReference.entityId == "100" &&
+                        it.tags == listOf("livro", "Livro")
+                },
+            )
+        }
+        verify {
+            remote.upload(
+                any(),
+                match {
+                    it.sourceReference.entityType == "book_edition" &&
+                        it.sourceReference.entityId == "200" &&
+                        it.tags == listOf("livro", "Edição")
+                },
+            )
+        }
+        verify {
+            remote.upload(
+                any(),
+                match {
+                    it.sourceReference.entityType == "book_edition" &&
+                        it.sourceReference.entityId == "201" &&
+                        it.tags == listOf("livro", null)
+                },
+            )
+        }
+        assertFalse(exists(url))
+        service().runBatch()
+        verify(exactly = 4) { remote.upload(any(), any()) }
+    }
+
+    @Test
+    fun `book migration stays disabled with flag off and skips external and remote covers`() {
+        val url = file("book.png")
+        bookAndEdition(url)
+        service(false).runBatch()
+        assertTrue(exists(url))
+        assertEquals(url, jdbc.queryForObject("SELECT cover_url FROM books", String::class.java))
+        assertEquals(url, jdbc.queryForObject("SELECT cover_url FROM book_editions", String::class.java))
+        jdbc.update("UPDATE books SET cover_url = 'https://example.org/cover.png'")
+        jdbc.update("UPDATE book_editions SET cover_url = ?", asset)
+        service().runBatch()
+        assertTrue(exists(url))
+        assertTrue(repository.candidates(10).isEmpty())
+        verify(exactly = 0) { remote.upload(any(), any()) }
+    }
+
+    @Test
+    fun `edition upload failure preserves all shared local links until retry`() {
+        val url = file("book.png")
+        bookAndEdition(url)
+        every { remote.upload(any(), match { it.sourceReference.entityType == "book_edition" }) } throws IllegalStateException("offline")
+        service().runBatch()
+        for (table in listOf("books", "book_editions")) {
+            assertEquals(url, jdbc.queryForObject("SELECT cover_url FROM $table", String::class.java))
+        }
+        assertTrue(exists(url))
+        every { remote.upload(any(), any()) } returns asset
+        retry()
+        service().runBatch()
+        for (table in listOf("books", "book_editions")) {
+            assertEquals(asset, jdbc.queryForObject("SELECT cover_url FROM $table", String::class.java))
+        }
+        assertFalse(exists(url))
+    }
+
+    @Test
+    fun `concurrent book or edition replacement preserves both original associations until retry`() {
+        val url = file("book.png")
+        bookAndEdition(url)
+        for (table in listOf("books", "book_editions")) {
+            jdbc.update("UPDATE books SET cover_url = ?", url)
+            jdbc.update("UPDATE book_editions SET cover_url = ?", url)
+            every { remote.upload(any(), any()) } answers {
+                jdbc.update("UPDATE $table SET cover_url = ?", asset)
+                asset
+            }
+            retry()
+            service().runBatch()
+            val other = if (table == "books") "book_editions" else "books"
+            assertEquals(asset, jdbc.queryForObject("SELECT cover_url FROM $table", String::class.java))
+            assertEquals(url, jdbc.queryForObject("SELECT cover_url FROM $other", String::class.java))
+            assertTrue(exists(url))
+        }
     }
 
     @Test
@@ -307,11 +414,11 @@ class LocalImageMigrationIntegrationTest {
     fun `cleanup keeps files referenced by domains outside scope and retries when released`() {
         val url = file("shared.png")
         game(url)
-        jdbc.update("INSERT INTO books(title, slug, fingerprint, cover_url) VALUES ('Livro', 'livro', 'book', ?)", url)
+        jdbc.update("INSERT INTO artists(name, fingerprint, profile_image_url) VALUES ('Músico', 'artist', ?)", url)
         service().runBatch()
         assertTrue(exists(url))
-        assertEquals(url, jdbc.queryForObject("SELECT cover_url FROM books", String::class.java))
-        jdbc.update("UPDATE books SET cover_url = NULL")
+        assertEquals(url, jdbc.queryForObject("SELECT profile_image_url FROM artists", String::class.java))
+        jdbc.update("UPDATE artists SET profile_image_url = NULL")
         service().runBatch()
         assertFalse(exists(url))
     }

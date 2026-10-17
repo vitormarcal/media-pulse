@@ -73,7 +73,7 @@ class LocalImageMigrationRepository(
     fun lockReferences() {
         jdbc.execute("SET LOCAL lock_timeout = '2s'")
         jdbc.execute(
-            "LOCK TABLE magazine_issues, artwork_images, artwork_artists, artworks, games, game_images IN SHARE ROW EXCLUSIVE MODE",
+            "LOCK TABLE books, book_editions, magazine_issues, artwork_images, artwork_artists, artworks, games, game_images IN SHARE ROW EXCLUSIVE MODE",
         )
     }
 
@@ -91,6 +91,13 @@ class LocalImageMigrationRepository(
                     ).singleOrNull()
             LocalImageTarget.GAME_COVER, LocalImageTarget.GAME_IMAGE ->
                 jdbc.query("SELECT title FROM games WHERE id = ?", { rs, _ -> rs.getString(1) }, reference.entityId).singleOrNull()
+            LocalImageTarget.BOOK, LocalImageTarget.BOOK_EDITION ->
+                jdbc
+                    .query(
+                        "SELECT title FROM ${reference.target.table} WHERE id = ?",
+                        { rs, _ -> rs.getString(1) },
+                        reference.entityId,
+                    ).singleOrNull()
             else -> null
         }
 
@@ -167,8 +174,6 @@ class LocalImageMigrationRepository(
             listOf(
                 "albums" to "cover_url",
                 "artists" to "profile_image_url",
-                "books" to "cover_url",
-                "book_editions" to "cover_url",
                 "movies" to "cover_url",
                 "movie_images" to "url",
                 "tv_shows" to "cover_url",

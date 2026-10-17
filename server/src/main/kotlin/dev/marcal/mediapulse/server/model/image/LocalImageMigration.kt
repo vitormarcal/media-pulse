@@ -6,6 +6,8 @@ enum class LocalImageTarget(
     val column: String,
     val entityColumn: String = "id",
 ) {
+    BOOK("books", "cover_url"),
+    BOOK_EDITION("book_editions", "cover_url"),
     MAGAZINE("magazine_issues", "cover_url"),
     ARTWORK("artwork_images", "url", "artwork_id"),
     ARTIST("artwork_artists", "portrait_url"),

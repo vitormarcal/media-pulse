@@ -62,9 +62,61 @@ class VisualLibraryClient(
                 sendUpload(image, metadata, emptyList())
             }
         } catch (error: Exception) {
-            logger.warn("Falha no upload para Visual Library: {}", error.javaClass.simpleName)
+            if (error is WebClientResponseException) {
+                logger.warn(
+                    "Falha no upload para Visual Library: status={} entityType={} entityId={} mimeType={} bytes={} response={}",
+                    error.statusCode.value(),
+                    metadata.sourceReference.entityType,
+                    metadata.sourceReference.entityId,
+                    image.contentType,
+                    image.bytes.size,
+                    responseDiagnostic(error),
+                )
+            } else {
+                val cause = generateSequence(error as Throwable) { it.cause }.take(12).last()
+                logger.warn(
+                    "Falha no upload para Visual Library: error={} cause={} entityType={} entityId={} mimeType={} bytes={}",
+                    error.javaClass.simpleName,
+                    cause.javaClass.simpleName,
+                    metadata.sourceReference.entityType,
+                    metadata.sourceReference.entityId,
+                    image.contentType,
+                    image.bytes.size,
+                )
+            }
             throw VisualLibraryUploadException(error)
         }
+    }
+
+    private fun responseDiagnostic(error: WebClientResponseException): String {
+        // Only structured error fields: never log the raw response, headers, image or request URL.
+        val body = runCatching { mapper.readTree(error.responseBodyAsByteArray) }.getOrNull()
+        val fields = listOf("code", "error", "statusMessage", "message", "detail")
+        val values =
+            fields.flatMap { field ->
+                val value = body?.get(field)
+                when {
+                    value == null || value.isNull -> emptyList()
+                    value.isTextual -> listOf("$field=${value.asText()}")
+                    value.isObject ->
+                        listOf("code", "message").mapNotNull { key ->
+                            value
+                                .get(key)
+                                ?.takeIf { it.isTextual }
+                                ?.asText()
+                                ?.let { "$field.$key=$it" }
+                        }
+                    else -> emptyList()
+                }
+            }
+        if (values.isEmpty()) return "sem detalhe JSON reconhecido"
+        return values
+            .joinToString("; ")
+            .replace(Regex("https?://[^\\s]+"), "[URL omitida]")
+            .replace(Regex("(?i)bearer\\s+[^\\s,;]+"), "Bearer [omitido]")
+            .replace(Regex("(?i)(token|password|secret|api[_-]?key)\\s*[:=]\\s*[^\\s,;]+"), "$1=[omitido]")
+            .replace(Regex("[\\p{Cntrl}]"), " ")
+            .take(512)
     }
 
     private fun sendUpload(

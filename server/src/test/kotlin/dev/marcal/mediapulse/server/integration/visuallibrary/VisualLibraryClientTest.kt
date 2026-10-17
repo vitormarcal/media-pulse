@@ -1,5 +1,8 @@
 package dev.marcal.mediapulse.server.integration.visuallibrary
 
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.sun.net.httpserver.HttpServer
 import dev.marcal.mediapulse.server.config.VisualLibraryProperties
@@ -8,6 +11,7 @@ import dev.marcal.mediapulse.server.model.image.ImageContent
 import dev.marcal.mediapulse.server.model.visuallibrary.VisualLibraryUploadMetadata
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -151,6 +155,45 @@ class VisualLibraryClientTest {
         responseStatus = 201
         responseBody = """{"id":"invalid"}"""
         assertFailsWith<VisualLibraryUploadException> { client.upload(ImageContent(bytes, MediaType.IMAGE_PNG), metadata) }
+    }
+
+    @Test
+    fun `HTTP rejection logs bounded sanitized diagnostic without retrying 415`() {
+        val logger = LoggerFactory.getLogger(VisualLibraryClient::class.java) as Logger
+        val appender = ListAppender<ILoggingEvent>().apply { start() }
+        logger.addAppender(appender)
+        var calls = 0
+        server.createContext("/api/assets") { exchange ->
+            calls++
+            exchange.requestBody.readAllBytes()
+            exchange.responseHeaders.set("Content-Type", "application/json")
+            val body =
+                mapper.writeValueAsBytes(
+                    mapOf(
+                        "statusMessage" to "Unsupported or invalid image.",
+                        "error" to mapOf("code" to "INVALID_IMAGE", "message" to "JPEG rejected"),
+                        "detail" to "JPEG\ninvalid Bearer secret-value token=hidden https://example.org/?secret=hidden " + "x".repeat(1000),
+                        "privatePayload" to "never-log-this",
+                    ),
+                )
+            exchange.sendResponseHeaders(415, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        try {
+            assertFailsWith<VisualLibraryUploadException> { client().upload(ImageContent(bytes, MediaType.IMAGE_JPEG), metadata) }
+            assertEquals(1, calls)
+            val log = appender.list.single { it.formattedMessage.contains("Falha no upload") }.formattedMessage
+            assertTrue(log.contains("status=415"))
+            assertTrue(log.contains("entityType=album entityId=123 mimeType=image/jpeg bytes=5"))
+            assertTrue(log.contains("Unsupported or invalid image."))
+            assertTrue(log.contains("error.code=INVALID_IMAGE"))
+            assertTrue(log.contains("Bearer [omitido] token=[omitido] [URL omitida]"))
+            assertTrue(log.substringAfter("response=").length <= 512)
+            for (secret in listOf("secret-value", "hidden", "never-log-this", "https://", "\n")) assertTrue(!log.contains(secret))
+        } finally {
+            logger.detachAppender(appender)
+            appender.stop()
+        }
     }
 
     @Test

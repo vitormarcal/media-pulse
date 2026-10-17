@@ -102,6 +102,29 @@ class LibraryImageStorageServiceTest {
     }
 
     @Test
+    fun `local book and edition uploads cannot reuse paths pending migration cleanup`() {
+        val service = service()
+        val image = ImageContent(png(), null)
+        for (editionId in listOf(null, 8L)) {
+            every { remote.enabled } returns false
+            every { remote.migrationEnabled } returns false
+            val original = service.saveBook(image, 7, null, "HARDCOVER", editionId)
+            assertEquals(original, service.saveBook(image, 7, null, "HARDCOVER", editionId))
+            every { remote.migrationEnabled } returns true
+            val first = service.saveBook(image, 7, null, "HARDCOVER", editionId)
+            val second = service.saveBook(image, 7, null, "HARDCOVER", editionId)
+            assertEquals(3, setOf(original, first, second).size)
+            Files.delete(root.resolve(original.removePrefix("/covers/")))
+            for (url in listOf(
+                first,
+                second,
+            )) {
+                assertContentEquals(image.bytes, Files.readAllBytes(root.resolve(url.removePrefix("/covers/"))))
+            }
+        }
+    }
+
+    @Test
     fun `empty fake truncated and oversized data never reaches either storage`() {
         val service = service()
         every { remote.enabled } returns true

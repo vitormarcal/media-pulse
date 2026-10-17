@@ -49,7 +49,8 @@ class LibraryImageStorageService(
                 ),
             )
         } else {
-            storage.saveImageForBook(validated, provider, bookId, fileHint, editionId)
+            val localHint = if (visualLibrary.migrationEnabled) "${fileHint.orEmpty()}_${UUID.randomUUID()}" else fileHint
+            storage.saveImageForBook(validated, provider, bookId, localHint, editionId)
         }
     }
 

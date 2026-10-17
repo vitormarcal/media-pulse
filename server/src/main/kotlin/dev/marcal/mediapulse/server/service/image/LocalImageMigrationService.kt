@@ -112,6 +112,13 @@ class LocalImageMigrationService(
 
     private fun metadata(reference: LocalImageReference): VisualLibraryUploadMetadata =
         when (reference.target) {
+            LocalImageTarget.BOOK, LocalImageTarget.BOOK_EDITION ->
+                VisualLibraryUploadMetadata.forEntity(
+                    if (reference.target == LocalImageTarget.BOOK) "book" else "book_edition",
+                    reference.entityId,
+                    "livro",
+                    repository.title(reference),
+                )
             LocalImageTarget.ARTWORK -> artworks.artworkMetadata(reference.entityId)
             LocalImageTarget.ARTIST -> artworks.artistMetadata(reference.entityId)
             LocalImageTarget.MAGAZINE ->
