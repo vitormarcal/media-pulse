@@ -44,7 +44,7 @@ Para iniciar o backend, configure o acesso ao PostgreSQL:
 
 Integrações, pipeline, storage, CORS e limites HTTP possuem defaults e opções documentados em `server/src/main/resources/application.yml`. Sobrescreva somente o necessário por variáveis de ambiente e nunca versione credenciais reais.
 
-Imagens novas de revistas, artes visuais, livros e jogos podem usar o Visual Library: `VISUAL_LIBRARY_ENABLED=true` e `VISUAL_LIBRARY_BASE_URL=http://visual-library:3000`. A integração usa o contrato 0.6.0 e envia sugestões de tags e referência da entidade. A flag vem desligada; referências locais existentes permanecem. Consulte [configuração, falhas e backup](docs/visual-library-images.md).
+Imagens novas de revistas, artes visuais, livros e jogos podem usar o Visual Library: `VISUAL_LIBRARY_ENABLED=true` e `VISUAL_LIBRARY_BASE_URL=http://visual-library:3000`. A integração usa o contrato 0.6.0 e envia sugestões de tags e referência da entidade. A flag vem desligada. Para migrar também o acervo local de revistas, jogos, obras e retratos e remover arquivos após verificação remota e atualização dos vínculos, habilite `VISUAL_LIBRARY_MIGRATION_ENABLED=true` e reinicie; outros domínios ficam fora dessa migração. Consulte [configuração, falhas e backup](docs/visual-library-images.md).
 
 ## Documentação
 

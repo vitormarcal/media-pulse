@@ -4,13 +4,10 @@ import dev.marcal.mediapulse.server.integration.visuallibrary.VisualLibraryClien
 import dev.marcal.mediapulse.server.model.image.ImageContent
 import dev.marcal.mediapulse.server.model.visuallibrary.VisualLibraryUploadMetadata
 import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.server.ResponseStatusException
 import java.time.Duration
-import javax.imageio.ImageIO
+import java.util.UUID
 
 @Service
 class LibraryImageStorageService(
@@ -40,7 +37,7 @@ class LibraryImageStorageService(
         editionId: Long? = null,
         fileHint: String? = title,
     ): String {
-        val validated = validate(image.bytes)
+        val validated = LibraryImageValidator.validate(image.bytes)
         return if (visualLibrary.enabled) {
             visualLibrary.upload(
                 validated,
@@ -63,47 +60,16 @@ class LibraryImageStorageService(
         provider: String,
         fileHint: String,
     ): String {
-        val validated = validate(image.bytes)
+        val validated = LibraryImageValidator.validate(image.bytes)
         return if (visualLibrary.enabled) {
             visualLibrary.upload(validated, VisualLibraryUploadMetadata.forEntity("game", gameId, "jogo", title))
         } else {
-            storage.saveImageForGame(validated, provider, gameId, fileHint)
+            // A pending local upload must not reuse a file that migration may delete
+            // before its gallery link is committed.
+            val localHint = if (visualLibrary.migrationEnabled) "${fileHint}_${UUID.randomUUID()}" else fileHint
+            storage.saveImageForGame(validated, provider, gameId, localHint)
         }
     }
-
-    private fun validate(bytes: ByteArray): ImageContent {
-        if (bytes.isEmpty() || bytes.size > MAX_BYTES) bad("Escolha uma imagem de até 10 MB.")
-        val format =
-            try {
-                ImageIO.createImageInputStream(bytes.inputStream()).use { input ->
-                    val readers = ImageIO.getImageReaders(input)
-                    require(readers.hasNext())
-                    val reader = readers.next()
-                    try {
-                        reader.input = input
-                        val format = reader.formatName.lowercase()
-                        require(format in setOf("jpeg", "png", "webp"))
-                        require(reader.getWidth(0).toLong() * reader.getHeight(0) <= 40_000_000)
-                        requireNotNull(reader.read(0))
-                        format
-                    } finally {
-                        reader.dispose()
-                    }
-                }
-            } catch (_: Exception) {
-                bad("Escolha uma imagem JPEG, PNG ou WebP válida, com até 40 megapixels.")
-            }
-        return ImageContent(
-            bytes,
-            when (format) {
-                "jpeg" -> MediaType.IMAGE_JPEG
-                "png" -> MediaType.IMAGE_PNG
-                else -> MediaType.parseMediaType("image/webp")
-            },
-        )
-    }
-
-    private fun bad(message: String): Nothing = throw ResponseStatusException(HttpStatus.BAD_REQUEST, message)
 
     companion object {
         const val MAX_BYTES = 10 * 1024 * 1024

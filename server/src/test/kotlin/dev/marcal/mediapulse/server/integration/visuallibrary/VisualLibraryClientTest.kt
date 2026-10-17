@@ -192,6 +192,36 @@ class VisualLibraryClientTest {
     }
 
     @Test
+    fun `migration permits uploads independently of new upload flag`() {
+        server.createContext("/api/assets") { exchange ->
+            exchange.requestBody.readAllBytes()
+            val body = responseBody.toByteArray()
+            exchange.responseHeaders.set("Content-Type", "application/json")
+            exchange.sendResponseHeaders(201, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        val migrating =
+            VisualLibraryClient(
+                VisualLibraryProperties(baseUrl = "http://127.0.0.1:${server.address.port}", migrationEnabled = true),
+                WebClient.builder(),
+                mapper,
+            )
+        assertEquals(false, migrating.enabled)
+        assertEquals("/api/image-assets/$id/content", migrating.upload(ImageContent(bytes, MediaType.IMAGE_PNG), metadata))
+        assertFailsWith<IllegalStateException> { client(false).upload(ImageContent(bytes, MediaType.IMAGE_PNG), metadata) }
+    }
+
+    @Test
+    fun `migration configuration requires a base URL and bounded batch and interval`() {
+        assertFailsWith<IllegalArgumentException> { VisualLibraryProperties(migrationEnabled = true) }
+        for (size in listOf(0, 101)) {
+            assertFailsWith<IllegalArgumentException> { VisualLibraryProperties(migrationBatchSize = size) }
+        }
+        assertFailsWith<IllegalArgumentException> { VisualLibraryProperties(migrationIntervalMs = 999) }
+        assertEquals(false, VisualLibraryProperties().migrationEnabled)
+    }
+
+    @Test
     fun `enabled flag requires valid base URL and unconfigured reads report unavailable`() {
         assertFailsWith<IllegalArgumentException> { VisualLibraryProperties(true) }
         for (url in listOf("file:///tmp/image", "http://user:password@localhost", "http://localhost?token=abc")) {

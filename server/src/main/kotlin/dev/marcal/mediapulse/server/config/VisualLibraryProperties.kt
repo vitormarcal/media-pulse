@@ -7,9 +7,14 @@ import java.net.URI
 data class VisualLibraryProperties(
     val enabled: Boolean = false,
     val baseUrl: String = "",
+    val migrationEnabled: Boolean = false,
+    val migrationBatchSize: Int = 10,
+    val migrationIntervalMs: Long = 60_000,
 ) {
     init {
-        require(!enabled || baseUrl.isNotBlank()) { "Visual Library habilitado exige base-url." }
+        require(migrationBatchSize in 1..100) { "Visual Library migration-batch-size deve estar entre 1 e 100." }
+        require(migrationIntervalMs >= 1_000) { "Visual Library migration-interval-ms deve ser pelo menos 1000." }
+        require(!(enabled || migrationEnabled) || baseUrl.isNotBlank()) { "Visual Library habilitado exige base-url." }
         if (baseUrl.isNotBlank()) {
             val uri = URI(baseUrl)
             require(

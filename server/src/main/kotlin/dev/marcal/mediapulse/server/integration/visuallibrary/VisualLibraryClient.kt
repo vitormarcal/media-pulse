@@ -33,6 +33,7 @@ class VisualLibraryClient(
     private val logger = LoggerFactory.getLogger(javaClass)
     private val client = builder.clone().codecs { it.defaultCodecs().maxInMemorySize(10 * 1024 * 1024) }.build()
     val enabled: Boolean get() = properties.enabled
+    val migrationEnabled: Boolean get() = properties.migrationEnabled
 
     private data class AssetResponse(
         val id: UUID,
@@ -42,7 +43,7 @@ class VisualLibraryClient(
         image: ImageContent,
         metadata: VisualLibraryUploadMetadata,
     ): String {
-        check(enabled)
+        check(enabled || properties.migrationEnabled)
         val tags =
             metadata.tags
                 .filterNotNull()

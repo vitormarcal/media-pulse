@@ -7,7 +7,10 @@ O Visual Library pode ser usado como armazenamento próprio do arquivo pessoal. 
 | Variável | Default | Comportamento |
 | --- | --- | --- |
 | `VISUAL_LIBRARY_ENABLED` | `false` | Usa Visual Library para novos uploads nos domínios acima. |
-| `VISUAL_LIBRARY_BASE_URL` | vazio | URL HTTP/HTTPS alcançável pelo backend, sem credenciais, query ou fragmento. Obrigatória quando a flag está ligada. |
+| `VISUAL_LIBRARY_BASE_URL` | vazio | URL HTTP/HTTPS alcançável pelo backend, sem credenciais, query ou fragmento. Obrigatória quando uploads ou migração estão habilitados. |
+| `VISUAL_LIBRARY_MIGRATION_ENABLED` | `false` | Migra imagens locais vinculadas a revistas, jogos, obras e retratos; remove o arquivo após verificação remota e commit. |
+| `VISUAL_LIBRARY_MIGRATION_BATCH_SIZE` | `10` | Máximo de arquivos por lote de migração e por lote de limpeza; de 1 a 100. |
+| `VISUAL_LIBRARY_MIGRATION_INTERVAL_MS` | `60000` | Intervalo após cada lote, em milissegundos; mínimo 1000. |
 
 Exemplo neutro em rede Docker:
 
@@ -16,7 +19,7 @@ VISUAL_LIBRARY_ENABLED=true
 VISUAL_LIBRARY_BASE_URL=http://visual-library:3000
 ```
 
-Não é necessário expor esse hostname ao navegador: ele consulta o backend do Media Pulse. Nenhuma credencial é enviada; a API atual do Visual Library não tem autenticação. Configuração inválida impede inicialização. O armazenamento de imagens não exigiu migration; movimentos múltiplos acrescentam a V67 no Media Pulse. O backend inclui o [plugin ImageIO WebP do TwelveMonkeys](https://github.com/haraldk/TwelveMonkeys) para validar esse formato.
+Não é necessário expor esse hostname ao navegador: ele consulta o backend do Media Pulse. Nenhuma credencial é enviada; a API atual do Visual Library não tem autenticação. Configuração inválida impede inicialização. O armazenamento inicial de imagens não exigiu migration; movimentos múltiplos acrescentam a V67 e a rotina opcional de migração local acrescenta a V71 no Media Pulse. O backend inclui o [plugin ImageIO WebP do TwelveMonkeys](https://github.com/haraldk/TwelveMonkeys) para validar esse formato.
 
 ## Upload e leitura
 
@@ -39,17 +42,81 @@ Não enviar `url` na referência: a integração não exige uma URL pública do 
 
 Sugestões omitem valores vazios e nomes acima de 48 caracteres UTF-16, normalizam espaços, deduplicam sem diferenciar caixa e limitam a oito tags. Não cortar títulos ou nomes para produzir tags incompletas. Dados completos permanecem no Media Pulse.
 
-Na 0.6.0, tags são aditivas; origem e visibilidade do primeiro upload continuam preservadas. Reenvio da mesma associação asset + aplicação + tipo + ID não reaplica tags nem altera a referência, respeitando remoções pessoais. Nova referência pode acrescentar sugestões; não há sincronização automática de edições de metadados ou remoções de vínculos. Assets anteriores não recebem backfill automático.
+Na 0.6.0, tags são aditivas; origem e visibilidade do primeiro upload continuam preservadas. Reenvio da mesma associação asset + aplicação + tipo + ID não reaplica tags nem altera a referência, respeitando remoções pessoais. Nova referência pode acrescentar sugestões; não há sincronização automática de edições de metadados ou remoções de vínculos. Assets anteriores não recebem backfill de tags automático; arquivos locais migrados recebem as referências e sugestões do upload.
 
 **Sintoma:** HTTP 400 ao enviar sugestões para um asset já existente. **Hipótese:** a união com tags pessoais ultrapassa as oito vagas; mensagens de erro não são usadas como contrato. **Decisão:** somente para 400 e sugestões não vazias, repetir uma vez com `tags=[]` e a mesma referência. Isso preserva tags existentes e permite registrar a associação sem sugestões. Falha da segunda tentativa usa o tratamento de erro normal. Não repetir outros status por essa regra. Cada chamada continua limitada a 30 segundos; esse caminho pode fazer duas chamadas.
 
 Em revistas novas, validar e persistir o número e a jornada dentro da transação antes do upload para obter um ID real. A transação confirma mesmo se o upload remoto falhar, retornando `coverUploadError`; erros de validação/banco continuam revertendo dados locais. Capas locais continuam sendo compensadas após rollback, e referências remotas podem permanecer sem vínculo após rollback.
 
-Os campos de imagem guardam `/api/image-assets/{uuid}/content`, uma referência relativa que identifica o provedor e o ID estável, sem hostname. A URL base pode mudar sem alterar o banco. Imagens antigas `/covers/...` permanecem locais. Não há migração automática do acervo. Livros/edições que já possuem capa preservam o vínculo atual, inclusive capas locais e externas, sem baixar novamente durante a sincronização.
+Os campos de imagem guardam `/api/image-assets/{uuid}/content`, uma referência relativa que identifica o provedor e o ID estável, sem hostname. A URL base pode mudar sem alterar o banco. Imagens antigas `/covers/...` permanecem locais. A migração do acervo de revistas, jogos, obras e retratos é opcional, conforme a seção abaixo; vem desligada. Livros/edições que já possuem capa preservam o vínculo atual, inclusive capas locais e externas, sem baixar novamente durante a sincronização.
 
 `GET /api/image-assets/{id}/content` recupera os bytes pelo backend. Preserva Content-Type, Cache-Control, ETag, Last-Modified e respostas condicionais 304. Encaminha If-None-Match e If-Modified-Since. UUID inválido retorna 400; asset ausente retorna 404; serviço sem configuração, indisponível ou resposta ilegível retorna 503. Download é limitado a 10 MB em memória por requisição, adequado às imagens aceitas nesta entrega; sem transformações ou miniaturas. Cada chamada usa o cliente de imagens existente e um limite de 30 segundos.
 
 A flag controla somente novos uploads. Ao desligá-la, mantenha `VISUAL_LIBRARY_BASE_URL` para continuar exibindo assets já vinculados. Não há fallback automático de upload para o disco local.
+
+## Migração das imagens locais existentes
+
+Disponível no backend **1.5.0**.
+
+Escopo aprovado em [migração do acervo local](features/visual-library-local-migration.md): somente `magazine_issues.cover_url`, `artwork_images.url`, `artwork_artists.portrait_url`, `games.cover_url` e `game_images.url` que começam com `/covers/`. Música, filmes, séries, livros, edições e treinos não são migrados. URLs externas, assets já remotos, imagens estáticas e arquivos órfãos anteriores também não entram na rotina. Nenhuma mudança no frontend ou em endpoints públicos.
+
+Para habilitar e reiniciar a aplicação:
+
+```env
+VISUAL_LIBRARY_ENABLED=true
+VISUAL_LIBRARY_BASE_URL=http://visual-library:3000
+VISUAL_LIBRARY_MIGRATION_ENABLED=true
+```
+
+A propriedade de migração é independente de `VISUAL_LIBRARY_ENABLED`: também pode migrar o acervo com novos uploads locais. Para centralizar novas imagens e esvaziar gradualmente o acervo local elegível, mantenha ambas ligadas. Se apenas a migração estiver ligada, novos arquivos locais de jogos recebem nomes únicos para não reutilizar caminhos em limpeza antes de seus vínculos serem persistidos. A configuração é lida na inicialização; desabilitar a migração e reiniciar interrompe novas execuções. Mantenha a URL base para ler imagens já migradas.
+
+Após `ApplicationReadyEvent`, um worker próprio inicia imediatamente e processa lotes sequenciais, sem ocupar o scheduler compartilhado ou impedir a inicialização. O intervalo padrão é um minuto após concluir o lote; um lote pode demorar mais por causa das chamadas remotas (até 30 segundos cada, com o retry existente em HTTP 400). Cada arquivo reúne todos os vínculos nos domínios abrangidos, incluindo capa e galeria do mesmo jogo. Envia bytes e referências de cada entidade, preserva legendas/principal e movimentos/revisão das obras e verifica SHA-256 dos bytes lidos do Visual Library. Referências iguais reenviadas respeitam a deduplicação existente. Quando a deduplicação encontra uma imagem já vinculada à galeria do jogo, os vínculos equivalentes são consolidados e a seleção de principal é preservada.
+
+Só depois do upload e da verificação a transação curta confere novamente os vínculos e revisões, troca as URLs e registra a limpeza. Alterações concorrentes de capa ou movimentos adiam o arquivo inteiro, sem sobrescrever a edição. Arquivo modificado durante o upload também impede a troca. Falhas preservam os vínculos e o arquivo local, sem fallback silencioso ou bloqueio dos demais itens. Tentativas de migração ficam elegíveis novamente após dez minutos; arquivos nunca tentados têm prioridade, evitando que um arquivo inválido bloqueie o restante.
+
+A migration **V71** cria `local_image_migrations` para registrar tentativas, URL remota, SHA-256 e limpeza pendente/concluída. Flyway apenas cria o schema; não transfere nem exclui arquivos. A limpeza volta a verificar os bytes remotos e o hash local após o commit, inclusive após reinício. Verifica referências locais de todos os domínios antes de remover o arquivo, protegendo imagens compartilhadas fora do escopo sem migrá-las. Se um diretório estiver inacessível, a limpeza continua pendente; apenas a ausência confirmada do arquivo permite concluir sem removê-lo. As verificações finais usam locks curtos nas tabelas de imagens, com espera máxima de dois segundos; contenção adia a tentativa; nenhuma transação fica aberta durante upload/download remoto. Um advisory lock de sessão PostgreSQL impede workers concorrentes em diferentes instâncias; ele reserva uma conexão durante o lote, além das conexões normais de trabalho (pool deve permitir pelo menos duas).
+
+Falha de remoção ou serviço remoto indisponível mantém a limpeza pendente. Lotes posteriores retomam a limpeza sem reenviar a imagem. Arquivos alterados e arquivos ainda compartilhados permanecem locais; as pendências são reavaliadas por ordem da última tentativa para não bloquear outras limpezas. Uma interrupção após remover o arquivo, mas antes de confirmar o estado de limpeza, é recuperada reconhecendo a ausência do arquivo na próxima tentativa. Caminhos fora da raiz configurada e links simbólicos não são elegíveis.
+
+Os logs registram habilitação, falhas por URL local/classe de erro e resumo de processados, migrados, falhos e removidos. Ao reiniciar com a flag ligada, deve aparecer em INFO:
+
+```text
+Migração local para Visual Library habilitada; lotes de 10 imagens.
+```
+
+Lotes com atividade registram `Migração Visual Library: processados=... migrados=... falhos=... removidos=...`. Lotes sem atividade ficam silenciosos; a ausência da mensagem inicial pede conferir versão 1.5.0, variável recebida pela aplicação, reinício e nível INFO habilitado.
+
+Para acompanhar a conclusão:
+
+```sql
+SELECT
+    COUNT(*) FILTER (WHERE remote_url IS NULL) AS tentativas_pendentes,
+    COUNT(*) FILTER (WHERE remote_url IS NOT NULL AND NOT cleaned) AS limpeza_pendente,
+    COUNT(*) FILTER (WHERE cleaned) AS concluidos
+FROM local_image_migrations;
+```
+
+Pendências zeradas indicam que as tentativas registradas terminaram; arquivos ainda não selecionados pelo worker não aparecem nessa tabela. Confira também os resumos dos lotes e as imagens das páginas. Arquivos compartilhados com outros domínios continuam com limpeza pendente enquanto houver vínculo local. Após concluir, pode desligar a flag de migração e reiniciar, mantendo a configuração de novos uploads e a URL base.
+
+Para inspecionar pendências individuais:
+
+```sql
+SELECT local_url, attempted_at, remote_url, cleaned
+FROM local_image_migrations
+ORDER BY attempted_at, local_url;
+```
+
+`remote_url IS NULL` indica tentativa ainda sem troca confirmada; `remote_url IS NOT NULL AND NOT cleaned` indica limpeza pendente. Não apague esse controle para reiniciar uma execução: o worker já retoma o estado persistido. O backup continua incluindo PostgreSQL do Media Pulse, os arquivos locais remanescentes e o banco/arquivos do Visual Library. A remoção libera apenas arquivos locais migrados e sem vínculos restantes; assets remotos nunca são excluídos pela rotina.
+
+Smoke adicional com `bootRun`, PostgreSQL e servidor HTTP temporários confirmou inicialização com V71, disparo automático com novos uploads desligados, migração conjunta de capa/galeria de jogo, referências corretas, preservação do principal, exclusão do arquivo e leitura PNG pelo proxy. Não usa o acervo real.
+
+Validação automatizada: `LocalImageMigrationIntegrationTest` usa PostgreSQL e arquivos temporários para cobrir escopo, flag desligada, vínculos compartilhados, falhas, bytes divergentes, rollback, edições concorrentes, movimentos, deduplicação, caminhos inválidos, advisory lock e retomada de limpeza. `VisualLibraryClientTest` cobre configuração e upload de migração com novos uploads desligados.
+
+```bash
+JAVA_TOOL_OPTIONS=-Dapi.version=1.44 ./server/gradlew -p server test \
+  --tests '*LocalImageMigrationIntegrationTest' --tests '*VisualLibraryClientTest' \
+  --tests '*LibraryImageStorageServiceTest'
+```
 
 ## Falhas e novas tentativas
 
@@ -62,7 +129,7 @@ A flag controla somente novos uploads. Ao desligá-la, mantenha `VISUAL_LIBRARY_
 
 ## Retenção e backup
 
-No Media Pulse, remover/substituir uma imagem remota ou excluir seu registro remove apenas a associação. Não excluir o asset: ele pode ser compartilhado pela deduplicação e a API externa não oferece exclusão. Rollback após upload pode deixar assets sem vínculo; sem rotina automática de limpeza nesta entrega. Capas locais de revistas continuam sendo removidas após commit e compensadas após rollback.
+No Media Pulse, remover/substituir uma imagem remota ou excluir seu registro remove apenas a associação. Não excluir o asset: ele pode ser compartilhado pela deduplicação e a API externa não oferece exclusão. Rollback após upload pode deixar assets sem vínculo; sem rotina automática de limpeza remota. Capas locais de revistas continuam sendo removidas após commit e compensadas após rollback.
 
 Excluir um asset na interface do Visual Library quebra os vínculos do Media Pulse. ID estável não assegura retenção. O cache do navegador pode continuar exibindo uma imagem por até uma hora depois de excluída.
 

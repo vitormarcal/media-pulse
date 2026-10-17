@@ -86,6 +86,22 @@ class LibraryImageStorageServiceTest {
     }
 
     @Test
+    fun `local game uploads cannot reuse files pending migration cleanup`() {
+        val service = service()
+        val image = ImageContent(png(), null)
+        every { remote.enabled } returns false
+        every { remote.migrationEnabled } returns false
+        val original = service.saveGame(image, 7, "Jogo", "STEAMGRIDDB", "grid")
+        assertEquals(original, service.saveGame(image, 7, "Jogo", "STEAMGRIDDB", "grid"))
+        every { remote.migrationEnabled } returns true
+        val first = service.saveGame(image, 7, "Jogo", "STEAMGRIDDB", "grid")
+        val second = service.saveGame(image, 7, "Jogo", "STEAMGRIDDB", "grid")
+        assertEquals(3, setOf(original, first, second).size)
+        Files.delete(root.resolve(original.removePrefix("/covers/")))
+        for (url in listOf(first, second)) assertContentEquals(image.bytes, Files.readAllBytes(root.resolve(url.removePrefix("/covers/"))))
+    }
+
+    @Test
     fun `empty fake truncated and oversized data never reaches either storage`() {
         val service = service()
         every { remote.enabled } returns true
