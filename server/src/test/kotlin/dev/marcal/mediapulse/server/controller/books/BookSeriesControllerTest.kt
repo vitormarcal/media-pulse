@@ -2,6 +2,8 @@ package dev.marcal.mediapulse.server.controller.books
 
 import dev.marcal.mediapulse.server.api.books.BookGroupDetailsDto
 import dev.marcal.mediapulse.server.api.books.BookGroupDto
+import dev.marcal.mediapulse.server.api.books.BookSeriesMetadataField
+import dev.marcal.mediapulse.server.api.books.BookSeriesSuggestionDto
 import dev.marcal.mediapulse.server.model.book.BookGroupKind
 import dev.marcal.mediapulse.server.repository.BookQueryRepository
 import dev.marcal.mediapulse.server.service.books.BookSeriesService
@@ -10,6 +12,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -18,6 +21,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.request
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.web.server.ResponseStatusException
 
 class BookSeriesControllerTest {
     private val service = mockk<BookSeriesService>()
@@ -44,6 +48,61 @@ class BookSeriesControllerTest {
             .perform(post("/api/books/series").contentType(MediaType.APPLICATION_JSON).content("""{"name":"New"}"""))
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.id").value(2))
+    }
+
+    @Test
+    fun `series context exposes review before selective apply and rejects unknown fields`() {
+        every { service.kind("series") } returns BookGroupKind.SERIES
+        every { service.details(BookGroupKind.SERIES, 1) } returns BookGroupDetailsDto(1, "Local", emptyList(), description = "Personal")
+        val suggestion = BookSeriesSuggestionDto(5, "External", emptyList(), description = "Provider")
+        coEvery { suggestions.previewSeries(1) } returns suggestion
+        every { service.applyMetadata(1, suggestion, setOf(BookSeriesMetadataField.DESCRIPTION)) } returns
+            BookGroupDetailsDto(1, "Local", emptyList(), description = "Provider")
+        val preview = mvc.perform(post("/api/books/series/1/metadata/preview")).andExpect(request().asyncStarted()).andReturn()
+        mvc
+            .perform(
+                asyncDispatch(preview),
+            ).andExpect(
+                status().isOk,
+            ).andExpect(jsonPath("$.current.description").value("Personal"))
+            .andExpect(jsonPath("$.suggested.description").value("Provider"))
+        val applied =
+            mvc
+                .perform(
+                    post(
+                        "/api/books/series/1/metadata/apply",
+                    ).contentType(MediaType.APPLICATION_JSON).content("""{"fields":["DESCRIPTION"]}"""),
+                ).andExpect(request().asyncStarted())
+                .andReturn()
+        mvc
+            .perform(
+                asyncDispatch(applied),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.name").value("Local"))
+            .andExpect(jsonPath("$.description").value("Provider"))
+        mvc
+            .perform(
+                post("/api/books/series/1/metadata/apply").contentType(MediaType.APPLICATION_JSON).content("""{"fields":["ORDER"]}"""),
+            ).andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `provider failure keeps an actionable reason for the UI`() {
+        coEvery { suggestions.previewSeries(1) } throws
+            ResponseStatusException(HttpStatus.BAD_GATEWAY, "Hardcover indisponível. Tente novamente.")
+        val result =
+            mvc
+                .perform(
+                    post(
+                        "/api/books/series/1/metadata/apply",
+                    ).contentType(MediaType.APPLICATION_JSON).content("""{"fields":["DESCRIPTION"]}"""),
+                ).andExpect(request().asyncStarted())
+                .andReturn()
+        mvc
+            .perform(
+                asyncDispatch(result),
+            ).andExpect(status().isBadGateway)
+            .andExpect(jsonPath("$.detail").value("Hardcover indisponível. Tente novamente."))
     }
 
     @Test

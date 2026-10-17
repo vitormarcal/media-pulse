@@ -262,3 +262,11 @@ Movimentos e estilos usa seleção múltipla: autocomplete nativo com sugestões
 “Alterar capa” revela seleção de arquivo, prévia e salvar na própria página. Preservar arquivo e prévia em erro para nova tentativa; sucesso atualiza a imagem exibida sem esconder o feedback. Usar superfícies quentes, controles de 16px, foco acessível e placeholders existentes. Upload manual de livro troca a capa canônica; a edição da leitura continua prioritária na apresentação dos dados de edição.
 
 No detalhe de jogos, o card de Catálogo usa o padrão de ação de enriquecimento de filmes e séries: título direto, superfície quente, botão vermelho “Buscar imagens”, estado Buscando, feedback de sucesso/erro e nova tentativa no mesmo controle. Busca acrescenta imagens e mantém a capa atual; atualiza a galeria após sucesso.
+
+## 14. Séries de livros e universos
+
+Listagem de séries usa cards com mosaico de até quatro capas locais, nome, autores com links e contagem do acervo, seguindo listas de álbuns e filmes. Reutilizar os mesmos cards no contexto do livro e na página do autor. Universos derivam capas da ordem de suas séries e livros.
+
+No detalhe, apresentar capa representativa e nome, autores, descrição expansível e universos no cabeçalho; os livros seguem a ordem de leitura em cards sequenciais. Editar série/universo revela metadados locais, associações e controles de reordenação/remoção; manter exclusão dentro da edição. Não confundir publicação concluída no Hardcover com leitura pessoal nem contagem externa com acervo local.
+
+Gerenciar séries distingue associar a uma série existente, criar uma série e buscar sugestões do Hardcover. Cada sugestão identifica sua origem, mostra capas e livros locais, marca os já associados e permite escolher o destino local. Metadados têm seleção explícita e comparação com valores atuais; preservar escolhas e feedback em falha. Usar tokens, superfícies quentes, controles de 16px, foco visível, operação por teclado e composição responsiva das listas existentes.

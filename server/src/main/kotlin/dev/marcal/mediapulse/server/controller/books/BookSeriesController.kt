@@ -3,10 +3,15 @@ package dev.marcal.mediapulse.server.controller.books
 import dev.marcal.mediapulse.server.api.books.ApplyBookSeriesSuggestionRequest
 import dev.marcal.mediapulse.server.api.books.BookGroupNameRequest
 import dev.marcal.mediapulse.server.api.books.BookGroupOrderRequest
+import dev.marcal.mediapulse.server.api.books.BookSeriesMetadataPreviewDto
+import dev.marcal.mediapulse.server.api.books.BookSeriesMetadataRequest
 import dev.marcal.mediapulse.server.service.books.BookSeriesService
 import dev.marcal.mediapulse.server.service.books.BookSeriesSuggestionsService
 import org.springframework.http.HttpStatus
+import org.springframework.http.ProblemDetail
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -23,6 +28,12 @@ class BookSeriesController(
     private val service: BookSeriesService,
     private val suggestions: BookSeriesSuggestionsService,
 ) {
+    @ExceptionHandler(ResponseStatusException::class)
+    fun invalid(error: ResponseStatusException): ResponseEntity<ProblemDetail> =
+        ResponseEntity.status(error.statusCode).body(
+            ProblemDetail.forStatusAndDetail(error.statusCode, error.reason ?: "Não foi possível concluir a operação."),
+        )
+
     @GetMapping("/series")
     fun series() = service.list(service.kind("series"))
 
@@ -33,7 +44,7 @@ class BookSeriesController(
     @ResponseStatus(HttpStatus.CREATED)
     fun createSeries(
         @RequestBody request: BookGroupNameRequest,
-    ) = service.create(service.kind("series"), request.name)
+    ) = service.create(service.kind("series"), request.name, request.description)
 
     @PostMapping("/universes")
     @ResponseStatus(HttpStatus.CREATED)
@@ -52,7 +63,7 @@ class BookSeriesController(
         @PathVariable kind: String,
         @PathVariable id: Long,
         @RequestBody request: BookGroupNameRequest,
-    ) = service.rename(service.kind(kind), id, request.name)
+    ) = service.update(service.kind(kind), id, request)
 
     @DeleteMapping("/{kind:series|universes}/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -81,6 +92,20 @@ class BookSeriesController(
         @PathVariable id: Long,
         @RequestBody request: BookGroupOrderRequest,
     ) = service.order(service.kind(kind), id, request.ids)
+
+    @PostMapping("/series/{id}/metadata/preview")
+    suspend fun metadataPreview(
+        @PathVariable id: Long,
+    ) = BookSeriesMetadataPreviewDto(
+        service.details(service.kind("series"), id),
+        suggestions.previewSeries(id),
+    )
+
+    @PostMapping("/series/{id}/metadata/apply")
+    suspend fun metadataApply(
+        @PathVariable id: Long,
+        @RequestBody request: BookSeriesMetadataRequest,
+    ) = service.applyMetadata(id, suggestions.previewSeries(id), request.fields)
 
     @GetMapping("/{bookId}/series")
     fun forBook(

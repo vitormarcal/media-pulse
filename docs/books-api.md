@@ -107,17 +107,17 @@ Nos contratos abaixo, `{kind}` representa os caminhos concretos `series` ou `uni
 
 | Método e caminho | Body / retorno |
 | --- | --- |
-| `GET /api/books/{kind}` | `BookGroupDto[]`: `id`, `name`, `itemCount` |
+| `GET /api/books/{kind}` | `BookGroupDto[]`: `id`, `name`, `itemCount`, `description`, `authors`, `coverUrls`, `hardcoverId` |
 | `POST /api/books/{kind}` | `{name}` → 201 `BookGroupDetailsDto` |
 | `GET /api/books/{kind}/{id}` | `BookGroupDetailsDto`: `id`, `name`, `items`, `universes` |
-| `PUT /api/books/{kind}/{id}` | `{name}` → detalhe atualizado |
+| `PUT /api/books/{kind}/{id}` | `{name, description?}` → detalhe atualizado |
 | `DELETE /api/books/{kind}/{id}` | 204; preserva livros e leituras |
 | `POST /api/books/{kind}/{id}/items/{childId}` | detalhe atualizado; associação idempotente ao final |
 | `DELETE /api/books/{kind}/{id}/items/{childId}` | detalhe atualizado; remoção idempotente |
 | `PUT /api/books/{kind}/{id}/order` | `{ids: [...]}` → detalhe atualizado |
 | `GET /api/books/{bookId}/series` | séries associadas ao livro |
 | `POST /api/books/{bookId}/series/suggestions` | `BookSeriesSuggestionDto[]`: `hardcoverId`, `name`, `books` locais |
-| `POST /api/books/{bookId}/series/suggestions/apply` | `{hardcoverId, seriesId?, name, bookIds}` → detalhe da série |
+| `POST /api/books/{bookId}/series/suggestions/apply` | `{hardcoverId, seriesId?, name, bookIds, metadataFields?}` → detalhe da série |
 
 `items` contém `id`, `name`, `position`, `slug` e `coverUrl`; os dois últimos são nulos para séries dentro de universos. `universes` lista os universos de uma série e é vazio no detalhe de universo. Nomes são obrigatórios, normalizados e limitados a 300 caracteres; nomes iguais não consolidam entidades. O detalhe é acessado por ID, preservando links após renomear.
 
@@ -138,3 +138,26 @@ Erros: 400 (nome, ordem ou seleção inválidos), 404 (entidade ausente), 409 (l
 Validação: `BookSeriesIntegrationTest` aplica todas as migrations em PostgreSQL isolado e cobre multiplicidade, ordem independente, duplicatas, concorrência, seleção local e preservação de leituras. `BookSeriesSuggestionsServiceTest` e `HardcoverSeriesApiClientTest` cobrem filtro local, ausência de vínculo, indisponibilidade e erros GraphQL. Para conferir a UI: sincronize um livro, busque sugestões, aplique uma seleção, reorganize duas séries em dois universos e recarregue; os vínculos e ordens devem permanecer independentes.
 
 No Docker 29, executar os testes com `JAVA_TOOL_OPTIONS=-Dapi.version=1.44`, conforme o padrão de validação dos demais domínios, e conferir zero testes ignorados no relatório.
+
+## Contexto de séries e autores
+
+Evolução descrita em [contexto e apresentação de séries](features/book-series-context.md). A migration `V73__add_book_series_context.sql` acrescenta descrição e metadados opcionais do Hardcover a `book_series`, sem alterar vínculos, leituras ou posições. Séries existentes podem receber contexto pela ação **Editar série → Buscar metadados no Hardcover**, inclusive quando foram criadas antes da V73.
+
+`BookGroupDto` inclui `description`, `authors`, `coverUrls` e `hardcoverId`. Detalhes acrescentam `hardcover`, com `slug`, `primaryAuthor: {id, name}`, `isCompleted`, `booksCount` e `primaryBooksCount`; campos externos podem ser nulos. `isCompleted` descreve a publicação, não o progresso pessoal. Contagens externas são identificadas como Hardcover; `itemCount` e `items` representam exclusivamente o acervo local. Universos também apresentam mosaicos derivados dos livros locais, mantendo os metadados externos vazios.
+
+Autores locais de uma série vêm exclusivamente de `book_authors.role = AUTHOR` nos livros associados, com deduplicação. Tradução, ilustração e outros papéis ficam de fora. O mesmo recorte aparece em `AuthorDetailsResponse.series`; remoções de livros e alterações de créditos se refletem sem persistir uma segunda fonte de autoria. O autor principal externo guarda ID e nome do Hardcover como contexto complementar; não cria um autor local nem faz associação aproximada por nome.
+
+Capas usam a ordem local dos livros, com a capa canônica e fallback para edição. Cards mostram até quatro URLs distintas; universos seguem primeiro a ordem das séries e depois a dos livros. O detalhe usa a primeira capa disponível. Não há importação de uma imagem própria da série.
+
+| Método e caminho | Contrato |
+| --- | --- |
+| `POST /api/books/series/{id}/metadata/preview` | `{current: BookGroupDetailsDto, suggested: BookSeriesSuggestionDto}`; não grava |
+| `POST /api/books/series/{id}/metadata/apply` | `{fields: [...]}` → detalhe atualizado; consulta novamente o provedor e aplica somente a seleção |
+
+Campos aceitos: `NAME`, `DESCRIPTION`, `PRIMARY_AUTHOR`, `PUBLICATION_STATUS`, `COUNTS`, `EXTERNAL_SLUG`. Seleção vazia ou campo desconhecido retorna 400. A ação exige vínculo Hardcover existente (409 quando ausente); erro do provedor retorna 502 e integração indisponível retorna 503. Respostas de erro de negócio incluem `detail` em ProblemDetail para feedback e nova tentativa na UI. Nenhuma dessas ações altera membros ou posições. Selecionar um campo ausente no provedor limpa esse campo explicitamente; valores falso e zero são preservados. `POST /api/books/series` também aceita descrição opcional. `PUT /api/books/series/{id}` aceita `description`: omitida ou nula preserva a descrição existente; string vazia limpa; texto é limitado a 30000 caracteres. Nome continua obrigatório e limitado a 300 caracteres.
+
+Na atribuição de sugestões, `metadataFields` é opcional e vazio por padrão para manter o contrato anterior. Novas séries podem receber os campos selecionados junto dos livros; para séries existentes, a UI começa com metadados desmarcados e distingue valores atuais dos sugeridos. Havendo exatamente uma série local com o mesmo ID Hardcover, ela é sugerida como destino. Livros já associados ficam identificados e não são reenviados como novos vínculos. Reutilizar uma série vinculada a outro ID Hardcover retorna 409, preservando os dados locais.
+
+A interface segue listas de discos e coleções: mosaicos, contagem do acervo e autores na listagem; capa e descrição no cabeçalho, com Continuar leitura para textos longos; manutenção e reordenação durante edição. Atribuição distingue sugestão externa, nova série e destino local. Os mesmos cards são usados na página do autor. Todas as consultas de navegação usam dados locais; enriquecer exige ação explícita e mantém campos e seleção em erro.
+
+Validação adicional: `BookSeriesContextIntegrationTest` migra um arquivo na V72 para a V73 e verifica autoria, edição local, contexto externo, aplicação seletiva e preservação do arquivo. Testes de cliente, serviço e controller cobrem consulta de metadados, valores ausentes/falso/zero, revisão, aplicação e rejeição de campos desconhecidos.

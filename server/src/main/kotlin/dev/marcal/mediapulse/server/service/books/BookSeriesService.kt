@@ -3,6 +3,9 @@ package dev.marcal.mediapulse.server.service.books
 import dev.marcal.mediapulse.server.api.books.ApplyBookSeriesSuggestionRequest
 import dev.marcal.mediapulse.server.api.books.BookGroupDetailsDto
 import dev.marcal.mediapulse.server.api.books.BookGroupDto
+import dev.marcal.mediapulse.server.api.books.BookGroupNameRequest
+import dev.marcal.mediapulse.server.api.books.BookSeriesMetadataDto
+import dev.marcal.mediapulse.server.api.books.BookSeriesMetadataField
 import dev.marcal.mediapulse.server.api.books.BookSeriesSuggestionDto
 import dev.marcal.mediapulse.server.model.book.BookGroupKind
 import dev.marcal.mediapulse.server.repository.BookSeriesRepository
@@ -30,19 +33,79 @@ class BookSeriesService(
     fun details(
         kind: BookGroupKind,
         id: Long,
-    ): BookGroupDetailsDto =
-        BookGroupDetailsDto(
-            id,
-            requireGroup(kind, id),
-            repository.items(kind, id),
-            if (kind ==
-                BookGroupKind.SERIES
-            ) {
-                repository.universes(id)
-            } else {
-                emptyList()
-            },
+    ): BookGroupDetailsDto {
+        requireGroup(kind, id)
+        val summary = repository.summary(kind, id)
+        return BookGroupDetailsDto(
+            id = id,
+            name = summary.name,
+            items = repository.items(kind, id),
+            universes = if (kind == BookGroupKind.SERIES) repository.universes(id) else emptyList(),
+            description = summary.description,
+            authors = summary.authors,
+            coverUrls = summary.coverUrls,
+            hardcoverId = summary.hardcoverId,
+            hardcover =
+                if (kind ==
+                    BookGroupKind.SERIES
+                ) {
+                    repository.metadata(id)
+                } else {
+                    BookSeriesMetadataDto()
+                },
         )
+    }
+
+    fun update(
+        kind: BookGroupKind,
+        id: Long,
+        request: BookGroupNameRequest,
+    ): BookGroupDetailsDto {
+        requireGroup(kind, id, true)
+        repository.rename(kind, id, normalizeName(request.name))
+        if (kind == BookGroupKind.SERIES &&
+            request.description != null
+        ) {
+            repository.description(id, normalizeDescription(request.description))
+        }
+        return details(kind, id)
+    }
+
+    fun applyMetadata(
+        id: Long,
+        suggestion: BookSeriesSuggestionDto,
+        fields: Set<BookSeriesMetadataField>,
+    ): BookGroupDetailsDto {
+        requireGroup(BookGroupKind.SERIES, id, true)
+        requireSource(id, suggestion.hardcoverId)
+        if (fields.isEmpty()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Selecione os metadados para aplicar")
+        if (BookSeriesMetadataField.NAME in fields) repository.rename(BookGroupKind.SERIES, id, normalizeName(suggestion.name))
+        val source =
+            if (BookSeriesMetadataField.DESCRIPTION in fields) {
+                suggestion.copy(description = normalizeDescription(suggestion.description))
+            } else {
+                suggestion
+            }
+        repository.applyMetadata(id, source, fields)
+        return details(BookGroupKind.SERIES, id)
+    }
+
+    private fun requireSource(
+        id: Long,
+        hardcoverId: Long,
+    ) {
+        val current = repository.seriesHardcoverId(id)
+        if (current != null &&
+            current != hardcoverId
+        ) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "A série está vinculada a outra série no Hardcover")
+        }
+    }
+
+    private fun normalizeDescription(value: String?): String? =
+        value?.trim()?.ifBlank { null }?.also {
+            if (it.length > 30000) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Descrição com até 30000 caracteres")
+        }
 
     @Transactional(readOnly = true)
     fun forBook(id: Long): List<BookGroupDto> {
@@ -53,7 +116,12 @@ class BookSeriesService(
     fun create(
         kind: BookGroupKind,
         name: String,
-    ): BookGroupDetailsDto = details(kind, repository.create(kind, normalizeName(name)))
+        description: String? = null,
+    ): BookGroupDetailsDto {
+        val id = repository.create(kind, normalizeName(name))
+        if (kind == BookGroupKind.SERIES && description != null) repository.description(id, normalizeDescription(description))
+        return details(kind, id)
+    }
 
     fun rename(
         kind: BookGroupKind,
@@ -122,11 +190,13 @@ class BookSeriesService(
         }
         val id = request.seriesId ?: repository.create(BookGroupKind.SERIES, normalizeName(request.name))
         requireGroup(BookGroupKind.SERIES, id, true)
+        requireSource(id, suggestion.hardcoverId)
         request.bookIds.forEach {
             requireBook(it)
             repository.add(BookGroupKind.SERIES, id, it)
         }
         repository.markSource(id, suggestion.hardcoverId)
+        if (request.metadataFields.isNotEmpty()) applyMetadata(id, suggestion, request.metadataFields)
         return details(BookGroupKind.SERIES, id)
     }
 

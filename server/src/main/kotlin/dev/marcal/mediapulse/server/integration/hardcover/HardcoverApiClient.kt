@@ -3,6 +3,7 @@ package dev.marcal.mediapulse.server.integration.hardcover
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverGraphQLRequest
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverGraphQLResponse
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverSeriesData
+import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverSeriesLookupData
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverSuggestedSeries
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverUserBook
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverUserBooksData
@@ -25,7 +26,11 @@ class HardcoverApiClient(
                     """
                     query SeriesSuggestions(${'$'}bookId: Int!) {
                       book_series(where: {book_id: {_eq: ${'$'}bookId}}) {
-                        series { id name book_series(order_by: [{position: asc_nulls_last}, {book_id: asc}]) { book_id position } }
+                        series {
+                          id name description slug is_completed books_count primary_books_count
+                          author { id name }
+                          book_series(order_by: [{position: asc_nulls_last}, {book_id: asc}]) { book_id position }
+                        }
                       }
                     }
                     """.trimIndent(),
@@ -45,6 +50,30 @@ class HardcoverApiClient(
         return response.data.entries
             .mapNotNull { it.series }
             .distinctBy { it.id }
+    }
+
+    suspend fun fetchSeriesById(seriesId: Long): HardcoverSuggestedSeries? {
+        val request =
+            HardcoverGraphQLRequest(
+                query =
+                    """
+                    query SeriesContext(${'$'}seriesId: Int!) {
+                      series_by_pk(id: ${'$'}seriesId) {
+                        id name description slug is_completed books_count primary_books_count author { id name }
+                      }
+                    }
+                    """.trimIndent(),
+                variables = mapOf("seriesId" to seriesId),
+            )
+        val response =
+            hardcoverWebClient
+                .post()
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(object : ParameterizedTypeReference<HardcoverGraphQLResponse<HardcoverSeriesLookupData>>() {})
+                .awaitSingle()
+        if (!response.errors.isNullOrEmpty() || response.data == null) throw IllegalStateException("Hardcover series context query failed")
+        return response.data.series
     }
 
     suspend fun fetchUserBooksPage(

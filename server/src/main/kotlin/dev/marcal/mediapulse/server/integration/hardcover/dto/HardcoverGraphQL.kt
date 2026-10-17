@@ -132,9 +132,24 @@ data class HardcoverSuggestedSeries(
     val id: Long,
     val name: String,
     @JsonProperty("book_series") val books: List<HardcoverSeriesBook> = emptyList(),
+    val description: String? = null,
+    val slug: String? = null,
+    val author: HardcoverSeriesAuthor? = null,
+    @JsonProperty("is_completed") val isCompleted: Boolean? = null,
+    @JsonProperty("books_count") val booksCount: Int? = null,
+    @JsonProperty("primary_books_count") val primaryBooksCount: Int? = null,
 )
 
 data class HardcoverSeriesBook(
     @JsonProperty("book_id") val bookId: Long,
     val position: Double? = null,
+)
+
+data class HardcoverSeriesAuthor(
+    val id: Long,
+    val name: String,
+)
+
+data class HardcoverSeriesLookupData(
+    @JsonProperty("series_by_pk") val series: HardcoverSuggestedSeries? = null,
 )

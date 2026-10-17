@@ -1,66 +1,77 @@
 <template>
   <section class="book-groups group-panel" aria-labelledby="book-series-heading">
-    <h2 id="book-series-heading">Séries</h2>
-    <p v-if="status === 'pending'">Carregando séries...</p>
-    <p v-else-if="error" role="alert">
+    <div class="group-section-heading">
+      <h2 id="book-series-heading">Séries</h2>
+      <button :aria-expanded="editing" aria-controls="book-series-management" :disabled="busy" @click="toggleEditing">
+        {{ editing ? 'Fechar gerenciamento' : 'Gerenciar séries' }}
+      </button>
+    </div>
+    <p v-if="status === 'pending'" class="group-state">Carregando séries...</p>
+    <p v-else-if="error" class="group-state group-error" role="alert">
       Não foi possível carregar as séries. <button @click="refresh()">Tentar novamente</button>
     </p>
-    <nav v-else-if="memberships?.length" aria-label="Séries deste livro">
-      <NuxtLink v-for="series in memberships" :key="series.id" :to="`/books/series/${series.id}`">{{
-        series.name
-      }}</NuxtLink>
-    </nav>
-    <p v-else>Nenhuma série associada.</p>
-    <details @toggle="loadSeries">
-      <summary>Gerenciar séries</summary>
-      <div class="group-management">
+    <div v-else-if="memberships?.length" class="group-grid">
+      <BookGroupCard v-for="series in memberships" :key="series.id" :group="series" />
+    </div>
+    <p v-else class="group-muted">Nenhuma série associada.</p>
+    <div v-if="editing" id="book-series-management" class="group-section">
+      <div class="group-edit-panel">
         <form @submit.prevent="associate">
-          <label
-            >Série<select v-model="selectedSeries" required :disabled="busy">
-              <option value="">Selecionar</option>
-              <option v-for="series in allSeries" :key="series.id" :value="series.id">{{ series.name }}</option>
-            </select></label
-          ><button type="submit" :disabled="busy || !selectedSeries">Associar livro</button>
+          <h3>Adicionar a uma série existente</h3>
+          <label for="book-existing-series">Série local</label
+          ><select id="book-existing-series" ref="seriesSelect" v-model="selectedSeries" required :disabled="busy">
+            <option value="">Selecionar</option>
+            <option v-for="series in availableSeries" :key="series.id" :value="series.id">
+              {{ series.name }}
+            </option></select
+          ><button class="group-primary" type="submit" :disabled="busy || !selectedSeries">Associar livro</button>
         </form>
         <form @submit.prevent="create">
-          <label>Nome da nova série<input v-model="newName" required maxlength="300" :disabled="busy" /></label
-          ><button type="submit" :disabled="busy">Criar série e associar livro</button>
+          <h3>Criar série</h3>
+          <label>Nome<input v-model="newName" required maxlength="300" :disabled="busy" /></label
+          ><button class="group-primary" type="submit" :disabled="busy || !newName.trim()">
+            Criar série e associar livro
+          </button>
         </form>
-        <div v-for="series in memberships" :key="series.id">
-          <button :disabled="busy" @click="unlink(series.id)">Remover vínculo com {{ series.name }}</button>
-        </div>
-        <button :disabled="busy" @click="preview">{{ busy ? 'Aguarde...' : 'Buscar sugestões de séries' }}</button>
-        <p v-if="searched && !suggestions.length">Nenhuma sugestão disponível.</p>
-        <form v-for="suggestion in suggestions" :key="suggestion.hardcoverId" @submit.prevent="apply(suggestion)">
-          <fieldset :disabled="busy">
-            <legend>{{ suggestion.name }}</legend>
-            <p>Selecione os livros do acervo. Novos vínculos serão adicionados ao final.</p>
-            <label v-for="book in suggestion.books" :key="book.id" class="group-check"
-              ><input v-model="selection[suggestion.hardcoverId]" type="checkbox" :value="book.id" />{{
-                book.name
-              }}</label
-            >
-            <label
-              >Série de destino<select v-model="targets[suggestion.hardcoverId]">
-                <option value="">Criar nova série</option>
-                <option v-for="series in allSeries" :key="series.id" :value="series.id">{{ series.name }}</option>
-              </select></label
-            >
-            <label v-if="!targets[suggestion.hardcoverId]"
-              >Nome da nova série<input v-model="names[suggestion.hardcoverId]" required maxlength="300"
-            /></label>
-            <button type="submit" :disabled="!selection[suggestion.hardcoverId]?.length">Aplicar seleção</button>
-          </fieldset>
-        </form>
-        <NuxtLink to="/books/series">Todas as séries</NuxtLink>
       </div>
-    </details>
-    <p v-if="message" role="status">{{ message }}</p>
+      <div v-if="memberships?.length" class="group-actions">
+        <button
+          v-for="series in memberships"
+          :key="series.id"
+          class="group-danger"
+          :disabled="busy"
+          @click="unlink(series.id)"
+        >
+          Remover vínculo com {{ series.name }}
+        </button>
+      </div>
+      <section class="group-section group-enrichment">
+        <div class="group-section-heading">
+          <h3>Sugestões do Hardcover</h3>
+          <button :disabled="busy" @click="preview">
+            {{ searching ? 'Buscando...' : 'Buscar sugestões de séries' }}
+          </button>
+        </div>
+        <p v-if="searched && !suggestions.length" class="group-muted">Nenhuma sugestão disponível.</p>
+        <BookSeriesSuggestionCard
+          v-for="suggestion in suggestions"
+          :key="suggestion.hardcoverId"
+          :suggestion="suggestion"
+          :series="allSeries"
+          :book-id="bookId"
+          @applied="reload"
+        />
+      </section>
+    </div>
+    <p v-if="message" role="status" :class="{ 'group-error': failed }">{{ message }}</p>
+    <NuxtLink to="/books/series">Todas as séries</NuxtLink>
   </section>
 </template>
 <script setup lang="ts">
 import type { BookGroup, BookGroupDetails, BookSeriesSuggestion } from '~/types/book-series'
 import { bookGroupError, useBookGroupsApi } from '~/composables/useBookGroupsApi'
+import BookGroupCard from '~/components/books/BookGroupCard.vue'
+import BookSeriesSuggestionCard from '~/components/books/BookSeriesSuggestionCard.vue'
 import '~/assets/css/book-groups.css'
 const props = defineProps<{ bookId: number }>()
 const api = useBookGroupsApi()
@@ -70,48 +81,62 @@ const {
   error,
   refresh,
 } = await useAsyncData(`book-series-${props.bookId}`, () => api<BookGroup[]>(`/${props.bookId}/series`))
+const editing = ref(false)
+const seriesSelect = ref<HTMLSelectElement | null>(null)
 const allSeries = ref<BookGroup[]>([])
+const availableSeries = computed(() =>
+  allSeries.value.filter((series) => !memberships.value?.some((member) => member.id === series.id)),
+)
 const selectedSeries = ref<number | ''>('')
 const newName = ref('')
 const suggestions = ref<BookSeriesSuggestion[]>([])
-const selection = ref<Record<number, number[]>>({})
-const targets = ref<Record<number, number | ''>>({})
-const names = ref<Record<number, string>>({})
 const searched = ref(false)
+const searching = ref(false)
 const busy = ref(false)
+const failed = ref(false)
 const message = ref('')
 async function run(action: () => Promise<void>) {
   if (busy.value) return
   busy.value = true
+  failed.value = false
   message.value = ''
   try {
     await action()
   } catch (cause) {
+    failed.value = true
     message.value = bookGroupError(cause)
   } finally {
     busy.value = false
   }
 }
-async function loadSeries(event: Event) {
-  if ((event.target as HTMLDetailsElement).open)
-    await run(async () => {
-      allSeries.value = await api<BookGroup[]>('/series')
-    })
+async function reload() {
+  await run(async () => {
+    allSeries.value = await api<BookGroup[]>('/series')
+    await refresh()
+  })
+}
+async function toggleEditing() {
+  editing.value = !editing.value
+  if (editing.value) {
+    await reload()
+    await nextTick()
+    seriesSelect.value?.focus()
+  }
 }
 async function associate() {
   await run(async () => {
     await api(`/series/${selectedSeries.value}/items/${props.bookId}`, 'POST')
     await refresh()
+    selectedSeries.value = ''
     message.value = 'Livro associado.'
   })
 }
 async function create() {
   await run(async () => {
     const series = await api<BookGroupDetails>('/series', 'POST', { name: newName.value })
-    // Preserve the created series as the selected target if association needs retry.
     selectedSeries.value = series.id
-    allSeries.value = await api<BookGroup[]>('/series')
     newName.value = ''
+    allSeries.value = await api<BookGroup[]>('/series')
     await api(`/series/${series.id}/items/${props.bookId}`, 'POST')
     await refresh()
     message.value = 'Série criada e livro associado.'
@@ -126,28 +151,15 @@ async function unlink(id: number) {
 }
 async function preview() {
   await run(async () => {
-    suggestions.value = await api<BookSeriesSuggestion[]>(`/${props.bookId}/series/suggestions`, 'POST')
-    allSeries.value = await api<BookGroup[]>('/series')
-    for (const suggestion of suggestions.value) {
-      selection.value[suggestion.hardcoverId] = suggestion.books.map((book) => book.id)
-      targets.value[suggestion.hardcoverId] = ''
-      names.value[suggestion.hardcoverId] = suggestion.name
+    searching.value = true
+    try {
+      const result = await api<BookSeriesSuggestion[]>(`/${props.bookId}/series/suggestions`, 'POST')
+      allSeries.value = await api<BookGroup[]>('/series')
+      suggestions.value = result
+      searched.value = true
+    } finally {
+      searching.value = false
     }
-    searched.value = true
-  })
-}
-async function apply(suggestion: BookSeriesSuggestion) {
-  await run(async () => {
-    const result = await api<BookGroupDetails>(`/${props.bookId}/series/suggestions/apply`, 'POST', {
-      hardcoverId: suggestion.hardcoverId,
-      seriesId: targets.value[suggestion.hardcoverId] || null,
-      name: names.value[suggestion.hardcoverId],
-      bookIds: selection.value[suggestion.hardcoverId],
-    })
-    targets.value[suggestion.hardcoverId] = result.id
-    allSeries.value = await api<BookGroup[]>('/series')
-    await refresh()
-    message.value = 'Seleção aplicada.'
   })
 }
 </script>

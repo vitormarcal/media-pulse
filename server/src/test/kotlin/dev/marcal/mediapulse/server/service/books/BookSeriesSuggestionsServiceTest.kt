@@ -5,6 +5,7 @@ import dev.marcal.mediapulse.server.config.HardcoverProperties
 import dev.marcal.mediapulse.server.integration.hardcover.HardcoverApiClient
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverSeriesBook
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverSuggestedSeries
+import dev.marcal.mediapulse.server.model.book.BookGroupKind
 import dev.marcal.mediapulse.server.repository.BookSeriesRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -38,6 +39,26 @@ class BookSeriesSuggestionsServiceTest {
                 repo.markSource(any(), any())
                 repo.add(any(), any(), any())
             }
+        }
+
+    @Test
+    fun `existing series can preview context without inspecting or changing its members`() =
+        runBlocking {
+            every { repo.name(BookGroupKind.SERIES, 1) } returns "Local"
+            every { repo.seriesHardcoverId(1) } returns 5
+            coEvery { client.fetchSeriesById(5) } returns
+                HardcoverSuggestedSeries(5, "External", description = "Description", isCompleted = false)
+            val result = service.previewSeries(1)
+            assertEquals("Description", result.description)
+            assertEquals(false, result.hardcover.isCompleted)
+            assertEquals(emptyList(), result.books)
+            verify(exactly = 0) {
+                repo.localBooks(any(), any())
+                repo.markSource(any(), any())
+                repo.add(any(), any(), any())
+            }
+            every { repo.seriesHardcoverId(1) } returns null
+            assertEquals(HttpStatus.CONFLICT, assertFailsWith<ResponseStatusException> { service.previewSeries(1) }.statusCode)
         }
 
     @Test

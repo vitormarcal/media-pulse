@@ -23,12 +23,18 @@
         empty-message="Nenhum livro apareceu para esse autor."
       />
 
+      <section v-if="data.series.length" class="book-groups group-panel">
+        <h2>Séries</h2>
+        <div class="group-grid"><BookGroupCard v-for="series in data.series" :key="series.id" :group="series" /></div>
+      </section>
+
       <BookReadTimeline :reads="data.recentReads" />
     </template>
   </main>
 </template>
 
 <script setup lang="ts">
+import BookGroupCard from '~/components/books/BookGroupCard.vue'
 import AuthorContextPanel from '~/components/books/AuthorContextPanel.vue'
 import AuthorPageHero from '~/components/books/AuthorPageHero.vue'
 import BookReadTimeline from '~/components/books/BookReadTimeline.vue'

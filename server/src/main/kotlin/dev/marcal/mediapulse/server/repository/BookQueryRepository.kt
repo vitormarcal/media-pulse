@@ -36,6 +36,7 @@ import java.time.ZoneOffset
 class BookQueryRepository(
     private val entityManager: EntityManager,
     private val mediaCommentQueryRepository: MediaCommentQueryRepository,
+    private val bookSeriesRepository: BookSeriesRepository,
 ) {
     fun library(
         limit: Int,
@@ -407,6 +408,7 @@ class BookQueryRepository(
             lastFinishedAt = asInstant(countsRow[4]),
             books = books,
             recentReads = recentReads,
+            series = bookSeriesRepository.forAuthor(authorId),
         )
     }
 

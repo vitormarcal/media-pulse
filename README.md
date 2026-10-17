@@ -57,7 +57,7 @@ Imagens novas de revistas, artes visuais, livros e jogos podem usar o Visual Lib
 - Proposta de migração para créditos como fonte única, com remoção do artista legado: `docs/features/album-artists-source-of-truth.md`
 - Lotes administrativos de créditos com prévia/aplicação/desfazimento: `docs/music-api.md` (etapa 5)
 
-Séries de livros e universos oferecem organização local em `/books/series` e `/books/universes`, com vínculos múltiplos e ordem de leitura editável. Sugestões do Hardcover são buscadas e aplicadas explicitamente; livros antigos precisam de uma sincronização para preencher o ID do provedor. Consulte [contratos e regras](docs/books-api.md#séries-e-universos).
+Séries de livros e universos oferecem organização local em `/books/series` e `/books/universes`, com vínculos múltiplos e ordem de leitura editável. Séries mostram autores derivados dos livros, inclusive em suas páginas, e metadados opcionais do Hardcover com revisão seletiva. Sugestões do Hardcover são buscadas e aplicadas explicitamente; livros antigos precisam de uma sincronização para preencher o ID do provedor. Consulte [contratos e regras](docs/books-api.md#séries-e-universos).
 
 ## Frontend
 

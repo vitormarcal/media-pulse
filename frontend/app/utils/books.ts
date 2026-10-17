@@ -616,6 +616,7 @@ export function buildAuthorPageData(author: AuthorDetailsResponse): AuthorPageDa
 
   return {
     id: String(author.authorId),
+    series: author.series,
     name: author.name,
     coverUrl: heroCover,
     heroMeta: [

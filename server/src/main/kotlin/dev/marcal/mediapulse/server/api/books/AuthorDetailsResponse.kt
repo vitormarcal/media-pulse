@@ -12,4 +12,5 @@ data class AuthorDetailsResponse(
     val lastFinishedAt: Instant?,
     val books: List<BookCardDto>,
     val recentReads: List<ReadCardDto>,
+    val series: List<BookGroupDto> = emptyList(),
 )

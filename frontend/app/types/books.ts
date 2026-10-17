@@ -1,3 +1,4 @@
+import type { BookGroup } from '~/types/book-series'
 import type { EditorialHighlight, EditorialShelfItem } from '~/types/home'
 import type { MediaCommentDto } from '~/types/comments'
 
@@ -65,6 +66,7 @@ export interface BookDetailsResponse {
 }
 
 export interface AuthorDetailsResponse {
+  series: BookGroup[]
   authorId: number
   name: string
   booksCount: number
@@ -118,6 +120,7 @@ export interface BookPageData {
 }
 
 export interface AuthorPageData {
+  series: BookGroup[]
   id: string
   name: string
   coverUrl: string | null

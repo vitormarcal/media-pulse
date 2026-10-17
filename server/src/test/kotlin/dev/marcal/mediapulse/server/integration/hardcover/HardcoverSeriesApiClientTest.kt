@@ -34,6 +34,27 @@ class HardcoverSeriesApiClientTest {
             assertEquals(emptyList(), client("""{"data":{"book_series":[]}}""").fetchSeries(10))
         }
 
+    @Test
+    fun `series context lookup decodes publication and author metadata including false and zero`() =
+        runBlocking {
+            val result =
+                client(
+                    """{"data":{"series_by_pk":{"id":5,"name":"Series","description":"Context","slug":"series","author":{"id":7,"name":"Primary"},"is_completed":false,"books_count":0,"primary_books_count":0}}}""",
+                ).fetchSeriesById(5)!!
+            assertEquals("Context", result.description)
+            assertEquals("series", result.slug)
+            assertEquals(7, result.author?.id)
+            assertEquals(false, result.isCompleted)
+            assertEquals(0, result.booksCount)
+            assertEquals(0, result.primaryBooksCount)
+            assertEquals(null, client("""{"data":{"series_by_pk":null}}""").fetchSeriesById(5))
+            assertFailsWith<IllegalStateException> {
+                client(
+                    """{"data":{"series_by_pk":null},"errors":[{"message":"failed"}]}""",
+                ).fetchSeriesById(5)
+            }
+        }
+
     private fun client(json: String) =
         HardcoverApiClient(
             WebClient

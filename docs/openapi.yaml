@@ -41,6 +41,70 @@ tags:
   - name: Magazines
     description: Local publications, numbers, reading journeys and rereads.
 paths:
+  /api/books/series/{id}/metadata/preview:
+    post:
+      tags:
+      - Books
+      summary: Preview stored and Hardcover series metadata
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookSeriesMetadataPreviewDto'
+        '400':
+          description: Invalid fields or empty selection
+        '404':
+          description: Local series not found
+        '409':
+          description: Missing or conflicting Hardcover identity
+        '502':
+          description: Hardcover HTTP, GraphQL or lookup failure
+        '503':
+          description: Hardcover unavailable
+  /api/books/series/{id}/metadata/apply:
+    post:
+      tags:
+      - Books
+      summary: Apply only selected Hardcover metadata fields without changing series members or positions
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid fields or empty selection
+        '404':
+          description: Local series not found
+        '409':
+          description: Missing or conflicting Hardcover identity
+        '502':
+          description: Hardcover HTTP, GraphQL or lookup failure
+        '503':
+          description: Hardcover unavailable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookSeriesMetadataRequest'
   /api/books/series:
     get:
       tags:
@@ -5819,12 +5883,75 @@ components:
         type: integer
         format: int64
   schemas:
+    BookSeriesProviderAuthorDto:
+      type: object
+      required:
+      - id
+      - name
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+    BookSeriesMetadataDto:
+      type: object
+      required: []
+      properties:
+        slug:
+          type: string
+          nullable: true
+        primaryAuthor:
+          allOf:
+          - $ref: '#/components/schemas/BookSeriesProviderAuthorDto'
+          nullable: true
+        isCompleted:
+          type: boolean
+          nullable: true
+        booksCount:
+          type: integer
+          nullable: true
+        primaryBooksCount:
+          type: integer
+          nullable: true
+    BookSeriesMetadataField:
+      type: string
+      enum:
+      - NAME
+      - DESCRIPTION
+      - PRIMARY_AUTHOR
+      - PUBLICATION_STATUS
+      - COUNTS
+      - EXTERNAL_SLUG
+    BookSeriesMetadataRequest:
+      type: object
+      required:
+      - fields
+      properties:
+        fields:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/BookSeriesMetadataField'
+          minItems: 1
+    BookSeriesMetadataPreviewDto:
+      type: object
+      required:
+      - current
+      - suggested
+      properties:
+        current:
+          $ref: '#/components/schemas/BookGroupDetailsDto'
+        suggested:
+          $ref: '#/components/schemas/BookSeriesSuggestionDto'
     BookGroupDto:
       type: object
       required:
       - id
       - name
       - itemCount
+      - authors
+      - coverUrls
       properties:
         id:
           type: integer
@@ -5833,6 +5960,21 @@ components:
           type: string
         itemCount:
           type: integer
+        description:
+          type: string
+          nullable: true
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorDto'
+        coverUrls:
+          type: array
+          items:
+            type: string
+        hardcoverId:
+          type: integer
+          format: int64
+          nullable: true
     BookGroupMemberDto:
       type: object
       required:
@@ -5863,6 +6005,9 @@ components:
       - name
       - items
       - universes
+      - authors
+      - coverUrls
+      - hardcover
       properties:
         id:
           type: integer
@@ -5877,6 +6022,23 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BookGroupDto'
+        description:
+          type: string
+          nullable: true
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorDto'
+        coverUrls:
+          type: array
+          items:
+            type: string
+        hardcoverId:
+          type: integer
+          format: int64
+          nullable: true
+        hardcover:
+          $ref: '#/components/schemas/BookSeriesMetadataDto'
     BookGroupNameRequest:
       type: object
       required:
@@ -5886,6 +6048,10 @@ components:
           type: string
           minLength: 1
           maxLength: 300
+        description:
+          type: string
+          nullable: true
+          description: Omit or null to preserve the current description on update; empty string clears it for a series.
     BookGroupOrderRequest:
       type: object
       required:
@@ -5903,6 +6069,7 @@ components:
       - hardcoverId
       - name
       - books
+      - hardcover
       properties:
         hardcoverId:
           type: integer
@@ -5913,6 +6080,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BookGroupMemberDto'
+        description:
+          type: string
+          nullable: true
+        hardcover:
+          $ref: '#/components/schemas/BookSeriesMetadataDto'
     ApplyBookSeriesSuggestionRequest:
       type: object
       required:
@@ -5938,6 +6110,11 @@ components:
             format: int64
           minItems: 1
           uniqueItems: true
+        metadataFields:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/BookSeriesMetadataField'
     MagazineReadStatus:
       type: string
       enum:
@@ -6524,20 +6701,25 @@ components:
         books:
           type: array
           items:
-            $ref: "#/components/schemas/BookCardDto"
+            $ref: '#/components/schemas/BookCardDto'
         recentReads:
           type: array
           items:
-            $ref: "#/components/schemas/ReadCardDto"
+            $ref: '#/components/schemas/ReadCardDto'
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookGroupDto'
       required:
-        - authorId
-        - name
-        - booksCount
-        - readsCount
-        - finishedCount
-        - currentlyReadingCount
-        - books
-        - recentReads
+      - authorId
+      - name
+      - booksCount
+      - readsCount
+      - finishedCount
+      - currentlyReadingCount
+      - books
+      - recentReads
+      - series
     ReadCardDto:
       type: object
       description: Consolidated reading session card; independent from provider event ids.
