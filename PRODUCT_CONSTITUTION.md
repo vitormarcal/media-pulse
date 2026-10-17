@@ -142,6 +142,7 @@ Current foundation:
 - Hardcover integration
 - books, editions, authors, reads, reviews, and library views
 - author and book detail pages
+- locally curated book series and universes, with independent reading orders and explicit Hardcover suggestions
 
 Future direction:
 

@@ -11,7 +11,7 @@ tags:
   - name: Workouts
     description: Manual exercise records and locally owned memories.
   - name: Books
-    description: Book queries and manual cover maintenance.
+    description: Book queries, manual cover maintenance, locally curated series and universes.
   - name: Movies
     description: Movie library, curation, enrichment, and watch endpoints.
   - name: People
@@ -41,6 +41,485 @@ tags:
   - name: Magazines
     description: Local publications, numbers, reading journeys and rereads.
 paths:
+  /api/books/series:
+    get:
+      tags:
+      - Books
+      summary: List book series
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookGroupDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+    post:
+      tags:
+      - Books
+      summary: Create book series
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookGroupNameRequest'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+  /api/books/series/{id}:
+    get:
+      tags:
+      - Books
+      summary: Get book series
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+    put:
+      tags:
+      - Books
+      summary: Rename book series
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookGroupNameRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+    delete:
+      tags:
+      - Books
+      summary: Delete book series
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+  /api/books/series/{id}/items/{childId}:
+    post:
+      tags:
+      - Books
+      summary: Append local member to book series
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: childId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+    delete:
+      tags:
+      - Books
+      summary: Remove membership from book series
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: childId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+  /api/books/series/{id}/order:
+    put:
+      tags:
+      - Books
+      summary: Replace full reading order of book series
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookGroupOrderRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+  /api/books/universes:
+    get:
+      tags:
+      - Books
+      summary: List book universes
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookGroupDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+    post:
+      tags:
+      - Books
+      summary: Create book universes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookGroupNameRequest'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+  /api/books/universes/{id}:
+    get:
+      tags:
+      - Books
+      summary: Get book universes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+    put:
+      tags:
+      - Books
+      summary: Rename book universes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookGroupNameRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+    delete:
+      tags:
+      - Books
+      summary: Delete book universes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: Deleted
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+  /api/books/universes/{id}/items/{childId}:
+    post:
+      tags:
+      - Books
+      summary: Append local member to book universes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: childId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+    delete:
+      tags:
+      - Books
+      summary: Remove membership from book universes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: childId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+  /api/books/universes/{id}/order:
+    put:
+      tags:
+      - Books
+      summary: Replace full reading order of book universes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookGroupOrderRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+  /api/books/{bookId}/series:
+    get:
+      tags:
+      - Books
+      summary: List series containing this book
+      parameters:
+      - name: bookId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookGroupDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+  /api/books/{bookId}/series/suggestions:
+    post:
+      tags:
+      - Books
+      summary: Preview Hardcover series suggestions
+      parameters:
+      - name: bookId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookSeriesSuggestionDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+        '409':
+          description: Synchronize Hardcover to retain the provider book ID
+        '502':
+          description: Hardcover request or GraphQL failure
+        '503':
+          description: Hardcover integration unavailable
+  /api/books/{bookId}/series/suggestions/apply:
+    post:
+      tags:
+      - Books
+      summary: Apply selected local books to a series
+      parameters:
+      - name: bookId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyBookSeriesSuggestionRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookGroupDetailsDto'
+        '400':
+          description: Invalid name, order or selection
+        '404':
+          description: Entity not found
+        '409':
+          description: Synchronize Hardcover to retain the provider book ID
+        '502':
+          description: Hardcover request or GraphQL failure
+        '503':
+          description: Hardcover integration unavailable
   /api/games/{gameId}/images/import:
     post:
       tags: [Games]
@@ -5340,6 +5819,125 @@ components:
         type: integer
         format: int64
   schemas:
+    BookGroupDto:
+      type: object
+      required:
+      - id
+      - name
+      - itemCount
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        itemCount:
+          type: integer
+    BookGroupMemberDto:
+      type: object
+      required:
+      - id
+      - name
+      - position
+      - slug
+      - coverUrl
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        position:
+          type: integer
+          minimum: 1
+        slug:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+    BookGroupDetailsDto:
+      type: object
+      required:
+      - id
+      - name
+      - items
+      - universes
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookGroupMemberDto'
+        universes:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookGroupDto'
+    BookGroupNameRequest:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 300
+    BookGroupOrderRequest:
+      type: object
+      required:
+      - ids
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+            format: int64
+          uniqueItems: true
+    BookSeriesSuggestionDto:
+      type: object
+      required:
+      - hardcoverId
+      - name
+      - books
+      properties:
+        hardcoverId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        books:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookGroupMemberDto'
+    ApplyBookSeriesSuggestionRequest:
+      type: object
+      required:
+      - hardcoverId
+      - name
+      - bookIds
+      properties:
+        hardcoverId:
+          type: integer
+          format: int64
+        seriesId:
+          type: integer
+          format: int64
+          nullable: true
+        name:
+          type: string
+          minLength: 1
+          maxLength: 300
+        bookIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          minItems: 1
+          uniqueItems: true
     MagazineReadStatus:
       type: string
       enum:

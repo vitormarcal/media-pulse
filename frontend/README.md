@@ -117,3 +117,9 @@ A página do jogo também oferece “Buscar imagens” em um card de Catálogo n
 A biblioteca, a busca e as discografias exibem créditos completos de álbuns. Listas têm links individuais para os artistas. Na revisão de duplicados, a prévia permite escolher o álbum de origem dos créditos e mostra a lista final antes da confirmação. Contratos e validação: `docs/music-api.md`, na raiz do projeto.
 
 A página `/music/admin/album-artist-backfills` completa créditos do acervo em lotes de até 10 álbuns. Permite busca e seleção ou seleção automática, revisão antes de aplicar, consulta dos lotes recentes, novas tentativas e desfazimento com confirmação. O padrão visual e a navegação seguem os painéis administrativos de música. A página integra a versão 1.4.0 e exige as APIs e a migração V70, introduzidas na beta.5 do backend. O controller SPA permite acesso direto e recarregamento dessa rota, com ou sem barra final.
+
+## Séries de livros e universos
+
+A área Livros oferece `/books/series` e `/books/universes`, com criação e páginas de detalhe por ID. Um livro pode participar de várias séries, e uma série de vários universos. Cada agrupamento mantém sua própria ordem de leitura, editável pelos controles Subir/Descer, acessíveis por teclado. Novos vínculos entram ao final.
+
+O detalhe do livro permite gerenciar suas séries e buscar sugestões explicitamente no Hardcover, revisando os livros locais selecionados e escolhendo criar uma série ou reutilizar uma existente. A ingestão de livros continua pelo Hardcover; para livros antigos, execute uma sincronização antes de buscar sugestões. Contratos e regras em [Books API](../docs/books-api.md#séries-e-universos).

@@ -2,6 +2,8 @@ package dev.marcal.mediapulse.server.integration.hardcover
 
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverGraphQLRequest
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverGraphQLResponse
+import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverSeriesData
+import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverSuggestedSeries
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverUserBook
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverUserBooksData
 import kotlinx.coroutines.reactor.awaitSingle
@@ -15,6 +17,35 @@ class HardcoverApiClient(
     private val hardcoverWebClient: WebClient,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
+
+    suspend fun fetchSeries(bookId: Long): List<HardcoverSuggestedSeries> {
+        val request =
+            HardcoverGraphQLRequest(
+                query =
+                    """
+                    query SeriesSuggestions(${'$'}bookId: Int!) {
+                      book_series(where: {book_id: {_eq: ${'$'}bookId}}) {
+                        series { id name book_series(order_by: [{position: asc_nulls_last}, {book_id: asc}]) { book_id position } }
+                      }
+                    }
+                    """.trimIndent(),
+                variables = mapOf("bookId" to bookId),
+            )
+        val response =
+            hardcoverWebClient
+                .post()
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(
+                    object : ParameterizedTypeReference<HardcoverGraphQLResponse<HardcoverSeriesData>>() {},
+                ).awaitSingle()
+        if (!response.errors.isNullOrEmpty() || response.data == null) {
+            throw IllegalStateException("Hardcover series query failed")
+        }
+        return response.data.entries
+            .mapNotNull { it.series }
+            .distinctBy { it.id }
+    }
 
     suspend fun fetchUserBooksPage(
         userId: Long,

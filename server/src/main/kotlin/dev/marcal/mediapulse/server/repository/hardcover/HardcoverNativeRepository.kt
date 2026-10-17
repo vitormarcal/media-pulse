@@ -11,6 +11,29 @@ import java.time.LocalDate
 
 @Repository
 class HardcoverNativeRepository {
+    fun retainHardcoverBookId(
+        bookId: Long,
+        hardcoverId: Long,
+    ) {
+        em
+            .createNativeQuery("UPDATE books SET hardcover_id = :hardcoverId WHERE id = :bookId AND hardcover_id IS NULL")
+            .setParameter("hardcoverId", hardcoverId)
+            .setParameter("bookId", bookId)
+            .executeUpdate()
+    }
+
+    @Transactional
+    fun retainHardcoverBookIdByFingerprint(
+        fingerprint: String,
+        hardcoverId: Long,
+    ) {
+        em
+            .createNativeQuery("UPDATE books SET hardcover_id = :hardcoverId WHERE fingerprint = :fingerprint AND hardcover_id IS NULL")
+            .setParameter("hardcoverId", hardcoverId)
+            .setParameter("fingerprint", fingerprint)
+            .executeUpdate()
+    }
+
     @PersistenceContext
     private lateinit var em: EntityManager
 

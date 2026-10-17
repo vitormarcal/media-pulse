@@ -1,0 +1,125 @@
+.book-groups {
+  display: grid;
+  gap: 24px;
+  width: min(1040px, calc(100% - 32px));
+  margin: auto;
+  padding: 28px 0 84px;
+  color: var(--base-color-text-primary);
+}
+.book-groups nav,
+.book-groups .group-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.book-groups h1,
+.book-groups h2,
+.book-groups p {
+  margin: 0;
+}
+.book-groups h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+.book-groups a {
+  color: inherit;
+}
+.book-groups form,
+.book-groups label,
+.book-groups .group-card,
+.book-groups .group-management {
+  display: grid;
+  gap: 12px;
+}
+.book-groups form,
+.book-groups .group-management {
+  margin-top: 16px;
+}
+.book-groups input:not([type='checkbox']),
+.book-groups select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #91918c;
+  border-radius: 16px;
+  background: white;
+  color: inherit;
+  font: inherit;
+}
+.book-groups button,
+.book-groups summary {
+  width: fit-content;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--base-color-surface-warm);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.book-groups button[type='submit'] {
+  background: #e60023;
+  color: white;
+}
+.book-groups button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.book-groups :focus-visible {
+  outline: 2px solid #435ee5;
+  outline-offset: 3px;
+}
+.book-groups .group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+.book-groups .group-card {
+  border-radius: 20px;
+  padding: 20px;
+  background: #f6f6f3;
+  text-decoration: none;
+}
+.book-groups .group-card span {
+  color: var(--base-color-text-secondary);
+}
+.book-groups .group-members {
+  display: grid;
+  gap: 20px;
+  padding-left: 24px;
+}
+.book-groups .group-member {
+  padding-left: 8px;
+}
+.book-groups .group-member-link {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.book-groups .group-cover {
+  width: 76px;
+  height: 112px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+.book-groups .group-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.book-groups .group-feedback {
+  color: #9e0a0a;
+}
+.book-groups fieldset {
+  border: 1px solid #e5e5e0;
+  border-radius: 20px;
+  padding: 20px;
+  min-width: 0;
+}
+.book-groups.group-panel {
+  width: auto;
+  margin: 0;
+  padding: 0;
+}

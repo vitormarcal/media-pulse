@@ -130,6 +130,8 @@ class HardcoverUserBookProcessor(
                 fingerprint = bookFingerprint,
             )
 
+        book?.id?.let { nativeRepo.retainHardcoverBookId(bookId, it) }
+
         // relaciona contribuições (AUTHOR / TRANSLATOR / ILLUSTRATOR / etc)
         for ((name, role) in contribPairs) {
             val authorId = authorIdsByName[name] ?: continue

@@ -57,6 +57,8 @@ Imagens novas de revistas, artes visuais, livros e jogos podem usar o Visual Lib
 - Proposta de migração para créditos como fonte única, com remoção do artista legado: `docs/features/album-artists-source-of-truth.md`
 - Lotes administrativos de créditos com prévia/aplicação/desfazimento: `docs/music-api.md` (etapa 5)
 
+Séries de livros e universos oferecem organização local em `/books/series` e `/books/universes`, com vínculos múltiplos e ordem de leitura editável. Sugestões do Hardcover são buscadas e aplicadas explicitamente; livros antigos precisam de uma sincronização para preencher o ID do provedor. Consulte [contratos e regras](docs/books-api.md#séries-e-universos).
+
 ## Frontend
 
 O frontend em `frontend/` pode ser servido separadamente para desenvolvimento ou via imagem combinada.

@@ -78,7 +78,7 @@ Lista sessões de leitura em ordem de atividade.
 
 ## Invariantes
 
-- consultas e leituras permanecem read-only; upload de capa é a exceção de manutenção
+- consultas e leituras permanecem read-only; manutenção de capas, séries e universos tem contratos de escrita próprios
 - leituras são sessões consolidadas, não eventos crus de provider
 - ISBN-10 e ISBN-13 pertencem à edição e são armazenados diretamente em `book_editions.isbn_10` e `book_editions.isbn_13`
 - cada edição admite no máximo um valor de cada tipo de ISBN; esses identificadores não pertencem ao livro canônico
@@ -98,3 +98,43 @@ Lista sessões de leitura em ordem de atividade.
 ## Capa manual
 
 `POST /api/books/{bookId}/cover` recebe JPEG/PNG/WebP em multipart `cover`, até 10 MB e 40 megapixels. Retorna 200 com `{coverUrl}` e altera somente a capa do livro canônico. Capas de edições e leituras permanecem independentes. Flag Visual Library define armazenamento remoto ou local; capas existentes não são migradas. Falhas de envio preservam a capa anterior e permitem repetir a mesma operação. Erros: 400 (imagem inválida), 404 (livro ausente), 413 (multipart acima do limite global), 503 (Visual Library indisponível). Consulte [armazenamento e retry de provedores](visual-library-images.md#livros-e-jogos).
+
+## Séries e universos
+
+Escopo: [séries de livros e universos](features/book-series.md). Migration `V72__add_book_series.sql` cria `book_series`, `book_universes`, `book_series_items` e `book_universe_series`, com posições por vínculo, e acrescenta `books.hardcover_id` para sugestões por identidade externa.
+
+Nos contratos abaixo, `{kind}` representa os caminhos concretos `series` ou `universes`. IDs são internos e numéricos. Em séries, um item é um livro; em universos, um item é uma série.
+
+| Método e caminho | Body / retorno |
+| --- | --- |
+| `GET /api/books/{kind}` | `BookGroupDto[]`: `id`, `name`, `itemCount` |
+| `POST /api/books/{kind}` | `{name}` → 201 `BookGroupDetailsDto` |
+| `GET /api/books/{kind}/{id}` | `BookGroupDetailsDto`: `id`, `name`, `items`, `universes` |
+| `PUT /api/books/{kind}/{id}` | `{name}` → detalhe atualizado |
+| `DELETE /api/books/{kind}/{id}` | 204; preserva livros e leituras |
+| `POST /api/books/{kind}/{id}/items/{childId}` | detalhe atualizado; associação idempotente ao final |
+| `DELETE /api/books/{kind}/{id}/items/{childId}` | detalhe atualizado; remoção idempotente |
+| `PUT /api/books/{kind}/{id}/order` | `{ids: [...]}` → detalhe atualizado |
+| `GET /api/books/{bookId}/series` | séries associadas ao livro |
+| `POST /api/books/{bookId}/series/suggestions` | `BookSeriesSuggestionDto[]`: `hardcoverId`, `name`, `books` locais |
+| `POST /api/books/{bookId}/series/suggestions/apply` | `{hardcoverId, seriesId?, name, bookIds}` → detalhe da série |
+
+`items` contém `id`, `name`, `position`, `slug` e `coverUrl`; os dois últimos são nulos para séries dentro de universos. `universes` lista os universos de uma série e é vazio no detalhe de universo. Nomes são obrigatórios, normalizados e limitados a 300 caracteres; nomes iguais não consolidam entidades. O detalhe é acessado por ID, preservando links após renomear.
+
+A ordem inicial é a de cadastro da associação, com novas posições ao final. Reordenar exige exatamente todos os IDs atuais, sem duplicatas; requisições inválidas retornam 400. Escritas de membros e ordem são serializadas por bloqueio da linha do agrupamento em transação. Remover itens pode deixar lacunas nas posições, sem afetar a sequência; reordenar normaliza para 1..N. Um livro pode participar de várias séries e uma série de vários universos, com ordem independente. Exclusões removem somente o agrupamento e seus vínculos.
+
+A UI usa `/books/series`, `/books/series/{id}`, `/books/universes` e `/books/universes/{id}`. O detalhe do livro oferece séries e gerenciamento local. O detalhe da série permite buscar livros do acervo e associar universos; o universo permite adicionar séries. Subir/Descer são ações acessíveis por teclado. Livros novos continuam entrando exclusivamente pelo Hardcover.
+
+### Sugestões Hardcover
+
+Sintoma anterior: a ingestão não preservava o ID do livro no provedor, impossibilitando consultar suas séries sem adivinhar pelo título. Decisão: sincronizações passam a preencher `books.hardcover_id` quando ausente. Livros antigos precisam de uma sincronização antes da primeira busca de sugestões (409 com orientação). O ID salvo não é substituído silenciosamente por outro. A sincronização também preenche o vínculo de eventos já processados e inalterados, usando o mesmo fingerprint canônico da ingestão; não é necessário alterar a leitura no provedor.
+
+A consulta explícita utiliza `book_series → series → book_series`, conforme os schemas oficiais de [Book Series](https://github.com/hardcoverapp/hardcover-docs/blob/main/src/content/docs/api/GraphQL/Schemas/BookSeries.mdx) e o [guia de séries](https://github.com/hardcoverapp/hardcover-docs/blob/main/src/content/docs/api/guides/GettingBooksInSeries.mdx). Retorna somente livros já locais, identificados por `hardcover_id`. Posições do provedor orientam a apresentação da revisão; os vínculos aceitos são acrescentados ao final na sequência selecionada, sem reordenar os existentes. Não há sugestões de universos.
+
+Aplicar consulta novamente a sugestão e valida que os livros selecionados pertencem a ela e existem localmente. `seriesId` reutiliza explicitamente uma série; ausente, cria uma nova com `name`. A UI mantém a série resultante como destino para reaplicações. Buscar não grava; aplicar grava apenas a seleção, e sincronizações não alteram associações ou posições. A origem é registrada em `book_series.hardcover_id` na primeira aplicação. Não há chamadas ao Hardcover na navegação do acervo.
+
+Erros: 400 (nome, ordem ou seleção inválidos), 404 (entidade ausente), 409 (livro sem vínculo Hardcover), 503 (integração desabilitada/sem token), 502 (falha HTTP ou GraphQL, inclusive resposta parcial). Falhas permitem nova tentativa sem perder os controles de curadoria manual.
+
+Validação: `BookSeriesIntegrationTest` aplica todas as migrations em PostgreSQL isolado e cobre multiplicidade, ordem independente, duplicatas, concorrência, seleção local e preservação de leituras. `BookSeriesSuggestionsServiceTest` e `HardcoverSeriesApiClientTest` cobrem filtro local, ausência de vínculo, indisponibilidade e erros GraphQL. Para conferir a UI: sincronize um livro, busque sugestões, aplique uma seleção, reorganize duas séries em dois universos e recarregue; os vínculos e ordens devem permanecer independentes.
+
+No Docker 29, executar os testes com `JAVA_TOOL_OPTIONS=-Dapi.version=1.44`, conforme o padrão de validação dos demais domínios, e conferir zero testes ignorados no relatório.

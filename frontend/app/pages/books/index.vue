@@ -1,5 +1,8 @@
 <template>
   <main class="books-page">
+    <nav class="books-group-links" aria-label="Organização de livros">
+      <NuxtLink to="/books/series">Séries de livros</NuxtLink><NuxtLink to="/books/universes">Universos</NuxtLink>
+    </nav>
     <div v-if="status === 'pending'" class="state-card">
       <p>Carregando...</p>
     </div>
@@ -232,6 +235,13 @@ useHead(() => ({
 </script>
 
 <style scoped>
+.books-group-links {
+  display: flex;
+  gap: 20px;
+}
+.books-group-links a {
+  color: var(--base-color-text-primary);
+}
 .books-page {
   display: grid;
   gap: var(--sema-space-section);

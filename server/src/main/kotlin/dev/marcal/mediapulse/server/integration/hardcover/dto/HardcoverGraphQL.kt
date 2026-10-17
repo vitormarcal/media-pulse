@@ -118,3 +118,23 @@ data class HardcoverContribution(
 data class HardcoverAuthor(
     val name: String? = null,
 )
+
+// Catalog suggestions are fetched only on an explicit owner action.
+data class HardcoverSeriesData(
+    @JsonProperty("book_series") val entries: List<HardcoverSeriesEntry> = emptyList(),
+)
+
+data class HardcoverSeriesEntry(
+    val series: HardcoverSuggestedSeries? = null,
+)
+
+data class HardcoverSuggestedSeries(
+    val id: Long,
+    val name: String,
+    @JsonProperty("book_series") val books: List<HardcoverSeriesBook> = emptyList(),
+)
+
+data class HardcoverSeriesBook(
+    @JsonProperty("book_id") val bookId: Long,
+    val position: Double? = null,
+)

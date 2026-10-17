@@ -21,6 +21,8 @@
 
       <MediaCoverUpload media-type="books" :entity-id="data.bookId" @saved="handleCoverSaved" />
 
+      <BookSeriesPanel :key="data.bookId" :book-id="data.bookId" />
+
       <BookReadTimeline :reads="data.recentReads" compact />
 
       <BookEditorialPanel
@@ -36,6 +38,7 @@
 </template>
 
 <script setup lang="ts">
+import BookSeriesPanel from '~/components/books/BookSeriesPanel.vue'
 import BookContextPanel from '~/components/books/BookContextPanel.vue'
 import BookEditorialPanel from '~/components/books/BookEditorialPanel.vue'
 import BookPageHero from '~/components/books/BookPageHero.vue'
