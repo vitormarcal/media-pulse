@@ -389,8 +389,8 @@ export function buildBookLibraryPageData(payload: {
         intro: '',
         backLink: '/books',
         backLabel: 'Voltar ao recorte',
-        accentLink: '/books?view=archive',
-        accentLabel: 'Ver arquivo inteiro',
+        accentLink: '/books',
+        accentLabel: 'Todos os livros',
         spotlight: buildSpotlightFromCard(
           currentItems[0] ?? finishedItems[0] ?? pausedItems[0] ?? wantItems[0] ?? dnfItems[0],
           `A biblioteca de livros em ${payload.selectedYear}`,
@@ -489,7 +489,7 @@ export function buildBookLibraryPageData(payload: {
         intro: '',
         backLink: '/books',
         backLabel: 'Voltar ao recorte',
-        accentLink: '/books?view=archive',
+        accentLink: '/books',
         accentLabel: 'Limpar busca',
         spotlight: buildSpotlightFromCard(
           searchItems[0],

@@ -82,6 +82,10 @@ Esse caminho é útil para validar apenas a camada de UI. Para produção com fr
 
 Listas de filmes e séries permitem incluir automaticamente favoritos e/ou abandonados, preservando inclusões manuais. Em filmes, abra “Editar lista”; em séries, use “Incluir automaticamente” na página da lista. As duas regras combinam-se por OU. Ordem e capa fixa aplicam-se aos itens manuais; itens automáticos aparecem depois. Consulte [a especificação e o roadmap](../docs/features/mixed-media-lists.md).
 
+## Biblioteca de livros
+
+`/books` reúne destaques, leituras em andamento, conclusões recentes e catálogo paginado na mesma página, seguindo Filmes. Busca e filtro por ano continuam na página principal. Links antigos com `view=archive` permanecem válidos e exibem a página unificada.
+
 ## Página do livro
 
 A página prioriza capa, identificação, nota e estado da leitura, seguidos de sinopse expansível, sessões de leitura e comentário pessoal. Datas de início e término aparecem quando disponíveis; a edição vinculada à leitura mais recente tem prioridade, com as demais acessíveis em uma seção expansível.

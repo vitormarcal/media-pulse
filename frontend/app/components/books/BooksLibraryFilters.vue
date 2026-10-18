@@ -15,7 +15,7 @@
     </form>
 
     <div class="years">
-      <NuxtLink class="year-chip" :class="{ active: selectedYear == null && !query }" to="/books?view=archive">
+      <NuxtLink class="year-chip" :class="{ active: selectedYear == null && !query }" to="/books">
         <span>Tudo</span>
         <strong>arquivo</strong>
       </NuxtLink>
@@ -56,11 +56,11 @@ function submitSearch() {
   const trimmed = localQuery.value.trim()
 
   if (!trimmed) {
-    navigateTo('/books?view=archive')
+    navigateTo('/books')
     return
   }
 
-  navigateTo(`/books?view=archive&q=${encodeURIComponent(trimmed)}`)
+  navigateTo(`/books?q=${encodeURIComponent(trimmed)}`)
 }
 </script>
 

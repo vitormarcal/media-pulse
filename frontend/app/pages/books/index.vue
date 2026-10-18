@@ -3,16 +3,16 @@
     <nav class="books-group-links" aria-label="Organização de livros">
       <NuxtLink to="/books/series">Séries de livros</NuxtLink><NuxtLink to="/books/universes">Universos</NuxtLink>
     </nav>
-    <div v-if="status === 'pending'" class="state-card">
+    <div v-if="editorialStatus === 'pending' || libraryStatus === 'pending'" class="state-card">
       <p>Carregando...</p>
     </div>
 
-    <div v-else-if="error" class="state-card error">
+    <div v-else-if="editorialError || libraryError" class="state-card error">
       <p>Não foi possível carregar os livros.</p>
-      <pre>{{ error.message }}</pre>
+      <pre>{{ editorialError?.message || libraryError?.message }}</pre>
     </div>
 
-    <template v-else-if="data">
+    <template v-else-if="collectionData && libraryData">
       <template v-if="showEditorialLayer && collectionData">
         <BooksCollectionHero
           :title="collectionData.hero.title"
@@ -51,8 +51,9 @@
         </section>
       </template>
 
-      <template v-else-if="libraryData">
+      <template v-if="libraryData">
         <BooksLibraryHero
+          v-if="!showEditorialLayer"
           :title="libraryData.hero.title"
           :intro="libraryData.hero.intro"
           :back-link="libraryData.hero.backLink"
@@ -108,7 +109,7 @@ import MediaStripCard from '~/components/home/MediaStripCard.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 import { fetchBooksCollectionData } from '~/composables/useBooksCollectionData'
 import { fetchBooksLibraryNextPage, fetchBooksLibraryPageData } from '~/composables/useBooksLibraryData'
-import type { BookCollectionData, BookLibraryCardModel, BookLibraryPageData } from '~/types/books'
+import type { BookLibraryCardModel } from '~/types/books'
 import { buildBookLibraryCards } from '~/utils/books'
 
 const route = useRoute()
@@ -126,34 +127,23 @@ const selectedYear = computed<number | null>(() => {
   return Number.isFinite(parsed) ? parsed : null
 })
 
-const archiveView = computed(() => route.query.view === 'archive')
+const showEditorialLayer = computed(() => !queryText.value && selectedYear.value == null)
 
-const showEditorialLayer = computed(() => !queryText.value && selectedYear.value == null && !archiveView.value)
+const {
+  data: collectionData,
+  error: editorialError,
+  status: editorialStatus,
+} = await useAsyncData('books-collection-page', () => fetchBooksCollectionData())
 
-const { data, error, status } = await useAsyncData(
-  'books-page',
-  async () => {
-    if (showEditorialLayer.value) {
-      return {
-        mode: 'collection' as const,
-        collection: await fetchBooksCollectionData(),
-        library: null,
-      }
-    }
-
-    return {
-      mode: 'library' as const,
-      collection: null,
-      library: await fetchBooksLibraryPageData({ q: queryText.value, year: selectedYear.value }),
-    }
-  },
-  {
-    watch: [queryText, selectedYear, archiveView],
-  },
+const {
+  data: libraryData,
+  error: libraryError,
+  status: libraryStatus,
+} = await useAsyncData(
+  'books-main-library-page',
+  () => fetchBooksLibraryPageData({ q: queryText.value, year: selectedYear.value }),
+  { watch: [queryText, selectedYear] },
 )
-
-const collectionData = computed<BookCollectionData | null>(() => data.value?.collection ?? null)
-const libraryData = computed<BookLibraryPageData | null>(() => data.value?.library ?? null)
 
 const nextCursor = ref<string | null>(null)
 const extraItems = ref<BookLibraryCardModel[]>([])
@@ -227,7 +217,7 @@ useHead(() => ({
       name: 'description',
       content:
         showEditorialLayer.value || !libraryData.value
-          ? 'Leituras em andamento e livros concluídos recentemente.'
+          ? 'Leituras em andamento, livros recentes, busca e catálogo.'
           : 'Catálogo de livros com busca e filtros por ano.',
     },
   ],

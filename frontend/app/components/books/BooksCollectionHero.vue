@@ -3,7 +3,7 @@
     <div class="top-actions">
       <NuxtLink class="back-link" to="/"> Voltar para a capa </NuxtLink>
 
-      <NuxtLink class="section-link" to="/books?view=archive"> Abrir arquivo inteiro </NuxtLink>
+      <NuxtLink class="section-link" to="#books-library-query"> Buscar livros </NuxtLink>
     </div>
 
     <div class="hero-grid">
