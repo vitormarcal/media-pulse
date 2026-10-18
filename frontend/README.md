@@ -125,3 +125,5 @@ A área Livros oferece `/books/series` e `/books/universes`, com criação e pá
 O detalhe do livro permite gerenciar suas séries e buscar sugestões explicitamente no Hardcover, revisando os livros locais selecionados e escolhendo criar uma série ou reutilizar uma existente. A ingestão de livros continua pelo Hardcover; para livros antigos, execute uma sincronização antes de buscar sugestões. Contratos e regras em [Books API](../docs/books-api.md#séries-e-universos).
 
 Cards de séries mostram mosaicos de capas, autores derivados dos livros e contagem local, inclusive na página de cada autor. O detalhe oferece descrição e contexto complementar do Hardcover; Editar série revela manutenção, reordenação e busca de metadados com revisão seletiva. Na atribuição, sugestões externas e séries locais têm apresentação distinta e livros já vinculados ficam identificados.
+
+No detalhe do livro, pendências de atualização das tags de séries nas capas do Visual Library aparecem abaixo de Séries, com motivo da falha e botão de nova tentativa. Associação e upload atualizam o estado; o polling ocorre apenas enquanto há pendência, sem bloquear a página.

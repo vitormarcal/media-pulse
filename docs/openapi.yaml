@@ -41,6 +41,51 @@ tags:
   - name: Magazines
     description: Local publications, numbers, reading journeys and rereads.
 paths:
+  /api/books/{bookId}/series-tags/sync:
+    get:
+      tags:
+      - Books
+      summary: Read book and edition cover series tag sync state
+      parameters:
+      - name: bookId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Local sync state; retry queues work and performs no remote I/O in this request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookSeriesTagSyncDto'
+        '404':
+          description: Book not found
+        '503':
+          description: Visual Library not configured for retry
+    post:
+      tags:
+      - Books
+      summary: Queue another attempt to synchronize the book series tags on its remote covers
+      parameters:
+      - name: bookId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Local sync state; retry queues work and performs no remote I/O in this request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookSeriesTagSyncDto'
+        '404':
+          description: Book not found
+        '503':
+          description: Visual Library not configured for retry
   /api/books/series/{id}/metadata/preview:
     post:
       tags:
@@ -5883,6 +5928,24 @@ components:
         type: integer
         format: int64
   schemas:
+    BookSeriesTagSyncDto:
+      type: object
+      required:
+      - revision
+      - pending
+      - message
+      - hasRemoteCovers
+      properties:
+        revision:
+          type: integer
+          format: int64
+        pending:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+        hasRemoteCovers:
+          type: boolean
     BookSeriesProviderAuthorDto:
       type: object
       required:

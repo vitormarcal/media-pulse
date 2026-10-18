@@ -34,8 +34,8 @@ As referências usam o ID real do Media Pulse convertido em **string**. O tipo s
 | Capa de revista | `magazine_issue` | `revista`, nome da publicação |
 | Imagem de obra | `artwork` | movimentos em grupo próprio; `arte visual`, título, artista, tipo e técnica como sugestões complementares |
 | Retrato de artista | `artwork_artist` | `artista`, nome, país de origem |
-| Capa de livro | `book` | `livro`, título |
-| Capa de edição | `book_edition` | `livro`, título da edição |
+| Capa de livro | `book` | upload: `livro`, título; séries no grupo `book-series` após commit |
+| Capa de edição | `book_edition` | upload: `livro`, título da edição; séries do livro no grupo `book-series` após commit |
 | Imagem/capa de jogo | `game` | `jogo`, título |
 
 Não enviar `url` na referência: a integração não exige uma URL pública do Media Pulse e não deve usar o endereço interno do backend como link público. O campo é opcional na API. Exemplo de referência: `{"entityType":"artwork","entityId":"123"}`.
@@ -170,7 +170,7 @@ Validação de WebP cobre imagens estáticas e animadas, MIME/extensão de clien
 
 Obras usam o novo contrato de tags vinculadas por referência (`managedTags.movements` no upload e `PUT /api/assets/{id}/references/tags` na edição), com revisão monotônica. A lista inteira é enviada e recebe prioridade sobre sugestões genéricas. Editar os movimentos atualiza todas as imagens remotas após commit, sem bloquear a leitura local. Pendência/mensagem ficam na obra e um endpoint de retry permite recuperar falhas. Consulte [contrato de obras](artworks-api.md) e [spec aprovada](features/artwork-movements.md). Esse contrato exige atualizar também o Visual Library; a 0.6.0 anterior não o possui.
 
-A regra anterior de não atualizar associações permanece para sugestões genéricas de título, artista, técnica e tipo; apenas movimentos têm sincronização nesta entrega. Tags pessoais e antigas sem procedência permanecem protegidas.
+A regra anterior de não atualizar associações permanece para sugestões genéricas de título, artista, técnica e tipo; movimentos e séries de livros têm sincronização por grupos próprios, conforme as seções específicas. Tags pessoais e antigas sem procedência permanecem protegidas.
 
 ## Livros e jogos
 
@@ -187,3 +187,15 @@ Validação adicional: `LibraryImageStorageServiceTest`, `HardcoverArtworkServic
 ### Limite de download do SteamGridDB
 
 **Sintoma:** `DataBufferLimitException: Exceeded limit on max bytes to buffer : 262144` no download de grids, antes do armazenamento. **Causa:** o cliente de metadados era reutilizado para imagens com o limite padrão de 256 KiB; a propriedade global do codec não configura esse WebClient criado manualmente. **Decisão:** cliente próprio de imagens com `imagesWebClientBuilder` e limite explícito de 10 MiB, mantendo o cliente de metadados separado. Respostas HTTP de erro não são tratadas como imagem. Sem nova variável ou migration. **Validação:** `SteamGridDbApiClientTest` usa servidor HTTP local para respostas de 512 KiB, exatamente 10 MiB, acima de 10 MiB e 404; validação de formato e pixels continua no armazenamento compartilhado. Após atualizar a aplicação, “Buscar imagens” no detalhe do jogo permite tentar novamente. A criação deduplicada de um jogo sem capa/principal também tenta as imagens novamente.
+
+## Tags de séries em livros e edições
+
+Livros usam o contrato de classificações gerenciadas por referência com grupo `book-series`, para referências `book` e `book_edition`. O Visual Library que fornece `PUT /api/assets/{id}/references/tags` com grupos nomeados atende a esta integração; não há alteração do contrato do serviço de imagens. A versão 0.6.0 antiga sem esse endpoint não atende.
+
+Sintoma anterior: associar ou renomear séries não alterava tags de capas já enviadas. Causa: títulos eram apenas sugestões genéricas no upload, e séries não tinham fila de atualização. Decisão: migration V74 cria uma fila durável por livro; associações, nomes e gravações de capas a invalidam na transação. Um worker envia a lista completa das séries após commit, incluindo o acervo remoto existente, com revisão monotônica. Nenhuma imagem é reenviada no backfill e nenhum pedido é feito ao Hardcover.
+
+As sugestões genéricas de `livro` e título continuam com o comportamento anterior. Novos uploads/migrações registram a referência e persistem a URL; as tags de séries são aplicadas em seguida pela fila, separando conflitos de classificação do sucesso de salvar a capa. A sincronização exige URL base configurada e também atua em referências remotas quando novos uploads estão desligados. Limites não truncam nomes nem descartam séries/personalizações: geram pendência visível e retry, respeitando oito tags totais e 48 caracteres UTF-16 por tag. Remover a contribuição de uma referência preserva contribuições pessoais e compartilhadas.
+
+Consulte [estado, retry, backoff, recuperação e validação](books-api.md#tags-de-séries-nas-capas). Validar associação a várias séries, edições com o mesmo asset, renomeação e remoção; criar conflito de limite ou indisponibilidade e verificar que o vínculo local permanece e o retry conclui após resolver a causa.
+
+Validação desta entrega: 64 testes de backend sem skips, lint/tipos/build do frontend e smoke com PostgreSQL e handlers HTTP reais do Visual Library em SQLite temporário. O smoke confirmou quatro referências compartilhando um asset, preservação de tags pessoais e de outro livro, remoção, limite de oito tags com retry e ausência de reupload. Chromium em desktop e 390px confirmou erro, retry e atualização do estado após associação sem bloquear a leitura.

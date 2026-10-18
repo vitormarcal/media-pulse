@@ -161,3 +161,26 @@ Na atribuição de sugestões, `metadataFields` é opcional e vazio por padrão 
 A interface segue listas de discos e coleções: mosaicos, contagem do acervo e autores na listagem; capa e descrição no cabeçalho, com Continuar leitura para textos longos; manutenção e reordenação durante edição. Atribuição distingue sugestão externa, nova série e destino local. Os mesmos cards são usados na página do autor. Todas as consultas de navegação usam dados locais; enriquecer exige ação explícita e mantém campos e seleção em erro.
 
 Validação adicional: `BookSeriesContextIntegrationTest` migra um arquivo na V72 para a V73 e verifica autoria, edição local, contexto externo, aplicação seletiva e preservação do arquivo. Testes de cliente, serviço e controller cobrem consulta de metadados, valores ausentes/falso/zero, revisão, aplicação e rejeição de campos desconhecidos.
+
+## Tags de séries nas capas
+
+Spec: [tags de séries no Visual Library](features/book-series-visual-library-tags.md). A migration `V74__add_book_series_tag_sync.sql` acrescenta revisão, pendência, mensagem, próxima tentativa e lease/token por livro. Todos os livros existentes entram na fila; livros sem capa remota reconhecida são concluídos sem chamada externa e não mostram pendência na UI.
+
+A fila é invalidada na mesma transação por triggers de persistência em associações, nomes de séries e URLs de capas canônicas/edições. Isso cobre exclusão em cascata, nome aplicado pelo Hardcover, importação e migração de imagens sem duplicar os hooks entre caminhos de escrita. Reordenação, edição de descrição, adição idempotente e gravação do mesmo nome/URL não criam revisões novas. A transformação dos nomes em tags e a comunicação externa permanecem no serviço Kotlin.
+
+Com `VISUAL_LIBRARY_BASE_URL` configurada, um worker dedicado processa até dez livros por lote a cada cinco segundos, depois dos commits locais. Cada livro envia todos os nomes de séries no grupo gerenciado `book-series`, pela referência `book` e por cada referência `book_edition` com capa remota atual. Referências distintas recebem chamadas separadas mesmo que compartilhem o asset. Nomes têm espaços normalizados, são deduplicados sem distinguir caixa e não são truncados. Limites de 48 caracteres UTF-16 por tag e oito tags totais por imagem geram pendência com motivo explícito.
+
+Novos uploads continuam registrando imagem/referência e sugestões genéricas primeiro. A persistência da URL agenda a classificação com a revisão mais recente; conflito de tags não impede salvar a capa. Capas locais/externas não são baixadas por essa rotina. A migração opcional, ao trocar `/covers/...` por referência remota, agenda a mesma fila. O backfill envia somente JSON, sem reenviar bytes. A flag de novos uploads não interrompe a atualização de referências já remotas quando a URL base permanece configurada, como na sincronização de movimentos de obras.
+
+| Método e caminho | Retorno |
+| --- | --- |
+| `GET /api/books/{bookId}/series-tags/sync` | `{revision, pending, message, hasRemoteCovers}` |
+| `POST /api/books/{bookId}/series-tags/sync` | Agenda retry e retorna o mesmo estado, sem esperar pelo Visual Library |
+
+Falhas de rede, limites e referência ausente mantêm `pending=true` e `message` com motivo. Tentativas automáticas de falhas aguardam dez minutos; alterações de séries/capas ou retry explícito ficam elegíveis imediatamente. O retry limpa a mensagem da tentativa anterior enquanto aguarda o novo resultado. Livro ausente retorna 404, e retry de capa remota sem URL base configurada retorna 503 com ProblemDetail. Sem capa remota, o retorno tem `pending=false` e `hasRemoteCovers=false`.
+
+A claim tem lease de cinco minutos e token exclusivo, renovado entre referências enquanto a revisão continua atual. Uma resposta só finaliza a revisão/token que leu; alterações novas não são apagadas por respostas antigas. Expiração do lease permite retomada após interrupção. O Visual Library também exige revisão monotônica e preserva tags pessoais, antigas e de outras referências. Uma tag removida do vínculo pode continuar visível quando ainda pertence a outra referência ou à curadoria pessoal. Referência/asset ausente no Visual Library gera pendência; corrigir o vínculo ou registrar a capa novamente permite nova tentativa.
+
+O detalhe do livro mostra pendência/erro abaixo das séries e oferece “Tentar atualizar tags das capas”. O estado é consultado novamente após mudanças de série ou upload; enquanto pendente, há polling a cada três segundos, ou trinta segundos quando existe mensagem, encerrado ao sair da página. Não altera os controles de atribuição nem bloqueia o histórico. A sincronização cobre as capas atualmente vinculadas; assets antigos retidos após substituir uma capa não recebem alterações por este fluxo.
+
+Validação: `BookSeriesTagSyncIntegrationTest` migra um arquivo na V73 e cobre backfill, referências compartilhadas de livro/edições, invalidação, rollback, leases/revisões concorrentes, falha parcial e retry; testes de serviço, cliente e controller cobrem normalização, limites UTF-16, contrato JSON e erros. Executar integrações com `JAVA_TOOL_OPTIONS=-Dapi.version=1.44` quando necessário para Docker 29.

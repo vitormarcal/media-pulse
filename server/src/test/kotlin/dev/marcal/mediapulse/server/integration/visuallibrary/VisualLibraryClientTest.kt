@@ -75,6 +75,53 @@ class VisualLibraryClientTest {
     }
 
     @Test
+    fun `book series synchronize canonical and edition references without uploading bytes or dropping tags on conflict`() {
+        var requests = 0
+        val entityTypes = mutableListOf<String>()
+        server.createContext("/api/assets/$id/references/tags") { exchange ->
+            requests++
+            assertEquals("PUT", exchange.requestMethod)
+            val body = mapper.readTree(exchange.requestBody.readAllBytes())
+            assertEquals("media-pulse", body["application"].asText())
+            assertEquals("book-series", body["group"].asText())
+            assertEquals(listOf("Mistborn", "Cosmere"), body["tags"].map { it.asText() })
+            assertEquals("17", body["entityId"].asText())
+            assertTrue(body["entityId"].isTextual)
+            assertEquals(9, body["revision"].asLong())
+            entityTypes.add(body["entityType"].asText())
+            val bytes =
+                if (responseStatus ==
+                    409
+                ) {
+                    """{"data":{"code":"TAG_LIMIT"}}""".toByteArray()
+                } else {
+                    """{"preservedTags":["Personal"],"legacyTagsPreserved":true}""".toByteArray()
+                }
+            exchange.responseHeaders.set("Content-Type", "application/json")
+            exchange.sendResponseHeaders(responseStatus, bytes.size.toLong())
+            exchange.responseBody.use { it.write(bytes) }
+        }
+        responseStatus = 200
+        for (type in listOf("book", "book_edition")) {
+            assertEquals(
+                listOf("Personal"),
+                client(false).synchronizeBookSeries(id, type, 17, listOf("Mistborn", "Cosmere"), 9).preservedTags,
+            )
+        }
+        assertEquals(listOf("book", "book_edition"), entityTypes)
+        responseStatus = 409
+        val error =
+            assertFailsWith<ResponseStatusException> {
+                client(
+                    false,
+                ).synchronizeBookSeries(id, "book", 17, listOf("Mistborn", "Cosmere"), 9)
+            }
+        assertEquals(503, error.statusCode.value())
+        assertTrue(error.reason!!.contains("oito"))
+        assertEquals(3, requests)
+    }
+
+    @Test
     fun `tag suggestions are cleaned deduplicated and bounded without truncating names`() {
         var sentTags = emptyList<String>()
         server.createContext("/api/assets") { exchange ->

@@ -74,6 +74,7 @@ import BookGroupCard from '~/components/books/BookGroupCard.vue'
 import BookSeriesSuggestionCard from '~/components/books/BookSeriesSuggestionCard.vue'
 import '~/assets/css/book-groups.css'
 const props = defineProps<{ bookId: number }>()
+const emit = defineEmits<{ changed: [] }>()
 const api = useBookGroupsApi()
 const {
   data: memberships,
@@ -81,6 +82,7 @@ const {
   error,
   refresh,
 } = await useAsyncData(`book-series-${props.bookId}`, () => api<BookGroup[]>(`/${props.bookId}/series`))
+watch(memberships, () => emit('changed'))
 const editing = ref(false)
 const seriesSelect = ref<HTMLSelectElement | null>(null)
 const allSeries = ref<BookGroup[]>([])

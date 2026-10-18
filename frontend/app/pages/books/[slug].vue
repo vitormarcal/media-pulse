@@ -21,7 +21,8 @@
 
       <MediaCoverUpload media-type="books" :entity-id="data.bookId" @saved="handleCoverSaved" />
 
-      <BookSeriesPanel :key="data.bookId" :book-id="data.bookId" />
+      <BookSeriesPanel :key="data.bookId" :book-id="data.bookId" @changed="seriesTagStatus?.refresh()" />
+      <BookSeriesTagSyncStatus :key="`tags-${data.bookId}`" ref="seriesTagStatus" :book-id="data.bookId" />
 
       <BookReadTimeline :reads="data.recentReads" compact />
 
@@ -38,6 +39,7 @@
 </template>
 
 <script setup lang="ts">
+import BookSeriesTagSyncStatus from '~/components/books/BookSeriesTagSyncStatus.vue'
 import BookSeriesPanel from '~/components/books/BookSeriesPanel.vue'
 import BookContextPanel from '~/components/books/BookContextPanel.vue'
 import BookEditorialPanel from '~/components/books/BookEditorialPanel.vue'
@@ -52,9 +54,12 @@ const slug = computed(() => String(route.params.slug))
 
 const { data, error, status } = await useBookPageData(slug.value)
 
+const seriesTagStatus = ref<InstanceType<typeof BookSeriesTagSyncStatus> | null>(null)
+
 function handleCoverSaved(coverUrl: string) {
   if (!data.value) return
   data.value.coverUrl = coverUrl
+  void seriesTagStatus.value?.refresh()
 }
 
 useHead(() => ({

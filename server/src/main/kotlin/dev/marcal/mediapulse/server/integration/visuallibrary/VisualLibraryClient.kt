@@ -199,6 +199,60 @@ class VisualLibraryClient(
         }
     }
 
+    fun synchronizeBookSeries(
+        assetId: UUID,
+        entityType: String,
+        entityId: Long,
+        series: List<String>,
+        revision: Long,
+    ): MovementSyncResponse {
+        require(entityType in setOf("book", "book_edition"))
+        if (properties.baseUrl.isBlank()) throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Visual Library não configurado.")
+        try {
+            return client
+                .put()
+                .uri("${properties.baseUrl.trimEnd('/')}/api/assets/$assetId/references/tags")
+                .bodyValue(
+                    mapOf(
+                        "application" to "media-pulse",
+                        "entityType" to entityType,
+                        "entityId" to entityId.toString(),
+                        "group" to "book-series",
+                        "tags" to series,
+                        "revision" to revision,
+                    ),
+                ).retrieve()
+                .bodyToMono(MovementSyncResponse::class.java)
+                .block(Duration.ofSeconds(30))
+                ?: error("Visual Library retornou resposta vazia.")
+        } catch (error: WebClientResponseException) {
+            val code =
+                runCatching {
+                    mapper
+                        .readTree(error.responseBodyAsByteArray)
+                        ?.path("data")
+                        ?.path("code")
+                        ?.asText()
+                }.getOrNull()
+            val reason =
+                when {
+                    error.statusCode.value() == 409 &&
+                        code in
+                        setOf(
+                            "STALE_REVISION",
+                            "REVISION_CONFLICT",
+                        )
+                    -> "O Visual Library já possui outra revisão das séries desta referência."
+                    error.statusCode.value() == 409 || error.statusCode.value() == 400 ->
+                        "Não foi possível aplicar as séries: confira o limite de oito tags por imagem e 48 caracteres por tag no Visual Library."
+                    error.statusCode.value() == 404 ->
+                        "A imagem ou sua referência não foi encontrada no Visual Library. Confira o vínculo da capa."
+                    else -> "Não foi possível atualizar as tags de séries no Visual Library. Tente novamente."
+                }
+            throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, reason)
+        }
+    }
+
     companion object {
         fun assetId(url: String): UUID? =
             if (Regex("/api/image-assets/[0-9a-fA-F-]{36}/content").matches(url)) {
