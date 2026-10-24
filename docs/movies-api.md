@@ -380,6 +380,10 @@ Diagnóstico: filmes recebidos pelo Plex podiam ter termos, créditos e empresas
 
 `GET /api/movies/collections/{collectionId}` retorna o snapshot local dos membros oficiais da coleção e resolve quais filmes já estão no catálogo.
 
+- retorna `syncState`: `PENDING` antes da primeira conclusão, `FAILED` quando há erro registrado e `COMPLETE` depois da consulta bem-sucedida (inclusive lista vazia)
+- sem snapshot concluído, preserva os filmes locais vinculados à coleção como membros provisórios; uma lista vazia só representa ausência confirmada quando o estado é `COMPLETE`
+- painel e página da coleção atualizam a leitura a cada 5 segundos por até 3 minutos enquanto pendente; interrompem em conclusão, falha ou saída da página
+- falhas exibem “Tentar novamente”, que usa o POST de reparo existente e ignora a espera automática de um dia
 - não consulta o TMDb durante a leitura
 - o painel embutido na página de filme também usa este GET ao expandir a coleção
 - coleções ainda não sincronizadas são processadas automaticamente em segundo plano

@@ -357,9 +357,12 @@ export function buildMovieCollectionPageData(
       eyebrow: 'Coleção',
       title: 'Resumo da coleção',
       description: '',
-      summary: members.length
-        ? `${formatShortNumber(members.length)} filmes na coleção, ${formatShortNumber(cataloguedCount)} já presentes no catálogo local e ${formatShortNumber(missingCount)} ainda fora dele.`
-        : 'Ainda não há membros retornados para esta coleção.',
+      summary:
+        payload.syncState !== 'COMPLETE'
+          ? `${formatShortNumber(cataloguedCount)} filmes no catálogo local. A lista completa ainda não foi carregada.`
+          : members.length
+            ? `${formatShortNumber(members.length)} filmes na coleção, ${formatShortNumber(cataloguedCount)} já presentes no catálogo local e ${formatShortNumber(missingCount)} ainda fora dele.`
+            : 'Esta coleção não possui filmes informados.',
       metrics: [
         {
           id: 'collection-total',
@@ -385,7 +388,7 @@ export function buildMovieCollectionPageData(
           value: `${coveragePct}%`,
           note: `${formatShortNumber(imagedCount)} entradas com imagem útil para navegação visual`,
         },
-      ],
+      ].filter((metric) => payload.syncState === 'COMPLETE' || metric.id === 'collection-catalogued'),
     },
     members,
   }

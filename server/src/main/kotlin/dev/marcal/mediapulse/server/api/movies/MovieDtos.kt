@@ -553,6 +553,8 @@ data class MovieCollectionBackfillResponse(
     val failed: Int,
 )
 
+enum class MovieCollectionSyncState { PENDING, FAILED, COMPLETE }
+
 data class MovieCollectionMembersResponse(
     val collectionId: Long,
     val tmdbId: String,
@@ -561,6 +563,7 @@ data class MovieCollectionMembersResponse(
     val posterUrl: String?,
     val backdropUrl: String?,
     val members: List<MovieCollectionMemberDto>,
+    val syncState: MovieCollectionSyncState,
 )
 
 data class MovieCollectionMemberDto(

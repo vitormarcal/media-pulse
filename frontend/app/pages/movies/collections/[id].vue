@@ -1,12 +1,14 @@
 <template>
   <main class="collection-page">
-    <div v-if="status === 'pending'" class="state-card">
+    <div v-if="!membersResponse && loadingMembers" class="state-card">
       <p>Carregando...</p>
     </div>
 
-    <div v-else-if="error" class="state-card error">
+    <div v-else-if="!membersResponse && membersError" class="state-card error">
       <p>Não foi possível carregar esta coleção.</p>
-      <pre>{{ error.message }}</pre>
+      <button type="button" class="member-button" :disabled="loadingMembers" @click="retryMembers">
+        Tentar novamente
+      </button>
     </div>
 
     <template v-else-if="pageData">
@@ -31,6 +33,13 @@
 
       <section class="members-section">
         <SectionHeading eyebrow="Coleção" title="Filmes" :summary="pageData.context.summary" />
+
+        <div v-if="syncMessage" class="state-card" role="status">
+          <p>{{ syncMessage }}</p>
+          <button v-if="canRetry" type="button" class="member-button" :disabled="loadingMembers" @click="retryMembers">
+            {{ loadingMembers ? 'Carregando…' : 'Tentar novamente' }}
+          </button>
+        </div>
 
         <div class="members-masonry">
           <article
@@ -84,13 +93,8 @@ import { NuxtLink } from '#components'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 import MoviesCollectionContext from '~/components/movies/MoviesCollectionContext.vue'
 import MoviesCollectionHero from '~/components/movies/MoviesCollectionHero.vue'
-import { useMovieCollectionPageData } from '~/composables/useMovieCollectionPageData'
 import { buildMovieCollectionPageData } from '~/utils/movies'
-import type {
-  ManualMovieCatalogCreateResponse,
-  MovieCollectionMembersResponse,
-  MovieCollectionPageData,
-} from '~/types/movies'
+import type { ManualMovieCatalogCreateResponse, MovieCollectionPageData } from '~/types/movies'
 
 const route = useRoute()
 const config = useRuntimeConfig()
@@ -98,44 +102,10 @@ const { resolveMediaUrl } = useMediaUrl()
 const collectionId = computed(() => String(route.params.id))
 const addingTmdbId = ref<string | null>(null)
 
-const { data, error, status, refresh } = await useMovieCollectionPageData(collectionId.value)
-const membersResponse = ref<MovieCollectionMembersResponse | null>(null)
-
-watch(
-  data,
-  (value) => {
-    if (!value) {
-      membersResponse.value = null
-      return
-    }
-
-    membersResponse.value = {
-      collectionId: value.collectionId,
-      tmdbId: value.tmdbId,
-      name: value.name,
-      overview: value.overview,
-      posterUrl: value.posterUrl,
-      backdropUrl: value.backdropUrl,
-      members: value.members.map((member) => ({
-        tmdbId: member.tmdbId,
-        title: member.title,
-        originalTitle: null,
-        year: Number(member.subtitle) || null,
-        overview: member.overview,
-        posterUrl: member.imageUrl,
-        backdropUrl: null,
-        tmdbUrl: member.tmdbUrl,
-        localMovieId: member.href ? Number(member.href.split('/').pop()) || null : null,
-        localSlug: member.href ? member.href.split('/').pop() || null : null,
-        inCatalog: member.inCatalog,
-      })),
-    }
-  },
-  { immediate: true },
-)
-
+const { membersResponse, loadingMembers, membersError, canRetry, syncMessage, loadMembers, retryMembers } =
+  useMovieCollectionMembers(collectionId)
 const pageData = computed<MovieCollectionPageData | null>(() =>
-  membersResponse.value ? buildMovieCollectionPageData(membersResponse.value) : (data.value ?? null),
+  membersResponse.value ? buildMovieCollectionPageData(membersResponse.value) : null,
 )
 
 function fallbackOverview(inCatalog: boolean) {
@@ -166,7 +136,7 @@ async function addMember(member: MovieCollectionPageData['members'][number]) {
       target.localMovieId = response.movieId
       target.localSlug = response.slug
     } else {
-      await refresh()
+      await loadMembers()
     }
   } finally {
     addingTmdbId.value = null

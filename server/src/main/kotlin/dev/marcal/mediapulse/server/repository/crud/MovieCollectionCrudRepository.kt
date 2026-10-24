@@ -14,6 +14,8 @@ class MovieCollectionCrudRepository(
         val posterUrl: String?,
         val backdropUrl: String?,
         val overview: String?,
+        val membersSynced: Boolean = false,
+        val membersSyncFailed: Boolean = false,
     )
 
     data class MovieCollectionBackfillCandidate(
@@ -48,7 +50,8 @@ class MovieCollectionCrudRepository(
             entityManager
                 .createNativeQuery(
                     """
-                    SELECT id, tmdb_id, name, poster_url, backdrop_url, overview
+                    SELECT id, tmdb_id, name, poster_url, backdrop_url, overview,
+                           members_synced_at IS NOT NULL, members_sync_error IS NOT NULL
                     FROM movie_collections
                     WHERE id = :collectionId
                     LIMIT 1
@@ -64,6 +67,8 @@ class MovieCollectionCrudRepository(
                 posterUrl = fields[3] as String?,
                 backdropUrl = fields[4] as String?,
                 overview = fields[5] as String?,
+                membersSynced = fields[6] as Boolean,
+                membersSyncFailed = fields[7] as Boolean,
             )
         }
 
@@ -118,6 +123,32 @@ class MovieCollectionCrudRepository(
                     backdropUrl = fields[6] as String?,
                     localMovieId = (fields[7] as Number?)?.toLong(),
                     localSlug = fields[8] as String?,
+                )
+            }
+
+    fun findLocalMembers(collectionId: Long): List<MovieCollectionMemberRecord> =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT tmdb_id, original_title, year, description, cover_url, id, slug
+                FROM movies
+                WHERE collection_id = :collectionId AND tmdb_id IS NOT NULL
+                ORDER BY year NULLS LAST, id
+                """.trimIndent(),
+            ).setParameter("collectionId", collectionId)
+            .resultList
+            .map { row ->
+                val fields = row as Array<*>
+                MovieCollectionMemberRecord(
+                    tmdbId = fields[0] as String,
+                    title = fields[1] as String,
+                    originalTitle = fields[1] as String,
+                    year = (fields[2] as Number?)?.toInt(),
+                    overview = fields[3] as String?,
+                    posterUrl = fields[4] as String?,
+                    backdropUrl = null,
+                    localMovieId = (fields[5] as Number).toLong(),
+                    localSlug = fields[6] as String?,
                 )
             }
 

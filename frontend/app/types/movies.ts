@@ -416,6 +416,7 @@ export interface MovieCatalogSuggestionsResponse {
 }
 
 export interface MovieCollectionMembersResponse {
+  syncState: 'PENDING' | 'FAILED' | 'COMPLETE'
   collectionId: number
   tmdbId: string
   name: string

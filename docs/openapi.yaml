@@ -9737,11 +9737,15 @@ components:
         backdropUrl:
           type: string
           nullable: true
+        syncState:
+          type: string
+          enum: [PENDING, FAILED, COMPLETE]
+          description: Estado da consulta dos membros; pendência ou falha preserva filmes locais conhecidos.
         members:
           type: array
           items:
             $ref: "#/components/schemas/MovieCollectionMemberDto"
-      required: [collectionId, tmdbId, name, members]
+      required: [collectionId, tmdbId, name, members, syncState]
     MovieCompanyMemberDto:
       type: object
       properties:

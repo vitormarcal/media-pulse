@@ -14,18 +14,19 @@
           <div class="collection-toolbar__actions">
             <NuxtLink class="collection-open-link" :to="`/movies/collections/${collection.id}`">Abrir coleção</NuxtLink>
             <button
-              v-if="showLoadButton"
+              v-if="canRetry"
               type="button"
               class="collection-load-button"
               :disabled="loadingMembers"
-              @click="loadMembers"
+              @click="retryMembers"
             >
-              {{ membersButtonLabel }}
+              {{ loadingMembers ? 'Carregando…' : 'Tentar novamente' }}
             </button>
           </div>
         </div>
 
-        <p v-if="membersError" class="members-error">{{ membersError }}</p>
+        <p v-if="syncMessage" role="status">{{ syncMessage }}</p>
+        <p v-if="addError" class="members-error">{{ addError }}</p>
 
         <div class="movie-rail">
           <article
@@ -72,7 +73,7 @@
 
 <script setup lang="ts">
 import SectionHeading from '~/components/home/SectionHeading.vue'
-import type { ManualMovieCatalogCreateResponse, MovieCollectionMembersResponse, MoviePageData } from '~/types/movies'
+import type { ManualMovieCatalogCreateResponse, MoviePageData } from '~/types/movies'
 
 const NuxtLink = resolveComponent('NuxtLink')
 
@@ -87,10 +88,11 @@ const emit = defineEmits<{
 const config = useRuntimeConfig()
 const { resolveMediaUrl } = useMediaUrl()
 const resolvedPosterUrl = computed(() => resolveMediaUrl(props.collection?.posterUrl ?? props.collection?.backdropUrl))
-const membersResponse = ref<MovieCollectionMembersResponse | null>(null)
-const loadingMembers = ref(false)
-const membersError = ref<string | null>(null)
+const { membersResponse, loadingMembers, canRetry, syncMessage, retryMembers } = useMovieCollectionMembers(
+  () => props.collection?.id ?? null,
+)
 const addingTmdbId = ref<string | null>(null)
+const addError = ref<string | null>(null)
 
 interface CollectionDisplayItem {
   id: string
@@ -113,23 +115,20 @@ const collectionSummary = computed(() => {
   return membersCatalogSummary.value
 })
 
-const membersButtonLabel = computed(() => {
-  if (loadingMembers.value) return 'Carregando...'
-  return membersError.value ? 'Tentar novamente' : 'Ver todos'
-})
-
-const showLoadButton = computed(() => !membersResponse.value || membersError.value != null)
-
 const membersCatalogSummary = computed(() => {
   const members = membersResponse.value?.members ?? []
   const catalogued = members.filter((member) => member.inCatalog).length
-  return members.length ? `${catalogued}/${members.length} no catálogo` : 'Nenhum filme no snapshot da coleção'
+  if (membersResponse.value?.syncState !== 'COMPLETE') return `${catalogued} no catálogo local`
+  return members.length ? `${catalogued}/${members.length} no catálogo` : 'Nenhum filme nesta coleção'
 })
 
 const collectionItems = computed<CollectionDisplayItem[]>(() => {
   if (!props.collection) return []
 
-  if (!membersResponse.value) {
+  if (
+    !membersResponse.value ||
+    (membersResponse.value.syncState !== 'COMPLETE' && !membersResponse.value.members.length)
+  ) {
     return props.collection.movies.map((movie) => ({
       id: `local-${movie.id}`,
       tmdbId: null,
@@ -170,31 +169,11 @@ const collectionCountLabel = computed(() => {
   return membersCatalogSummary.value
 })
 
-async function loadMembers() {
-  if (!props.collection || loadingMembers.value) return
-
-  loadingMembers.value = true
-  membersError.value = null
-
-  try {
-    membersResponse.value = await $fetch<MovieCollectionMembersResponse>(
-      `/api/movies/collections/${props.collection.id}`,
-      {
-        baseURL: config.public.apiBase,
-      },
-    )
-  } catch {
-    membersError.value = 'Não foi possível carregar a coleção completa.'
-  } finally {
-    loadingMembers.value = false
-  }
-}
-
 async function addMember(item: CollectionDisplayItem) {
   if (addingTmdbId.value || !item.tmdbId) return
 
   addingTmdbId.value = item.tmdbId
-  membersError.value = null
+  addError.value = null
 
   try {
     const response = await $fetch<ManualMovieCatalogCreateResponse>('/api/movies/catalog', {
@@ -216,7 +195,7 @@ async function addMember(item: CollectionDisplayItem) {
     }
     emit('added', response)
   } catch {
-    membersError.value = `Não foi possível adicionar "${item.title}".`
+    addError.value = `Não foi possível adicionar "${item.title}".`
   } finally {
     addingTmdbId.value = null
   }

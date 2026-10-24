@@ -2,9 +2,11 @@ package dev.marcal.mediapulse.server.service.movie
 
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionMemberDto
 import dev.marcal.mediapulse.server.api.movies.MovieCollectionMembersResponse
+import dev.marcal.mediapulse.server.api.movies.MovieCollectionSyncState
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.repository.crud.MovieCollectionCrudRepository
 import dev.marcal.mediapulse.server.util.TxUtil
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,15 +27,26 @@ class MovieCollectionMembersService(
     )
 
     private val running = AtomicBoolean(false)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     @Transactional(readOnly = true)
     fun getMembers(collectionId: Long): MovieCollectionMembersResponse {
         val collection =
             movieCollectionCrudRepository.findCollection(collectionId)
                 ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Movie collection not found")
-        val members = movieCollectionCrudRepository.findMembers(collectionId)
+        val members =
+            movieCollectionCrudRepository.findMembers(collectionId).ifEmpty {
+                if (!collection.membersSynced) movieCollectionCrudRepository.findLocalMembers(collectionId) else emptyList()
+            }
+        val syncState =
+            when {
+                collection.membersSyncFailed -> MovieCollectionSyncState.FAILED
+                collection.membersSynced -> MovieCollectionSyncState.COMPLETE
+                else -> MovieCollectionSyncState.PENDING
+            }
 
         return MovieCollectionMembersResponse(
+            syncState = syncState,
             collectionId = collection.id,
             tmdbId = collection.tmdbId,
             name = collection.name,
@@ -75,6 +88,15 @@ class MovieCollectionMembersService(
         val collection =
             movieCollectionCrudRepository.findCollection(collectionId)
                 ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Movie collection not found")
+        return runCatching { fetchAndPersistMembers(collection) }.getOrElse { error ->
+            logger.warn("Failed to sync movie collection members | collectionId={}", collectionId, error)
+            tx.inTx { movieCollectionCrudRepository.markMemberSyncFailure(collectionId, error.message ?: "Collection sync failed") }
+            false
+        }
+    }
+
+    private fun fetchAndPersistMembers(collection: MovieCollectionCrudRepository.MovieCollectionRecord): Boolean {
+        val collectionId = collection.id
         val tmdbCollection =
             tmdbApiClient.fetchMovieCollectionDetails(collection.tmdbId)
                 ?: run {

@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.repository
 
 import dev.marcal.mediapulse.server.repository.crud.MovieAutomaticEnrichmentRepository
+import dev.marcal.mediapulse.server.repository.crud.MovieCollectionCrudRepository
 import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -62,6 +63,17 @@ class MovieCollectionEnrichmentIntegrationTest {
             assertEquals(emptyList(), repository.findPendingMovieIds(25))
             assertNull(jdbc.queryForMap("SELECT collection_sync_error FROM movies WHERE id = 1")["collection_sync_error"])
             assertEquals("Movie", jdbc.queryForObject("SELECT original_title FROM movies WHERE id = 1", String::class.java))
+            jdbc.update("INSERT INTO movie_collections(id, tmdb_id, name) VALUES (10, '2344', 'Collection')")
+            jdbc.update("UPDATE movies SET collection_id = 10, slug = 'movie' WHERE id = 1")
+            val collections = MovieCollectionCrudRepository(manager)
+            assertEquals(false, collections.findCollection(10)!!.membersSynced)
+            assertEquals(false, collections.findCollection(10)!!.membersSyncFailed)
+            assertEquals("603", collections.findLocalMembers(10).single().tmdbId)
+            assertEquals(1L, collections.findLocalMembers(10).single().localMovieId)
+            jdbc.update("UPDATE movie_collections SET members_sync_error = 'Unavailable' WHERE id = 10")
+            assertEquals(true, collections.findCollection(10)!!.membersSyncFailed)
+            jdbc.update("UPDATE movie_collections SET members_sync_error = NULL, members_synced_at = NOW() WHERE id = 10")
+            assertEquals(true, collections.findCollection(10)!!.membersSynced)
         } finally {
             manager.close()
             factory.destroy()
