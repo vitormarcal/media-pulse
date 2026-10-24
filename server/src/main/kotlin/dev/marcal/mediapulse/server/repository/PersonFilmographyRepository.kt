@@ -9,6 +9,33 @@ class PersonFilmographyRepository(
 ) {
     enum class MediaType { MOVIE, SHOW }
 
+    data class SyncStatus(
+        val synced: Boolean = false,
+        val compacted: Boolean = false,
+        val failed: Boolean = false,
+        val retryReady: Boolean = true,
+    )
+
+    fun findSyncStatus(
+        personId: Long,
+        mediaType: MediaType,
+    ): SyncStatus {
+        val row =
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT synced_at IS NOT NULL, compacted_at IS NOT NULL, sync_error IS NOT NULL,
+                           sync_attempted_at IS NULL OR sync_attempted_at <= NOW() - INTERVAL '1 day'
+                    FROM person_filmography_syncs
+                    WHERE person_id = :personId AND media_type = :mediaType
+                    """.trimIndent(),
+                ).setParameter("personId", personId)
+                .setParameter("mediaType", mediaType.name)
+                .resultList
+                .firstOrNull() as Array<*>? ?: return SyncStatus()
+        return SyncStatus(row[0] as Boolean, row[1] as Boolean, row[2] as Boolean, row[3] as Boolean)
+    }
+
     data class PersonRecord(
         val id: Long,
         val tmdbId: String,

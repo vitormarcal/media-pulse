@@ -39,7 +39,7 @@ A implementação futura deve adicionar uma ação equivalente para o perfil TMD
 - Um snapshot concluído volta a ser elegível inicialmente depois de 30 dias.
 - O intervalo de renovação deve usar uma única configuração compartilhada enquanto não houver necessidade real de políticas por entidade.
 - Uma renovação com falha preserva integralmente o último snapshot bem-sucedido.
-- Páginas continuam lendo apenas dados locais; a abertura de uma página não dispara chamadas ao provedor.
+- GETs e abertura de perfis continuam lendo apenas dados locais. A exploração explícita Ver filmes/Ver séries pode restaurar filmografias ausentes ou compactadas por POST condicional, conforme [filmografia sob demanda](person-filmography-on-demand.md). Isso não renova snapshots completos por idade.
 - A ação administrativa explícita ignora os intervalos automáticos.
 - Workers continuam usando lotes pequenos, proteção contra concorrência e limites do provedor.
 

@@ -580,6 +580,8 @@ data class MovieCollectionMemberDto(
     val inCatalog: Boolean,
 )
 
+enum class PersonFilmographySyncState { PENDING, COMPACTED, FAILED, COMPLETE }
+
 data class PersonFilmographyResponse(
     val personId: Long,
     val tmdbId: String,
@@ -587,6 +589,7 @@ data class PersonFilmographyResponse(
     val profileUrl: String?,
     val members: List<PersonFilmographyMemberDto>,
     val compacted: Boolean = false,
+    val syncState: PersonFilmographySyncState = PersonFilmographySyncState.PENDING,
 )
 
 data class PersonFilmographyMemberDto(
@@ -614,6 +617,7 @@ data class PersonShowFilmographyResponse(
     val profileUrl: String?,
     val members: List<PersonShowFilmographyMemberDto>,
     val compacted: Boolean = false,
+    val syncState: PersonFilmographySyncState = PersonFilmographySyncState.PENDING,
 )
 
 data class PersonShowFilmographyMemberDto(

@@ -441,6 +441,7 @@ export interface MovieCollectionMember {
 }
 
 export interface PersonFilmographyResponse {
+  syncState: 'PENDING' | 'COMPACTED' | 'FAILED' | 'COMPLETE'
   personId: number
   tmdbId: string
   name: string
@@ -468,6 +469,7 @@ export interface PersonFilmographyMember {
 }
 
 export interface PersonShowFilmographyResponse {
+  syncState: 'PENDING' | 'COMPACTED' | 'FAILED' | 'COMPLETE'
   personId: number
   tmdbId: string
   name: string

@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.controller.games.GameCatalogController
 import dev.marcal.mediapulse.server.controller.movies.MovieCatalogController
 import dev.marcal.mediapulse.server.controller.movies.MoviesController
 import dev.marcal.mediapulse.server.controller.music.MusicBrainzPageEnrichmentController
+import dev.marcal.mediapulse.server.controller.people.PeopleController
 import dev.marcal.mediapulse.server.controller.shows.ShowCatalogController
 import dev.marcal.mediapulse.server.controller.shows.ShowsController
 import org.junit.jupiter.api.Test
@@ -31,6 +32,8 @@ class ExternalActionHttpMethodContractTest {
                 MusicBrainzPageEnrichmentController::class.java to "albumPreview",
                 MusicBrainzPageEnrichmentController::class.java to "artistCandidates",
                 MusicBrainzPageEnrichmentController::class.java to "artistDiscography",
+                PeopleController::class.java to "ensureFilmography",
+                PeopleController::class.java to "ensureShowFilmography",
                 PeopleAdminController::class.java to "refreshMovieFilmography",
                 PeopleAdminController::class.java to "refreshShowFilmography",
             )

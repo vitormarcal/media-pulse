@@ -4471,6 +4471,50 @@ paths:
               schema:
                 $ref: "#/components/schemas/PersonShowFilmographyResponse"
 
+  /api/people/{personId}/filmography/ensure:
+    post:
+      summary: Ensure complete movie filmography, reusing local data when available
+      description: Restores missing or compacted snapshots on demand. A recent failure preserves local data and returns FAILED without calling the provider again. Reading a complete snapshot does not renew retention.
+      tags: [People]
+      parameters:
+        - name: personId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Local filmography with availability state, including provider failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonFilmographyResponse"
+        "404":
+          description: Person not found
+
+  /api/people/{personId}/show-filmography/ensure:
+    post:
+      summary: Ensure complete show filmography, reusing local data when available
+      description: Restores missing or compacted snapshots on demand. A recent failure preserves local data and returns FAILED without calling the provider again. Reading a complete snapshot does not renew retention.
+      tags: [People]
+      parameters:
+        - name: personId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Local filmography with availability state, including provider failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonShowFilmographyResponse"
+        "404":
+          description: Person not found
+
   /api/people/{personId}/filmography/movies/{movieId}/link:
     post:
       summary: Link a person filmography category to an existing local movie
@@ -9865,7 +9909,11 @@ components:
             $ref: "#/components/schemas/PersonFilmographyMemberDto"
         compacted:
           type: boolean
-      required: [personId, tmdbId, name, members, compacted]
+        syncState:
+          type: string
+          enum: [PENDING, COMPACTED, FAILED, COMPLETE]
+          description: COMPLETE includes successful empty snapshots. FAILED preserves known local data.
+      required: [personId, tmdbId, name, members, compacted, syncState]
     PersonShowFilmographyMemberDto:
       type: object
       properties:
@@ -9935,7 +9983,11 @@ components:
             $ref: "#/components/schemas/PersonShowFilmographyMemberDto"
         compacted:
           type: boolean
-      required: [personId, tmdbId, name, members, compacted]
+        syncState:
+          type: string
+          enum: [PENDING, COMPACTED, FAILED, COMPLETE]
+          description: COMPLETE includes successful empty snapshots. FAILED preserves known local data.
+      required: [personId, tmdbId, name, members, compacted, syncState]
     PersonFilmographyCompactionResponse:
       type: object
       properties:

@@ -78,6 +78,16 @@ class PeopleController(
         @PathVariable personId: Long,
     ): PersonShowFilmographyResponse = personShowFilmographyService.getFilmography(personId)
 
+    @PostMapping("/{personId}/filmography/ensure")
+    fun ensureFilmography(
+        @PathVariable personId: Long,
+    ): PersonFilmographyResponse = personFilmographyService.ensureFilmography(personId)
+
+    @PostMapping("/{personId}/show-filmography/ensure")
+    fun ensureShowFilmography(
+        @PathVariable personId: Long,
+    ): PersonShowFilmographyResponse = personShowFilmographyService.ensureFilmography(personId)
+
     @PostMapping("/{personId}/filmography/movies/{movieId}/link")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun linkMovie(

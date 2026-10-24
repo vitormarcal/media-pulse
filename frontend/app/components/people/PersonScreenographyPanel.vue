@@ -32,11 +32,10 @@
       </div>
     </div>
 
-    <div v-if="currentCompacted" class="compacted-notice">
-      <p><strong>Vínculos locais pendentes</strong> — atualize para consultar a filmografia completa.</p>
-      <button type="button" :disabled="currentLoading" @click="refreshActive">
-        {{ currentLoading ? 'Atualizando...' : 'Atualizar filmografia' }}
-      </button>
+    <p v-if="currentLoading" role="status">Carregando filmografia…</p>
+    <div v-else-if="currentIncomplete" class="compacted-notice" role="status">
+      <p>Não foi possível carregar a filmografia completa. Os dados locais continuam disponíveis.</p>
+      <button type="button" :disabled="currentLoading" @click="refreshActive">Tentar novamente</button>
     </div>
 
     <p v-if="currentError" class="panel-error">{{ currentError }}</p>
@@ -116,7 +115,7 @@
       </section>
     </div>
 
-    <div v-else-if="currentLoaded" class="empty-card">
+    <div v-else-if="currentLoaded && !currentLoading && !currentIncomplete" class="empty-card">
       <p>{{ emptyLabel }}</p>
     </div>
   </section>
@@ -191,21 +190,12 @@ const currentError = computed(() => (activeKind.value === 'movies' ? movieError.
 const currentLoaded = computed(() =>
   activeKind.value === 'movies' ? !!movieFilmography.value : !!showFilmography.value,
 )
-const currentCompacted = computed(() =>
-  activeKind.value === 'movies'
-    ? movieFilmography.value?.compacted === true
-    : showFilmography.value?.compacted === true,
-)
-const panelDescription = computed(() =>
-  currentCompacted.value
-    ? 'Revise obras locais que ainda não estão completamente vinculadas a esta pessoa.'
-    : 'Compare a filmografia do TMDb com o catálogo local e escolha o que deseja adicionar.',
-)
-const emptyLabel = computed(() =>
-  currentCompacted.value
-    ? 'Nenhum vínculo local pendente para esta pessoa.'
-    : 'Nenhum item apareceu nesse recorte do TMDb.',
-)
+const currentIncomplete = computed(() => {
+  const response = activeKind.value === 'movies' ? movieFilmography.value : showFilmography.value
+  return response != null && response.syncState !== 'COMPLETE'
+})
+const panelDescription = 'Compare a filmografia do TMDb com o catálogo local e escolha o que deseja adicionar.'
+const emptyLabel = 'Nenhum item apareceu nesse recorte do TMDb.'
 
 const currentMembers = computed<ScreenographyMemberViewModel[]>(() => {
   if (activeKind.value === 'movies') {
@@ -279,7 +269,7 @@ const currentGroups = computed(() => {
     .filter((group) => group.items.length)
 })
 
-const showLoadButton = computed(() => !currentLoaded.value || currentError.value != null)
+const showLoadButton = computed(() => !currentLoaded.value || (currentError.value != null && !currentIncomplete.value))
 const loadButtonLabel = computed(() => {
   if (currentError.value) return 'Tentar novamente'
   return activeKind.value === 'movies' ? 'Ver filmes' : 'Ver séries'
@@ -289,11 +279,7 @@ const countLabel = computed(() => {
   if (activeKind.value === 'movies') {
     if (!movieFilmography.value) return `${props.person.stats.movieCount} filmes locais ligados a esta pessoa`
     const catalogued = movieFilmography.value.members.filter((item) => item.inCatalog).length
-    if (movieFilmography.value.compacted) {
-      return movieFilmography.value.members.length
-        ? `${movieFilmography.value.members.length} filmes locais com vínculos pendentes`
-        : 'Nenhum vínculo de filme pendente'
-    }
+    if (movieFilmography.value.syncState !== 'COMPLETE') return `${catalogued} filmes conhecidos no catálogo`
     return movieFilmography.value.members.length
       ? `${catalogued}/${movieFilmography.value.members.length} filmes já estão no catálogo`
       : 'Nenhum filme retornado pelo TMDb'
@@ -301,11 +287,7 @@ const countLabel = computed(() => {
 
   if (!showFilmography.value) return `${props.person.stats.showCount} séries locais ligadas a esta pessoa`
   const catalogued = showFilmography.value.members.filter((item) => item.inCatalog).length
-  if (showFilmography.value.compacted) {
-    return showFilmography.value.members.length
-      ? `${showFilmography.value.members.length} séries locais com vínculos pendentes`
-      : 'Nenhum vínculo de série pendente'
-  }
+  if (showFilmography.value.syncState !== 'COMPLETE') return `${catalogued} séries conhecidas no catálogo`
   return showFilmography.value.members.length
     ? `${catalogued}/${showFilmography.value.members.length} séries já estão no catálogo`
     : 'Nenhuma série retornada pelo TMDb'
@@ -320,10 +302,18 @@ const panelSummary = computed(() => {
   }
 
   const movieSummary = movieLoaded
-    ? `${movieFilmography.value!.members.filter((item) => item.inCatalog).length}/${movieFilmography.value!.members.length} filmes`
+    ? movieFilmography.value!.syncState === 'COMPLETE'
+      ? `${movieFilmography.value!.members.filter((item) => item.inCatalog).length}/${movieFilmography.value!.members.length} filmes`
+      : movieLoading.value
+        ? 'Carregando filmografia de filmes…'
+        : 'Lista completa de filmes indisponível'
     : null
   const showSummary = showLoaded
-    ? `${showFilmography.value!.members.filter((item) => item.inCatalog).length}/${showFilmography.value!.members.length} séries`
+    ? showFilmography.value!.syncState === 'COMPLETE'
+      ? `${showFilmography.value!.members.filter((item) => item.inCatalog).length}/${showFilmography.value!.members.length} séries`
+      : showLoading.value
+        ? 'Carregando filmografia de séries…'
+        : 'Lista completa de séries indisponível'
     : null
 
   return [movieSummary, showSummary].filter(Boolean).join(' · ')
@@ -383,6 +373,12 @@ async function loadMovies() {
         baseURL: config.public.apiBase,
       },
     )
+    if (movieFilmography.value.syncState !== 'COMPLETE') {
+      movieFilmography.value = await $fetch<PersonFilmographyResponse>(
+        `/api/people/${props.person.personId}/filmography/ensure`,
+        { baseURL: config.public.apiBase, method: 'POST' },
+      )
+    }
   } catch {
     movieError.value = 'Não foi possível carregar a filmografia de filmes desta pessoa.'
   } finally {
@@ -403,6 +399,12 @@ async function loadShows() {
         baseURL: config.public.apiBase,
       },
     )
+    if (showFilmography.value.syncState !== 'COMPLETE') {
+      showFilmography.value = await $fetch<PersonShowFilmographyResponse>(
+        `/api/people/${props.person.personId}/show-filmography/ensure`,
+        { baseURL: config.public.apiBase, method: 'POST' },
+      )
+    }
   } catch {
     showError.value = 'Não foi possível carregar a filmografia de séries desta pessoa.'
   } finally {

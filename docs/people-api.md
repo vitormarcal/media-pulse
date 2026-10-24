@@ -22,6 +22,8 @@ A People API sustenta a exploração audiovisual transversal entre filmes e sér
 | `DELETE /api/people/{personId}/favorite`                  | `personId`                        | remove a marcação de favorito                                       |
 | `GET /api/people/{personId}/filmography`                  | `personId`                        | snapshot local da filmografia de filmes                             |
 | `GET /api/people/{personId}/show-filmography`             | `personId`                        | snapshot local da filmografia de séries                             |
+| `POST /api/people/{personId}/filmography/ensure` | `personId` | reutiliza filmografia completa local ou restaura filmes sob demanda |
+| `POST /api/people/{personId}/show-filmography/ensure` | `personId` | reutiliza filmografia completa local ou restaura séries sob demanda |
 | `POST /api/people/{personId}/filmography/movies/{movieId}/link` | body com `category`          | vincula a pessoa a um filme local existente                         |
 | `POST /api/people/{personId}/filmography/shows/{showId}/link`   | body com `category`          | vincula a pessoa a uma série local existente                        |
 | `POST /api/admin/people/{personId}/tmdb-filmography`      | `personId`                        | força atualização da filmografia de filmes                          |
@@ -46,7 +48,7 @@ A People API sustenta a exploração audiovisual transversal entre filmes e sér
 
 As filmografias de filmes e séries possuem snapshots e estados de sincronização independentes.
 
-- abrir ou explorar a página nunca consulta o TMDb nem grava no catálogo
+- abrir o perfil e ler os GETs não consulta o TMDb; o clique Ver filmes/Ver séries pode restaurar a filmografia via POST condicional, sem criar obras nem créditos no catálogo
 - presença local é resolvida dinamicamente pelo `tmdb_id`
 - leitura da filmografia não cria filmes, séries ou créditos
 - títulos externos continuam disponíveis para adição explícita pelo owner
@@ -57,6 +59,21 @@ As filmografias de filmes e séries possuem snapshots e estados de sincronizaç�
 - `compacted=true` indica que o recorte contém somente obras locais com vínculos ainda incompletos; obras já completamente vinculadas continuam disponíveis nos créditos canônicos da página
 - atualizar manualmente substitui o recorte pelo snapshot completo do TMDb, limpa o estado compactado e inicia um novo prazo de retenção
 
+### Carregamento completo sob demanda
+
+- ao clicar Ver filmes/Ver séries, a UI lê o recorte local e, se incompleto, chama o respectivo POST `ensure`
+- `syncState` distingue `PENDING` (nunca sincronizado), `COMPACTED`, `FAILED` e `COMPLETE`; uma lista vazia é definitiva somente em `COMPLETE`
+- o serviço reutiliza qualquer snapshot completo ainda não compactado, mesmo com mais de sete dias; não escreve timestamps nem consulta o TMDb nesse caso
+- ausência ou compactação inicia restauração automática naquele recorte; sucesso substitui a lista atomicamente, limpa erro/compactação e reinicia retenção
+- falha mantém os dados locais, registra tentativa e retorna `FAILED` com HTTP 200; pessoa inexistente continua retornando 404
+- uma nova exploração respeita a espera de um dia após falha; Tentar novamente usa o POST administrativo existente, que ignora essa espera
+- chamadas de exploração, worker e reparo são coordenadas por pessoa/recorte dentro da instância da aplicação; o worker reavalia a disponibilidade antes de consultar o provedor
+- a interface mostra Carregando filmografia… e preserva os dados conhecidos, a aba e o contexto; erro oferece nova tentativa, sem loop automático
+- a lista de filmes e a de séries são independentes; abrir o perfil ou mudar de aba não baixa as duas listas
+- os workers continuam fazendo a primeira sincronização; a compactação não coloca todos os descartes de volta na fila
+
+Especificação e critérios: [Filmografia sob demanda](features/person-filmography-on-demand.md).
+
 ### Retenção e compactação
 
 - filmografias de pessoas não favoritas tornam-se elegíveis sete dias após a última sincronização bem-sucedida
@@ -66,7 +83,7 @@ As filmografias de filmes e séries possuem snapshots e estados de sincronizaç�
 - ao corrigir a última categoria pendente, o membro é removido imediatamente do snapshot compacto e continua visível nos créditos canônicos da página
 - filmes, séries, créditos e pessoas nunca são removidos pela compactação
 - pessoas favoritas são sempre excluídas da seleção
-- acesso e leitura da página não renovam o prazo nem consultam o TMDb
+- leitura de dados completos não renova o prazo; restauração bem-sucedida por exploração reinicia os sete dias
 - o scheduler executa diariamente às 04:30 por padrão e processa até 100 pessoas
 - `TMDB_FILMOGRAPHY_COMPACTION_CRON` altera o cron da rotina
 - a ação administrativa aceita `limit` entre 1 e 1.000 e usa as mesmas regras do scheduler
@@ -122,7 +139,7 @@ Séries usam os episódios locais conhecidos:
 - diretório irrestrito de todas as pessoas persistidas
 - listas genéricas ou múltiplas coleções de pessoas
 - busca externa ou criação de pessoas pela página de favoritos
-- atualização de provedor durante leitura
+- atualização de provedor durante GETs de leitura
 - ordenação manual de favoritos
 - ficha técnica irrestrita com produção, música ou outras equipes
 

@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.service.person
 
 import dev.marcal.mediapulse.server.api.movies.PersonFilmographyMemberDto
 import dev.marcal.mediapulse.server.api.movies.PersonFilmographyResponse
+import dev.marcal.mediapulse.server.api.movies.PersonFilmographySyncState
 import dev.marcal.mediapulse.server.api.movies.PersonLinkRequest
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.repository.PersonFilmographyRepository
@@ -9,6 +10,7 @@ import dev.marcal.mediapulse.server.repository.PersonFilmographyRepository.Media
 import dev.marcal.mediapulse.server.service.movie.ManualMovieCatalogService
 import dev.marcal.mediapulse.server.service.movie.MovieCreditsService
 import dev.marcal.mediapulse.server.util.TxUtil
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -41,6 +43,13 @@ class PersonFilmographyService(
     )
 
     private val running = AtomicBoolean(false)
+
+    // Bounded locks coordinate page requests, worker and explicit refresh in this application instance.
+    private val refreshLocks = Array(64) { Any() }
+    private val logger = LoggerFactory.getLogger(javaClass)
+
+    private fun refreshLock(personId: Long): Any = refreshLocks[Math.floorMod(personId, refreshLocks.size.toLong()).toInt()]
+
     private val relevantCrewJobs =
         setOf(
             "Director",
@@ -52,6 +61,7 @@ class PersonFilmographyService(
     @Transactional(readOnly = true)
     fun getFilmography(personId: Long): PersonFilmographyResponse {
         val person = findPerson(personId)
+        val sync = repository.findSyncStatus(personId, MediaType.MOVIE)
         return PersonFilmographyResponse(
             person.id,
             person.tmdbId,
@@ -82,7 +92,13 @@ class PersonFilmographyService(
                     (availableCategories - member.linkedCategories).sorted(),
                 )
             },
-            repository.isCompacted(personId, MediaType.MOVIE),
+            sync.compacted,
+            when {
+                sync.synced && !sync.compacted -> PersonFilmographySyncState.COMPLETE
+                sync.failed -> PersonFilmographySyncState.FAILED
+                sync.compacted -> PersonFilmographySyncState.COMPACTED
+                else -> PersonFilmographySyncState.PENDING
+            },
         )
     }
 
@@ -90,14 +106,46 @@ class PersonFilmographyService(
         if (!running.compareAndSet(false, true)) return BatchResult(0, 0, 0)
         return try {
             val candidates = repository.findPendingPersonIds(MediaType.MOVIE, limit.coerceIn(1, 200))
-            val completed = candidates.count(::refreshFilmography)
+            val completed = candidates.count { ensureAvailable(it, restoreCompacted = false) }
             BatchResult(candidates.size, completed, candidates.size - completed)
         } finally {
             running.set(false)
         }
     }
 
-    fun refreshFilmography(personId: Long): Boolean {
+    fun ensureFilmography(personId: Long): PersonFilmographyResponse {
+        ensureAvailable(personId)
+        return getFilmography(personId)
+    }
+
+    private fun ensureAvailable(
+        personId: Long,
+        restoreCompacted: Boolean = true,
+    ): Boolean =
+        synchronized(refreshLock(personId)) {
+            findPerson(personId)
+            val sync = repository.findSyncStatus(personId, MediaType.MOVIE)
+            when {
+                sync.synced && !sync.compacted -> true
+                sync.failed && !sync.retryReady -> false
+                sync.compacted && !restoreCompacted -> false
+                else -> refreshFilmography(personId)
+            }
+        }
+
+    fun refreshFilmography(personId: Long): Boolean =
+        synchronized(refreshLock(personId)) {
+            try {
+                refreshSnapshot(personId)
+            } catch (ex: Exception) {
+                if (ex is ResponseStatusException) throw ex
+                logger.warn("Failed to refresh person filmography | personId={} mediaType=MOVIE", personId, ex)
+                tx.inTx { repository.markFailure(personId, MediaType.MOVIE, ex.message ?: "Filmography unavailable") }
+                false
+            }
+        }
+
+    private fun refreshSnapshot(personId: Long): Boolean {
         val person = findPerson(personId)
         val credits =
             tmdbApiClient.fetchPersonMovieCredits(person.tmdbId) ?: run {
