@@ -118,6 +118,7 @@ media-pulse:
   visual-library:
     enabled: ${VISUAL_LIBRARY_ENABLED:false}
     base-url: ${VISUAL_LIBRARY_BASE_URL:}
+    token: ${VISUAL_LIBRARY_TOKEN:}
     migration-enabled: ${VISUAL_LIBRARY_MIGRATION_ENABLED:false}
     migration-batch-size: ${VISUAL_LIBRARY_MIGRATION_BATCH_SIZE:10}
     migration-interval-ms: ${VISUAL_LIBRARY_MIGRATION_INTERVAL_MS:60000}

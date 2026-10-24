@@ -8,6 +8,7 @@ O Visual Library pode ser usado como armazenamento próprio do arquivo pessoal. 
 | --- | --- | --- |
 | `VISUAL_LIBRARY_ENABLED` | `false` | Usa Visual Library para novos uploads nos domínios acima. |
 | `VISUAL_LIBRARY_BASE_URL` | vazio | URL HTTP/HTTPS alcançável pelo backend, sem credenciais, query ou fragmento. Obrigatória quando uploads ou migração estão habilitados. |
+| `VISUAL_LIBRARY_TOKEN` | vazio | Token de aplicação criado em Access no Visual Library; enviado como Bearer em todas as chamadas dessa integração. Informar somente o segredo, sem prefixo `Bearer` ou espaços. |
 | `VISUAL_LIBRARY_MIGRATION_ENABLED` | `false` | Migra imagens locais vinculadas a revistas, jogos, obras, retratos, livros e edições; remove o arquivo após verificação remota e commit. |
 | `VISUAL_LIBRARY_MIGRATION_BATCH_SIZE` | `10` | Máximo de arquivos por lote de migração e por lote de limpeza; de 1 a 100. |
 | `VISUAL_LIBRARY_MIGRATION_INTERVAL_MS` | `60000` | Intervalo após cada lote, em milissegundos; mínimo 1000. |
@@ -17,9 +18,14 @@ Exemplo neutro em rede Docker:
 ```env
 VISUAL_LIBRARY_ENABLED=true
 VISUAL_LIBRARY_BASE_URL=http://visual-library:3000
+VISUAL_LIBRARY_TOKEN=vl_app_TOKEN_DA_APLICACAO
 ```
 
-Não é necessário expor esse hostname ao navegador: ele consulta o backend do Media Pulse. Nenhuma credencial é enviada; a API atual do Visual Library não tem autenticação. Configuração inválida impede inicialização. O armazenamento inicial de imagens não exigiu migration; movimentos múltiplos acrescentam a V67 e a rotina opcional de migração local acrescenta a V71 no Media Pulse. O backend inclui o [plugin ImageIO WebP do TwelveMonkeys](https://github.com/haraldk/TwelveMonkeys) para validar esse formato.
+Não é necessário expor esse hostname ao navegador: ele consulta o backend do Media Pulse.
+
+Com Visual Library 0.15.0 ou posterior, criar um token nomeado Media Pulse na página Access e configurar `VISUAL_LIBRARY_TOKEN` somente no backend. O cliente envia `Authorization: Bearer ...` em uploads, retries, migração, leitura/proxy de imagens e atualizações de tags de movimentos/séries, inclusive quando novos uploads estão desligados. Nenhum segredo é enviado ao frontend ou incluído nas referências persistidas. Vazio mantém chamadas sem Authorization para instalações antigas sem autenticação; uma instalação protegida recusará essas chamadas. Token inválido/revogado mantém os tratamentos existentes de indisponibilidade (503/placeholder/pendência), sem nova tentativa anônima. Após trocar ou revogar o token, atualizar a variável e reiniciar o Media Pulse. Não versionar o valor real; usar HTTPS ao atravessar redes externas. O cliente clona o builder compartilhado e não acrescenta credenciais a outras integrações.
+
+Configuração inválida impede inicialização. O armazenamento inicial de imagens não exigiu migration; movimentos múltiplos acrescentam a V67 e a rotina opcional de migração local acrescenta a V71 no Media Pulse. O backend inclui o [plugin ImageIO WebP do TwelveMonkeys](https://github.com/haraldk/TwelveMonkeys) para validar esse formato.
 
 ## Upload e leitura
 
@@ -52,7 +58,7 @@ Os campos de imagem guardam `/api/image-assets/{uuid}/content`, uma referência 
 
 `GET /api/image-assets/{id}/content` recupera os bytes pelo backend. Preserva Content-Type, Cache-Control, ETag, Last-Modified e respostas condicionais 304. Encaminha If-None-Match e If-Modified-Since. UUID inválido retorna 400; asset ausente retorna 404; serviço sem configuração, indisponível ou resposta ilegível retorna 503. Download é limitado a 10 MB em memória por requisição, adequado às imagens aceitas nesta entrega; sem transformações ou miniaturas. Cada chamada usa o cliente de imagens existente e um limite de 30 segundos.
 
-A flag controla somente novos uploads. Ao desligá-la, mantenha `VISUAL_LIBRARY_BASE_URL` para continuar exibindo assets já vinculados. Não há fallback automático de upload para o disco local.
+A flag controla somente novos uploads. Ao desligá-la, mantenha `VISUAL_LIBRARY_BASE_URL` e, em instalações protegidas, `VISUAL_LIBRARY_TOKEN` para continuar exibindo assets já vinculados. Não há fallback automático de upload para o disco local.
 
 ## Migração das imagens locais existentes
 
@@ -65,6 +71,7 @@ Para habilitar e reiniciar a aplicação:
 ```env
 VISUAL_LIBRARY_ENABLED=true
 VISUAL_LIBRARY_BASE_URL=http://visual-library:3000
+VISUAL_LIBRARY_TOKEN=vl_app_TOKEN_DA_APLICACAO
 VISUAL_LIBRARY_MIGRATION_ENABLED=true
 ```
 
@@ -199,3 +206,11 @@ As sugestões genéricas de `livro` e título continuam com o comportamento ante
 Consulte [estado, retry, backoff, recuperação e validação](books-api.md#tags-de-séries-nas-capas). Validar associação a várias séries, edições com o mesmo asset, renomeação e remoção; criar conflito de limite ou indisponibilidade e verificar que o vínculo local permanece e o retry conclui após resolver a causa.
 
 Validação desta entrega: 64 testes de backend sem skips, lint/tipos/build do frontend e smoke com PostgreSQL e handlers HTTP reais do Visual Library em SQLite temporário. O smoke confirmou quatro referências compartilhando um asset, preservação de tags pessoais e de outro livro, remoção, limite de oito tags com retry e ausência de reupload. Chromium em desktop e 390px confirmou erro, retry e atualização do estado após associação sem bloquear a leitura.
+
+## Autenticação por variável de ambiente
+
+A configuração `media-pulse.visual-library.token` é lida de `VISUAL_LIBRARY_TOKEN`. Não exige migration, mudança de frontend, contrato público ou dependência nova. Tokens com espaços/controles/caracteres fora de ASCII visível são recusados na configuração sem reproduzir o segredo na mensagem. Representação das propriedades e diagnóstico de erro remoto ocultam o token configurado, inclusive se a resposta remota o repetir sem prefixo Bearer.
+
+Validação: `VisualLibraryClientTest` usa HTTP local para conferir Authorization nos uploads e retries, na migração, nas atualizações de movimentos/séries e nos GETs condicionais com uploads desligados. Também verifica ausência de cabeçalho com token vazio, isolamento do builder compartilhado, filtro de headers no proxy e ausência de retry anônimo/exposição do segredo em recusas 401.
+
+Resultado: 16 testes direcionados passaram (`VisualLibraryClientTest`, `ArtworkMovementSyncServiceTest` e `BookSeriesTagSyncServiceTest`), incluindo binding do YAML pelo nome da variável. `ktlintFormat` e `ktlintCheck` concluídos; compilação Kotlin e dos testes concluída. Nenhum segredo real ou dado de produção foi utilizado.

@@ -77,3 +77,8 @@ Ação autorizada: oferecer “Buscar imagens” no detalhe do jogo, usando o ca
 ## Extensão aprovada: migração local dos domínios integrados
 
 A restrição original de não migrar o acervo é ampliada para todos os domínios já integrados: revistas, jogos, obras de arte, retratos de artistas, livros e edições, por rotina opcional configurada por propriedade. Remoção local depende de upload/leitura verificados, commit dos vínculos e ausência de referências locais restantes. Falhas e interrupções permitem retomada. Música, filmes, séries e treinos permanecem fora da migração enquanto não tiverem integração de armazenamento com o Visual Library. Consulte a [spec da migração](visual-library-local-migration.md) e a [operação](../visual-library-images.md).
+
+
+## Autenticação do Visual Library
+
+A integração existente passa a aceitar `VISUAL_LIBRARY_TOKEN` no backend, usando o mesmo token de aplicação nas operações de assets, inclusive proxy de leitura e tarefas de sincronização/migração. O navegador continua recebendo somente a referência do Media Pulse. Segredo ausente preserva compatibilidade com instalações antigas; segredo recusado pelo servidor não habilita fallback anônimo. Não altera banco, frontend, contratos de domínio ou permissões da integração. Configuração e rotação em [operação](../visual-library-images.md).

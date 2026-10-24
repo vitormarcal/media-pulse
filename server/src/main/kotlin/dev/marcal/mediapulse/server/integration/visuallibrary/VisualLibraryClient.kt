@@ -31,7 +31,13 @@ class VisualLibraryClient(
     private val mapper: ObjectMapper,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val client = builder.clone().codecs { it.defaultCodecs().maxInMemorySize(10 * 1024 * 1024) }.build()
+    private val client =
+        builder
+            .clone()
+            .defaultHeaders { headers ->
+                if (properties.token.isNotEmpty()) headers.setBearerAuth(properties.token)
+            }.codecs { it.defaultCodecs().maxInMemorySize(10 * 1024 * 1024) }
+            .build()
     val enabled: Boolean get() = properties.enabled
     val migrationEnabled: Boolean get() = properties.migrationEnabled
 
@@ -112,7 +118,9 @@ class VisualLibraryClient(
         if (values.isEmpty()) return "sem detalhe JSON reconhecido"
         return values
             .joinToString("; ")
-            .replace(Regex("https?://[^\\s]+"), "[URL omitida]")
+            .let { diagnostic ->
+                if (properties.token.isEmpty()) diagnostic else diagnostic.replace(properties.token, "[omitido]")
+            }.replace(Regex("https?://[^\\s]+"), "[URL omitida]")
             .replace(Regex("(?i)bearer\\s+[^\\s,;]+"), "Bearer [omitido]")
             .replace(Regex("(?i)(token|password|secret|api[_-]?key)\\s*[:=]\\s*[^\\s,;]+"), "$1=[omitido]")
             .replace(Regex("[\\p{Cntrl}]"), " ")

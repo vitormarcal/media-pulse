@@ -12,7 +12,12 @@ import dev.marcal.mediapulse.server.model.visuallibrary.VisualLibraryUploadMetad
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
+import org.springframework.boot.context.properties.bind.Bindable
+import org.springframework.boot.context.properties.bind.Binder
+import org.springframework.boot.env.YamlPropertySourceLoader
+import org.springframework.core.io.ClassPathResource
 import org.springframework.http.MediaType
+import org.springframework.mock.env.MockEnvironment
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
@@ -28,6 +33,7 @@ import kotlin.test.assertTrue
 class VisualLibraryClientTest {
     private val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0).apply { start() }
     private val id = UUID.fromString("00000000-0000-0000-0000-000000000001")
+    private val token = "vl_app_synthetic-test-token"
     private val mapper = jacksonObjectMapper()
     private val metadata = VisualLibraryUploadMetadata.forEntity("album", 123, "Legião Urbana", "Dois", "álbum", "rock brasileiro")
     private val bytes = byteArrayOf(0, 1, 2, 3, -1)
@@ -35,12 +41,14 @@ class VisualLibraryClientTest {
     private var responseBody = """{"id":"$id","mimeType":"image/png","sizeBytes":5,"source":"media-pulse",
         "hiddenFromGallery":false,"createdAt":"2026-10-12T12:00:00.000Z","tags":[],"sourceReferences":[]}"""
 
-    private fun client(enabled: Boolean = true) =
-        VisualLibraryClient(
-            VisualLibraryProperties(enabled, "http://127.0.0.1:${server.address.port}"),
-            WebClient.builder(),
-            mapper,
-        )
+    private fun client(
+        enabled: Boolean = true,
+        token: String = this.token,
+    ) = VisualLibraryClient(
+        VisualLibraryProperties(enabled, "http://127.0.0.1:${server.address.port}", token = token),
+        WebClient.builder(),
+        mapper,
+    )
 
     @AfterEach
     fun close() {
@@ -50,6 +58,7 @@ class VisualLibraryClientTest {
     @Test
     fun `classification update sends all movements with a string entity id and numeric revision`() {
         server.createContext("/api/assets/$id/references/tags") { exchange ->
+            assertEquals("Bearer $token", exchange.requestHeaders.getFirst("Authorization"))
             assertEquals("PUT", exchange.requestMethod)
             val body = mapper.readTree(exchange.requestBody.readAllBytes())
             assertEquals("media-pulse", body["application"].asText())
@@ -79,6 +88,7 @@ class VisualLibraryClientTest {
         var requests = 0
         val entityTypes = mutableListOf<String>()
         server.createContext("/api/assets/$id/references/tags") { exchange ->
+            assertEquals("Bearer $token", exchange.requestHeaders.getFirst("Authorization"))
             requests++
             assertEquals("PUT", exchange.requestMethod)
             val body = mapper.readTree(exchange.requestBody.readAllBytes())
@@ -125,6 +135,7 @@ class VisualLibraryClientTest {
     fun `tag suggestions are cleaned deduplicated and bounded without truncating names`() {
         var sentTags = emptyList<String>()
         server.createContext("/api/assets") { exchange ->
+            assertEquals("Bearer $token", exchange.requestHeaders.getFirst("Authorization"))
             val text = exchange.requestBody.readAllBytes().toString(Charsets.UTF_8)
             val json = text.substringAfter("name=\"tags\"").substringAfter("\r\n\r\n").substringBefore("\r\n--")
             sentTags = mapper.readTree(json).map { it.asText() }
@@ -144,6 +155,7 @@ class VisualLibraryClientTest {
     fun `rejected enrichment retries once without tags and retains the same source reference`() {
         val payloads = mutableListOf<String>()
         server.createContext("/api/assets") { exchange ->
+            assertEquals("Bearer $token", exchange.requestHeaders.getFirst("Authorization"))
             payloads.add(exchange.requestBody.readAllBytes().toString(Charsets.UTF_8))
             exchange.responseHeaders.set("Content-Type", "application/json")
             val body = responseBody.toByteArray()
@@ -165,6 +177,7 @@ class VisualLibraryClientTest {
     @Test
     fun `multipart upload accepts both creation and deduplication and stores a host independent reference`() {
         server.createContext("/api/assets") { exchange ->
+            assertEquals("Bearer $token", exchange.requestHeaders.getFirst("Authorization"))
             assertEquals("POST", exchange.requestMethod)
             val raw = exchange.requestBody.readAllBytes()
             val payload = raw.toString(Charsets.ISO_8859_1)
@@ -211,6 +224,7 @@ class VisualLibraryClientTest {
         logger.addAppender(appender)
         var calls = 0
         server.createContext("/api/assets") { exchange ->
+            assertEquals("Bearer $token", exchange.requestHeaders.getFirst("Authorization"))
             calls++
             exchange.requestBody.readAllBytes()
             exchange.responseHeaders.set("Content-Type", "application/json")
@@ -220,6 +234,7 @@ class VisualLibraryClientTest {
                         "statusMessage" to "Unsupported or invalid image.",
                         "error" to mapOf("code" to "INVALID_IMAGE", "message" to "JPEG rejected"),
                         "detail" to "JPEG\ninvalid Bearer secret-value token=hidden https://example.org/?secret=hidden " + "x".repeat(1000),
+                        "message" to "Credential echoed: $token",
                         "privatePayload" to "never-log-this",
                     ),
                 )
@@ -236,7 +251,7 @@ class VisualLibraryClientTest {
             assertTrue(log.contains("error.code=INVALID_IMAGE"))
             assertTrue(log.contains("Bearer [omitido] token=[omitido] [URL omitida]"))
             assertTrue(log.substringAfter("response=").length <= 512)
-            for (secret in listOf("secret-value", "hidden", "never-log-this", "https://", "\n")) assertTrue(!log.contains(secret))
+            for (secret in listOf(token, "secret-value", "hidden", "never-log-this", "https://", "\n")) assertTrue(!log.contains(secret))
         } finally {
             logger.detachAppender(appender)
             appender.stop()
@@ -249,6 +264,7 @@ class VisualLibraryClientTest {
         var requestDate: String? = null
         responseStatus = 200
         server.createContext("/api/assets/$id/content") { exchange ->
+            assertEquals("Bearer $token", exchange.requestHeaders.getFirst("Authorization"))
             requestEtag = exchange.requestHeaders.getFirst("If-None-Match")
             requestDate = exchange.requestHeaders.getFirst("If-Modified-Since")
             exchange.responseHeaders.set("Content-Type", "image/png")
@@ -282,8 +298,83 @@ class VisualLibraryClientTest {
     }
 
     @Test
+    fun `application configuration binds the token from its environment variable`() {
+        val environment = MockEnvironment().withProperty("VISUAL_LIBRARY_TOKEN", token)
+        YamlPropertySourceLoader()
+            .load("application", ClassPathResource("application.yml"))
+            .forEach { environment.propertySources.addLast(it) }
+        val properties =
+            Binder
+                .get(environment)
+                .bind("media-pulse.visual-library", Bindable.of(VisualLibraryProperties::class.java))
+                .get()
+        assertEquals(token, properties.token)
+    }
+
+    @Test
+    fun `token is optional and authorization stays in the Visual Library client`() {
+        val authorizations = mutableListOf<String?>()
+        server.createContext("/api/assets/$id/content") { exchange ->
+            authorizations.add(exchange.requestHeaders.getFirst("Authorization"))
+            exchange.responseHeaders.set("Content-Type", "image/png")
+            exchange.responseHeaders.set("Authorization", "Bearer must-not-reach-the-browser")
+            exchange.sendResponseHeaders(200, bytes.size.toLong())
+            exchange.responseBody.use { it.write(bytes) }
+        }
+        val builder = WebClient.builder()
+        val authenticated =
+            VisualLibraryClient(
+                VisualLibraryProperties(baseUrl = "http://127.0.0.1:${server.address.port}", token = token),
+                builder,
+                mapper,
+            )
+        val response = authenticated.content(id, null, null)
+        assertEquals(null, response.headers.getFirst("Authorization"))
+        client(false, token = "").content(id, null, null)
+        builder
+            .build()
+            .get()
+            .uri("http://127.0.0.1:${server.address.port}/api/assets/$id/content")
+            .retrieve()
+            .toBodilessEntity()
+            .block()
+        assertEquals(listOf("Bearer $token", null, null), authorizations)
+    }
+
+    @Test
+    fun `invalid or revoked token fails without anonymous retry or token disclosure`() {
+        val logger = LoggerFactory.getLogger(VisualLibraryClient::class.java) as Logger
+        val appender = ListAppender<ILoggingEvent>().apply { start() }
+        logger.addAppender(appender)
+        var calls = 0
+        server.createContext("/api/assets") { exchange ->
+            calls++
+            assertEquals("Bearer $token", exchange.requestHeaders.getFirst("Authorization"))
+            exchange.requestBody.readAllBytes()
+            val body = mapper.writeValueAsBytes(mapOf("message" to "Invalid credential $token"))
+            exchange.responseHeaders.set("Content-Type", "application/json")
+            exchange.sendResponseHeaders(401, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        try {
+            assertFailsWith<VisualLibraryUploadException> { client().upload(ImageContent(bytes, MediaType.IMAGE_PNG), metadata) }
+            assertEquals(1, calls)
+            assertTrue(appender.list.none { it.formattedMessage.contains(token) })
+        } finally {
+            logger.detachAppender(appender)
+            appender.stop()
+        }
+        for (invalid in listOf("Bearer $token", " $token", "$token\r\nInjected: value", "\t")) {
+            val error = assertFailsWith<IllegalArgumentException> { VisualLibraryProperties(token = invalid) }
+            assertTrue(!error.message.orEmpty().contains(token))
+        }
+        assertTrue(!VisualLibraryProperties(token = token).toString().contains(token))
+    }
+
+    @Test
     fun `migration permits uploads independently of new upload flag`() {
         server.createContext("/api/assets") { exchange ->
+            assertEquals("Bearer $token", exchange.requestHeaders.getFirst("Authorization"))
             exchange.requestBody.readAllBytes()
             val body = responseBody.toByteArray()
             exchange.responseHeaders.set("Content-Type", "application/json")
@@ -292,7 +383,7 @@ class VisualLibraryClientTest {
         }
         val migrating =
             VisualLibraryClient(
-                VisualLibraryProperties(baseUrl = "http://127.0.0.1:${server.address.port}", migrationEnabled = true),
+                VisualLibraryProperties(baseUrl = "http://127.0.0.1:${server.address.port}", migrationEnabled = true, token = token),
                 WebClient.builder(),
                 mapper,
             )
