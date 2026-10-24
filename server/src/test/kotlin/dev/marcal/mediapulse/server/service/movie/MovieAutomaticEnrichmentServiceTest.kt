@@ -9,6 +9,7 @@ import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.Optional
@@ -30,6 +31,88 @@ class MovieAutomaticEnrichmentServiceTest {
             movieTermsService,
             movieCreditsService,
             movieCompaniesService,
+        )
+
+    @BeforeEach
+    fun setUpCollection() {
+        every { manualMovieCatalogService.fetchTmdbMovieSnapshot("603") } returns snapshot()
+        every { pendingRepository.markCollectionComplete(any()) } returns 1
+    }
+
+    @Test
+    fun `should assign collection even when other steps are already complete`() {
+        val linked =
+            movie(60, "603", null).copy(
+                termsSyncedAt = Instant.now(),
+                creditsSyncedAt = Instant.now(),
+                companiesSyncedAt = Instant.now(),
+            )
+        every { movieRepository.findById(60) } returns Optional.of(linked)
+        val snapshot =
+            snapshot().copy(
+                collection =
+                    ManualMovieCatalogService.TmdbMovieCollectionSnapshot(
+                        tmdbId = "2344",
+                        name = "The Matrix Collection",
+                        posterUrl = null,
+                        backdropUrl = null,
+                    ),
+            )
+        every { manualMovieCatalogService.fetchTmdbMovieSnapshot("603") } returns snapshot
+
+        service.enrichMovie(60)
+
+        verify { manualMovieCatalogService.assignTmdbCollection(linked, snapshot) }
+        verify { pendingRepository.markCollectionComplete(60) }
+    }
+
+    @Test
+    fun `should mark successful check without collection as complete`() {
+        every { movieRepository.findById(61) } returns Optional.of(movie(61, "603", null))
+
+        service.enrichMovie(61)
+
+        verify { pendingRepository.markCollectionComplete(61) }
+    }
+
+    @Test
+    fun `should retry unavailable collection without blocking other steps`() {
+        every { movieRepository.findById(62) } returns Optional.of(movie(62, "603", null))
+        every { manualMovieCatalogService.fetchTmdbMovieSnapshot("603") } returns null
+        every { pendingRepository.markCollectionFailure(62, "TMDb movie unavailable") } returns 1
+
+        service.enrichMovie(62)
+
+        verify { pendingRepository.markCollectionFailure(62, "TMDb movie unavailable") }
+        verify(exactly = 0) { pendingRepository.markCollectionComplete(any()) }
+        verify { movieTermsService.syncFromTmdbIfLinked(62) }
+        verify { movieCreditsService.syncFromTmdbIfLinked(62) }
+        verify { movieCompaniesService.syncFromTmdbIfLinked(62) }
+    }
+
+    @Test
+    fun `should skip checked collections and recent failures`() {
+        every { movieRepository.findById(63) } returns Optional.of(movie(63, "603", null).copy(collectionCheckedAt = Instant.now()))
+        every { movieRepository.findById(64) } returns Optional.of(movie(64, "603", null).copy(collectionSyncAttemptedAt = Instant.now()))
+
+        service.enrichMovie(63)
+        service.enrichMovie(64)
+
+        verify(exactly = 0) { manualMovieCatalogService.fetchTmdbMovieSnapshot(any()) }
+    }
+
+    private fun snapshot() =
+        ManualMovieCatalogService.TmdbMovieSnapshot(
+            tmdbId = "603",
+            title = "The Matrix",
+            originalTitle = null,
+            imdbId = null,
+            overview = null,
+            releaseYear = 1999,
+            posterPath = null,
+            backdropPath = null,
+            posterUrl = null,
+            backdropUrl = null,
         )
 
     @Test

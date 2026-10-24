@@ -20,7 +20,10 @@ class MovieAutomaticEnrichmentRepository(
                         OR m.tmdb_resolution_checked_at < NOW() - INTERVAL '1 day'
                       ))
                    OR (m.tmdb_id IS NOT NULL AND (
-                        (m.terms_synced_at IS NULL AND (
+                        (m.collection_checked_at IS NULL AND (
+                          m.collection_sync_attempted_at IS NULL OR m.collection_sync_attempted_at <= NOW() - INTERVAL '1 day'
+                        ))
+                        OR (m.terms_synced_at IS NULL AND (
                           m.terms_sync_attempted_at IS NULL OR m.terms_sync_attempted_at <= NOW() - INTERVAL '1 day'
                         ))
                         OR (m.credits_curated_at IS NULL AND m.credits_synced_at IS NULL AND (
@@ -79,6 +82,25 @@ class MovieAutomaticEnrichmentRepository(
             ).setParameter("movieId", movieId)
             .setParameter("state", state)
             .setParameter("error", error?.take(500))
+            .executeUpdate()
+
+    @Transactional
+    fun markCollectionFailure(
+        movieId: Long,
+        error: String,
+    ): Int = markFailure(movieId, "collection", error)
+
+    @Transactional
+    fun markCollectionComplete(movieId: Long): Int =
+        entityManager
+            .createNativeQuery(
+                """
+                UPDATE movies
+                SET collection_checked_at = NOW(), collection_sync_attempted_at = NOW(),
+                    collection_sync_error = NULL, updated_at = NOW()
+                WHERE id = :movieId
+                """.trimIndent(),
+            ).setParameter("movieId", movieId)
             .executeUpdate()
 
     @Transactional

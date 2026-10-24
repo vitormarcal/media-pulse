@@ -62,7 +62,7 @@ Movie library import runs in the existing startup pipeline (`ApplicationReadyEve
 
 Movies imported from the Plex library or received through scrobble webhooks are enriched asynchronously from TMDb.
 
-- Movies with a TMDb id enter the pending terms, credits, and companies synchronization immediately.
+- Movies with a TMDb id enter the pending collection, terms, credits, and companies synchronization immediately.
 - Movies with only an IMDb id are first resolved through TMDb's external-id lookup.
 - Import and scrobble persistence do not depend on TMDb availability.
 - Incomplete steps remain pending and are retried periodically.

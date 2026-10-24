@@ -41,6 +41,7 @@ class MovieAutomaticEnrichmentService(
                 val refreshed = movieRepository.findById(movieId).orElse(null)
                 if (refreshed != null &&
                     refreshed.tmdbId != null &&
+                    refreshed.collectionCheckedAt != null &&
                     refreshed.termsSyncedAt != null &&
                     refreshed.creditsSyncedAt != null &&
                     refreshed.companiesSyncedAt != null
@@ -84,7 +85,17 @@ class MovieAutomaticEnrichmentService(
             movie = movieRepository.findById(movieId).orElse(movie)
         }
 
-        if (movie.tmdbId == null) return
+        val tmdbId = movie.tmdbId ?: return
+
+        if (shouldAttempt(movie.collectionCheckedAt, movie.collectionSyncAttemptedAt)) {
+            runStep(movieId, "collection", pendingRepository::markCollectionFailure) {
+                val snapshot =
+                    manualMovieCatalogService.fetchTmdbMovieSnapshot(tmdbId)
+                        ?: error("TMDb movie unavailable")
+                manualMovieCatalogService.assignTmdbCollection(movie, snapshot)
+                pendingRepository.markCollectionComplete(movieId)
+            }
+        }
 
         if (shouldAttempt(movie.termsSyncedAt, movie.termsSyncAttemptedAt)) {
             runStep(movieId, "terms", pendingRepository::markTermsFailure) {

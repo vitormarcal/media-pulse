@@ -363,6 +363,10 @@ Perfil, busca, favoritos e filmografias audiovisuais estão documentados em [`pe
 
 Filmes podem ser vinculados a uma coleção oficial do TMDb, como `The Matrix Collection`.
 
+O worker automático também verifica a coleção de filmes com TMDb e `collection_checked_at` vazio, inclusive filmes antigos cujas outras etapas já terminaram. A ausência de coleção em uma resposta válida conclui a verificação; indisponibilidade do filme ou falha de persistência mantém a etapa pendente, com nova tentativa após um dia. A migration V75 adiciona `collection_sync_attempted_at` e `collection_sync_error` para controlar essas retentativas.
+
+Diagnóstico: filmes recebidos pelo Plex podiam ter termos, créditos e empresas completos sem coleção porque essa etapa não participava do worker. O vínculo passa a reutilizar a associação do cadastro manual. Para validar, importe um filme com coleção conhecida no TMDb, aguarde o worker e confira `MovieDetailsResponse.collection`; falhas de coleção não devem impedir as outras etapas. Filmes já verificados sem coleção continuam exigindo reparo explícito caso o provedor passe a informar uma posteriormente.
+
 - o schema guarda `movie_collections.tmdb_id` como chave externa estável da coleção
 - `movies.collection_id` aponta para a coleção local
 - o vínculo é preenchido durante criação de catálogo e enriquecimento por TMDb

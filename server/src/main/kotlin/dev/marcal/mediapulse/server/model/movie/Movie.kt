@@ -29,6 +29,10 @@ data class Movie(
     val collectionId: Long? = null,
     @Column(name = "collection_checked_at")
     val collectionCheckedAt: Instant? = null,
+    @Column(name = "collection_sync_attempted_at")
+    val collectionSyncAttemptedAt: Instant? = null,
+    @Column(name = "collection_sync_error")
+    val collectionSyncError: String? = null,
     @Column(name = "terms_synced_at")
     val termsSyncedAt: Instant? = null,
     @Column(name = "terms_sync_attempted_at")
