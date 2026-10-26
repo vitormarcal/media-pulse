@@ -6,7 +6,7 @@
 
     <div v-else-if="!membersResponse && membersError" class="state-card error">
       <p>Não foi possível carregar esta coleção.</p>
-      <button v-owner type="button" class="member-button" :disabled="loadingMembers" @click="retryMembers">
+      <button type="button" class="member-button" :disabled="loadingMembers" @click="retryMembers">
         Tentar novamente
       </button>
     </div>
@@ -36,14 +36,7 @@
 
         <div v-if="syncMessage" class="state-card" role="status">
           <p>{{ syncMessage }}</p>
-          <button
-            v-if="canRetry"
-            v-owner
-            type="button"
-            class="member-button"
-            :disabled="loadingMembers"
-            @click="retryMembers"
-          >
+          <button v-if="canRetry" type="button" class="member-button" :disabled="loadingMembers" @click="retryMembers">
             {{ loadingMembers ? 'Carregando…' : 'Tentar novamente' }}
           </button>
         </div>

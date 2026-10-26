@@ -3,7 +3,9 @@
     <div class="top-actions">
       <NuxtLink class="back-link" :to="backLink"> {{ backLabel }} </NuxtLink>
 
-      <NuxtLink class="recent-link" :to="accentLink"> {{ accentLabel }} </NuxtLink>
+      <NuxtLink v-if="!accentOwnerOnly || owner.authenticated" class="recent-link" :to="accentLink">
+        {{ accentLabel }}
+      </NuxtLink>
     </div>
 
     <div class="hero-grid">
@@ -82,6 +84,8 @@
 import { NuxtLink } from '#components'
 import type { EditorialHighlight } from '~/types/home'
 
+const owner = useOwnerAuth()
+
 const props = withDefaults(
   defineProps<{
     title: string
@@ -94,6 +98,7 @@ const props = withDefaults(
     eyebrow?: string
     showEmptyLead?: boolean
     accentLabel?: string
+    accentOwnerOnly?: boolean
   }>(),
   {
     eyebrow: 'Filmes',

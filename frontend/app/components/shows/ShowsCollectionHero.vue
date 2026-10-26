@@ -3,7 +3,9 @@
     <div class="top-actions">
       <NuxtLink class="back-link" :to="backLink"> {{ backLabel }} </NuxtLink>
 
-      <NuxtLink class="library-link" :to="accentLink"> {{ accentLabel }} </NuxtLink>
+      <NuxtLink v-if="!accentOwnerOnly || owner.authenticated" class="library-link" :to="accentLink">
+        {{ accentLabel }}
+      </NuxtLink>
     </div>
 
     <div class="hero-grid">
@@ -78,6 +80,8 @@
 import { NuxtLink } from '#components'
 import type { EditorialHighlight } from '~/types/home'
 
+const owner = useOwnerAuth()
+
 const props = withDefaults(
   defineProps<{
     title: string
@@ -88,6 +92,7 @@ const props = withDefaults(
     backLabel?: string
     accentLink?: string
     accentLabel?: string
+    accentOwnerOnly?: boolean
   }>(),
   {
     backLink: '/',

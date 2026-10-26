@@ -2,6 +2,7 @@ import type { MovieCollectionMembersResponse } from '~/types/movies'
 
 export function useMovieCollectionMembers(collectionId: MaybeRefOrGetter<string | null>) {
   const config = useRuntimeConfig()
+  const owner = useOwnerAuth()
   const membersResponse = ref<MovieCollectionMembersResponse | null>(null)
   const loadingMembers = ref(false)
   const membersError = ref<string | null>(null)
@@ -45,7 +46,7 @@ export function useMovieCollectionMembers(collectionId: MaybeRefOrGetter<string 
 
   function retryMembers() {
     polls = 0
-    return loadMembers(true)
+    return loadMembers(owner.value.authenticated && membersResponse.value?.syncState === 'FAILED')
   }
 
   watch(

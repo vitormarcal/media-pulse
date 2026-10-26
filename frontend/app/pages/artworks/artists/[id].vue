@@ -47,7 +47,12 @@
         </fieldset>
       </form>
       <p v-if="error" class="art-error" role="alert">{{ error }}</p>
-      <ArtworkImageManager :artist-id="data.id" :has-portrait="Boolean(data.portraitUrl)" @changed="refresh()" />
+      <ArtworkImageManager
+        v-if="owner.authenticated"
+        :artist-id="data.id"
+        :has-portrait="Boolean(data.portraitUrl)"
+        @changed="refresh()"
+      />
       <h2>Obras cadastradas</h2>
       <ArtworkLibrary :artist-id="data.id" chronological :born-at="data.bornAt" :died-at="data.diedAt" />
     </template>
@@ -61,6 +66,7 @@ import ArtworkImageManager from '~/components/artworks/ArtworkImageManager.vue'
 import ArtworkLibrary from '~/components/artworks/ArtworkLibrary.vue'
 import type { ArtworkArtist } from '~/types/artworks'
 definePageMeta({ key: (route) => route.params.id as string })
+const owner = useOwnerAuth()
 const route = useRoute()
 const { request, run, busy, error } = useArtworkApi()
 const { resolveMediaUrl } = useMediaUrl()

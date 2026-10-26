@@ -16,7 +16,9 @@
           <h1>{{ data.hero.title }}</h1>
           <p v-if="data.hero.intro">{{ data.hero.intro }}</p>
           <div class="hero-actions">
-            <NuxtLink class="primary-link" :to="data.hero.accentLink">{{ data.hero.accentLabel }}</NuxtLink>
+            <NuxtLink v-if="owner.authenticated" class="primary-link" :to="data.hero.accentLink">{{
+              data.hero.accentLabel
+            }}</NuxtLink>
             <NuxtLink v-if="queryText || addMode" class="secondary-link" to="/games">Limpar recorte</NuxtLink>
           </div>
         </div>

@@ -38,14 +38,17 @@
               <div>
                 <p class="current-title">{{ currentScaleItem?.title ?? 'Ainda sem nota' }}</p>
                 <span v-if="!minimal" class="current-copy">
-                  {{ currentScaleItem?.description ?? 'Escolha uma nota abaixo.' }}
+                  {{
+                    currentScaleItem?.description ??
+                    (owner.authenticated ? 'Escolha uma nota abaixo.' : 'Nenhuma nota registrada.')
+                  }}
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="rating-scale" role="group" :aria-label="title">
+        <div v-if="owner.authenticated" class="rating-scale" role="group" :aria-label="title">
           <button
             v-for="item in scale"
             :key="item.rating"
@@ -62,7 +65,13 @@
         </div>
 
         <p v-if="!minimal" class="scale-copy">
-          {{ currentScaleItem ? currentScaleItem.description : 'Escolha uma nota.' }}
+          {{
+            currentScaleItem
+              ? currentScaleItem.description
+              : owner.authenticated
+                ? 'Escolha uma nota.'
+                : 'Nenhuma nota registrada.'
+          }}
         </p>
 
         <div v-if="!minimal" class="scale-anchors">

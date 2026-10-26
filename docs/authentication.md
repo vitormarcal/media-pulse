@@ -63,3 +63,5 @@ Neste ambiente, o Docker recusou a API antiga usada pelo cliente de testes, faze
 Um proxy que termina TLS encaminha HTTP ao backend. CORS precisa rodar depois do filtro de forwarded headers e antes da autorização; a ordem anterior causava `403 Invalid CORS request` mesmo para a origem pública correta. O proxy deve substituir os headers encaminhados por valores confiáveis, incluindo protocolo, host e endereço do cliente. Valide um POST com Origin HTTPS e X-Forwarded-Proto/Host/Port correspondentes.
 
 O frontend renova a sessão/CSRF antes de login e reset, e descarta o CSRF local após respostas 401/403. Isso evita exigir duas tentativas depois que a sessão expira ou o backend reinicia. A tela de reset distingue 400 (senha), 401 (autorização), 403 (sessão/origem), 429 (limite) e falhas de conexão/servidor.
+
+Logout também renova sessão/CSRF antes do POST. A barra informa falhas e permite tentar novamente. Consultas públicas de coleções repetem o GET em falhas de leitura; a sincronização administrativa permanece restrita ao proprietário.

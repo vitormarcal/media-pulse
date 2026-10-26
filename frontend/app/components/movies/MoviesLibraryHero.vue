@@ -10,7 +10,7 @@
       <p v-if="intro" class="intro">{{ intro }}</p>
 
       <div class="actions">
-        <NuxtLink class="action-accent" :to="accentLink">
+        <NuxtLink v-if="!accentOwnerOnly || owner.authenticated" class="action-accent" :to="accentLink">
           {{ accentLabel }}
         </NuxtLink>
 
@@ -42,6 +42,8 @@
 <script setup lang="ts">
 import { NuxtLink } from '#components'
 
+const owner = useOwnerAuth()
+
 const props = defineProps<{
   title: string
   intro: string
@@ -49,6 +51,7 @@ const props = defineProps<{
   backLabel: string
   accentLink: string
   accentLabel: string
+  accentOwnerOnly?: boolean
   utilityLink?: string | null
   utilityLabel?: string | null
   spotlight: {

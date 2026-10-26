@@ -26,6 +26,7 @@
           }}
         </p>
         <div class="art-actions">
+          <span v-if="!owner.authenticated && data.artwork.favorite" class="art-muted">♥ Favorita</span>
           <button v-owner class="art-button" :aria-pressed="data.artwork.favorite" :disabled="busy" @click="favorite">
             {{ data.artwork.favorite ? '♥ Favorita' : 'Favoritar' }}
           </button>
@@ -89,6 +90,7 @@
       <ArtworkExperienceHistory :artwork-id="data.artwork.id" :experiences="data.experiences" @changed="refresh()" />
       <ArtworkListMembership :artwork-id="data.artwork.id" :selected="data.lists" @changed="refresh()" />
       <ArtworkImageManager
+        v-if="owner.authenticated"
         :artwork-id="data.artwork.id"
         :images="data.images"
         :title="data.artwork.title"
@@ -109,6 +111,7 @@ import ArtworkExperienceHistory from '~/components/artworks/ArtworkExperienceHis
 import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import type { ArtworkDetails } from '~/types/artworks'
 definePageMeta({ key: (route) => route.params.id as string })
+const owner = useOwnerAuth()
 const route = useRoute()
 const { request, run, busy, error } = useArtworkApi()
 const { resolveMediaUrl } = useMediaUrl()

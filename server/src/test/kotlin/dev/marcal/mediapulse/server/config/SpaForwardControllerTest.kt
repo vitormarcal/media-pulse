@@ -7,6 +7,36 @@ import kotlin.test.assertEquals
 
 class SpaForwardControllerTest {
     @Test
+    fun `book group details and artist review support direct navigation and refresh`() {
+        val mvc =
+            org.springframework.test.web.servlet.setup.MockMvcBuilders
+                .standaloneSetup(SpaForwardController())
+                .build()
+        for (path in listOf(
+            "/books/series",
+            "/books/series/42",
+            "/books/universes",
+            "/books/universes/42",
+            "/music/admin/artist-duplicates",
+        )) {
+            for (suffix in listOf("", "/")) {
+                mvc
+                    .perform(
+                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                            .get(path + suffix),
+                    ).andExpect(
+                        org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                            .status()
+                            .isOk,
+                    ).andExpect(
+                        org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                            .forwardedUrl("/index.html"),
+                    )
+            }
+        }
+    }
+
+    @Test
     fun `magazine publication routes support direct navigation and refresh`() {
         val routes =
             SpaForwardController::class.java

@@ -34,6 +34,7 @@
         </div>
 
         <NuxtLink
+          v-if="owner.authenticated"
           class="merge-albums-link"
           :to="{
             path: '/music/admin/album-duplicates',
@@ -54,6 +55,8 @@
 
 <script setup lang="ts">
 import type { AlbumTermDto, ArtistMusicBrainzProfile } from '~/types/music'
+const owner = useOwnerAuth()
+
 const props = defineProps<{
   artistId: number
   title: string

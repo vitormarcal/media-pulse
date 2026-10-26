@@ -12,6 +12,7 @@
     <template v-else-if="editorialData && libraryData">
       <template v-if="showEditorialLayer">
         <ShowsCollectionHero
+          accent-owner-only
           :title="editorialData.hero.title"
           :intro="editorialData.hero.intro"
           :lead="editorialData.hero.lead"
@@ -75,7 +76,7 @@
 
       <ShowManualAddCard v-if="owner.authenticated && showManualAddCard" :initial-title="queryText" />
 
-      <section v-else-if="showManualEntryHint" class="entry-hint">
+      <section v-else-if="owner.authenticated && showManualEntryHint" class="entry-hint">
         <div class="entry-hint__copy">
           <p class="entry-hint__eyebrow">Entrada manual</p>
           <h2>Não era a série certa?</h2>
@@ -272,6 +273,7 @@ useHead(() => ({
 <style scoped>
 .shows-page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sema-space-section);
   width: min(1480px, calc(100vw - 32px));
   margin: 0 auto;
@@ -286,6 +288,7 @@ useHead(() => ({
 
 .lists-entry {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 18px;
   align-items: center;

@@ -4,6 +4,7 @@
     <div v-else-if="error" class="state">Não foi possível carregar as listas.</div>
     <template v-else-if="data">
       <ShowsLibraryHero
+        accent-owner-only
         title="Listas de séries"
         intro="Recortes pessoais para organizar séries em qualquer ordem."
         back-link="/shows"

@@ -123,7 +123,7 @@
           :back-label="libraryData.hero.backLabel"
           :accent-link="libraryData.hero.accentLink"
           :accent-label="libraryData.hero.accentLabel"
-          :utility-link="libraryData.hero.utilityLink"
+          :utility-link="owner.authenticated ? libraryData.hero.utilityLink : null"
           :utility-label="libraryData.hero.utilityLabel"
           :spotlight="libraryData.hero.spotlight"
         />

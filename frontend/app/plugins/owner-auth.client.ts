@@ -24,7 +24,10 @@ export default defineNuxtPlugin(async (nuxtApp) => {
       if (url.origin !== apiOrigin || !url.pathname.startsWith('/api/')) return
       options.credentials = 'include'
       if (!['GET', 'HEAD', 'OPTIONS'].includes(String(options.method ?? 'GET').toUpperCase())) {
-        if (!owner.value.csrfToken || ['/api/auth/login', '/api/auth/reset'].includes(url.pathname)) {
+        if (
+          !owner.value.csrfToken ||
+          ['/api/auth/login', '/api/auth/reset', '/api/auth/logout'].includes(url.pathname)
+        ) {
           owner.value = await session()
         }
         options.headers.set('X-CSRF-Token', owner.value.csrfToken)

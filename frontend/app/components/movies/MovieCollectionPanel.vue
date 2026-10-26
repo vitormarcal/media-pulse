@@ -15,7 +15,6 @@
             <NuxtLink class="collection-open-link" :to="`/movies/collections/${collection.id}`">Abrir coleção</NuxtLink>
             <button
               v-if="canRetry"
-              v-owner
               type="button"
               class="collection-load-button"
               :disabled="loadingMembers"

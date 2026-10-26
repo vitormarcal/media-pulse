@@ -12,6 +12,7 @@
     <template v-else-if="editorialData && libraryData">
       <template v-if="showEditorialLayer">
         <MoviesCollectionHero
+          accent-owner-only
           :title="editorialData.hero.title"
           :intro="editorialData.hero.intro"
           :lead="editorialData.hero.lead"
@@ -63,7 +64,7 @@
         :back-label="libraryData.hero.backLabel"
         :accent-link="libraryData.hero.accentLink"
         :accent-label="libraryData.hero.accentLabel"
-        :utility-link="libraryData.hero.utilityLink"
+        :utility-link="owner.authenticated ? libraryData.hero.utilityLink : null"
         :utility-label="libraryData.hero.utilityLabel"
         :spotlight="libraryData.hero.spotlight"
       />
@@ -77,7 +78,7 @@
 
       <section v-if="libraryData.mode === 'library'" class="entry-rail">
         <NuxtLink
-          v-for="entry in entryCards"
+          v-for="entry in entryCards.filter((item) => owner.authenticated || item.id !== 'add')"
           :key="entry.id"
           class="entry-card"
           :to="entry.href"
@@ -97,7 +98,7 @@
 
       <MovieManualAddCard v-if="owner.authenticated && showManualAddCard" :initial-title="queryText" />
 
-      <section v-else-if="showManualEntryHint" class="entry-hint">
+      <section v-else-if="owner.authenticated && showManualEntryHint" class="entry-hint">
         <div class="entry-hint__copy">
           <p class="entry-hint__eyebrow">Entrada manual</p>
           <h2>Não era o filme certo?</h2>

@@ -98,6 +98,26 @@ class OwnerAuthIntegrationTest {
             filter.doFilter(request, response) { _, _ -> reached = true }
             return if (reached) 200 else response.status
         }
+        for (path in listOf(
+            "/api/music/lists",
+            "/api/books/series",
+            "/api/magazines",
+            "/api/artworks",
+            "/api/movies/lists",
+            "/api/shows/lists",
+            "/api/games/42/sessions",
+            "/api/workouts",
+            "/api/people/42/favorite",
+            "/api/ratings/movies/42",
+            "/api/comments/42",
+        )) {
+            assertEquals(200, allowed(path), "Public read: $path")
+            for (method in listOf("POST", "PUT", "PATCH", "DELETE")) {
+                assertEquals(401, allowed(path, method), "Anonymous mutation: $method $path")
+                assertEquals(403, allowed(path, method, session), "Missing CSRF: $method $path")
+                assertEquals(200, allowed(path, method, session, "csrf-token"), "Owner mutation: $method $path")
+            }
+        }
         assertEquals(200, allowed("/api/books/library"))
         assertEquals(401, allowed("/api/admin/spotify/status"))
         assertEquals(401, allowed("//api//admin/spotify/status"))

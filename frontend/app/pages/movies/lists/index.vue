@@ -11,6 +11,7 @@
 
     <template v-else-if="data">
       <MoviesLibraryHero
+        accent-owner-only
         :title="data.hero.title"
         :intro="data.hero.intro"
         :back-link="data.hero.backLink"
