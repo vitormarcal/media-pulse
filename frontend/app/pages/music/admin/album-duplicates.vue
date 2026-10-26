@@ -27,7 +27,7 @@
         ><span>Artista</span><input v-model="artistFilter" type="search" placeholder="Ex.: Oswaldo Montenegro"
       /></label>
       <label><span>Álbum</span><input v-model="albumFilter" type="search" placeholder="Ex.: Seu Francisco" /></label>
-      <button class="secondary" type="button" :disabled="suggestionsPending" @click="loadSuggestions">
+      <button v-owner class="secondary" type="button" :disabled="suggestionsPending" @click="loadSuggestions">
         {{ suggestionsPending ? 'Buscando...' : 'Atualizar sugestões' }}
       </button>
     </section>
@@ -68,7 +68,12 @@
               :suggested="album.albumId === group.suggestedTargetAlbumId"
             />
           </div>
-          <button class="primary" type="button" @click="prepareMerge(group.candidates, group.suggestedTargetAlbumId)">
+          <button
+            v-owner
+            class="primary"
+            type="button"
+            @click="prepareMerge(group.candidates, group.suggestedTargetAlbumId)"
+          >
             Revisar mesclagem
           </button>
         </article>
@@ -88,7 +93,7 @@
           type="search"
           placeholder="Buscar artista ou álbum"
           @keyup.enter="searchCatalog"
-        /><button class="secondary" type="button" @click="searchCatalog">Buscar</button>
+        /><button v-owner class="secondary" type="button" @click="searchCatalog">Buscar</button>
       </div>
       <div v-for="artist in catalog" :key="artist.artistId" class="catalog-artist">
         <h3>{{ artist.artistName }}</h3>
@@ -103,7 +108,7 @@
           >
         </label>
       </div>
-      <button class="primary" type="button" :disabled="manualSelection.length < 2" @click="prepareManualMerge">
+      <button v-owner class="primary" type="button" :disabled="manualSelection.length < 2" @click="prepareManualMerge">
         Revisar seleção
       </button>
     </section>
@@ -114,7 +119,7 @@
           <p class="kicker">Confirmação</p>
           <h2>Como ficará o álbum canônico</h2>
         </div>
-        <button class="ghost" type="button" @click="preview = null">Fechar</button>
+        <button v-owner class="ghost" type="button" @click="preview = null">Fechar</button>
       </div>
       <p>
         {{ preview.artistName }} · {{ preview.totalTracks }} vínculos de faixa ·
@@ -190,7 +195,13 @@
       <ul>
         <li v-for="warning in preview.warnings" :key="warning">{{ warning }}</li>
       </ul>
-      <button class="primary danger" type="button" :disabled="mergePending || previewPending" @click="confirmMerge">
+      <button
+        v-owner
+        class="primary danger"
+        type="button"
+        :disabled="mergePending || previewPending"
+        @click="confirmMerge"
+      >
         {{ mergePending ? 'Mesclando...' : 'Confirmar mesclagem definitiva' }}
       </button>
     </section>

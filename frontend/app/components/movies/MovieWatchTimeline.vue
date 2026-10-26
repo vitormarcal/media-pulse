@@ -18,6 +18,7 @@
           </div>
           <div class="timeline-actions">
             <button
+              v-owner
               type="button"
               class="remove-button"
               :disabled="deletingWatchId === watch.watchId"
@@ -40,10 +41,22 @@
           <p>A sessão registrada em {{ pendingRemoval.meta }} será retirada do histórico deste filme.</p>
 
           <div class="confirm-actions">
-            <button type="button" class="secondary-button" :disabled="deletingWatchId != null" @click="cancelRemoval">
+            <button
+              v-owner
+              type="button"
+              class="secondary-button"
+              :disabled="deletingWatchId != null"
+              @click="cancelRemoval"
+            >
               Manter sessão
             </button>
-            <button type="button" class="danger-button" :disabled="deletingWatchId != null" @click="confirmRemoval">
+            <button
+              v-owner
+              type="button"
+              class="danger-button"
+              :disabled="deletingWatchId != null"
+              @click="confirmRemoval"
+            >
               {{ deletingWatchId != null ? 'Removendo...' : 'Remover' }}
             </button>
           </div>

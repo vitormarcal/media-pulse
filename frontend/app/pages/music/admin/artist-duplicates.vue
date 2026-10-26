@@ -27,7 +27,7 @@
         ><span>Artista</span
         ><input v-model="artistFilter" type="search" placeholder="Ex.: Björk" @keyup.enter="loadSuggestions"
       /></label>
-      <button class="secondary" type="button" :disabled="suggestionsPending" @click="loadSuggestions">
+      <button v-owner class="secondary" type="button" :disabled="suggestionsPending" @click="loadSuggestions">
         {{ suggestionsPending ? 'Buscando...' : 'Atualizar sugestões' }}
       </button>
     </section>
@@ -57,7 +57,12 @@
           <div class="candidate-row">
             <ArtistMergeCard v-for="candidate in group.candidates" :key="candidate.artistId" :artist="candidate" />
           </div>
-          <button class="primary" type="button" @click="prepareMerge(group.candidates, group.suggestedTargetArtistId)">
+          <button
+            v-owner
+            class="primary"
+            type="button"
+            @click="prepareMerge(group.candidates, group.suggestedTargetArtistId)"
+          >
             Revisar mesclagem
           </button>
         </article>
@@ -73,6 +78,7 @@
       </div>
       <div class="manual-search">
         <input v-model="catalogQuery" type="search" placeholder="Buscar artista" @keyup.enter="searchCatalog" /><button
+          v-owner
           class="secondary"
           type="button"
           @click="searchCatalog"
@@ -87,7 +93,7 @@
           ></label
         >
       </div>
-      <button class="primary" type="button" :disabled="manualSelection.length < 2" @click="prepareManualMerge">
+      <button v-owner class="primary" type="button" :disabled="manualSelection.length < 2" @click="prepareManualMerge">
         Revisar seleção
       </button>
     </section>
@@ -98,7 +104,7 @@
           <p class="kicker">Confirmação</p>
           <h2>Como ficará o artista canônico</h2>
         </div>
-        <button class="ghost" type="button" @click="preview = null">Fechar</button>
+        <button v-owner class="ghost" type="button" @click="preview = null">Fechar</button>
       </div>
       <p>
         {{ preview.totalAlbums }} álbuns · {{ preview.totalTracks }} faixas · {{ preview.totalPlaybacks }} reproduções
@@ -158,6 +164,7 @@
         <li v-for="warning in preview.warnings" :key="warning">{{ warning }}</li>
       </ul>
       <button
+        v-owner
         class="primary danger"
         type="button"
         :disabled="mergePending || hasExternalConflict"

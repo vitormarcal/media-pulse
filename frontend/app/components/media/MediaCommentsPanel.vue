@@ -3,6 +3,7 @@
     <div v-if="compact" class="compact-header">
       <h2>Comentários</h2>
       <button
+        v-owner
         class="button button-secondary"
         type="button"
         :aria-expanded="composerOpen"
@@ -36,6 +37,7 @@
 
           <div class="actions">
             <button
+              v-owner
               class="button button-primary"
               type="button"
               :disabled="savingEdit || !editBody.trim()"
@@ -43,7 +45,7 @@
             >
               {{ savingEdit ? 'Salvando...' : 'Atualizar' }}
             </button>
-            <button class="button button-secondary" type="button" :disabled="savingEdit" @click="cancelEdit">
+            <button v-owner class="button button-secondary" type="button" :disabled="savingEdit" @click="cancelEdit">
               Cancelar
             </button>
             <p v-if="editError" class="feedback error">{{ editError }}</p>
@@ -58,8 +60,8 @@
             </div>
 
             <div class="actions">
-              <button class="button button-ghost" type="button" @click="startEdit(comment)">Editar</button>
-              <button class="button button-ghost" type="button" @click="deleteId = comment.id">Excluir</button>
+              <button v-owner class="button button-ghost" type="button" @click="startEdit(comment)">Editar</button>
+              <button v-owner class="button button-ghost" type="button" @click="deleteId = comment.id">Excluir</button>
             </div>
           </div>
 
@@ -81,10 +83,10 @@
     <div v-if="deleteId != null" class="empty-card" role="alert">
       <p>Excluir este comentário?</p>
       <div class="actions">
-        <button class="button button-secondary" type="button" :disabled="deleting" @click="deleteComment">
+        <button v-owner class="button button-secondary" type="button" :disabled="deleting" @click="deleteComment">
           Confirmar exclusão
         </button>
-        <button class="button button-ghost" type="button" :disabled="deleting" @click="deleteId = null">
+        <button v-owner class="button button-ghost" type="button" :disabled="deleting" @click="deleteId = null">
           Cancelar
         </button>
       </div>
@@ -99,6 +101,7 @@
 
         <button
           v-if="localComments.length"
+          v-owner
           class="button button-secondary"
           type="button"
           @click="composerOpen = !composerOpen"
@@ -107,7 +110,7 @@
         </button>
       </div>
 
-      <form v-if="composerOpen" class="composer-card" @submit.prevent="submitNewComment">
+      <form v-if="composerOpen" v-owner class="composer-card" @submit.prevent="submitNewComment">
         <label class="field">
           <span class="field-label">Comentário</span>
           <textarea

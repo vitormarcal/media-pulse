@@ -7,7 +7,7 @@
         <h1>Listas de álbuns</h1>
       </div>
 
-      <form class="create-card" @submit.prevent="createList">
+      <form v-owner class="create-card" @submit.prevent="createList">
         <p class="eyebrow">Nova lista</p>
         <label>
           Nome

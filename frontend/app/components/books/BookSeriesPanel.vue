@@ -2,7 +2,13 @@
   <section class="book-groups group-panel" aria-labelledby="book-series-heading">
     <div class="group-section-heading">
       <h2 id="book-series-heading">Séries</h2>
-      <button :aria-expanded="editing" aria-controls="book-series-management" :disabled="busy" @click="toggleEditing">
+      <button
+        v-owner
+        :aria-expanded="editing"
+        aria-controls="book-series-management"
+        :disabled="busy"
+        @click="toggleEditing"
+      >
         {{ editing ? 'Fechar gerenciamento' : 'Gerenciar séries' }}
       </button>
     </div>
@@ -16,7 +22,7 @@
     <p v-else class="group-muted">Nenhuma série associada.</p>
     <div v-if="editing" id="book-series-management" class="group-section">
       <div class="group-edit-panel">
-        <form @submit.prevent="associate">
+        <form v-owner @submit.prevent="associate">
           <h3>Adicionar a uma série existente</h3>
           <label for="book-existing-series">Série local</label
           ><select id="book-existing-series" ref="seriesSelect" v-model="selectedSeries" required :disabled="busy">
@@ -26,7 +32,7 @@
             </option></select
           ><button class="group-primary" type="submit" :disabled="busy || !selectedSeries">Associar livro</button>
         </form>
-        <form @submit.prevent="create">
+        <form v-owner @submit.prevent="create">
           <h3>Criar série</h3>
           <label>Nome<input v-model="newName" required maxlength="300" :disabled="busy" /></label
           ><button class="group-primary" type="submit" :disabled="busy || !newName.trim()">
@@ -38,6 +44,7 @@
         <button
           v-for="series in memberships"
           :key="series.id"
+          v-owner
           class="group-danger"
           :disabled="busy"
           @click="unlink(series.id)"
@@ -48,7 +55,7 @@
       <section class="group-section group-enrichment">
         <div class="group-section-heading">
           <h3>Sugestões do Hardcover</h3>
-          <button :disabled="busy" @click="preview">
+          <button v-owner :disabled="busy" @click="preview">
             {{ searching ? 'Buscando...' : 'Buscar sugestões de séries' }}
           </button>
         </div>

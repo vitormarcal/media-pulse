@@ -1,7 +1,10 @@
 <template>
   <div class="app-shell">
     <AppTopNav @open-search="searchOpen = true" />
-    <SpotifyStatusBanner v-if="spotifyStatus?.status === 'REAUTHORIZATION_REQUIRED'" :status="spotifyStatus" />
+    <SpotifyStatusBanner
+      v-if="owner.authenticated && spotifyStatus?.status === 'REAUTHORIZATION_REQUIRED'"
+      :status="spotifyStatus"
+    />
     <SearchOverlay
       :open="searchOpen"
       :loading="loading"
@@ -23,11 +26,18 @@ import { fetchGlobalSearch } from '~/composables/useGlobalSearch'
 import type { GlobalSearchData } from '~/types/search'
 import type { SpotifyStatusResponse } from '~/types/spotify'
 
+const owner = useOwnerAuth()
+
 const route = useRoute()
 const config = useRuntimeConfig()
-const { data: spotifyStatus } = await useFetch<SpotifyStatusResponse>('/api/admin/spotify/status', {
-  baseURL: config.public.apiBase,
-})
+const { data: spotifyStatus } = await useAsyncData(
+  'owner-spotify-status',
+  () =>
+    owner.value.authenticated
+      ? $fetch<SpotifyStatusResponse>('/api/admin/spotify/status', { baseURL: config.public.apiBase })
+      : Promise.resolve(null),
+  { watch: [() => owner.value.authenticated] },
+)
 const searchOpen = ref(false)
 const query = ref('')
 const results = ref<GlobalSearchData | null>(null)

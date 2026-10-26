@@ -1,5 +1,5 @@
 <template>
-  <section class="add-watch-panel">
+  <section v-owner class="add-watch-panel">
     <SectionHeading eyebrow="Sessão" title="Registrar sessão" />
 
     <article class="panel-card">
@@ -7,14 +7,14 @@
         <p class="panel-title">Registrar sessão</p>
       </div>
 
-      <form class="panel-form" @submit.prevent="handleSubmit">
+      <form v-owner class="panel-form" @submit.prevent="handleSubmit">
         <label class="field">
           <span>Data e hora</span>
           <input v-model="watchedAtInput" type="datetime-local" />
         </label>
 
         <div class="actions">
-          <button type="button" class="secondary-button" :disabled="submitting" @click="setNow">Agora</button>
+          <button v-owner type="button" class="secondary-button" :disabled="submitting" @click="setNow">Agora</button>
           <button type="submit" class="primary-button" :disabled="submitting || !watchedAtInput">
             {{ submitting ? 'Salvando...' : 'Adicionar sessão' }}
           </button>

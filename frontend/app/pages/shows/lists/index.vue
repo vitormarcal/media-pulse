@@ -14,7 +14,7 @@
       />
       <section>
         <SectionHeading eyebrow="Curadoria" title="Listas" :summary="`${data.length} listas`" />
-        <form class="create" @submit.prevent="createList">
+        <form v-owner class="create" @submit.prevent="createList">
           <label><span>Nome</span><input v-model="name" required placeholder="Favoritas" /></label
           ><label><span>Descrição</span><input v-model="description" placeholder="Opcional" /></label
           ><button type="submit" :disabled="creating">{{ creating ? 'Criando…' : 'Criar lista' }}</button>

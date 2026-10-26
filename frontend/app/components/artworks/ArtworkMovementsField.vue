@@ -11,7 +11,7 @@
         placeholder="Ex.: Art Nouveau"
         @keydown.enter.prevent="add"
       />
-      <button type="button" class="art-button" :disabled="!draft.trim()" @click="add">Adicionar</button>
+      <button v-owner type="button" class="art-button" :disabled="!draft.trim()" @click="add">Adicionar</button>
     </div>
     <datalist :id="suggestionId">
       <option v-for="suggestion in available" :key="suggestion" :value="suggestion" />
@@ -19,7 +19,7 @@
     <ul v-if="model.length" class="art-movement-chips" aria-label="Movimentos selecionados">
       <li v-for="(movement, index) in model" :key="movement">
         <span>{{ movement }}</span
-        ><button type="button" :aria-label="`Remover ${movement}`" @click="remove(index)">×</button>
+        ><button v-owner type="button" :aria-label="`Remover ${movement}`" @click="remove(index)">×</button>
       </li>
     </ul>
   </div>

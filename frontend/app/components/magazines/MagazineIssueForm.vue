@@ -1,5 +1,5 @@
 <template>
-  <form class="mag-panel mag-form" @submit.prevent="save">
+  <form v-owner class="mag-panel mag-form" @submit.prevent="save">
     <h2>{{ savedId ? 'Adicionar capa' : issue ? 'Editar número' : 'Adicionar número' }}</h2>
     <fieldset class="mag-form" :disabled="saving">
       <fieldset class="mag-form" :disabled="savedId != null">
@@ -42,7 +42,7 @@
             ><span>Capa</span><input type="file" accept="image/jpeg,image/png,image/webp" @change="chooseCover"
           /></label>
           <MediaImage v-if="preview" :src="preview" alt="Prévia da capa" class="mag-preview" />
-          <button v-if="preview" type="button" class="mag-button" @click="removeImage">Remover capa</button>
+          <button v-if="preview" v-owner type="button" class="mag-button" @click="removeImage">Remover capa</button>
         </div>
       </details>
       <p v-if="savedId" class="mag-feedback" role="status">Dados salvos. A capa ainda não foi enviada.</p>

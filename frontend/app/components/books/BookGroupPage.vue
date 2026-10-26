@@ -11,7 +11,13 @@
             <NuxtLink class="group-back" :to="`/books/${kind}`">{{
               kind === 'series' ? 'Voltar para séries' : 'Voltar para universos'
             }}</NuxtLink
-            ><button :aria-expanded="editing" aria-controls="group-edit-panel" :disabled="busy" @click="toggleEditing">
+            ><button
+              v-owner
+              :aria-expanded="editing"
+              aria-controls="group-edit-panel"
+              :disabled="busy"
+              @click="toggleEditing"
+            >
               {{ editing ? 'Fechar edição' : kind === 'series' ? 'Editar série' : 'Editar universo' }}
             </button>
           </div>
@@ -67,7 +73,7 @@
         </div>
       </header>
       <section v-if="editing" id="group-edit-panel" class="group-edit-panel">
-        <form @submit.prevent="saveDetails">
+        <form v-owner @submit.prevent="saveDetails">
           <h2>Detalhes</h2>
           <label>Nome<input ref="nameInput" v-model="name" required maxlength="300" :disabled="busy" /></label>
           <label v-if="kind === 'series'"
@@ -82,17 +88,19 @@
             <p>Livros e leituras serão preservados.</p>
             <label class="group-check"
               ><input v-model="confirmDelete" type="checkbox" :disabled="busy" />Confirmar exclusão</label
-            ><button class="group-danger" type="button" :disabled="busy || !confirmDelete" @click="removeGroup">
+            ><button v-owner class="group-danger" type="button" :disabled="busy || !confirmDelete" @click="removeGroup">
               Excluir {{ kind === 'series' ? 'série' : 'universo' }}
             </button>
           </details>
         </form>
         <div class="group-section">
-          <form @submit.prevent="add">
+          <form v-owner @submit.prevent="add">
             <h2>Adicionar do acervo</h2>
             <template v-if="kind === 'series'"
               ><label>Buscar livro<input v-model="query" type="search" :disabled="busy" /></label
-              ><button :disabled="busy || !query.trim()" type="button" @click="search">Buscar livros</button></template
+              ><button v-owner :disabled="busy || !query.trim()" type="button" @click="search">
+                Buscar livros
+              </button></template
             >
             <label :for="`group-member-${id}`">{{ kind === 'series' ? 'Livro' : 'Série' }}</label
             ><select :id="`group-member-${id}`" v-model="selected" required :disabled="busy">
@@ -101,7 +109,7 @@
             </select>
             <button class="group-primary" type="submit" :disabled="busy || !selected">Adicionar ao final</button>
           </form>
-          <form v-if="kind === 'series'" @submit.prevent="linkUniverse">
+          <form v-if="kind === 'series'" v-owner @submit.prevent="linkUniverse">
             <label for="group-universe">Universo</label
             ><select id="group-universe" v-model="universeId" required :disabled="busy">
               <option value="">Selecionar</option>
@@ -119,11 +127,11 @@
       <section v-if="editing && kind === 'series' && group.hardcoverId" class="group-enrichment">
         <div class="group-section-heading">
           <h2>Metadados</h2>
-          <button :disabled="busy" @click="previewMetadata">
+          <button v-owner :disabled="busy" @click="previewMetadata">
             {{ busy ? 'Buscando...' : 'Buscar metadados no Hardcover' }}
           </button>
         </div>
-        <form v-if="metadataPreview" @submit.prevent="applyMetadata">
+        <form v-if="metadataPreview" v-owner @submit.prevent="applyMetadata">
           <BookSeriesMetadataFields
             v-model="metadataFields"
             :suggestion="metadataPreview.suggested"
@@ -159,18 +167,21 @@
             >
             <div v-if="editing" class="group-actions group-member-actions">
               <button
+                v-owner
                 :disabled="busy || index === 0"
                 :aria-label="`Mover ${item.name} para cima`"
                 @click="move(index, -1)"
               >
                 ↑</button
               ><button
+                v-owner
                 :disabled="busy || index === group.items.length - 1"
                 :aria-label="`Mover ${item.name} para baixo`"
                 @click="move(index, 1)"
               >
                 ↓</button
               ><button
+                v-owner
                 class="group-danger"
                 :disabled="busy"
                 :aria-label="`Remover ${item.name} deste agrupamento`"

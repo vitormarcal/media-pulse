@@ -19,7 +19,7 @@
 
           <p class="eyebrow">Pessoa no catálogo audiovisual</p>
           <h1>{{ data.name }}</h1>
-          <button class="favorite-button" type="button" :disabled="favoritePending" @click="toggleFavorite">
+          <button v-owner class="favorite-button" type="button" :disabled="favoritePending" @click="toggleFavorite">
             {{ data.favorite ? '★ Favorita' : '☆ Favoritar' }}
           </button>
           <p class="intro">{{ heroIntro }}</p>

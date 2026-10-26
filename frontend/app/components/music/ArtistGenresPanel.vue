@@ -5,7 +5,7 @@
         <p class="eyebrow">Curadoria</p>
         <h2>Gêneros do artista</h2>
       </div>
-      <button type="button" class="secondary" @click="editing = !editing">
+      <button v-owner type="button" class="secondary" @click="editing = !editing">
         {{ editing ? 'Fechar' : 'Editar gêneros' }}
       </button>
     </div>
@@ -13,16 +13,16 @@
       <article v-for="genre in genres" :key="genre.id" class="chip" :class="{ hidden: !genre.active }">
         <span>{{ genre.name }}</span
         ><small>{{ genre.source === 'MUSICBRAINZ' ? 'MusicBrainz' : 'Manual' }}</small>
-        <button v-if="editing" type="button" @click="restoreOrHide(genre)">
+        <button v-if="editing" v-owner type="button" @click="restoreOrHide(genre)">
           {{ genre.active ? 'Ocultar aqui' : 'Restaurar' }}
         </button>
-        <button v-if="editing && genre.active" type="button" @click="setGlobalVisibility(genre.id)">
+        <button v-if="editing && genre.active" v-owner type="button" @click="setGlobalVisibility(genre.id)">
           Ocultar geral
         </button>
       </article>
     </div>
     <p v-else class="muted">Nenhum gênero associado ao artista.</p>
-    <form v-if="editing" class="add-form" @submit.prevent="addGenre">
+    <form v-if="editing" v-owner class="add-form" @submit.prevent="addGenre">
       <input v-model="draft" placeholder="Ex.: Alternative rock" />
       <button type="submit" class="primary" :disabled="busy || !draft.trim()">Adicionar</button>
     </form>

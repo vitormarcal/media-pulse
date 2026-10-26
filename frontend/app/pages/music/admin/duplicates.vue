@@ -71,11 +71,18 @@
         </div>
 
         <div class="toolbar-actions">
-          <button type="button" class="secondary-button" :disabled="!groups.length" @click="toggleAllVisibleGroups">
+          <button
+            v-owner
+            type="button"
+            class="secondary-button"
+            :disabled="!groups.length"
+            @click="toggleAllVisibleGroups"
+          >
             {{ allVisibleSelected ? 'Desmarcar visíveis' : 'Marcar visíveis' }}
           </button>
 
           <button
+            v-owner
             type="button"
             class="secondary-button"
             :disabled="busyBatch || !selectedGroupIds.length"
@@ -85,6 +92,7 @@
           </button>
 
           <button
+            v-owner
             type="button"
             class="primary-button"
             :disabled="busyBatch || !canMergeAllFiltered"
@@ -215,6 +223,7 @@
 
             <div class="group-card__footer-actions">
               <button
+                v-owner
                 type="button"
                 class="secondary-button"
                 :disabled="busyGroupId === groupId(group)"
@@ -224,6 +233,7 @@
               </button>
 
               <button
+                v-owner
                 type="button"
                 class="primary-button"
                 :disabled="busyGroupId === groupId(group) || !selectionFor(group).sourceTrackIds.length"
@@ -261,8 +271,10 @@
           </div>
 
           <div class="confirm-actions">
-            <button type="button" class="secondary-button" :disabled="busyBatch" @click="closeConfirm">Cancelar</button>
-            <button type="button" class="primary-button" :disabled="busyBatch" @click="runConfirmedAction">
+            <button v-owner type="button" class="secondary-button" :disabled="busyBatch" @click="closeConfirm">
+              Cancelar
+            </button>
+            <button v-owner type="button" class="primary-button" :disabled="busyBatch" @click="runConfirmedAction">
               {{ busyBatch ? 'Processando...' : confirmState.confirmLabel }}
             </button>
           </div>

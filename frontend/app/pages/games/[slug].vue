@@ -19,7 +19,12 @@
         :identifiers="data.identifiers"
       />
 
-      <MediaCoverUpload media-type="games" :entity-id="data.gameId" @saved="handleCoverSaved" />
+      <MediaCoverUpload
+        v-if="owner.authenticated"
+        media-type="games"
+        :entity-id="data.gameId"
+        @saved="handleCoverSaved"
+      />
 
       <GameImagesPanel :game-id="data.gameId" @imported="refresh()" />
 
@@ -39,7 +44,7 @@
         minimal
       />
 
-      <GameAddSessionPanel :game-id="data.gameId" @created="handleSessionChanged" />
+      <GameAddSessionPanel v-if="owner.authenticated" :game-id="data.gameId" @created="handleSessionChanged" />
 
       <MediaCommentsPanel
         :entity-id="data.gameId"
@@ -65,6 +70,8 @@ import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import { useGamePageData } from '~/composables/useGamePageData'
 
 import MediaCoverUpload from '~/components/media/MediaCoverUpload.vue'
+
+const owner = useOwnerAuth()
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))

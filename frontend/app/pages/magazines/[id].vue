@@ -17,11 +17,15 @@
       />
       <div class="mag-actions">
         <NuxtLink class="mag-button" :to="`/magazines/publications/${data.issue.publication.id}`">Ver números</NuxtLink>
-        <button class="mag-button primary" @click="openRead(openJourney)">
+        <button v-owner class="mag-button primary" @click="openRead(openJourney)">
           {{ openJourney ? 'Atualizar leitura' : data.reads.length ? 'Reler' : 'Ler' }}
         </button>
-        <button class="mag-button" :aria-expanded="editIssue" @click="editIssue = !editIssue">Editar número</button>
-        <button class="mag-button" :aria-expanded="editPublication" @click="openPublication">Editar publicação</button>
+        <button v-owner class="mag-button" :aria-expanded="editIssue" @click="editIssue = !editIssue">
+          Editar número
+        </button>
+        <button v-owner class="mag-button" :aria-expanded="editPublication" @click="openPublication">
+          Editar publicação
+        </button>
       </div>
       <div v-if="readEditorOpened && !editingRead" v-show="readEditorOpen" id="magazine-read-editor-new">
         <MagazineReadEditor
@@ -39,16 +43,16 @@
           @saved="savedIssue"
           @cancel="editIssue = false"
         />
-        <button class="mag-button mag-danger" @click="deleteTarget = { kind: 'issue' }">Excluir número</button>
+        <button v-owner class="mag-button mag-danger" @click="deleteTarget = { kind: 'issue' }">Excluir número</button>
         <div v-if="deleteTarget?.kind === 'issue'" class="mag-panel" role="alert">
           <p>Excluir este número, leituras e comentários?</p>
           <div class="mag-actions">
-            <button class="mag-button" :disabled="saving" @click="confirmDelete">Excluir</button
-            ><button class="mag-button" :disabled="saving" @click="deleteTarget = null">Cancelar</button>
+            <button v-owner class="mag-button" :disabled="saving" @click="confirmDelete">Excluir</button
+            ><button v-owner class="mag-button" :disabled="saving" @click="deleteTarget = null">Cancelar</button>
           </div>
         </div>
       </div>
-      <form v-if="editPublication" class="mag-panel mag-form" @submit.prevent="savePublication">
+      <form v-if="editPublication" v-owner class="mag-panel mag-form" @submit.prevent="savePublication">
         <h2>Editar publicação</h2>
         <fieldset class="mag-fields" :disabled="saving">
           <label><span>Nome</span><input v-model="publicationName" required maxlength="200" /></label
@@ -57,7 +61,7 @@
         <small class="mag-muted">Altera todos os números desta publicação.</small>
         <div class="mag-actions">
           <button class="mag-button primary" :disabled="saving">Salvar</button
-          ><button type="button" class="mag-button" @click="editPublication = false">Cancelar</button>
+          ><button v-owner type="button" class="mag-button" @click="editPublication = false">Cancelar</button>
         </div>
       </form>
       <p v-if="actionError" class="mag-error" role="alert">{{ actionError }}</p>
@@ -83,12 +87,15 @@
             </div>
             <div class="mag-actions">
               <button
+                v-owner
                 class="mag-button ghost"
                 :aria-expanded="readEditorOpen && editingRead?.id === read.id"
                 @click="openRead(read)"
               >
                 Editar leitura</button
-              ><button class="mag-button ghost" @click="deleteTarget = { kind: 'read', id: read.id }">Excluir</button>
+              ><button v-owner class="mag-button ghost" @click="deleteTarget = { kind: 'read', id: read.id }">
+                Excluir
+              </button>
             </div>
           </div>
           <div
@@ -107,8 +114,8 @@
           <div v-if="deleteTarget?.kind === 'read' && deleteTarget.id === read.id" class="mag-delete" role="alert">
             <p>Excluir esta leitura?</p>
             <div class="mag-actions">
-              <button class="mag-button" :disabled="saving" @click="confirmDelete">Excluir leitura</button
-              ><button class="mag-button" :disabled="saving" @click="deleteTarget = null">Cancelar</button>
+              <button v-owner class="mag-button" :disabled="saving" @click="confirmDelete">Excluir leitura</button
+              ><button v-owner class="mag-button" :disabled="saving" @click="deleteTarget = null">Cancelar</button>
             </div>
           </div>
         </article>

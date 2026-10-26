@@ -11,7 +11,7 @@
           }}</NuxtLink>
         </nav>
       </div>
-      <form class="group-create-card" @submit.prevent="create">
+      <form v-owner class="group-create-card" @submit.prevent="create">
         <h2>{{ kind === 'series' ? 'Nova série' : 'Novo universo' }}</h2>
         <label
           >Nome<input

@@ -1,11 +1,18 @@
 <template>
-  <dialog ref="dialog" class="composer" aria-labelledby="workout-title" @cancel="handleCancel" @close="emit('close')">
+  <dialog
+    ref="dialog"
+    v-owner
+    class="composer"
+    aria-labelledby="workout-title"
+    @cancel="handleCancel"
+    @close="emit('close')"
+  >
     <div class="composer-heading">
       <div>
         <p class="eyebrow">Um momento para você</p>
         <h2 id="workout-title">{{ category ? 'Guarde este treino' : 'Como você se movimentou?' }}</h2>
       </div>
-      <button type="button" class="close-button" aria-label="Fechar registro" :disabled="saving" @click="close">
+      <button v-owner type="button" class="close-button" aria-label="Fechar registro" :disabled="saving" @click="close">
         ×
       </button>
     </div>
@@ -14,6 +21,7 @@
       <button
         v-for="item in workoutCategories"
         :key="item.value"
+        v-owner
         type="button"
         class="category-choice"
         @click="choose(item.value)"
@@ -23,15 +31,15 @@
       </button>
     </div>
 
-    <form v-else class="entry" @submit.prevent="save">
+    <form v-else v-owner class="entry" @submit.prevent="save">
       <fieldset :disabled="saving" class="entry-fields">
         <div class="memory">
           <img :src="preview || workoutCategory(category).image" :alt="preview ? 'Foto escolhida para o treino' : ''" />
           <div class="memory-actions">
-            <button type="button" class="soft-button" @click="fileInput?.click()">
+            <button v-owner type="button" class="soft-button" @click="fileInput?.click()">
               {{ photo ? 'Trocar foto' : 'Adicionar foto' }}
             </button>
-            <button v-if="photo" type="button" class="soft-button" @click="removePhoto">Remover foto</button>
+            <button v-if="photo" v-owner type="button" class="soft-button" @click="removePhoto">Remover foto</button>
           </div>
           <input
             ref="fileInput"
@@ -47,7 +55,7 @@
         <div class="details">
           <div class="activity-line">
             <h3>{{ workoutCategory(category).label }}</h3>
-            <button type="button" class="text-button" @click="category = null">Trocar atividade</button>
+            <button v-owner type="button" class="text-button" @click="category = null">Trocar atividade</button>
           </div>
           <div class="when">
             <label><span>Dia</span><input v-model="date" aria-label="Dia do treino" type="date" required /></label>
@@ -109,6 +117,7 @@
             <button
               v-for="minutes in [15, 30, 45, 60]"
               :key="minutes"
+              v-owner
               type="button"
               class="soft-button"
               @click="duration = String(minutes)"
@@ -126,7 +135,7 @@
               placeholder="Parque, academia, sua casa…"
             />
           </label>
-          <button v-else type="button" class="text-button add-location" @click="revealLocation">
+          <button v-else v-owner type="button" class="text-button add-location" @click="revealLocation">
             + Adicionar local
           </button>
         </div>

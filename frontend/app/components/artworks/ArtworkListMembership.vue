@@ -5,6 +5,7 @@
         Listas<span class="art-count" aria-hidden="true">{{ selected.length }}</span>
       </h2>
       <button
+        v-owner
         class="art-button"
         type="button"
         :aria-expanded="managing"
@@ -18,6 +19,7 @@
       <NuxtLink :to="`/artworks/lists/${list.id}`">{{ list.name }}</NuxtLink>
       <button
         v-if="managing"
+        v-owner
         class="art-button"
         :aria-label="`Remover de ${list.name}`"
         :disabled="busy"
@@ -26,7 +28,7 @@
         Remover
       </button>
     </div>
-    <form v-show="managing" :id="managerId" ref="managerForm" class="art-section" @submit.prevent="add">
+    <form v-show="managing" :id="managerId" ref="managerForm" v-owner class="art-section" @submit.prevent="add">
       <fieldset :disabled="busy">
         <div class="art-fields">
           <label

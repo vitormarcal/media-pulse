@@ -22,6 +22,7 @@
       <ArtistContextPanel :stats="data.stats" :recent-days="data.recentDays" />
 
       <ArtistMusicBrainzPanel
+        v-if="owner.authenticated"
         :artist-id="Number(data.id)"
         :link="data.musicBrainz"
         :profile="data.profile"
@@ -59,6 +60,8 @@ import ArtistMusicBrainzPanel from '~/components/music/ArtistMusicBrainzPanel.vu
 import ArtistMusicBrainzDiscography from '~/components/music/ArtistMusicBrainzDiscography.vue'
 import MusicLibraryGrid from '~/components/music/MusicLibraryGrid.vue'
 import { useArtistPageData } from '~/composables/useArtistPageData'
+
+const owner = useOwnerAuth()
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))

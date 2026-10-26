@@ -15,6 +15,7 @@
             <NuxtLink class="collection-open-link" :to="`/movies/collections/${collection.id}`">Abrir coleção</NuxtLink>
             <button
               v-if="canRetry"
+              v-owner
               type="button"
               class="collection-load-button"
               :disabled="loadingMembers"
@@ -56,6 +57,7 @@
               <a v-if="item.tmdbUrl" class="tmdb-link" :href="item.tmdbUrl" target="_blank" rel="noreferrer">TMDb</a>
               <button
                 v-if="!item.inCatalog"
+                v-owner
                 type="button"
                 class="movie-button"
                 :disabled="addingTmdbId === item.tmdbId"

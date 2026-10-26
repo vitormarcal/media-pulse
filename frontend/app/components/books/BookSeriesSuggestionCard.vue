@@ -1,5 +1,5 @@
 <template>
-  <form class="group-suggestion" @submit.prevent="apply">
+  <form v-owner class="group-suggestion" @submit.prevent="apply">
     <header>
       <p class="group-eyebrow">Sugestão do Hardcover</p>
       <h3>{{ suggestion.name }}</h3>
@@ -47,7 +47,7 @@
       </button>
     </fieldset>
     <p v-if="message" role="status" :class="{ 'group-error': failed }">{{ message }}</p>
-    <button v-if="targetFailed" type="button" :disabled="loadingTarget" @click="loadTarget">
+    <button v-if="targetFailed" v-owner type="button" :disabled="loadingTarget" @click="loadTarget">
       Tentar carregar destino novamente
     </button>
   </form>

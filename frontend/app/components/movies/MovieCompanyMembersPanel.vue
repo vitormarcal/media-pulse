@@ -13,6 +13,7 @@
           <p class="members-count">{{ countLabel }}</p>
           <button
             v-if="showLoadButton"
+            v-owner
             type="button"
             class="members-load-button"
             :disabled="loading"
@@ -56,6 +57,7 @@
               <a v-if="item.tmdbUrl" class="tmdb-link" :href="item.tmdbUrl" target="_blank" rel="noreferrer">TMDb</a>
               <button
                 v-if="!item.inCatalog"
+                v-owner
                 type="button"
                 class="movie-button"
                 :disabled="addingTmdbId === item.tmdbId"

@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.marcal.mediapulse.server"
-version = "1.8.5"
+version = "1.9.0"
 
 java {
     toolchain {
@@ -33,6 +33,8 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+    implementation("org.springframework.security:spring-security-crypto")
 
     implementation("commons-codec:commons-codec:1.19.0")
 

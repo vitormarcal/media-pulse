@@ -59,9 +59,15 @@ O contrato não expõe tokens nem a descrição crua retornada pelo provedor. Qu
 
 O refresh token obtido pelo OAuth é persistido localmente em `spotify_credentials`, sua única fonte de configuração. Uma nova autorização atualiza a credencial sem exigir reinício e altera o estado para `HEALTHY`.
 
+## Controle de acesso
+
+Endpoints `/api/admin/**`, inclusive leituras, exigem sessão owner. Mutações do navegador exigem também `X-CSRF-Token`. Veja [autenticação](authentication.md) para login, reset, configuração e códigos de erro.
+
 ## Spotify OAuth
 
 ### `GET /oauth/spotify/login`
+
+Exige sessão autenticada do owner.
 
 Se `media-pulse.spotify.oauth.enabled=false`, retorna `404`.
 
@@ -87,6 +93,8 @@ Casos de erro documentados no código:
 ## Plex
 
 ### `POST /webhook/plex`
+
+Exige `?secret=...` igual ao `PLEX_WEBHOOK_SECRET` do backend. Ausente, incorreto ou não configurado retorna `401`; não usa sessão/CSRF. Veja [configuração do webhook](authentication.md#exceções-de-integração-e-exploração).
 
 Recebe `multipart/form-data` com:
 

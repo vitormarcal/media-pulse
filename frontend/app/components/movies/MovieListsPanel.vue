@@ -41,6 +41,7 @@
 
         <button
           v-if="editingEnabled && !item.includedAutomatically"
+          v-owner
           type="button"
           class="card-action"
           :disabled="busyListId === item.listId"
@@ -73,6 +74,7 @@
           <button
             v-for="item in availableLists"
             :key="item.listId"
+            v-owner
             type="button"
             class="editor-chip"
             :disabled="busyListId === item.listId"
@@ -86,7 +88,7 @@
 
       <p v-else class="editor-note">Este filme já está em todas as listas disponíveis.</p>
 
-      <form class="create-form" @submit.prevent="createAndAttachList">
+      <form v-owner class="create-form" @submit.prevent="createAndAttachList">
         <p class="group-label">Criar nova lista</p>
 
         <div class="field-row">

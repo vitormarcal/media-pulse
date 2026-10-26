@@ -1,5 +1,5 @@
 <template>
-  <form class="mag-panel mag-form" @submit.prevent="save">
+  <form v-owner class="mag-panel mag-form" @submit.prevent="save">
     <h2>{{ existing ? 'Editar leitura' : reread ? 'Releitura' : 'Leitura' }}</h2>
     <fieldset :disabled="saving" class="mag-form">
       <MagazineReadFields

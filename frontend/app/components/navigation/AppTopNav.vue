@@ -12,15 +12,26 @@
         </NuxtLink>
       </nav>
 
+      <NuxtLink v-if="!owner.authenticated" class="nav-link" to="/login">Entrar</NuxtLink>
+      <button v-else type="button" class="search-trigger" @click="logout">Sair</button>
       <button type="button" class="search-trigger" @click="$emit('openSearch')">Buscar</button>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
+const owner = useOwnerAuth()
 defineEmits<{
   openSearch: []
 }>()
+
+const config = useRuntimeConfig()
+async function logout() {
+  await $fetch('/api/auth/logout', { baseURL: config.public.apiBase, method: 'POST' })
+  owner.value = { authenticated: false, csrfToken: '' }
+  await navigateTo('/')
+  window.location.reload()
+}
 
 const items = [
   { label: 'Início', href: '/' },

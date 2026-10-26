@@ -131,3 +131,9 @@ O detalhe do livro permite gerenciar suas séries e buscar sugestões explicitam
 Cards de séries mostram mosaicos de capas, autores derivados dos livros e contagem local, inclusive na página de cada autor. O detalhe oferece descrição e contexto complementar do Hardcover; Editar série revela manutenção, reordenação e busca de metadados com revisão seletiva. Na atribuição, sugestões externas e séries locais têm apresentação distinta e livros já vinculados ficam identificados.
 
 No detalhe do livro, pendências de atualização das tags de séries nas capas do Visual Library aparecem abaixo de Séries, com motivo da falha e botão de nova tentativa. Associação e upload atualizam o estado; o polling ocorre apenas enquanto há pendência, sem bloquear a página.
+
+## Autenticação
+
+Consulta pública; controles de edição/administração aparecem após login em `/login`. Criação/reset em `/auth/reset` exige o UUID configurado no backend e uma nova senha. O plugin `owner-auth.client.ts` centraliza cookie de sessão e token CSRF; a diretiva `v-owner` controla somente apresentação. O backend sempre valida as operações.
+
+Em desenvolvimento HTTP, configure `AUTH_COOKIE_SECURE=false` no backend, uma origem explícita no CORS e o mesmo hostname para UI/API. Consulte [configuração e contratos](../docs/authentication.md).

@@ -13,7 +13,7 @@
               <p v-if="session.notes" class="notes">{{ session.notes }}</p>
             </div>
 
-            <form v-else class="edit-form" @submit.prevent="saveEdit(session)">
+            <form v-else v-owner class="edit-form" @submit.prevent="saveEdit(session)">
               <label class="field">
                 <span>Status</span>
                 <select v-model="editStatus">
@@ -44,6 +44,7 @@
                   {{ savingId === session.sessionId ? 'Salvando...' : 'Salvar' }}
                 </button>
                 <button
+                  v-owner
                   type="button"
                   class="secondary-button"
                   :disabled="savingId === session.sessionId"
@@ -61,6 +62,7 @@
           </div>
           <div v-if="editingId !== session.sessionId" class="timeline-actions">
             <button
+              v-owner
               type="button"
               class="edit-button"
               :disabled="deletingId === session.sessionId"
@@ -69,6 +71,7 @@
               Editar
             </button>
             <button
+              v-owner
               type="button"
               class="remove-button"
               :disabled="deletingId === session.sessionId"

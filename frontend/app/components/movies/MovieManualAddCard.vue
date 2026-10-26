@@ -1,5 +1,5 @@
 <template>
-  <section class="manual-add-card">
+  <section v-owner class="manual-add-card">
     <SectionHeading
       eyebrow="Entrada manual"
       title="Adicionar filme ao catálogo"
@@ -7,7 +7,7 @@
     />
 
     <article class="form-card">
-      <form class="lookup-form" @submit.prevent="handleSuggest">
+      <form v-owner class="lookup-form" @submit.prevent="handleSuggest">
         <label class="field">
           <span>Nome do filme</span>
           <input v-model="title" type="text" placeholder="Ex.: Le Mépris" />
@@ -17,7 +17,7 @@
           <button type="submit" class="primary-button" :disabled="loadingSuggestions || !title.trim()">
             {{ loadingSuggestions ? 'Buscando...' : 'Buscar no TMDb' }}
           </button>
-          <button type="button" class="secondary-button" @click="showManual = !showManual">
+          <button v-owner type="button" class="secondary-button" @click="showManual = !showManual">
             {{ showManual ? 'Fechar entrada mínima' : 'Criar entrada mínima' }}
           </button>
         </div>
@@ -56,6 +56,7 @@
             </div>
 
             <button
+              v-owner
               type="button"
               class="primary-button suggestion-button"
               :disabled="submitting"
@@ -80,7 +81,7 @@
           <p class="suggestions-summary">Informe os dados diretamente.</p>
         </div>
 
-        <form class="manual-form" @submit.prevent="handleManualSubmit">
+        <form v-owner class="manual-form" @submit.prevent="handleManualSubmit">
           <label class="field field-wide">
             <span>Título</span>
             <input v-model="manualTitle" type="text" placeholder="Nome do filme" />

@@ -73,7 +73,7 @@
         :years="libraryData.filters.years"
       />
 
-      <ShowManualAddCard v-if="showManualAddCard" :initial-title="queryText" />
+      <ShowManualAddCard v-if="owner.authenticated && showManualAddCard" :initial-title="queryText" />
 
       <section v-else-if="showManualEntryHint" class="entry-hint">
         <div class="entry-hint__copy">
@@ -127,6 +127,8 @@ import { useShowsCollectionData } from '~/composables/useShowsCollectionData'
 import { fetchShowsLibraryNextPage, fetchShowsLibraryPageData } from '~/composables/useShowsLibraryData'
 import type { ShowLibraryCardModel } from '~/types/shows'
 import { buildShowLibraryCards } from '~/utils/shows'
+
+const owner = useOwnerAuth()
 
 const route = useRoute()
 

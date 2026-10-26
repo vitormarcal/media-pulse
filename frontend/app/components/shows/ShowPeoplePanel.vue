@@ -33,6 +33,7 @@
             </div>
             <button
               v-if="editing"
+              v-owner
               type="button"
               class="remove-button"
               :disabled="removingKey === `${group.id}:${item.personId}`"
@@ -48,10 +49,10 @@
       <p v-if="!people.groups.length" class="empty-copy">Nenhum crédito disponível.</p>
 
       <div v-if="editing" class="editor-actions">
-        <button type="button" class="secondary-button" :disabled="syncing" @click="syncFromTmdb">
+        <button v-owner type="button" class="secondary-button" :disabled="syncing" @click="syncFromTmdb">
           {{ syncing ? 'Sincronizando...' : 'Sincronizar base TMDb' }}
         </button>
-        <button type="button" class="secondary-button" :disabled="loadingCandidates" @click="toggleCandidates">
+        <button v-owner type="button" class="secondary-button" :disabled="loadingCandidates" @click="toggleCandidates">
           {{ candidatesVisible ? 'Ocultar opções' : loadingCandidates ? 'Buscando...' : 'Trazer mais do TMDb' }}
         </button>
       </div>
@@ -63,6 +64,7 @@
             <input v-model="candidateQuery" type="search" placeholder="Buscar por nome ou função" />
             <button
               v-if="selectedKeys.length"
+              v-owner
               type="button"
               class="mini-button"
               :disabled="importingBatch"
@@ -97,6 +99,7 @@
                 </div>
                 <a class="tmdb-person-link" :href="item.tmdbUrl" target="_blank" rel="noreferrer">TMDb</a>
                 <button
+                  v-owner
                   type="button"
                   class="mini-button"
                   :disabled="importingKey === candidateKey(item)"

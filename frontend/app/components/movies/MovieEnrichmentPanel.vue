@@ -1,5 +1,5 @@
 <template>
-  <section class="enrichment-panel">
+  <section v-owner class="enrichment-panel">
     <SectionHeading
       eyebrow="Catálogo"
       title="Buscar sugestões no TMDb"
@@ -12,7 +12,7 @@
         <p class="copy-body">Use o vínculo existente ou informe o TMDb ID.</p>
       </div>
 
-      <form class="action-form" @submit.prevent="handlePreview">
+      <form v-owner class="action-form" @submit.prevent="handlePreview">
         <label class="field">
           <span>TMDb ID</span>
           <input v-model="tmdbId" type="text" placeholder="Ex.: 438631" />
@@ -37,7 +37,7 @@
             <h3>{{ preview.title }}</h3>
             <p class="dialog-summary">TMDb {{ preview.resolvedTmdbId }}</p>
           </div>
-          <button type="button" class="close-button" @click="closePreview">Fechar</button>
+          <button v-owner type="button" class="close-button" @click="closePreview">Fechar</button>
         </div>
 
         <section class="preview-hero">
@@ -133,7 +133,7 @@
                 primary: selectedImagePrimaryKey === candidate.key,
               }"
             >
-              <button type="button" class="candidate-visual" @click="toggleCandidate(candidate.key)">
+              <button v-owner type="button" class="candidate-visual" @click="toggleCandidate(candidate.key)">
                 <img :src="candidate.imageUrl" :alt="candidate.label" />
                 <span v-if="selectedImagePrimaryKey === candidate.key" class="pin-badge">Principal</span>
                 <span v-else-if="candidate.suggestedAsPrimary" class="pin-badge muted-badge">Sugestão</span>
@@ -154,6 +154,7 @@
 
                 <div class="candidate-actions">
                   <button
+                    v-owner
                     type="button"
                     class="chip-button"
                     :class="{ active: selectedImageKeys.includes(candidate.key) }"
@@ -162,6 +163,7 @@
                     {{ selectedImageKeys.includes(candidate.key) ? 'Selecionada' : 'Selecionar' }}
                   </button>
                   <button
+                    v-owner
                     type="button"
                     class="chip-button"
                     :class="{ active: selectedImagePrimaryKey === candidate.key }"
@@ -177,10 +179,11 @@
         </section>
 
         <div class="dialog-actions">
-          <button type="button" class="secondary-button" :disabled="applyLoading" @click="applyMissing">
+          <button v-owner type="button" class="secondary-button" :disabled="applyLoading" @click="applyMissing">
             {{ applyLoading ? 'Aplicando...' : 'Preencher lacunas' }}
           </button>
           <button
+            v-owner
             type="button"
             class="primary-button"
             :disabled="applyLoading || !selectedFields.length"

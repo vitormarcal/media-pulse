@@ -16,6 +16,7 @@
             <div class="topbar">
               <NuxtLink class="back-link" to="/movies/lists"> Voltar para listas </NuxtLink>
               <button
+                v-owner
                 type="button"
                 class="edit-order-button"
                 :class="{ active: reorderMode }"
@@ -52,7 +53,7 @@
       </section>
 
       <ListAutomaticRules
-        v-if="reorderMode"
+        v-if="owner.authenticated && reorderMode"
         domain="movies"
         :list-id="data.listId"
         :include-favorites="data.includeFavorites"
@@ -78,6 +79,7 @@
             }}
           </p>
           <button
+            v-owner
             type="button"
             class="cover-panel__reset"
             :disabled="savingCover || coverDraftMovieId == null"
@@ -91,6 +93,7 @@
           <button
             v-for="movie in manualMovies"
             :key="`cover-${movie.id}`"
+            v-owner
             type="button"
             class="cover-option"
             :class="{ 'cover-option--active': coverDraftMovieId === movie.movieId }"
@@ -129,6 +132,7 @@
           </p>
           <div class="order-toolbar__actions">
             <button
+              v-owner
               type="button"
               class="order-toolbar__button"
               :disabled="savingOrder || !orderDirty"
@@ -137,6 +141,7 @@
               Desfazer
             </button>
             <button
+              v-owner
               type="button"
               class="order-toolbar__button order-toolbar__button--primary"
               :disabled="savingOrder || !orderDirty"
@@ -203,6 +208,8 @@ import ListAutomaticRules from '~/components/media/ListAutomaticRules.vue'
 import MoviesLibraryGrid from '~/components/movies/MoviesLibraryGrid.vue'
 import { useMovieListPageData } from '~/composables/useMovieListPageData'
 import type { MovieLibraryCardModel, MovieListCoverUpdateRequest, MovieListOrderUpdateRequest } from '~/types/movies'
+
+const owner = useOwnerAuth()
 
 const route = useRoute()
 const config = useRuntimeConfig()

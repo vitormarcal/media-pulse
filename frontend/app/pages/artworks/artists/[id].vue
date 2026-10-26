@@ -29,20 +29,20 @@
             >
           </dl>
           <div class="art-actions">
-            <button class="art-button" :aria-expanded="editing" @click="edit">
+            <button v-owner class="art-button" :aria-expanded="editing" @click="edit">
               {{ editing ? 'Fechar edição' : 'Editar artista' }}
             </button>
-            <button v-if="editing" class="art-button" :disabled="busy" @click="remove">Excluir artista</button>
+            <button v-if="editing" v-owner class="art-button" :disabled="busy" @click="remove">Excluir artista</button>
           </div>
           <ArtworkLongText title="Biografia" :text="data.biography" />
         </div>
       </header>
-      <form v-if="editing" class="art-panel" @submit.prevent="save">
+      <form v-if="editing" v-owner class="art-panel" @submit.prevent="save">
         <fieldset :disabled="busy">
           <ArtworkArtistFields v-model="form" />
           <div class="art-actions">
             <button class="art-button art-primary">Salvar artista</button
-            ><button type="button" class="art-button" @click="editing = false">Cancelar</button>
+            ><button v-owner type="button" class="art-button" @click="editing = false">Cancelar</button>
           </div>
         </fieldset>
       </form>

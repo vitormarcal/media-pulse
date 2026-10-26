@@ -1,14 +1,14 @@
 <template>
-  <section class="mb-panel">
+  <section v-owner class="mb-panel">
     <div>
       <p class="eyebrow">MusicBrainz</p>
       <h2>{{ link ? 'Artista vinculado' : 'Vincular artista' }}</h2>
     </div>
     <p v-if="link" class="muted">Artist MBID: {{ link.mbid }}</p>
-    <button class="secondary" type="button" :disabled="loading" @click="search">
+    <button v-owner class="secondary" type="button" :disabled="loading" @click="search">
       {{ link ? 'Revisar vínculo' : 'Buscar artista' }}
     </button>
-    <button v-if="link" class="secondary" type="button" :disabled="loading" @click="refreshProfile">
+    <button v-if="link" v-owner class="secondary" type="button" :disabled="loading" @click="refreshProfile">
       Atualizar dados
     </button>
     <p v-if="profile?.syncedAt" class="muted">Atualizado em {{ new Date(profile.syncedAt).toLocaleString('pt-BR') }}</p>
@@ -42,6 +42,7 @@
       <button
         v-for="candidate in candidates"
         :key="candidate.artistMbid"
+        v-owner
         class="candidate"
         type="button"
         @click="apply(candidate)"

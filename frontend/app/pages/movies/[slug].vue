@@ -66,6 +66,7 @@
           <button
             v-for="action in movieActions"
             :key="action.id"
+            v-owner
             type="button"
             class="action-button"
             :class="{ active: activeAction === action.id }"
@@ -80,6 +81,7 @@
 
       <div v-if="activeAction === 'metadata'" ref="metadataTarget">
         <MovieEnrichmentPanel
+          v-if="owner.authenticated"
           :movie-id="data.movieId"
           :identifiers="data.identifiers"
           @applied="handleEnrichmentApplied"
@@ -117,7 +119,7 @@
         />
       </div>
 
-      <MovieAddWatchPanel :movie-id="data.movieId" @created="handleWatchCreated" />
+      <MovieAddWatchPanel v-if="owner.authenticated" :movie-id="data.movieId" @created="handleWatchCreated" />
 
       <MediaCommentsPanel
         :entity-id="data.movieId"
@@ -147,6 +149,8 @@ import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
 import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import { useMoviePageData } from '~/composables/useMoviePageData'
 import type { ManualMovieWatchCreateResponse, MovieEnrichmentApplyResponse } from '~/types/movies'
+
+const owner = useOwnerAuth()
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))

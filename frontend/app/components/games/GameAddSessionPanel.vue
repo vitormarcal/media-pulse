@@ -1,9 +1,9 @@
 <template>
-  <section class="add-session-panel">
+  <section v-owner class="add-session-panel">
     <SectionHeading eyebrow="Sessão" title="Registrar sessão" />
 
     <article class="panel-card">
-      <form class="panel-form" @submit.prevent="handleSubmit">
+      <form v-owner class="panel-form" @submit.prevent="handleSubmit">
         <label class="field">
           <span>Status</span>
           <select v-model="status">
@@ -30,7 +30,7 @@
         </label>
 
         <div class="actions">
-          <button type="button" class="secondary-button" :disabled="submitting" @click="setNow">Agora</button>
+          <button v-owner type="button" class="secondary-button" :disabled="submitting" @click="setNow">Agora</button>
           <button type="submit" class="primary-button" :disabled="submitting || !startedAtInput">
             {{ submitting ? 'Salvando...' : 'Adicionar sessão' }}
           </button>

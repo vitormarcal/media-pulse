@@ -7,10 +7,12 @@
         <div class="compact-row">
           <span class="compact-label">{{ label }}</span>
 
-          <div class="compact-actions">
+          <strong v-if="!owner.authenticated">{{ currentRating ?? '—' }}</strong>
+          <div v-else class="compact-actions">
             <button
               v-for="item in scale"
               :key="item.rating"
+              v-owner
               type="button"
               class="compact-button"
               :class="{ selected: currentRating === item.rating }"
@@ -47,6 +49,7 @@
           <button
             v-for="item in scale"
             :key="item.rating"
+            v-owner
             type="button"
             class="scale-button"
             :class="{ selected: currentRating === item.rating }"
@@ -89,6 +92,8 @@
 <script setup lang="ts">
 import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { MediaRatingDto } from '~/types/ratings'
+
+const owner = useOwnerAuth()
 
 const scale = [
   {

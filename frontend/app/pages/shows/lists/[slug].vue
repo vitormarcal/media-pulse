@@ -17,10 +17,13 @@
           <h1>{{ data.name }}</h1>
           <p>{{ data.description || 'Curadoria pessoal de séries.' }}</p>
           <small>{{ data.showCount }} séries · {{ data.watchedShowsCount }} concluídas</small>
-          <button class="delete-list" type="button" :disabled="saving" @click="deleteList">Excluir lista</button>
+          <button v-owner class="delete-list" type="button" :disabled="saving" @click="deleteList">
+            Excluir lista
+          </button>
         </div>
       </header>
       <ListAutomaticRules
+        v-if="owner.authenticated"
         domain="shows"
         :list-id="data.listId"
         :include-favorites="data.includeFavorites"
@@ -47,16 +50,17 @@
               <p>{{ show.year || 'Série' }} · {{ show.watchedEpisodesCount }}/{{ show.episodesCount }} episódios</p>
             </div>
             <div v-if="data.manualShowIds.includes(show.showId)" class="actions">
-              <button :disabled="index === 0 || saving" @click="move(index, -1)">Subir</button
-              ><button :disabled="index === data.manualShowIds.length - 1 || saving" @click="move(index, 1)">
+              <button v-owner :disabled="index === 0 || saving" @click="move(index, -1)">Subir</button
+              ><button v-owner :disabled="index === data.manualShowIds.length - 1 || saving" @click="move(index, 1)">
                 Descer</button
               ><button
+                v-owner
                 :class="{ active: data.coverShowId === show.showId }"
                 :disabled="saving"
                 @click="setCover(show.showId)"
               >
                 {{ data.coverShowId === show.showId ? 'Capa' : 'Usar como capa' }}</button
-              ><button :disabled="saving" @click="remove(show.showId)">Remover inclusão manual</button>
+              ><button v-owner :disabled="saving" @click="remove(show.showId)">Remover inclusão manual</button>
             </div>
             <span v-else>Inclusão automática</span>
           </article>
@@ -70,6 +74,8 @@ import ListAutomaticRules from '~/components/media/ListAutomaticRules.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 import { useShowList } from '~/composables/useShowListPageData'
 import type { ShowListItemDto } from '~/types/shows'
+
+const owner = useOwnerAuth()
 const route = useRoute()
 const slug = String(route.params.slug)
 const config = useRuntimeConfig()

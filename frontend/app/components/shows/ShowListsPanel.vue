@@ -10,6 +10,7 @@
         >
         <button
           v-if="editing && !list.includedAutomatically"
+          v-owner
           type="button"
           :disabled="busy === list.listId"
           @click="remove(list)"
@@ -27,6 +28,7 @@
         <button
           v-for="list in available"
           :key="list.listId"
+          v-owner
           type="button"
           :disabled="busy === list.listId"
           @click="attach(list.listId)"
@@ -35,7 +37,7 @@
         </button>
       </div>
       <p v-else class="quiet">Esta série já está em todas as listas disponíveis.</p>
-      <form @submit.prevent="createAndAttach">
+      <form v-owner @submit.prevent="createAndAttach">
         <label><span>Nova lista</span><input v-model="name" placeholder="Favoritas, Para rever…" required /></label>
         <label><span>Descrição</span><input v-model="description" placeholder="Opcional" /></label>
         <button class="primary" type="submit" :disabled="creating || !name.trim()">

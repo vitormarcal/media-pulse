@@ -2,14 +2,14 @@
   <section class="art-panel">
     <div class="art-section-header">
       <h2>Experiências</h2>
-      <button class="art-button" @click="start()">Registrar experiência</button>
+      <button v-owner class="art-button" @click="start()">Registrar experiência</button>
     </div>
-    <form v-if="editing !== undefined" @submit.prevent="save">
+    <form v-if="editing !== undefined" v-owner @submit.prevent="save">
       <fieldset :disabled="busy">
         <ArtworkExperienceFields v-model="form" />
         <div class="art-actions">
           <button class="art-button art-primary">{{ busy ? 'Salvando…' : 'Salvar experiência' }}</button
-          ><button type="button" class="art-button" @click="editing = undefined">Cancelar</button>
+          ><button v-owner type="button" class="art-button" @click="editing = undefined">Cancelar</button>
         </div>
       </fieldset>
     </form>
@@ -29,8 +29,8 @@
       >
       <p v-if="experience.notes" class="art-preserve">{{ experience.notes }}</p>
       <div class="art-actions">
-        <button class="art-button" :disabled="busy" @click="start(experience)">Editar</button
-        ><button class="art-button" :disabled="busy" @click="remove(experience.id)">Excluir</button>
+        <button v-owner class="art-button" :disabled="busy" @click="start(experience)">Editar</button
+        ><button v-owner class="art-button" :disabled="busy" @click="remove(experience.id)">Excluir</button>
       </div>
     </article>
   </section>

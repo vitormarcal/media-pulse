@@ -1,5 +1,5 @@
 <template>
-  <section class="artist-create" :class="{ expanded }">
+  <section v-owner class="artist-create" :class="{ expanded }">
     <div class="summary">
       <div class="summary-copy">
         <p class="eyebrow">Catálogo</p>
@@ -7,7 +7,7 @@
           <h2>Adicionar artista</h2>
         </div>
       </div>
-      <button type="button" class="secondary-action" @click="toggle">
+      <button v-owner type="button" class="secondary-action" @click="toggle">
         {{ expanded ? 'Fechar' : 'Adicionar artista' }}
       </button>
     </div>
@@ -29,6 +29,7 @@
           <button
             v-for="candidate in candidates"
             :key="candidate.artistMbid"
+            v-owner
             type="button"
             class="candidate"
             :class="{ selected: selected?.artistMbid === candidate.artistMbid }"
@@ -52,7 +53,7 @@
           <strong>{{ selected.name }}</strong>
           <p class="muted">Será criado com este vínculo do MusicBrainz.</p>
         </div>
-        <button type="button" class="primary-action" :disabled="loading" @click="create(selected)">
+        <button v-owner type="button" class="primary-action" :disabled="loading" @click="create(selected)">
           {{ loading ? 'Adicionando...' : 'Adicionar à biblioteca' }}
         </button>
       </div>

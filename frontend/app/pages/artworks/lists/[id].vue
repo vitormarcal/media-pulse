@@ -10,13 +10,13 @@
       <header class="art-header">
         <h1>{{ data.name }}</h1>
         <div class="art-actions">
-          <button class="art-button" @click="edit">Editar lista</button
-          ><button class="art-button" :disabled="busy" @click="remove">Excluir lista</button>
+          <button v-owner class="art-button" @click="edit">Editar lista</button
+          ><button v-owner class="art-button" :disabled="busy" @click="remove">Excluir lista</button>
         </div>
       </header>
       <ArtworkNav />
       <p v-if="data.description" class="art-preserve">{{ data.description }}</p>
-      <form v-if="editing" class="art-panel" @submit.prevent="save">
+      <form v-if="editing" v-owner class="art-panel" @submit.prevent="save">
         <fieldset :disabled="busy">
           <div class="art-fields">
             <label>Nome <input v-model="form.name" required maxlength="200" /></label
@@ -24,7 +24,7 @@
           </div>
           <div class="art-actions">
             <button class="art-button art-primary">Salvar lista</button
-            ><button type="button" class="art-button" @click="editing = false">Cancelar</button>
+            ><button v-owner type="button" class="art-button" @click="editing = false">Cancelar</button>
           </div>
         </fieldset>
       </form>

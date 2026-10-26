@@ -35,7 +35,7 @@
     </p>
 
     <div v-if="editingEnabled" class="editor-toolbar">
-      <button type="button" class="secondary-button" :disabled="syncing" @click="syncFromTmdb">
+      <button v-owner type="button" class="secondary-button" :disabled="syncing" @click="syncFromTmdb">
         {{ syncing ? 'Sincronizando...' : 'Sincronizar TMDb' }}
       </button>
     </div>

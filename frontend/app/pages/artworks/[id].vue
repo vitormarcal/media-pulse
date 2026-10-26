@@ -26,13 +26,13 @@
           }}
         </p>
         <div class="art-actions">
-          <button class="art-button" :aria-pressed="data.artwork.favorite" :disabled="busy" @click="favorite">
+          <button v-owner class="art-button" :aria-pressed="data.artwork.favorite" :disabled="busy" @click="favorite">
             {{ data.artwork.favorite ? '♥ Favorita' : 'Favoritar' }}
           </button>
-          <button class="art-button" :aria-expanded="editing" @click="editing = !editing">
+          <button v-owner class="art-button" :aria-expanded="editing" @click="editing = !editing">
             {{ editing ? 'Fechar edição' : 'Editar obra' }}
           </button>
-          <button v-if="editing" class="art-button" :disabled="busy" @click="remove">Excluir obra</button>
+          <button v-if="editing" v-owner class="art-button" :disabled="busy" @click="remove">Excluir obra</button>
         </div>
       </header>
       <p v-if="error" class="art-error" role="alert">{{ error }}</p>
@@ -45,7 +45,13 @@
         <p :class="data.artwork.movementsSyncPending ? 'art-error' : 'art-muted'">
           {{ data.artwork.movementsSyncMessage || 'Movimentos salvos. A atualização no Visual Library está pendente.' }}
         </p>
-        <button v-if="data.artwork.movementsSyncPending" class="art-button" :disabled="busy" @click="retryMovements">
+        <button
+          v-if="data.artwork.movementsSyncPending"
+          v-owner
+          class="art-button"
+          :disabled="busy"
+          @click="retryMovements"
+        >
           Tentar sincronizar movimentos novamente
         </button>
       </div>

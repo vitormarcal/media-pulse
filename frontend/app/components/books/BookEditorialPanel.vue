@@ -3,6 +3,7 @@
     <div class="section-header">
       <h2>{{ entries.length > 1 ? 'Comentários' : 'Comentário' }}</h2>
       <button
+        v-owner
         class="button button-secondary"
         type="button"
         :aria-expanded="composerOpen"
@@ -27,6 +28,7 @@
 
           <div class="actions">
             <button
+              v-owner
               class="button button-primary"
               type="button"
               :disabled="savingEdit || !editBody.trim()"
@@ -34,7 +36,7 @@
             >
               {{ savingEdit ? 'Salvando...' : 'Atualizar' }}
             </button>
-            <button class="button button-secondary" type="button" :disabled="savingEdit" @click="cancelEdit">
+            <button v-owner class="button button-secondary" type="button" :disabled="savingEdit" @click="cancelEdit">
               Cancelar
             </button>
             <p v-if="editError" class="feedback error">{{ editError }}</p>
@@ -53,7 +55,13 @@
               </p>
             </div>
 
-            <button v-if="entry.kind === 'manual'" class="button button-ghost" type="button" @click="startEdit(entry)">
+            <button
+              v-if="entry.kind === 'manual'"
+              v-owner
+              class="button button-ghost"
+              type="button"
+              @click="startEdit(entry)"
+            >
               Editar
             </button>
           </div>
@@ -70,7 +78,7 @@
     </div>
 
     <div v-if="composerOpen" class="composer-shell">
-      <form class="composer-card" @submit.prevent="submitNewComment">
+      <form v-owner class="composer-card" @submit.prevent="submitNewComment">
         <label class="field">
           <span class="field-label">Comentário</span>
           <textarea

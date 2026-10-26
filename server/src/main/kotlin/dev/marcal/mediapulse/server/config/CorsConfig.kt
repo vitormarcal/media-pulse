@@ -1,28 +1,27 @@
 package dev.marcal.mediapulse.server.config
 
-import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.web.servlet.config.annotation.CorsRegistry
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
+import org.springframework.core.Ordered
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import org.springframework.web.filter.CorsFilter
 
 @Configuration
 class CorsConfig(
-    @Value("\${media-pulse.allowed-origin:*}") private val allowedOrigin: List<String>,
+    private val props: CorsProperties,
 ) {
-    private val logger = LoggerFactory.getLogger(this.javaClass)
-
     @Bean
-    fun corsConfigurer(): WebMvcConfigurer {
-        logger.info("AllowedOrigins: $allowedOrigin")
-        return object : WebMvcConfigurer {
-            override fun addCorsMappings(registry: CorsRegistry) {
-                registry
-                    .addMapping("/api/**")
-                    .allowedMethods("*")
-                    .allowedOrigins(*allowedOrigin.toTypedArray())
+    fun corsFilter(): FilterRegistrationBean<CorsFilter> {
+        val configuration =
+            CorsConfiguration().apply {
+                allowedOrigins = props.allowedOrigin
+                allowedMethods = listOf("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                allowedHeaders = listOf("*")
+                allowCredentials = true
             }
-        }
+        val source = UrlBasedCorsConfigurationSource().apply { registerCorsConfiguration("/api/**", configuration) }
+        return FilterRegistrationBean(CorsFilter(source)).apply { order = Ordered.HIGHEST_PRECEDENCE }
     }
 }

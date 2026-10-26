@@ -1,5 +1,5 @@
 <template>
-  <form class="rules-panel" @submit.prevent="save">
+  <form v-owner class="rules-panel" @submit.prevent="save">
     <h2>Incluir automaticamente</h2>
     <p>Itens adicionados manualmente permanecem. Com as duas regras ativas, basta atender a uma delas.</p>
     <fieldset :disabled="saving || disabled">

@@ -1,12 +1,12 @@
 <template>
-  <section class="mb-panel">
+  <section v-owner class="mb-panel">
     <div class="panel-heading">
       <div>
         <p class="eyebrow">MusicBrainz</p>
         <h2>{{ link ? 'Dados vinculados' : 'Enriquecer dados' }}</h2>
         <p>{{ link ? `Release group ${link.mbid}` : 'Encontre o disco correto e revise tudo antes de salvar.' }}</p>
       </div>
-      <button class="secondary" type="button" :disabled="loading" @click="search">
+      <button v-owner class="secondary" type="button" :disabled="loading" @click="search">
         {{ link ? 'Revisar vínculo' : 'Buscar correspondência' }}
       </button>
     </div>
@@ -17,6 +17,7 @@
       <button
         v-for="candidate in candidates"
         :key="candidate.releaseGroupMbid"
+        v-owner
         type="button"
         class="candidate"
         @click="previewCandidate(candidate)"
@@ -35,7 +36,7 @@
       </ul>
       <p><strong>Preservados:</strong> título, capa e tracklist.</p>
       <p v-if="preview.candidate.artists?.length">Os créditos do álbum serão substituídos pelos artistas acima.</p>
-      <button class="primary" type="button" :disabled="loading" @click="apply">Confirmar enriquecimento</button>
+      <button v-owner class="primary" type="button" :disabled="loading" @click="apply">Confirmar enriquecimento</button>
     </div>
   </section>
 </template>

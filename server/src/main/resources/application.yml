@@ -1,5 +1,12 @@
 server:
   forward-headers-strategy: framework
+  servlet:
+    session:
+      timeout: 12h
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${AUTH_COOKIE_SECURE:true}
 
 spring:
   servlet:
@@ -21,6 +28,9 @@ spring:
     locations: classpath:db/migration
 
 media-pulse:
+  auth:
+    reset-token: ${AUTH_RESET_TOKEN:}
+    plex-webhook-secret: ${PLEX_WEBHOOK_SECRET:}
   http:
     remote:
       max-connections: 100

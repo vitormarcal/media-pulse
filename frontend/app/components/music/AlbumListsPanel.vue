@@ -35,6 +35,7 @@
 
         <button
           v-if="editing"
+          v-owner
           type="button"
           class="remove-button"
           :disabled="busyListId === list.listId"
@@ -55,6 +56,7 @@
         <button
           v-for="list in availableLists"
           :key="list.listId"
+          v-owner
           type="button"
           class="list-chip"
           :disabled="busyListId === list.listId"
@@ -66,7 +68,7 @@
       </div>
       <p v-else class="editor-note">O álbum já está em todas as listas disponíveis.</p>
 
-      <form class="create-form" @submit.prevent="createList">
+      <form v-owner class="create-form" @submit.prevent="createList">
         <label>
           <span>Nova lista</span>
           <input v-model="draftName" type="text" placeholder="Favoritos, essenciais, para ouvir..." />

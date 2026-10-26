@@ -33,6 +33,7 @@
             </div>
             <button
               v-if="editingEnabled"
+              v-owner
               type="button"
               class="remove-button"
               :disabled="removingKey === `${group.id}:${item.personId}`"
@@ -57,11 +58,17 @@
 
       <div v-if="editingEnabled" class="editor-shell">
         <div class="editor-actions">
-          <button type="button" class="secondary-button" :disabled="syncing" @click="syncFromTmdb">
+          <button v-owner type="button" class="secondary-button" :disabled="syncing" @click="syncFromTmdb">
             {{ syncing ? 'Sincronizando...' : 'Sincronizar base TMDb' }}
           </button>
 
-          <button type="button" class="ghost-button" :disabled="loadingTmdbCandidates" @click="toggleTmdbCandidates">
+          <button
+            v-owner
+            type="button"
+            class="ghost-button"
+            :disabled="loadingTmdbCandidates"
+            @click="toggleTmdbCandidates"
+          >
             {{
               tmdbCandidatesVisible
                 ? 'Ocultar extras do TMDb'
@@ -80,6 +87,7 @@
               <input v-model="candidateQuery" type="search" placeholder="Buscar por nome ou função" />
               <button
                 v-if="selectedCandidateKeys.length"
+                v-owner
                 type="button"
                 class="mini-button"
                 :disabled="importingBatch"
@@ -119,6 +127,7 @@
                     <a class="tmdb-person-link" :href="item.tmdbUrl" target="_blank" rel="noreferrer">TMDb</a>
 
                     <button
+                      v-owner
                       type="button"
                       class="mini-button"
                       :disabled="importingCandidateKey === candidateKey(item)"
@@ -177,6 +186,7 @@
               <button
                 v-for="item in suggestions"
                 :key="item.personId"
+                v-owner
                 type="button"
                 class="suggestion-item"
                 :disabled="linkingPersonId === item.personId"

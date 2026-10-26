@@ -28,10 +28,16 @@
           <span>{{ item.name }}</span>
           <small v-if="editing">{{ item.source === 'TMDB' ? 'TMDb' : 'Manual' }}</small>
           <div v-if="editing" class="pill-actions">
-            <button type="button" :disabled="busyTermId === item.termId" @click="setLocalVisibility(item.termId, true)">
+            <button
+              v-owner
+              type="button"
+              :disabled="busyTermId === item.termId"
+              @click="setLocalVisibility(item.termId, true)"
+            >
               Ocultar aqui
             </button>
             <button
+              v-owner
               type="button"
               class="ghost"
               :disabled="busyTermId === item.termId"
@@ -49,6 +55,7 @@
     <div v-if="editing" class="editor-panel">
       <button
         v-if="enrichmentStatus.status !== 'BLOCKED'"
+        v-owner
         type="button"
         class="secondary-button"
         :disabled="syncing"
@@ -58,7 +65,7 @@
       </button>
       <p v-else class="blocked-copy">Vincule esta série ao TMDb para buscar marcações externas.</p>
 
-      <form class="add-form" @submit.prevent="addTerm">
+      <form v-owner class="add-form" @submit.prevent="addTerm">
         <label class="field name-field">
           <span>Nova marcação</span>
           <input v-model="draftName" type="text" placeholder="Ex.: Mistério, viagem no tempo" />
@@ -68,6 +75,7 @@
               <button
                 v-for="suggestion in suggestions"
                 :key="suggestion.id"
+                v-owner
                 type="button"
                 class="suggestion-item"
                 :disabled="suggestionDisabled(suggestion)"
@@ -100,6 +108,7 @@
             <button
               v-for="item in group.items"
               :key="item.id"
+              v-owner
               type="button"
               class="hidden-pill"
               :disabled="busyTermId === item.termId"

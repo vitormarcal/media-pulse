@@ -35,7 +35,7 @@
     <p v-if="currentLoading" role="status">Carregando filmografia…</p>
     <div v-else-if="currentIncomplete" class="compacted-notice" role="status">
       <p>Não foi possível carregar a filmografia completa. Os dados locais continuam disponíveis.</p>
-      <button type="button" :disabled="currentLoading" @click="refreshActive">Tentar novamente</button>
+      <button v-owner type="button" :disabled="currentLoading" @click="refreshActive">Tentar novamente</button>
     </div>
 
     <p v-if="currentError" class="panel-error">{{ currentError }}</p>
@@ -71,6 +71,7 @@
               <a v-if="item.tmdbUrl" class="tmdb-link" :href="item.tmdbUrl" target="_blank" rel="noreferrer">TMDb</a>
               <button
                 v-if="item.inCatalog && item.availableCategories.length === 1"
+                v-owner
                 type="button"
                 class="link-button"
                 :disabled="linkingKey === `${item.kind}:${item.tmdbId}`"
@@ -80,6 +81,7 @@
               </button>
               <button
                 v-else-if="item.inCatalog && item.availableCategories.length > 1"
+                v-owner
                 type="button"
                 class="link-button"
                 @click="toggleCategoryChoice(item)"
@@ -88,6 +90,7 @@
               </button>
               <button
                 v-if="!item.inCatalog"
+                v-owner
                 type="button"
                 class="add-button"
                 :disabled="addingKey === `${item.kind}:${item.tmdbId}`"
@@ -100,6 +103,7 @@
               <button
                 v-for="category in item.availableCategories"
                 :key="category"
+                v-owner
                 type="button"
                 :disabled="linkingKey === `${item.kind}:${item.tmdbId}`"
                 @click="linkMember(item, category)"

@@ -1,9 +1,9 @@
 <template>
-  <section class="add-watch-panel">
+  <section v-owner class="add-watch-panel">
     <SectionHeading eyebrow="Episódio" title="Marcar episódio" />
 
     <article class="panel-card">
-      <form class="panel-form" @submit.prevent="handleSubmit">
+      <form v-owner class="panel-form" @submit.prevent="handleSubmit">
         <div class="episode-grid">
           <label class="field">
             <span>Temporada</span>
@@ -27,7 +27,7 @@
         </label>
 
         <div class="actions">
-          <button type="button" class="secondary-button" :disabled="submitting" @click="setNow">Agora</button>
+          <button v-owner type="button" class="secondary-button" :disabled="submitting" @click="setNow">Agora</button>
           <button type="submit" class="primary-button" :disabled="submitting || !canSubmit">
             {{ submitting ? 'Salvando...' : 'Marcar episódio' }}
           </button>

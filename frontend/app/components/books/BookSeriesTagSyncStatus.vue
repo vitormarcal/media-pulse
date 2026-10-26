@@ -5,7 +5,7 @@
       {{ sync.message || 'Atualização das tags de séries nas capas pendente.' }}
     </p>
     <p v-else-if="sync?.message" role="status">{{ sync.message }}</p>
-    <button v-if="loadError || sync?.pending" type="button" :disabled="busy" @click="retry">
+    <button v-if="loadError || sync?.pending" v-owner type="button" :disabled="busy" @click="retry">
       {{ busy ? 'Agendando...' : 'Tentar atualizar tags das capas' }}
     </button>
     <p v-if="error" class="error" role="alert">{{ error }}</p>

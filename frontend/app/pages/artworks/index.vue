@@ -2,7 +2,7 @@
   <main class="art-page">
     <header class="art-header">
       <h1>Artes visuais</h1>
-      <button class="art-button art-primary" @click="adding = !adding">Adicionar obra</button>
+      <button v-owner class="art-button art-primary" @click="adding = !adding">Adicionar obra</button>
     </header>
     <ArtworkNav />
     <ArtworkForm v-if="adding" @saved="saved" @cancel="adding = false" />

@@ -44,7 +44,7 @@
         </form>
       </section>
 
-      <GameManualAddCard v-if="addMode" :initial-title="queryText" />
+      <GameManualAddCard v-if="owner.authenticated && addMode" :initial-title="queryText" />
 
       <section class="stats-grid">
         <article v-for="metric in data.stats" :key="metric.id" class="stat-card">
@@ -91,6 +91,8 @@ import SectionHeading from '~/components/home/SectionHeading.vue'
 import { fetchGamesLibraryNextPage, fetchGamesLibraryPageData } from '~/composables/useGamesLibraryData'
 import type { GameLibraryCardModel } from '~/types/games'
 import { buildGameLibraryCard } from '~/utils/games'
+
+const owner = useOwnerAuth()
 
 const route = useRoute()
 const router = useRouter()

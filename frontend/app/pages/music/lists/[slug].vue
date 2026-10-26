@@ -8,7 +8,7 @@
         <div class="hero-copy">
           <div class="hero-actions">
             <NuxtLink class="quiet-button" to="/music/lists">Voltar para listas</NuxtLink>
-            <button class="quiet-button" type="button" @click="editing = !editing">
+            <button v-owner class="quiet-button" type="button" @click="editing = !editing">
               {{ editing ? 'Fechar edição' : 'Editar lista' }}
             </button>
           </div>
@@ -28,13 +28,13 @@
       </section>
 
       <section v-if="editing" class="edit-panel">
-        <form class="metadata-form" @submit.prevent="saveMetadata">
+        <form v-owner class="metadata-form" @submit.prevent="saveMetadata">
           <p class="eyebrow">Identidade</p>
           <label>Nome <input v-model="metadata.name" required /></label>
           <label>Descrição <textarea v-model="metadata.description" rows="3" /></label>
           <div class="form-actions">
             <button type="submit" :disabled="busy">Salvar detalhes</button>
-            <button class="danger" type="button" :disabled="busy" @click="deleteList">Excluir lista</button>
+            <button v-owner class="danger" type="button" :disabled="busy" @click="deleteList">Excluir lista</button>
           </div>
         </form>
 
@@ -49,6 +49,7 @@
             <button
               v-for="album in availableResults"
               :key="album.id"
+              v-owner
               type="button"
               :disabled="busy"
               @click="addAlbum(album.id)"
@@ -119,11 +120,18 @@
             </div>
           </div>
           <div class="item-actions">
-            <button type="button" :class="{ primary: !item.listenedAt }" :disabled="busy" @click="toggleListened(item)">
+            <button
+              v-owner
+              type="button"
+              :class="{ primary: !item.listenedAt }"
+              :disabled="busy"
+              @click="toggleListened(item)"
+            >
               {{ item.listenedAt ? 'Desmarcar ouvido' : 'Marcar como ouvido' }}
             </button>
             <template v-if="editing && sortMode === 'position'">
               <button
+                v-owner
                 type="button"
                 :disabled="busy || item.position === 1"
                 aria-label="Mover para cima"
@@ -132,6 +140,7 @@
                 ↑
               </button>
               <button
+                v-owner
                 type="button"
                 :disabled="busy || item.position === data.itemCount"
                 aria-label="Mover para baixo"
@@ -139,7 +148,9 @@
               >
                 ↓
               </button>
-              <button class="danger" type="button" :disabled="busy" @click="removeAlbum(item.albumId)">Remover</button>
+              <button v-owner class="danger" type="button" :disabled="busy" @click="removeAlbum(item.albumId)">
+                Remover
+              </button>
             </template>
           </div>
         </article>

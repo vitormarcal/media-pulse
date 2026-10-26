@@ -1,5 +1,5 @@
 <template>
-  <section class="season-enrichment-panel">
+  <section v-owner class="season-enrichment-panel">
     <div class="panel-copy">
       <p class="eyebrow">Catálogo</p>
       <h2>Enriquecer episódios</h2>
@@ -12,11 +12,12 @@
         <input v-model="tmdbId" type="text" inputmode="numeric" autocomplete="off" placeholder="Usar vínculo salvo" />
       </label>
 
-      <button type="button" class="secondary-button" :disabled="loading" @click="loadPreview">
+      <button v-owner type="button" class="secondary-button" :disabled="loading" @click="loadPreview">
         {{ loading ? 'Buscando...' : 'Analisar' }}
       </button>
 
       <button
+        v-owner
         type="button"
         class="primary-button"
         :disabled="applying || !preview || preview.selectedFieldsCount === 0"
@@ -90,6 +91,7 @@
       <div class="preview-footer">
         <button
           v-if="changedEpisodes.length > visibleEpisodes.length"
+          v-owner
           type="button"
           class="ghost-button"
           @click="showAll = true"
@@ -97,6 +99,7 @@
           Ver todos
         </button>
         <button
+          v-owner
           type="button"
           class="secondary-button"
           :disabled="applying || selectedFieldsCount === 0"

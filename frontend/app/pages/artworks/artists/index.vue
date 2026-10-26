@@ -2,15 +2,15 @@
   <main class="art-page">
     <header class="art-header">
       <h1>Artistas</h1>
-      <button class="art-button art-primary" @click="adding = !adding">Adicionar artista</button>
+      <button v-owner class="art-button art-primary" @click="adding = !adding">Adicionar artista</button>
     </header>
     <ArtworkNav />
-    <form v-if="adding" class="art-panel" @submit.prevent="save">
+    <form v-if="adding" v-owner class="art-panel" @submit.prevent="save">
       <fieldset :disabled="busy">
         <ArtworkArtistFields v-model="form" />
         <div class="art-actions">
           <button class="art-button art-primary">Salvar artista</button
-          ><button type="button" class="art-button" @click="adding = false">Cancelar</button>
+          ><button v-owner type="button" class="art-button" @click="adding = false">Cancelar</button>
         </div>
       </fieldset>
     </form>

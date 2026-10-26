@@ -1,5 +1,5 @@
 <template>
-  <section class="duplicate-panel">
+  <section v-owner class="duplicate-panel">
     <header class="panel-heading">
       <div>
         <p class="eyebrow">Saneamento do catálogo</p>
@@ -43,6 +43,7 @@
       </div>
 
       <button
+        v-owner
         class="secondary-button manual-review-button"
         type="button"
         :disabled="manualTrackIds.length < 2 || manualTargetTrackId === null"
@@ -55,7 +56,7 @@
     <div v-if="pending" class="state-card">Buscando possíveis duplicatas...</div>
     <div v-else-if="loadError" class="state-card state-card--error">
       <p>{{ loadError }}</p>
-      <button class="secondary-button" type="button" @click="loadGroups">Tentar novamente</button>
+      <button v-owner class="secondary-button" type="button" @click="loadGroups">Tentar novamente</button>
     </div>
 
     <template v-else>
@@ -65,6 +66,7 @@
           <span>{{ allSelected ? 'Desmarcar todos' : 'Selecionar todos' }}</span>
         </label>
         <button
+          v-owner
           class="secondary-button"
           type="button"
           :disabled="busyBatch || !selectedGroupIds.length"
@@ -150,6 +152,7 @@
             </p>
             <div>
               <button
+                v-owner
                 class="secondary-button"
                 type="button"
                 :disabled="busyGroupId === groupKey(group)"
@@ -158,6 +161,7 @@
                 {{ group.ignored ? 'Reabrir' : 'Ignorar' }}
               </button>
               <button
+                v-owner
                 class="secondary-button"
                 type="button"
                 :disabled="busyGroupId === groupKey(group) || !selectionFor(group).sourceTrackIds.length"
@@ -180,10 +184,16 @@
         <h2 id="duplicate-confirm-title">{{ confirmation.title }}</h2>
         <p>{{ confirmation.message }}</p>
         <div class="confirm-actions">
-          <button class="secondary-button" type="button" :disabled="confirmationBusy" @click="closeConfirmation">
+          <button
+            v-owner
+            class="secondary-button"
+            type="button"
+            :disabled="confirmationBusy"
+            @click="closeConfirmation"
+          >
             Cancelar
           </button>
-          <button class="primary-button" type="button" :disabled="confirmationBusy" @click="confirmMerge">
+          <button v-owner class="primary-button" type="button" :disabled="confirmationBusy" @click="confirmMerge">
             {{ confirmationBusy ? 'Mesclando...' : confirmation.confirmLabel }}
           </button>
         </div>

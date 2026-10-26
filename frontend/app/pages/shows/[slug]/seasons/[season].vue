@@ -44,7 +44,7 @@
       </section>
 
       <ShowSeasonEnrichmentPanel
-        v-if="data.seasonNumber != null"
+        v-if="owner.authenticated && data.seasonNumber != null"
         :show-id="data.showId"
         :season-number="data.seasonNumber"
         :initial-tmdb-id="data.showTmdbId"
@@ -70,6 +70,7 @@
                 </div>
                 <div v-if="!episode.watched" class="episode-actions">
                   <button
+                    v-owner
                     type="button"
                     class="secondary-button"
                     :disabled="isEpisodeSubmitting(episode.episodeId)"
@@ -78,6 +79,7 @@
                     Data
                   </button>
                   <button
+                    v-owner
                     type="button"
                     class="secondary-button"
                     :disabled="isEpisodeSubmitting(episode.episodeId)"
@@ -86,6 +88,7 @@
                     {{ submittingUntilEpisodeId === episode.episodeId ? 'Salvando...' : 'Até aqui' }}
                   </button>
                   <button
+                    v-owner
                     type="button"
                     class="primary-button"
                     :disabled="isEpisodeSubmitting(episode.episodeId)"
@@ -130,6 +133,8 @@ import type {
   ShowSeasonEnrichmentApplyResponse,
   ShowSeasonEpisodeModel,
 } from '~/types/shows'
+
+const owner = useOwnerAuth()
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))

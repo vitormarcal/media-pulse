@@ -6,6 +6,7 @@
         }}<span v-if="!artistId" class="art-count" aria-hidden="true">{{ images?.length || 0 }}</span>
       </h2>
       <button
+        v-owner
         class="art-button"
         type="button"
         :aria-expanded="managing"
@@ -28,14 +29,14 @@
         <figcaption v-if="image.caption">{{ image.caption }}</figcaption>
         <a v-if="image.sourceUrl" :href="image.sourceUrl" target="_blank" rel="noopener">Origem</a>
         <div v-if="managing" class="art-actions">
-          <button class="art-button" :disabled="busy || image.primary" @click="changePrimary(image.id)">
+          <button v-owner class="art-button" :disabled="busy || image.primary" @click="changePrimary(image.id)">
             {{ image.primary ? 'Principal' : 'Usar como principal' }}
           </button>
-          <button class="art-button" :disabled="busy" @click="remove(image.id)">Remover</button>
+          <button v-owner class="art-button" :disabled="busy" @click="remove(image.id)">Remover</button>
         </div>
       </figure>
     </div>
-    <form v-show="managing" :id="managerId" ref="managerForm" class="art-section" @submit.prevent="add">
+    <form v-show="managing" :id="managerId" ref="managerForm" v-owner class="art-section" @submit.prevent="add">
       <fieldset :disabled="busy">
         <div class="art-fields">
           <label
@@ -54,7 +55,7 @@
         <div class="art-actions">
           <button class="art-button" :disabled="!files.length && !url">
             {{ busy ? 'Adicionando…' : 'Adicionar imagem' }}</button
-          ><button v-if="artistId && hasPortrait" type="button" class="art-button" @click="removePortrait">
+          ><button v-if="artistId && hasPortrait" v-owner type="button" class="art-button" @click="removePortrait">
             Remover retrato
           </button>
         </div>

@@ -5,7 +5,7 @@
         <p class="eyebrow">Seu ritmo, suas lembranças</p>
         <h1>Em movimento.</h1>
         <p>Uma corrida, alguns pulos, um tempo na academia.<br />Guarde os momentos em que você cuidou de você.</p>
-        <button ref="addButton" type="button" class="primary-button" @click="composerOpen = true">
+        <button ref="addButton" v-owner type="button" class="primary-button" @click="composerOpen = true">
           + Registrar treino
         </button>
       </div>
@@ -52,7 +52,7 @@
               : 'Registre seu primeiro treino para começar seu histórico.'
           }}
         </p>
-        <button type="button" class="secondary-button" @click="composerOpen = true">Registrar treino</button>
+        <button v-owner type="button" class="secondary-button" @click="composerOpen = true">Registrar treino</button>
       </div>
       <div v-else class="workout-grid">
         <article v-for="workout in items" :key="workout.id" class="workout-card">
@@ -83,7 +83,7 @@
         </button>
       </div>
     </section>
-    <WorkoutComposer :open="composerOpen" @close="composerOpen = false" @saved="saved" />
+    <WorkoutComposer v-if="owner.authenticated" :open="composerOpen" @close="composerOpen = false" @saved="saved" />
   </main>
 </template>
 
@@ -91,6 +91,8 @@
 import WorkoutComposer from '~/components/workouts/WorkoutComposer.vue'
 import type { Workout, WorkoutCategory } from '~/types/workouts'
 import { workoutCategories, workoutCategory } from '~/utils/workouts'
+
+const owner = useOwnerAuth()
 
 const api = useWorkouts()
 const route = useRoute()

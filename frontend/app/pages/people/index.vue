@@ -33,7 +33,7 @@
             >
             <small>{{ person.roles.slice(0, 2).join(' · ') || 'Catálogo audiovisual' }}</small>
           </div>
-          <button type="button" :aria-label="favoriteLabel(person)" @click="toggleSearchFavorite(person)">
+          <button v-owner type="button" :aria-label="favoriteLabel(person)" @click="toggleSearchFavorite(person)">
             {{ person.favorite ? '★' : '☆' }}
           </button>
         </article>
@@ -63,6 +63,7 @@
             <p>{{ relationshipLabel(person) }}</p>
           </div>
           <button
+            v-owner
             type="button"
             :aria-label="`Remover ${person.name} dos favoritos`"
             @click="removeFavorite(person.personId)"
@@ -99,6 +100,7 @@
             <p>{{ watchedWorksLabel(person.watchedWorksCount, section.workLabel) }}</p>
           </div>
           <button
+            v-owner
             type="button"
             :aria-label="`Adicionar ${person.name} aos favoritos`"
             @click="favoriteFromHistory(person)"

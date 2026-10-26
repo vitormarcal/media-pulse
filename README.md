@@ -34,6 +34,10 @@ O backend não builda mais o frontend durante o ciclo do Gradle. O empacotamento
 - frontend estático gerado pelo Nuxt
 - entrega no mesmo domínio, com APIs em `/api/*` e UI em `/`
 
+## Autenticação
+
+A consulta permanece pública; alterações e administração exigem login do owner. Para criar a senha, configure `AUTH_RESET_TOKEN` com um UUID novo, reinicie e abra `/auth/reset`. O UUID é consumido uma única vez. Produção usa HTTPS; em desenvolvimento HTTP configure `AUTH_COOKIE_SECURE=false`. O webhook Plex agora exige `PLEX_WEBHOOK_SECRET` e a mesma chave na query `secret` da URL configurada no Plex. Consulte [autenticação e recuperação](docs/authentication.md).
+
 ## Configuração
 
 Para iniciar o backend, configure o acesso ao PostgreSQL:

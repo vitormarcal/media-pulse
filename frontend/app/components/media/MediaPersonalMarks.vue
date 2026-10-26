@@ -1,9 +1,18 @@
 <template>
   <div class="personal-marks">
+    <p v-if="!owner.authenticated">
+      {{
+        marks
+          .filter((mark) => mark.active)
+          .map((mark) => mark.label)
+          .join(' · ')
+      }}
+    </p>
     <div class="mark-actions" role="group" aria-label="Marcações pessoais" :aria-busy="pending">
       <button
         v-for="mark in marks"
         :key="mark.key"
+        v-owner
         type="button"
         :aria-pressed="mark.active"
         :disabled="pending"
@@ -18,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+const owner = useOwnerAuth()
 const props = defineProps<{
   mediaType: 'movies' | 'shows'
   entityId: number

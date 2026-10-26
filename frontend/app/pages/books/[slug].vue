@@ -19,7 +19,12 @@
         :hero-meta="data.heroMeta"
       />
 
-      <MediaCoverUpload media-type="books" :entity-id="data.bookId" @saved="handleCoverSaved" />
+      <MediaCoverUpload
+        v-if="owner.authenticated"
+        media-type="books"
+        :entity-id="data.bookId"
+        @saved="handleCoverSaved"
+      />
 
       <BookSeriesPanel :key="data.bookId" :book-id="data.bookId" @changed="seriesTagStatus?.refresh()" />
       <BookSeriesTagSyncStatus :key="`tags-${data.bookId}`" ref="seriesTagStatus" :book-id="data.bookId" />
@@ -48,6 +53,8 @@ import BookReadTimeline from '~/components/books/BookReadTimeline.vue'
 import { useBookPageData } from '~/composables/useBookPageData'
 
 import MediaCoverUpload from '~/components/media/MediaCoverUpload.vue'
+
+const owner = useOwnerAuth()
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))

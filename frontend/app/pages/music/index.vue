@@ -18,7 +18,7 @@
           :supporting="collectionData.hero.supporting"
         />
 
-        <AddMusicBrainzArtistPanel />
+        <AddMusicBrainzArtistPanel v-if="owner.authenticated" />
 
         <section class="music-section">
           <SectionHeading eyebrow="Discos" title="Em rotação" />
@@ -128,7 +128,7 @@
           :spotlight="libraryData.hero.spotlight"
         />
 
-        <AddMusicBrainzArtistPanel />
+        <AddMusicBrainzArtistPanel v-if="owner.authenticated" />
 
         <MusicLibraryFilters
           :query="libraryData.filters.query"
@@ -189,6 +189,8 @@ import type {
   TrackLibraryPageResponse,
 } from '~/types/music'
 import { buildMusicLibraryCards } from '~/utils/music'
+
+const owner = useOwnerAuth()
 
 const route = useRoute()
 

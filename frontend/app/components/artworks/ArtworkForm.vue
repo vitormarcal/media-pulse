@@ -1,5 +1,5 @@
 <template>
-  <form ref="captureForm" class="art-panel" @submit.prevent="save">
+  <form ref="captureForm" v-owner class="art-panel" @submit.prevent="save">
     <h2>{{ initial ? 'Editar obra' : 'Adicionar obra' }}</h2>
     <fieldset :disabled="busy">
       <fieldset :disabled="savedId != null">

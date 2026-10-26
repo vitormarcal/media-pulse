@@ -34,6 +34,7 @@
           <button
             v-for="action in albumActions"
             :key="action.id"
+            v-owner
             type="button"
             class="action-button"
             :class="{ active: activeAction === action.id }"
@@ -58,11 +59,17 @@
       </div>
 
       <div v-if="activeAction === 'metadata'" ref="metadataTarget">
-        <AlbumMusicBrainzPanel :album-id="Number(data.id)" :link="data.musicBrainz" @applied="refresh" />
+        <AlbumMusicBrainzPanel
+          v-if="owner.authenticated"
+          :album-id="Number(data.id)"
+          :link="data.musicBrainz"
+          @applied="refresh"
+        />
       </div>
 
       <div v-if="activeAction === 'duplicates'" ref="duplicatesTarget">
         <AlbumDuplicateTracksPanel
+          v-if="owner.authenticated"
           :album-id="Number(data.id)"
           :album-title="data.title"
           :tracks="data.tracks"
@@ -103,6 +110,8 @@ import AlbumTrackList from '~/components/music/AlbumTrackList.vue'
 import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
 import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import { useAlbumPageData } from '~/composables/useAlbumPageData'
+
+const owner = useOwnerAuth()
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))

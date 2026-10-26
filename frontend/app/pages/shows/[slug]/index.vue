@@ -61,6 +61,7 @@
           <button
             v-for="action in showActions"
             :key="action.id"
+            v-owner
             type="button"
             class="action-button"
             :class="{ active: action.toggle && activeAction === action.id }"
@@ -70,7 +71,7 @@
             <span>{{ action.label }}</span>
             <small>{{ action.toggle && activeAction === action.id ? 'Fechar' : action.description }}</small>
           </button>
-          <button type="button" class="action-button" :disabled="refreshingEpisodes" @click="refreshEpisodes">
+          <button v-owner type="button" class="action-button" :disabled="refreshingEpisodes" @click="refreshEpisodes">
             <span>{{ refreshingEpisodes ? 'Atualizando episódios…' : 'Atualizar episódios' }}</span>
             <small>Todas as temporadas regulares, incluindo episódios futuros</small>
           </button>
@@ -86,7 +87,12 @@
       </section>
 
       <div v-if="activeAction === 'metadata'" ref="metadataTarget">
-        <ShowMetadataEnrichmentPanel :show-id="data.showId" :identifiers="data.externalIds" @applied="refresh()" />
+        <ShowMetadataEnrichmentPanel
+          v-if="owner.authenticated"
+          :show-id="data.showId"
+          :identifiers="data.externalIds"
+          @applied="refresh()"
+        />
       </div>
 
       <div ref="listsTarget">
@@ -119,7 +125,7 @@
         minimal
       />
 
-      <ShowAddWatchPanel :show-id="data.showId" @created="handleWatchCreated" />
+      <ShowAddWatchPanel v-if="owner.authenticated" :show-id="data.showId" @created="handleWatchCreated" />
 
       <MediaCommentsPanel
         :entity-id="data.showId"
@@ -148,6 +154,8 @@ import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
 import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import { useShowPageData } from '~/composables/useShowPageData'
 import type { ManualShowWatchCreateResponse, ShowEpisodesRefreshResponse } from '~/types/shows'
+
+const owner = useOwnerAuth()
 
 const config = useRuntimeConfig()
 const refreshingEpisodes = ref(false)

@@ -26,6 +26,7 @@
 
             <div v-if="editingEnabled" class="pill-actions">
               <button
+                v-owner
                 type="button"
                 class="pill-action"
                 :disabled="busyTermId === item.termId"
@@ -34,6 +35,7 @@
                 Ocultar aqui
               </button>
               <button
+                v-owner
                 type="button"
                 class="pill-action ghost"
                 :disabled="busyTermId === item.termId"
@@ -50,7 +52,7 @@
     </div>
 
     <div v-if="editingEnabled" class="editor-panel">
-      <form class="add-form" @submit.prevent="addTerm">
+      <form v-owner class="add-form" @submit.prevent="addTerm">
         <label class="field field-name">
           <span>Nova marcação</span>
           <input v-model="draftName" type="text" placeholder="Ex.: Dream Pop, Clube da Esquina, Noite chuvosa" />
@@ -62,6 +64,7 @@
               <button
                 v-for="item in suggestions"
                 :key="item.id"
+                v-owner
                 type="button"
                 class="suggestion-item"
                 :disabled="suggestionDisabled(item)"
@@ -99,6 +102,7 @@
             <button
               v-for="item in group.items"
               :key="item.id"
+              v-owner
               type="button"
               class="hidden-pill"
               :disabled="busyTermId === item.termId"

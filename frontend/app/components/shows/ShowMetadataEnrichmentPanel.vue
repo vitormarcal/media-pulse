@@ -1,12 +1,12 @@
 <template>
-  <section class="enrichment-panel">
+  <section v-owner class="enrichment-panel">
     <div class="panel-copy">
       <p class="eyebrow">Catálogo</p>
       <h2>Enriquecer dados da série</h2>
       <p>Compare título, ano, descrição e imagens com o TMDb antes de aplicar alterações.</p>
     </div>
 
-    <form class="lookup" @submit.prevent="loadPreview">
+    <form v-owner class="lookup" @submit.prevent="loadPreview">
       <label>
         <span>TMDb ID</span>
         <input v-model="tmdbId" inputmode="numeric" autocomplete="off" placeholder="Usar vínculo salvo" />
@@ -23,7 +23,7 @@
           <h3>{{ preview.title }}</h3>
           <small>TMDb {{ preview.resolvedTmdbId }}</small>
         </div>
-        <button type="button" class="quiet" :disabled="applying" @click="preview = null">Fechar</button>
+        <button v-owner type="button" class="quiet" :disabled="applying" @click="preview = null">Fechar</button>
       </div>
 
       <div class="field-grid">
@@ -63,9 +63,10 @@
             <img :src="candidate.imageUrl" :alt="candidate.label" />
             <div>
               <strong>{{ candidate.label }}</strong
-              ><button type="button" class="quiet" @click="toggleImage(candidate.key)">
+              ><button v-owner type="button" class="quiet" @click="toggleImage(candidate.key)">
                 {{ selectedImageKeys.includes(candidate.key) ? 'Remover' : 'Selecionar' }}</button
               ><button
+                v-owner
                 type="button"
                 class="quiet"
                 :disabled="!selectedImageKeys.includes(candidate.key)"
@@ -79,10 +80,11 @@
       </section>
 
       <div class="actions">
-        <button type="button" class="secondary" :disabled="applying" @click="apply('MISSING', [])">
+        <button v-owner type="button" class="secondary" :disabled="applying" @click="apply('MISSING', [])">
           Preencher lacunas
         </button>
         <button
+          v-owner
           type="button"
           class="primary"
           :disabled="applying || !selectedFields.length"

@@ -1,7 +1,7 @@
 <template>
-  <details class="cover-upload" @toggle="handleToggle">
+  <details v-owner class="cover-upload" @toggle="handleToggle">
     <summary>Alterar capa</summary>
-    <form @submit.prevent="upload">
+    <form v-owner @submit.prevent="upload">
       <label>
         <span>Escolher capa</span>
         <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp" :disabled="busy" @change="choose" />

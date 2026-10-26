@@ -95,7 +95,7 @@
         </NuxtLink>
       </section>
 
-      <MovieManualAddCard v-if="showManualAddCard" :initial-title="queryText" />
+      <MovieManualAddCard v-if="owner.authenticated && showManualAddCard" :initial-title="queryText" />
 
       <section v-else-if="showManualEntryHint" class="entry-hint">
         <div class="entry-hint__copy">
@@ -149,6 +149,8 @@ import { useMoviesCollectionData } from '~/composables/useMoviesCollectionData'
 import { fetchMoviesLibraryNextPage, fetchMoviesLibraryPageData } from '~/composables/useMoviesLibraryData'
 import type { MovieLibraryCardModel } from '~/types/movies'
 import { buildMovieLibraryCards } from '~/utils/movies'
+
+const owner = useOwnerAuth()
 
 const route = useRoute()
 const { resolveMediaUrl } = useMediaUrl()

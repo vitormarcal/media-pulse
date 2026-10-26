@@ -7,7 +7,7 @@
         <p class="copy-body">Busque novas imagens para a galeria. A capa atual será mantida.</p>
       </div>
       <div class="actions">
-        <button type="button" class="primary-button" :disabled="busy" @click="importImages">
+        <button v-owner type="button" class="primary-button" :disabled="busy" @click="importImages">
           {{ busy ? 'Buscando…' : 'Buscar imagens' }}
         </button>
       </div>

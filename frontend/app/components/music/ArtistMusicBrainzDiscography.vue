@@ -6,7 +6,7 @@
         <h2>Importar discos</h2>
         <p class="muted">Revise release groups antes de criar discos locais. Capas e faixas não serão importadas.</p>
       </div>
-      <button type="button" class="secondary" :disabled="loading" @click="load">Buscar discografia</button>
+      <button v-owner type="button" class="secondary" :disabled="loading" @click="load">Buscar discografia</button>
     </div>
 
     <p v-if="message" class="muted">{{ message }}</p>
@@ -35,7 +35,7 @@
       </div>
       <div class="actions">
         <span>{{ selected.length }} selecionado(s)</span>
-        <button type="button" class="primary" :disabled="loading || !selected.length" @click="importSelected">
+        <button v-owner type="button" class="primary" :disabled="loading || !selected.length" @click="importSelected">
           Confirmar importação
         </button>
       </div>

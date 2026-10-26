@@ -25,7 +25,7 @@
         <section class="panel" aria-labelledby="new-batch-title">
           <h2 id="new-batch-title">Novo lote</h2>
           <p class="hint">Comece com um álbum. Créditos já preenchidos serão preservados.</p>
-          <form @submit.prevent="generatePreview">
+          <form v-owner @submit.prevent="generatePreview">
             <fieldset :disabled="!!busy" class="mode-options">
               <legend class="field-label">Escolher álbuns</legend>
               <label><input v-model="mode" type="radio" value="automatic" /> Seleção automática</label>
@@ -56,6 +56,7 @@
                   @keydown.enter.prevent="searchAlbums"
                 />
                 <button
+                  v-owner
                   type="button"
                   class="secondary"
                   :disabled="!!busy || searching || searchText.trim().length < 2"
@@ -69,6 +70,7 @@
                 <li v-for="album in selectedAlbums" :key="album.id">
                   <span>{{ album.title }}</span>
                   <button
+                    v-owner
                     type="button"
                     :disabled="!!busy"
                     :aria-label="`Remover ${album.title} do lote`"
@@ -123,7 +125,7 @@
                 {{ batch.items.length }} álbum(ns) · {{ readyCount }} pronto(s) · {{ appliedCount }} aplicado(s)
               </p>
             </div>
-            <button type="button" class="secondary" :disabled="!!busy" @click="openBatch(batch.batchId)">
+            <button v-owner type="button" class="secondary" :disabled="!!busy" @click="openBatch(batch.batchId)">
               {{ busy === 'load' ? 'Atualizando...' : 'Atualizar resultado' }}
             </button>
           </header>
@@ -136,18 +138,25 @@
 
           <div v-if="readyCount" class="batch-actions">
             <p>Aplicar todas as propostas prontas deste lote. Álbuns já aplicados não serão repetidos.</p>
-            <button type="button" class="primary" :disabled="!!busy" @click="applyBatch">
+            <button v-owner type="button" class="primary" :disabled="!!busy" @click="applyBatch">
               {{ busy === 'apply' ? 'Aplicando...' : `Aplicar propostas (${readyCount})` }}
             </button>
           </div>
           <div v-if="pendingIds.length" class="batch-actions quiet-actions">
             <p>Para consultas interrompidas ou conflitos corrigidos, gere uma nova prévia dos álbuns pendentes.</p>
-            <button type="button" class="secondary" :disabled="!!busy" @click="retryPreview">
+            <button v-owner type="button" class="secondary" :disabled="!!busy" @click="retryPreview">
               Gerar nova prévia dos pendentes ({{ pendingIds.length }})
             </button>
           </div>
           <div v-if="appliedCount" class="undo-area">
-            <button v-if="!undoPrompt" type="button" class="secondary" :disabled="!!busy" @click="undoPrompt = true">
+            <button
+              v-if="!undoPrompt"
+              v-owner
+              type="button"
+              class="secondary"
+              :disabled="!!busy"
+              @click="undoPrompt = true"
+            >
               Desfazer alterações deste lote
             </button>
             <div v-else class="undo-confirmation" aria-labelledby="undo-title">
@@ -157,10 +166,12 @@
                 preservados. O histórico de reproduções permanece.
               </p>
               <div class="button-row">
-                <button type="button" class="primary" :disabled="!!busy" @click="confirmUndo">
+                <button v-owner type="button" class="primary" :disabled="!!busy" @click="confirmUndo">
                   {{ busy === 'undo' ? 'Desfazendo...' : 'Confirmar desfazimento' }}
                 </button>
-                <button type="button" class="secondary" :disabled="!!busy" @click="undoPrompt = false">Cancelar</button>
+                <button v-owner type="button" class="secondary" :disabled="!!busy" @click="undoPrompt = false">
+                  Cancelar
+                </button>
               </div>
             </div>
           </div>
@@ -170,7 +181,7 @@
       <aside class="panel history" aria-labelledby="history-title">
         <header class="section-heading">
           <h2 id="history-title">Lotes recentes</h2>
-          <button type="button" class="secondary compact" :disabled="!!busy" @click="loadRecent">
+          <button v-owner type="button" class="secondary compact" :disabled="!!busy" @click="loadRecent">
             {{ busy === 'history' ? 'Carregando...' : 'Atualizar' }}
           </button>
         </header>
@@ -179,6 +190,7 @@
           <button
             v-for="item in recent"
             :key="item.batchId"
+            v-owner
             type="button"
             class="history-item"
             :aria-pressed="batch?.batchId === item.batchId"

@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 @EnableConfigurationProperties(
+    OwnerAuthProperties::class,
+    CorsProperties::class,
     PipelineProperties::class,
     PlexProperties::class,
     MusicBrainzProperties::class,

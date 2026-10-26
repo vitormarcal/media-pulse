@@ -69,3 +69,40 @@ a:focus-visible {
 #__nuxt {
   min-height: 100vh;
 }
+
+[data-owner-hidden] {
+  display: none !important;
+}
+.owner-access {
+  width: min(440px, calc(100% - 32px));
+  margin: 48px auto;
+  color: var(--base-color-text-primary);
+}
+.owner-access form {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0;
+}
+.owner-access input {
+  border: 1px solid #91918c;
+  border-radius: 16px;
+  padding: 11px 15px;
+  background: white;
+  color: #211922;
+}
+.owner-access button {
+  border: 0;
+  border-radius: 16px;
+  padding: 12px 16px;
+  background: var(--base-color-brand-red);
+  color: white;
+  cursor: pointer;
+}
+.owner-access :focus-visible {
+  outline: 2px solid #435ee5;
+  outline-offset: 3px;
+}
+.owner-access button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
