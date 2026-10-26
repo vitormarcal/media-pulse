@@ -9,6 +9,44 @@ import kotlin.test.assertFailsWith
 
 class CorsPropertiesTest {
     @Test
+    fun `forwarded HTTPS is applied before CORS for same origin reset`() {
+        val cors = CorsConfig(CorsProperties()).corsFilter()
+        val request =
+            org.springframework.mock.web.MockHttpServletRequest("POST", "/api/auth/reset").apply {
+                serverName = "media.example.test"
+                serverPort = 80
+                addHeader("Origin", "https://media.example.test")
+                addHeader("X-Forwarded-Proto", "https")
+                addHeader("X-Forwarded-Host", "media.example.test")
+                addHeader("X-Forwarded-Port", "443")
+            }
+        val response =
+            org.springframework.mock.web
+                .MockHttpServletResponse()
+        val filters =
+            listOf(
+                cors.order to cors.filter,
+                org.springframework.core.Ordered.HIGHEST_PRECEDENCE to
+                    org.springframework.web.filter
+                        .ForwardedHeaderFilter(),
+            ).sortedBy { it.first }.map { it.second }
+        val endpoint =
+            object : jakarta.servlet.http.HttpServlet() {
+                override fun service(
+                    req: jakarta.servlet.http.HttpServletRequest,
+                    res: jakarta.servlet.http.HttpServletResponse,
+                ) {
+                    assertEquals(true, req.isSecure)
+                    res.status = 204
+                }
+            }
+        org.springframework.mock.web
+            .MockFilterChain(endpoint, *filters.toTypedArray<jakarta.servlet.Filter>())
+            .doFilter(request, response)
+        assertEquals(204, response.status)
+    }
+
+    @Test
     fun `indexed origins bind as an explicit list for credentialed requests`() {
         val source =
             MapConfigurationPropertySource(

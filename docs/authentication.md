@@ -15,7 +15,7 @@ O env não é removido do processo: seu valor deixa de autorizar resets depois d
 
 Reset não autentica automaticamente e invalida todas as sessões anteriores pela versão da credencial, inclusive em outras instâncias conectadas ao mesmo banco. Login troca o identificador da sessão; logout a invalida. Sessões ficam em memória e terminam após reinício ou 12 horas de inatividade. A instalação atual não requer armazenamento compartilhado de sessões.
 
-Login e reset compartilham limite de dez tentativas por minuto por processo, incluindo tentativas bem-sucedidas. Excesso retorna `429`; aguarde um minuto. Esse limite é local à instância e reinicia com o processo.
+Login e reset têm limites separados de dez tentativas por minuto por endereço de cliente, incluindo tentativas bem-sucedidas. Endereços compartilhados por NAT dividem o limite. O controle mantém até 10.000 janelas em memória; ao atingir essa capacidade, descarta a mais antiga. Excesso retorna `429`; aguarde um minuto. Esse limite é local à instância e reinicia com o processo.
 
 ## Configuração
 
@@ -57,3 +57,9 @@ Na validação com sessão, as APIs retornaram `500` porque a configuração ant
 Executar `./server/gradlew -p server ktlintFormat` e os testes de autenticação/CORS, além de `npm --prefix frontend run check` e `npm --prefix frontend run build`. Os testes de banco usam PostgreSQL descartável via Testcontainers; conferir o relatório XML para garantir que não foram pulados.
 
 Neste ambiente, o Docker recusou a API antiga usada pelo cliente de testes, fazendo o Testcontainers considerar Docker indisponível. Executar os testes com `JAVA_TOOL_OPTIONS=-Dapi.version=1.44` resolveu a detecção sem alterar dependências ou a configuração do serviço. Validar pelo relatório `OwnerAuthIntegrationTest`: dois testes executados e zero skips. Esse override é somente para o processo de teste quando houver essa incompatibilidade.
+
+### Proxy HTTPS e sessão expirada
+
+Um proxy que termina TLS encaminha HTTP ao backend. CORS precisa rodar depois do filtro de forwarded headers e antes da autorização; a ordem anterior causava `403 Invalid CORS request` mesmo para a origem pública correta. O proxy deve substituir os headers encaminhados por valores confiáveis, incluindo protocolo, host e endereço do cliente. Valide um POST com Origin HTTPS e X-Forwarded-Proto/Host/Port correspondentes.
+
+O frontend renova a sessão/CSRF antes de login e reset, e descarta o CSRF local após respostas 401/403. Isso evita exigir duas tentativas depois que a sessão expira ou o backend reinicia. A tela de reset distingue 400 (senha), 401 (autorização), 403 (sessão/origem), 429 (limite) e falhas de conexão/servidor.

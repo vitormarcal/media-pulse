@@ -34,7 +34,7 @@ class OwnerAuthController(
         @RequestBody body: OwnerLoginRequest,
         request: HttpServletRequest,
     ) {
-        val generation = auth.login(body.password)
+        val generation = auth.login(body.password, request.remoteAddr)
         request.changeSessionId()
         request.session.setAttribute("ownerGeneration", generation)
     }
@@ -44,7 +44,7 @@ class OwnerAuthController(
         @RequestBody body: OwnerResetRequest,
         request: HttpServletRequest,
     ) {
-        auth.reset(body.token, body.password)
+        auth.reset(body.token, body.password, request.remoteAddr)
         request.getSession(false)?.invalidate()
     }
 

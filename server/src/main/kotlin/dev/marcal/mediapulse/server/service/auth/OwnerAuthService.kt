@@ -16,23 +16,41 @@ class OwnerAuthService(
 ) {
     private val encoder = BCryptPasswordEncoder(12)
     private val dummyHash = encoder.encode("unavailable-owner-password")
-    private var windowStart = 0L
-    private var attempts = 0
+
+    private data class AttemptWindow(
+        val start: Long,
+        var attempts: Int = 0,
+    )
+
+    private val windows = LinkedHashMap<Pair<String, String>, AttemptWindow>()
 
     @Synchronized
-    fun checkRate() {
+    private fun checkRate(
+        action: String,
+        clientAddress: String,
+    ) {
         val now = System.currentTimeMillis()
-        if (now - windowStart >= 60_000) {
-            windowStart = now
-            attempts = 0
+        windows.entries.removeIf { now - it.value.start >= 60_000 }
+        val key = action to clientAddress
+        val window =
+            windows.getOrPut(key) {
+                if (windows.size >= 10_000) windows.remove(windows.keys.first())
+                AttemptWindow(now)
+            }
+        if (++window.attempts >
+            10
+        ) {
+            throw ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Aguarde um minuto antes de tentar novamente")
         }
-        if (++attempts > 10) throw ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Aguarde um minuto antes de tentar novamente")
     }
 
     fun generation(): Long = repository.credential().generation
 
-    fun login(password: String): Long {
-        checkRate()
+    fun login(
+        password: String,
+        clientAddress: String = "local",
+    ): Long {
+        checkRate("login", clientAddress)
         val credential = repository.credential()
         if (password.toByteArray().size > 72 ||
             !encoder.matches(password, credential.passwordHash ?: dummyHash) ||
@@ -47,8 +65,9 @@ class OwnerAuthService(
     fun reset(
         token: String,
         password: String,
+        clientAddress: String = "local",
     ) {
-        checkRate()
+        checkRate("reset", clientAddress)
         if (props.resetToken.isBlank() || !equal(props.resetToken.lowercase(), token.lowercase())) {
             throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Autorização inválida ou consumida")
         }

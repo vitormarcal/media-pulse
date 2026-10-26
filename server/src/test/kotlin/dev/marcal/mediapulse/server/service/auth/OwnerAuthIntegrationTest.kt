@@ -130,7 +130,7 @@ class OwnerAuthIntegrationTest {
     fun `http session rotates on login and logout destroys it`() {
         val auth = io.mockk.mockk<OwnerAuthService>()
         io.mockk.every { auth.generation() } returns 1L
-        io.mockk.every { auth.login("owner-password") } returns 1L
+        io.mockk.every { auth.login("owner-password", "127.0.0.1") } returns 1L
         val props = OwnerAuthProperties()
         val mvc =
             MockMvcBuilders

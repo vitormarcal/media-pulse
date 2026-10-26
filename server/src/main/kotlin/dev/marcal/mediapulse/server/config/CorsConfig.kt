@@ -22,6 +22,7 @@ class CorsConfig(
                 allowCredentials = true
             }
         val source = UrlBasedCorsConfigurationSource().apply { registerCorsConfiguration("/api/**", configuration) }
-        return FilterRegistrationBean(CorsFilter(source)).apply { order = Ordered.HIGHEST_PRECEDENCE }
+        // Resolve the external HTTPS origin before CORS, and authorize only after CORS.
+        return FilterRegistrationBean(CorsFilter(source)).apply { order = Ordered.HIGHEST_PRECEDENCE + 10 }
     }
 }

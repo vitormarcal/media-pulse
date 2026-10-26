@@ -6,7 +6,7 @@
       :class="{ 'art-library-filters-visible': !chronological }"
     >
       <summary>Filtrar obras</summary>
-      <form v-owner class="art-filters" @submit.prevent="load(false)">
+      <form class="art-filters" @submit.prevent="load(false)">
         <label>Buscar <input v-model="filters.q" type="search" placeholder="Título, artista, técnica…" /></label>
         <label v-if="!artistId"
           >Artista

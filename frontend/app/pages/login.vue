@@ -12,6 +12,7 @@
 </template>
 
 <script setup lang="ts">
+import { FetchError } from 'ofetch'
 import type { OwnerSession } from '~/composables/useOwnerAuth'
 
 const owner = useOwnerAuth()
@@ -31,8 +32,16 @@ async function submit() {
     password.value = ''
     owner.value = await $fetch<OwnerSession>('/api/auth/session', { baseURL: config.public.apiBase })
     await navigateTo('/')
-  } catch {
-    error.value = 'Não foi possível entrar. Confira a senha ou aguarde um minuto antes de tentar novamente.'
+  } catch (cause) {
+    const status = cause instanceof FetchError ? cause.statusCode : undefined
+    const messages: Record<number, string> = {
+      401: 'Senha inválida.',
+      403: 'A sessão ou a origem da requisição foi recusada. Recarregue a página; se persistir, confira HTTPS, cookies e proxy.',
+      429: 'Muitas tentativas deste endereço. Aguarde um minuto antes de tentar novamente.',
+    }
+    error.value = status
+      ? (messages[status] ?? 'O servidor não conseguiu concluir o login.')
+      : 'Não foi possível conectar ao serviço. Confira a conexão e a configuração de HTTPS e CORS.'
   } finally {
     busy.value = false
   }

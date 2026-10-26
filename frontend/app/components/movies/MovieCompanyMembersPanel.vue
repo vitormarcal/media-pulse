@@ -13,7 +13,6 @@
           <p class="members-count">{{ countLabel }}</p>
           <button
             v-if="showLoadButton"
-            v-owner
             type="button"
             class="members-load-button"
             :disabled="loading"

@@ -24,13 +24,14 @@ export default defineNuxtPlugin(async (nuxtApp) => {
       if (url.origin !== apiOrigin || !url.pathname.startsWith('/api/')) return
       options.credentials = 'include'
       if (!['GET', 'HEAD', 'OPTIONS'].includes(String(options.method ?? 'GET').toUpperCase())) {
-        if (!owner.value.csrfToken) owner.value = await session()
+        if (!owner.value.csrfToken || ['/api/auth/login', '/api/auth/reset'].includes(url.pathname)) {
+          owner.value = await session()
+        }
         options.headers.set('X-CSRF-Token', owner.value.csrfToken)
       }
     },
     onResponseError({ response }) {
-      if (response.status === 401) owner.value.authenticated = false
-      if (response.status === 403) owner.value = { authenticated: false, csrfToken: '' }
+      if (response.status === 401 || response.status === 403) owner.value = { authenticated: false, csrfToken: '' }
     },
   })
   const stops = new WeakMap<HTMLElement, () => void>()

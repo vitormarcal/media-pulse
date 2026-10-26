@@ -17,6 +17,8 @@
 </template>
 
 <script setup lang="ts">
+import { FetchError } from 'ofetch'
+
 const owner = useOwnerAuth()
 const config = useRuntimeConfig()
 const token = ref('')
@@ -40,9 +42,17 @@ async function submit() {
     owner.value = { authenticated: false, csrfToken: '' }
     token.value = password.value = confirmation.value = ''
     message.value = 'Senha salva. Entre com a nova senha.'
-  } catch {
-    message.value =
-      'Não foi possível salvar. Confira o código, os limites da senha ou aguarde um minuto antes de tentar novamente.'
+  } catch (error) {
+    const status = error instanceof FetchError ? error.statusCode : undefined
+    const messages: Record<number, string> = {
+      400: 'Use pelo menos 12 caracteres e no máximo 72 bytes na senha.',
+      401: 'Código inválido, já utilizado ou indisponível. Confira AUTH_RESET_TOKEN no backend e reinicie após alterá-lo.',
+      403: 'A sessão ou a origem da requisição foi recusada. Recarregue a página; se persistir, confira HTTPS, cookies e proxy.',
+      429: 'Muitas tentativas deste endereço. Aguarde um minuto antes de tentar novamente.',
+    }
+    message.value = status
+      ? (messages[status] ?? 'O servidor não conseguiu salvar a senha. Confira os logs do backend.')
+      : 'Não foi possível conectar ao serviço. Confira a conexão e a configuração de HTTPS e CORS.'
   } finally {
     busy.value = false
   }

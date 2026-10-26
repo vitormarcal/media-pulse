@@ -12,18 +12,28 @@ import kotlin.test.assertFailsWith
 
 class OwnerAuthServiceTest {
     @Test
-    fun `login and reset share a limit even before first password exists`() {
+    fun `reset attempts are limited by client and do not exhaust login attempts`() {
         val repository = mockk<OwnerAuthRepository>()
         every { repository.credential() } returns OwnerAuthRepository.Credential(null, 0)
         val service = OwnerAuthService(repository, OwnerAuthProperties())
-        repeat(5) {
-            assertEquals(HttpStatus.UNAUTHORIZED, assertFailsWith<ResponseStatusException> { service.login("wrong") }.statusCode)
+        repeat(10) {
             assertEquals(
                 HttpStatus.UNAUTHORIZED,
-                assertFailsWith<ResponseStatusException> { service.reset("wrong", "new-password") }.statusCode,
+                assertFailsWith<ResponseStatusException> { service.reset("wrong", "new-password", "client-a") }.statusCode,
             )
         }
-        assertEquals(HttpStatus.TOO_MANY_REQUESTS, assertFailsWith<ResponseStatusException> { service.login("wrong") }.statusCode)
+        assertEquals(
+            HttpStatus.TOO_MANY_REQUESTS,
+            assertFailsWith<ResponseStatusException> { service.reset("wrong", "new-password", "client-a") }.statusCode,
+        )
+        assertEquals(
+            HttpStatus.UNAUTHORIZED,
+            assertFailsWith<ResponseStatusException> { service.reset("wrong", "new-password", "client-b") }.statusCode,
+        )
+        assertEquals(
+            HttpStatus.UNAUTHORIZED,
+            assertFailsWith<ResponseStatusException> { service.login("wrong", "client-a") }.statusCode,
+        )
     }
 
     @Test
