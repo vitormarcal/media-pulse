@@ -110,7 +110,7 @@ export function buildGamePageData(game: GameDetailsResponse): GamePageData {
     year: game.year,
     description: game.description,
     coverUrl: game.coverUrl,
-    gallery: gallery.slice(0, 4),
+    gallery,
     rating: game.rating,
     heroMeta: [
       game.year ? String(game.year) : null,

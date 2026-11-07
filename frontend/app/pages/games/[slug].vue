@@ -14,10 +14,13 @@
         :title="data.title"
         :subtitle="heroSubtitle"
         :description="data.description"
-        :gallery="data.gallery"
+        :gallery="data.gallery.slice(0, 4)"
         :hero-meta="data.heroMeta"
         :identifiers="data.identifiers"
+        @view-image="galleryViewer?.open($event)"
       />
+
+      <GameImageGallery ref="galleryViewer" :images="data.gallery" :title="data.title" />
 
       <MediaCoverUpload
         v-if="owner.authenticated"
@@ -26,7 +29,7 @@
         @saved="handleCoverSaved"
       />
 
-      <GameImagesPanel v-if="owner.authenticated" :game-id="data.gameId" @imported="refresh()" />
+      <GameImagesPanel v-if="owner.authenticated" :key="data.gameId" :game-id="data.gameId" @imported="refresh()" />
 
       <section class="context-grid">
         <article class="context-card">
@@ -61,6 +64,7 @@
 </template>
 
 <script setup lang="ts">
+import GameImageGallery from '~/components/games/GameImageGallery.vue'
 import GameImagesPanel from '~/components/games/GameImagesPanel.vue'
 import GameAddSessionPanel from '~/components/games/GameAddSessionPanel.vue'
 import GamePageHero from '~/components/games/GamePageHero.vue'
@@ -71,6 +75,7 @@ import { useGamePageData } from '~/composables/useGamePageData'
 
 import MediaCoverUpload from '~/components/media/MediaCoverUpload.vue'
 
+const galleryViewer = ref<InstanceType<typeof GameImageGallery> | null>(null)
 const owner = useOwnerAuth()
 
 const route = useRoute()
@@ -93,7 +98,7 @@ async function handleSessionChanged() {
 
 function handleCoverSaved(coverUrl: string) {
   if (!data.value) return
-  data.value.gallery = [coverUrl, ...data.value.gallery.filter((url) => url !== coverUrl)].slice(0, 4)
+  data.value.gallery = [coverUrl, ...data.value.gallery.filter((url) => url !== coverUrl)]
 }
 
 useHead(() => ({

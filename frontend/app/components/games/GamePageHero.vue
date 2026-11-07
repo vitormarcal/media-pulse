@@ -24,9 +24,17 @@
       </div>
 
       <div class="gallery">
-        <div v-for="(image, index) in gallery" :key="`${image}-${index}`" class="gallery-item" :class="`slot-${index}`">
+        <button
+          v-for="(image, index) in gallery"
+          :key="`${image}-${index}`"
+          type="button"
+          class="gallery-item"
+          :class="`slot-${index}`"
+          :aria-label="`Ampliar imagem ${index + 1} de ${title}`"
+          @click="$emit('viewImage', index)"
+        >
           <MediaImage :src="resolveMediaUrl(image)" :alt="title" />
-        </div>
+        </button>
       </div>
     </div>
   </section>
@@ -43,6 +51,8 @@ const props = defineProps<{
   heroMeta: string[]
   identifiers: GamePageData['identifiers']
 }>()
+
+defineEmits<{ viewImage: [index: number] }>()
 
 const { resolveMediaUrl } = useMediaUrl()
 const heroImageUrl = computed(() => props.gallery.map((image) => resolveMediaUrl(image)).find(Boolean) ?? null)
@@ -154,9 +164,18 @@ h1 {
 }
 
 .gallery-item {
+  border: 0;
+  padding: 0;
+  cursor: zoom-in;
+  min-width: 0;
   overflow: hidden;
   border-radius: 28px;
   background: var(--base-color-surface-warm);
+}
+
+.gallery-item:focus-visible {
+  outline: 3px solid var(--base-color-focus);
+  outline-offset: 4px;
 }
 
 .gallery-item img {

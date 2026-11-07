@@ -111,3 +111,16 @@ Imagens novas do SteamGridDB e capa de fallback do IGDB são baixadas, validadas
 ## Buscar imagens no detalhe
 
 `POST /api/games/{gameId}/images/import` busca até três grids usando o SteamGridDB ID salvo, ou procura pelo título se ainda não houver vínculo. Sem grid salvo, tenta a capa do IGDB vinculado. Usa o armazenamento e limites existentes e acrescenta imagens sem alterar metadados ou sessões. Preserva a capa atual; atribui uma principal somente quando não houver capa nem principal. Retorna `{savedImagesCount, coverAssigned, failedImagesCount}`; imagens já vinculadas não contam como novas. Entidade ausente retorna 404; falha de todas as imagens tentadas retorna 503 e permite retry na página. Sucesso parcial mantém imagens salvas e informa falhas. Provedores sem configuração ou sem resultados podem retornar contagens zero.
+
+## Escolher imagens no detalhe
+
+A interface usa agora seleção explícita, conforme [escopo aprovado](features/game-image-selection.md). O import automático acima permanece compatível e o cadastro mantém seu comportamento anterior.
+
+- `GET /api/games/{gameId}/images/candidates`: retorna `{images, warnings}`. Cada opção contém `id`, `provider`, `kind`, `url`, `previewUrl`, `width` e `height`. Não baixa nem armazena arquivos. SteamGridDB fornece um lote de grids (incluindo horizontais) e heroes; IGDB fornece capa, screenshots e artworks do ID local. A ausência de credenciais/resultados produz lista vazia; falhas isoladas preservam opções dos outros tipos/provedores e geram avisos.
+- `POST /api/games/{gameId}/images/selection`: exige owner e CSRF; recebe `{ids: [...]}`, entre uma e 50 seleções. Retorna `{savedIds, failedIds}`, inclusive quando todas falham. IDs desconhecidos ou opções que desapareceram do provedor entram em `failedIds`. Formato inválido retorna 400 e jogo ausente retorna 404. O backend revalida os IDs nos resultados atuais, sem aceitar URLs do navegador.
+
+Salvar usa o armazenamento, validações e limites existentes e não atribui nem troca a capa/principal, mesmo quando não há capa. A UI mantém falhas selecionadas para retry, desmarca os sucessos e atualiza a galeria completa. As prévias são carregadas diretamente do provedor, sem token; os arquivos selecionados são baixados pelo backend e guardados no Visual Library quando habilitado.
+
+O Media Pulse guarda somente a referência retornada pelo armazenamento na galeria existente (`game_images`). Não persiste URLs de origem nem histórico de seleção. Selecionar novamente envia a imagem ao armazenamento; deduplicação e revisão de duplicadas pertencem ao Visual Library. Se o armazenamento retornar uma referência já vinculada ao jogo, a inserção existente preserva um único vínculo. Sem migration, nova variável ou dependência.
+
+As imagens salvas aparecem em galeria masonry, com proporção original e ampliação em tela cheia na própria página. O visualizador tem miniaturas, contador, setas e Escape; ao fechar, devolve o foco ao controle de origem. A galeria fica disponível sem login e as ações de adição continuam exclusivas do owner.

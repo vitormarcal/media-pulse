@@ -263,6 +263,8 @@ Movimentos e estilos usa seleção múltipla: autocomplete nativo com sugestões
 
 No detalhe de jogos, o card de Catálogo usa o padrão de ação de enriquecimento de filmes e séries: título direto, superfície quente, botão vermelho “Buscar imagens”, estado Buscando, feedback de sucesso/erro e nova tentativa no mesmo controle. Busca acrescenta imagens e mantém a capa atual; atualiza a galeria após sucesso.
 
+A seleção de imagens de jogos substitui a importação direta do card por “Escolher imagens”: prévias sem recorte, checkbox nativo por imagem, tipo/provedor. “Salvar selecionadas” é a confirmação explícita de armazenamento. Não manter histórico de URLs de origem nem bloquear opções já escolhidas; a deduplicação e revisão de duplicadas pertencem ao Visual Library. Usar grid responsivo, seleção com borda vermelha, superfícies quentes, foco visível e feedback no mesmo card. Preservar seleções em falha e manter apenas itens que falharam selecionados após sucesso parcial. A galeria guardada aparece antes dos controles de adição, inclusive sem login, em masonry responsivo com proporções originais e cantos de 20px. Imagens da galeria e do mosaico do hero abrem ampliação na própria página, em tela cheia sobre superfície escura quente, com miniaturas, contador, setas, Escape e retorno do foco. Preservar a composição integral, sem recorte, e usar toda a área disponível no visualizador. O mosaico do hero mantém até quatro.
+
 ## 14. Séries de livros e universos
 
 Listagem de séries usa cards com mosaico de até quatro capas locais, nome, autores com links e contagem do acervo, seguindo listas de álbuns e filmes. Reutilizar os mesmos cards no contexto do livro e na página do autor. Universos derivam capas da ordem de suas séries e livros.

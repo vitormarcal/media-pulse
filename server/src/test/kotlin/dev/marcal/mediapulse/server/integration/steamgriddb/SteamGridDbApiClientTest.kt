@@ -46,6 +46,35 @@ class SteamGridDbApiClientTest {
     }
 
     @Test
+    fun `candidate queries request all grids and heroes with previews and propagate provider failures`() {
+        val paths = mutableListOf<String>()
+        server.createContext("/grids/game/20") { exchange ->
+            paths += exchange.requestURI.toString()
+            val body =
+                """{"success":true,"data":[{"id":1,"url":"https://cdn/grid.png","thumb":"https://cdn/thumb.png","width":920,"height":430}]}"""
+                    .toByteArray()
+            exchange.responseHeaders.set("Content-Type", "application/json")
+            exchange.sendResponseHeaders(200, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        server.createContext("/heroes/game/20") { exchange ->
+            paths += exchange.requestURI.toString()
+            exchange.sendResponseHeaders(503, -1)
+            exchange.close()
+        }
+        val props = SteamGridDbProperties(apiBaseUrl = "http://127.0.0.1:${server.address.port}", apiKey = "test")
+        val clients = SteamGridDbClientConfig(props)
+        val api = SteamGridDbApiClient(props, clients.steamGridDbWebClient(WebClient.builder()), WebClient.builder().build())
+        val image = api.fetchImageOptions(20).single()
+        assertEquals(920, image.width)
+        assertEquals("https://cdn/thumb.png", image.thumb)
+        assertFailsWith<WebClientResponseException> { api.fetchImageOptions(20, true) }
+        assertEquals(true, paths.first().startsWith("/grids/game/20"))
+        assertEquals(false, paths.first().contains("dimensions="))
+        assertEquals(true, paths.last().startsWith("/heroes/game/20"))
+    }
+
+    @Test
     fun `downloads larger than default 256 KiB preserve all bytes and content type`() {
         val bytes = ByteArray(512 * 1024) { (it % 251).toByte() }
         serve(bytes)

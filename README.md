@@ -91,3 +91,5 @@ Por padrão, o `Makefile` usa o `Dockerfile` raiz.
 Artes visuais aceita múltiplos movimentos e estilos com sugestões e entrada livre. Correções atualizam as imagens remotas automaticamente e permitem retry em falhas; operação e migration V67 estão em [artworks-api.md](docs/artworks-api.md).
 
 Capas remotas de livros e edições recebem tags das séries locais automaticamente, inclusive no acervo já enviado ao Visual Library. A fila persiste alterações e permite retry no detalhe do livro; veja [contrato e operação](docs/books-api.md#tags-de-séries-nas-capas).
+
+No detalhe de jogos, “Escolher imagens” mostra capas e fundos do SteamGridDB e capas, screenshots e artes do IGDB para seleção explícita. O Media Pulse guarda a referência retornada pelo armazenamento, deixando deduplicação e revisão de duplicadas no Visual Library. As imagens salvas aparecem em galeria masonry e podem ser ampliadas na própria página com miniaturas e navegação por teclado. Consulte [seleção e visualização](docs/games-api.md#escolher-imagens-no-detalhe).

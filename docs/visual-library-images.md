@@ -214,3 +214,7 @@ A configuração `media-pulse.visual-library.token` é lida de `VISUAL_LIBRARY_T
 Validação: `VisualLibraryClientTest` usa HTTP local para conferir Authorization nos uploads e retries, na migração, nas atualizações de movimentos/séries e nos GETs condicionais com uploads desligados. Também verifica ausência de cabeçalho com token vazio, isolamento do builder compartilhado, filtro de headers no proxy e ausência de retry anônimo/exposição do segredo em recusas 401.
 
 Resultado: 16 testes direcionados passaram (`VisualLibraryClientTest`, `ArtworkMovementSyncServiceTest` e `BookSeriesTagSyncServiceTest`), incluindo binding do YAML pelo nome da variável. `ktlintFormat` e `ktlintCheck` concluídos; compilação Kotlin e dos testes concluída. Nenhum segredo real ou dado de produção foi utilizado.
+
+## Seleção de imagens de jogos
+
+No detalhe do jogo, “Escolher imagens” consulta prévias dos provedores sem enviar arquivos ao Visual Library. “Salvar selecionadas” armazena somente a seleção com a referência `game` e as sugestões existentes (`jogo`, título), preservando a capa atual. O Media Pulse guarda a referência retornada na galeria existente, sem persistir URL de origem ou histórico de seleção. A deduplicação e a revisão de duplicadas ficam no Visual Library; referências iguais não duplicam o vínculo da galeria. Não há migration. Consulte [contrato, limites e retry](games-api.md#escolher-imagens-no-detalhe).

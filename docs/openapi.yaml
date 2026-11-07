@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.9.2
+  version: 1.10.0
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -764,6 +764,113 @@ paths:
           description: Hardcover request or GraphQL failure
         '503':
           description: Hardcover integration unavailable
+  /api/games/{gameId}/images/candidates:
+    get:
+      tags: [Games]
+      summary: Preview provider images without storing files
+      description: Lists a batch of SteamGridDB grids and heroes and the linked IGDB cover, screenshots and artworks. Partial provider failures are returned as warnings.
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Available candidates and provider warnings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [images, warnings]
+                properties:
+                  images:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, provider, kind, url, previewUrl]
+                      properties:
+                        id:
+                          type: string
+                          description: Opaque candidate ID revalidated against current provider results on save
+                        provider:
+                          type: string
+                          enum: [STEAMGRIDDB, IGDB]
+                        kind:
+                          type: string
+                          enum: [GRID, GRID_HORIZONTAL, HERO, COVER, SCREENSHOT, ARTWORK]
+                        url:
+                          type: string
+                        previewUrl:
+                          type: string
+                        width:
+                          type: integer
+                          nullable: true
+                        height:
+                          type: integer
+                          nullable: true
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+        '404':
+          description: Game not found
+  /api/games/{gameId}/images/selection:
+    post:
+      tags: [Games]
+      summary: Store only selected provider images
+      description: Preserves cover, primary image and sessions. Revalidates candidate IDs and stores the returned image reference using the existing gallery flow. Deduplication is delegated to storage. Individual failures, including missing candidates, are returned for retry without undoing successful saves.
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  items:
+                    type: string
+                    pattern: '^[a-f0-9]{64}$'
+      responses:
+        '200':
+          description: Per-image results, including partial or total failures
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [savedIds, failedIds]
+                properties:
+                  savedIds:
+                    type: array
+                    items:
+                      type: string
+                  failedIds:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Invalid selection
+        '401':
+          description: Owner login required
+        '403':
+          description: Invalid CSRF token
+        '404':
+          description: Game not found
   /api/games/{gameId}/images/import:
     post:
       security:

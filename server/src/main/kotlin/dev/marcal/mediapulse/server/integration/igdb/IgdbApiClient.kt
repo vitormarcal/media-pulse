@@ -25,6 +25,8 @@ data class IgdbGameResponse(
     @JsonProperty("first_release_date")
     val firstReleaseDate: Long? = null,
     val cover: IgdbCoverResponse? = null,
+    val screenshots: List<IgdbCoverResponse> = emptyList(),
+    val artworks: List<IgdbCoverResponse> = emptyList(),
     val genres: List<IgdbNamedResponse> = emptyList(),
     val platforms: List<IgdbNamedResponse> = emptyList(),
 )
@@ -34,6 +36,8 @@ data class IgdbCoverResponse(
     @JsonProperty("image_id")
     val imageId: String? = null,
     val url: String? = null,
+    val width: Int? = null,
+    val height: Int? = null,
 )
 
 data class IgdbNamedResponse(
@@ -102,6 +106,15 @@ class IgdbApiClient(
             limit 1;
             """.trimIndent()
         return postGames(body).firstOrNull()
+    }
+
+    fun fetchImageOptions(gameId: String): IgdbGameResponse? {
+        if (!props.enabled || props.clientId.isBlank() || props.clientSecret.isBlank()) return null
+        val id = gameId.toLongOrNull() ?: throw IllegalArgumentException("ID IGDB inválido")
+        ensureConfigured()
+        return postGames(
+            "fields id,cover.image_id,cover.width,cover.height,screenshots.image_id,screenshots.width,screenshots.height,artworks.image_id,artworks.width,artworks.height; where id = $id; limit 1;",
+        ).firstOrNull()
     }
 
     fun buildCoverUrl(cover: IgdbCoverResponse?): String? {

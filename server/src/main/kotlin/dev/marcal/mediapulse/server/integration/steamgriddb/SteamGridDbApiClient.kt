@@ -23,6 +23,7 @@ data class SteamGridDbGridResponse(
     val height: Int? = null,
     val style: String? = null,
     val score: Double? = null,
+    val thumb: String? = null,
 )
 
 private data class SteamGridDbEnvelope<T>(
@@ -38,10 +39,13 @@ class SteamGridDbApiClient(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun searchGames(query: String): List<SteamGridDbGameResponse> {
+    fun searchGames(
+        query: String,
+        failOnError: Boolean = false,
+    ): List<SteamGridDbGameResponse> {
         val normalized = query.trim()
         if (!props.enabled || props.apiKey.isBlank() || normalized.isBlank()) return emptyList()
-        return getEnvelope<Array<SteamGridDbGameResponse>>("/search/autocomplete/{term}", normalized)
+        return getEnvelope<Array<SteamGridDbGameResponse>>("/search/autocomplete/{term}", normalized, failOnError = failOnError)
             ?.data
             ?.toList()
             .orEmpty()
@@ -55,6 +59,24 @@ class SteamGridDbApiClient(
         )?.data
             ?.toList()
             .orEmpty()
+    }
+
+    fun fetchImageOptions(
+        gameId: Long,
+        heroes: Boolean = false,
+    ): List<SteamGridDbGridResponse> {
+        if (!props.enabled || props.apiKey.isBlank()) return emptyList()
+        val category = if (heroes) "heroes" else "grids"
+        val result =
+            steamGridDbWebClient
+                .get()
+                .uri("/$category/game/{gameId}", gameId)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${props.apiKey}")
+                .retrieve()
+                .bodyToMono<SteamGridDbEnvelope<Array<SteamGridDbGridResponse>>>()
+                .block()
+        check(result?.success == true) { "SteamGridDB indisponível" }
+        return result?.data.orEmpty().toList()
     }
 
     fun downloadImage(url: String): ImageContent =
@@ -77,6 +99,7 @@ class SteamGridDbApiClient(
     private inline fun <reified T> getEnvelope(
         uri: String,
         vararg vars: Any,
+        failOnError: Boolean = false,
     ): SteamGridDbEnvelope<T>? =
         runCatching {
             steamGridDbWebClient
@@ -87,6 +110,7 @@ class SteamGridDbApiClient(
                 .bodyToMono<SteamGridDbEnvelope<T>>()
                 .block()
         }.onFailure { error ->
+            if (failOnError) throw error
             if (error !is WebClientResponseException) {
                 logger.warn("SteamGridDB request failed", error)
             } else {
