@@ -126,3 +126,13 @@ O Media Pulse guarda somente a referência retornada pelo armazenamento na galer
 As imagens salvas aparecem em galeria masonry, com proporção original e ampliação em tela cheia na própria página. O visualizador tem miniaturas, contador, setas e Escape; ao fechar, devolve o foco ao controle de origem. A galeria fica disponível sem login e as ações de adição continuam exclusivas do owner.
 
 Na seleção, clicar na prévia abre a URL original transitoriamente no visualizador, com setas, miniaturas e checkbox para marcar/desmarcar. Abrir, navegar e fechar não guardam imagens nem alteram as escolhas; o envio ocorre somente em “Salvar selecionadas”.
+
+## Existência de imagens na seleção
+
+`POST /api/games/{gameId}/images/lookup` exige owner e CSRF. Recebe `{ids: [...]}` com 1–8 IDs de candidatos atuais e retorna `{available, results: [{id, state}]}`. Estados: `IN_GALLERY`, `IN_LIBRARY`, `NOT_FOUND` e `UNAVAILABLE`. IDs inválidos/lote excedido retornam 400; jogo ausente retorna 404. A URL de download é resolvida novamente nos provedores pelo backend, nunca aceita do navegador.
+
+Com Visual Library habilitado, o backend baixa os originais solicitados (até 10 MiB cada), calcula SHA-256 dos bytes completos e consulta `POST /api/assets/lookup` com o Bearer existente. Compara IDs encontrados com as referências remotas atuais da capa/galeria. Nenhum arquivo, hash, URL de origem ou resultado é persistido. O contrato exige Visual Library 0.27.0; serviço desabilitado, versão anterior, falhas e respostas inválidas são tratados como indisponíveis, preservando seleção e upload.
+
+A UI observa as opções que entram na tela e envia um lote de até quatro por vez, sem baixar todas antecipadamente. Abrir/navegar no visualizador também prioriza a opção atual. “Verificando…”, “Já na galeria”, “Já no Visual Library”, “Não encontrada no Visual Library” e “Não verificado” são avisos informativos: nenhuma opção é oculta ou bloqueada. Respostas de buscas anteriores são ignoradas. A ausência indica somente falta dos bytes exatos no índice, sem comparação por similaridade nem garantia sobre legados sem hash. Falha isolada de download não marca a imagem como ausente.
+
+Salvar mantém o upload existente para registrar a referência e sugestões; o lookup não cria vínculos. Após sucesso, o aviso pode refletir a referência já na galeria durante a sessão atual. A consulta pode exigir novo download do original no envio; não há cache persistente nem migration. Veja [escopo aprovado](features/game-image-existence.md).

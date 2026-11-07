@@ -218,3 +218,7 @@ Resultado: 16 testes direcionados passaram (`VisualLibraryClientTest`, `ArtworkM
 ## Seleção de imagens de jogos
 
 No detalhe do jogo, “Escolher imagens” consulta prévias dos provedores sem enviar arquivos ao Visual Library. “Salvar selecionadas” armazena somente a seleção com a referência `game` e as sugestões existentes (`jogo`, título), preservando a capa atual. O Media Pulse guarda a referência retornada na galeria existente, sem persistir URL de origem ou histórico de seleção. A deduplicação e a revisão de duplicadas ficam no Visual Library; referências iguais não duplicam o vínculo da galeria. Não há migration. Consulte [contrato, limites e retry](games-api.md#escolher-imagens-no-detalhe).
+
+## Consulta de existência na seleção de jogos
+
+Com Visual Library 0.27.0 ou posterior e uploads remotos habilitados, a seleção consulta `/api/assets/lookup` em lotes autenticados de hashes SHA-256 dos originais. “Já na galeria” depende de o ID encontrado estar entre as referências atuais do jogo; “Já no Visual Library” não cria associação. Consulta não altera assets, tags ou referências. Falhas, versão anterior e uploads remotos desligados mantêm a seleção utilizável, sem concluir que os arquivos são novos. Sem nova configuração, dependência ou migration. [Contrato e limites](games-api.md#existência-de-imagens-na-seleção).

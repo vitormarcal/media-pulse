@@ -19,6 +19,12 @@ class GameImageSelectionController(
         @PathVariable gameId: Long,
     ) = service.candidates(gameId)
 
+    @PostMapping("/lookup")
+    fun lookup(
+        @PathVariable gameId: Long,
+        @RequestBody request: GameImageSelectionRequest,
+    ) = service.lookup(gameId, request)
+
     @PostMapping("/selection")
     fun save(
         @PathVariable gameId: Long,

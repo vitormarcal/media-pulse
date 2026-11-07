@@ -1,11 +1,13 @@
 package dev.marcal.mediapulse.server.service.game
 
+import dev.marcal.mediapulse.server.api.games.GameImageExistence
 import dev.marcal.mediapulse.server.api.games.GameImageSelectionRequest
 import dev.marcal.mediapulse.server.integration.igdb.IgdbApiClient
 import dev.marcal.mediapulse.server.integration.igdb.IgdbCoverResponse
 import dev.marcal.mediapulse.server.integration.igdb.IgdbGameResponse
 import dev.marcal.mediapulse.server.integration.steamgriddb.SteamGridDbApiClient
 import dev.marcal.mediapulse.server.integration.steamgriddb.SteamGridDbGridResponse
+import dev.marcal.mediapulse.server.integration.visuallibrary.VisualLibraryClient
 import dev.marcal.mediapulse.server.model.game.Game
 import dev.marcal.mediapulse.server.model.image.ImageContent
 import dev.marcal.mediapulse.server.repository.crud.GameImageCrudRepository
@@ -14,9 +16,11 @@ import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.Test
 import org.springframework.web.server.ResponseStatusException
 import java.util.Optional
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -26,7 +30,8 @@ class GameImageSelectionServiceTest {
     private val igdb = mockk<IgdbApiClient>()
     private val steam = mockk<SteamGridDbApiClient>()
     private val storage = mockk<LibraryImageStorageService>()
-    private val service = GameImageSelectionService(games, images, igdb, steam, storage)
+    private val visualLibrary = mockk<VisualLibraryClient>(relaxed = true)
+    private val service = GameImageSelectionService(games, images, igdb, steam, storage, visualLibrary)
     private val game = Game(id = 7, title = "Hades", originalTitle = "Hades", fingerprint = "hades", igdbId = "10", steamGridDbId = "20")
 
     init {
@@ -84,6 +89,95 @@ class GameImageSelectionServiceTest {
         assertFailsWith<ResponseStatusException> { service.save(7, GameImageSelectionRequest(listOf("https://localhost/private"))) }
         assertFailsWith<ResponseStatusException> { service.save(7, GameImageSelectionRequest(emptyList())) }
         assertFailsWith<ResponseStatusException> { service.save(7, GameImageSelectionRequest(List(51) { unknown })) }
+    }
+
+    @Test
+    fun `lookup hashes original bytes and distinguishes gallery library absent and failed downloads without saving`() {
+        every { visualLibrary.enabled } returns true
+        val options = service.candidates(7).images.take(4)
+        val linked = UUID.randomUUID()
+        val other = UUID.randomUUID()
+        for ((index, option) in options.withIndex()) {
+            if (index == 3) {
+                every { storage.downloadProviderImage(option.url) } throws IllegalStateException("offline")
+            } else {
+                every { storage.downloadProviderImage(option.url) } returns ImageContent(byteArrayOf(index.toByte()), null)
+            }
+        }
+        val hashes = (0..2).map { DigestUtils.sha256Hex(byteArrayOf(it.toByte())) }
+        every { visualLibrary.lookupHashes(hashes) } returns mapOf(hashes[0] to linked, hashes[1] to other, hashes[2] to null)
+        every { images.urlsForGame(7) } returns listOf("/api/image-assets/$linked/content")
+        val result = service.lookup(7, GameImageSelectionRequest(options.map { it.id }))
+        assertEquals(true, result.available)
+        assertEquals(
+            listOf(
+                GameImageExistence.IN_GALLERY,
+                GameImageExistence.IN_LIBRARY,
+                GameImageExistence.NOT_FOUND,
+                GameImageExistence.UNAVAILABLE,
+            ),
+            result.results.map {
+                it.state
+            },
+        )
+        verify(exactly = 1) { visualLibrary.lookupHashes(hashes) }
+        verify(exactly = 0) { storage.saveGame(any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { images.insertIgnore(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `disabled lookup downloads nothing and remote failures are never classified as absent`() {
+        val option = service.candidates(7).images.first()
+        every { visualLibrary.enabled } returns false
+        val request = GameImageSelectionRequest(listOf(option.id))
+        assertEquals(false, service.lookup(7, request).available)
+        verify(exactly = 0) { storage.downloadProviderImage(any()) }
+        every { visualLibrary.enabled } returns true
+        every { storage.downloadProviderImage(option.url) } returns ImageContent(byteArrayOf(1), null)
+        every { visualLibrary.lookupHashes(any()) } throws IllegalStateException("unsupported endpoint")
+        val result = service.lookup(7, request)
+        assertEquals(false, result.available)
+        assertEquals(GameImageExistence.UNAVAILABLE, result.results.single().state)
+    }
+
+    @Test
+    fun `lookup rejects untrusted URLs and oversized batches without downloading anything`() {
+        for (ids in listOf(emptyList(), listOf("https://localhost/private"), List(9) { "a".repeat(64) })) {
+            assertEquals(
+                400,
+                assertFailsWith<ResponseStatusException> { service.lookup(7, GameImageSelectionRequest(ids)) }.statusCode.value(),
+            )
+        }
+        verify(exactly = 0) { storage.downloadProviderImage(any()) }
+    }
+
+    @Test
+    fun `lookup recognizes a remote cover even without a gallery row`() {
+        val asset = UUID.randomUUID()
+        every { games.findById(7) } returns Optional.of(game.copy(coverUrl = "/api/image-assets/$asset/content"))
+        every { visualLibrary.enabled } returns true
+        val option = service.candidates(7).images.first()
+        val bytes = byteArrayOf(7)
+        every { storage.downloadProviderImage(option.url) } returns ImageContent(bytes, null)
+        every { visualLibrary.lookupHashes(listOf(DigestUtils.sha256Hex(bytes))) } returns mapOf(DigestUtils.sha256Hex(bytes) to asset)
+        every { images.urlsForGame(7) } returns emptyList()
+        assertEquals(
+            GameImageExistence.IN_GALLERY,
+            service
+                .lookup(7, GameImageSelectionRequest(listOf(option.id)))
+                .results
+                .single()
+                .state,
+        )
+    }
+
+    @Test
+    fun `unknown valid candidate ID cannot initiate a download or hash lookup`() {
+        every { visualLibrary.enabled } returns true
+        val result = service.lookup(7, GameImageSelectionRequest(listOf("a".repeat(64))))
+        assertEquals(GameImageExistence.UNAVAILABLE, result.results.single().state)
+        verify(exactly = 0) { storage.downloadProviderImage(any()) }
+        verify(exactly = 0) { visualLibrary.lookupHashes(any()) }
     }
 
     @Test

@@ -7,6 +7,9 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.transaction.annotation.Transactional
 
 interface GameImageCrudRepository : CrudRepository<GameImage, Long> {
+    @Query(nativeQuery = true, value = "SELECT url FROM game_images WHERE game_id = :gameId")
+    fun urlsForGame(gameId: Long): List<String>
+
     fun existsByGameIdAndIsPrimaryTrue(gameId: Long): Boolean
 
     @Modifying

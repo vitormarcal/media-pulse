@@ -15,10 +15,11 @@
         <p v-if="!candidates.length && !loading" class="copy-body">
           Nenhuma imagem disponível nos provedores configurados.
         </p>
-        <div class="candidate-grid">
+        <div ref="candidateGrid" class="candidate-grid">
           <article
             v-for="(image, index) in candidates"
             :key="image.id"
+            :data-candidate-id="image.id"
             class="candidate"
             :class="{ selected: selected.includes(image.id) }"
           >
@@ -26,7 +27,7 @@
               type="button"
               class="candidate-preview"
               :aria-label="`Ampliar opção ${index + 1}: ${kindLabel(image.kind)}`"
-              @click="candidateViewer?.open(index)"
+              @click="openCandidate(index)"
             >
               <img
                 :src="image.previewUrl"
@@ -41,6 +42,13 @@
               <span>{{ kindLabel(image.kind) }} · {{ providerLabel(image.provider) }}</span>
               <span v-if="image.width && image.height" class="dimensions">{{ image.width }} × {{ image.height }}</span>
             </label>
+            <span
+              v-if="existence[image.id] || lookupAvailable === false"
+              class="existence-badge"
+              :title="existenceHint"
+              role="status"
+              >{{ existenceLabel(image.id) }}</span
+            >
           </article>
         </div>
         <GameImageGallery
@@ -49,17 +57,26 @@
           :preview-images="candidates.map((image) => image.previewUrl)"
           title="Imagens disponíveis"
           viewer-only
+          @image-change="queueLookup(candidates[$event]?.id)"
         >
           <template #selection="{ index }">
-            <label v-if="candidates[index]" class="preview-selection">
-              <input
-                v-model="selected"
-                type="checkbox"
-                :value="candidates[index]!.id"
-                :disabled="selectionDisabled(candidates[index]!.id)"
-              />
-              Selecionar imagem
-            </label>
+            <div v-if="candidates[index]" class="preview-lookup">
+              <span
+                v-if="existence[candidates[index]!.id] || lookupAvailable === false"
+                class="preview-existence"
+                role="status"
+                >{{ existenceLabel(candidates[index]!.id) }}</span
+              >
+              <label class="preview-selection">
+                <input
+                  v-model="selected"
+                  type="checkbox"
+                  :value="candidates[index]!.id"
+                  :disabled="selectionDisabled(candidates[index]!.id)"
+                />
+                Selecionar imagem
+              </label>
+            </div>
           </template>
         </GameImageGallery>
         <div v-if="candidates.length" class="actions save-actions">
@@ -97,6 +114,95 @@ const message = ref('')
 const warnings = ref<string[]>([])
 const candidates = ref<Candidate[]>([])
 const selected = ref<string[]>([])
+type Existence = 'CHECKING' | 'IN_GALLERY' | 'IN_LIBRARY' | 'NOT_FOUND' | 'UNAVAILABLE'
+const existence = ref<Record<string, Existence>>({})
+const lookupAvailable = ref<boolean | null>(null)
+const candidateGrid = ref<HTMLElement>()
+const existenceHint =
+  'Consulta dos bytes exatos do original no Visual Library; não identifica imagens apenas parecidas.'
+let observer: IntersectionObserver | undefined
+let lookupGeneration = 0
+let lookupRunning = false
+let disposed = false
+const pendingLookups = new Set<string>()
+const savedInSearch = new Set<string>()
+function existenceLabel(id: string) {
+  if (lookupAvailable.value === false) return 'Não verificado'
+  return {
+    CHECKING: 'Verificando…',
+    IN_GALLERY: 'Já na galeria',
+    IN_LIBRARY: 'Já no Visual Library',
+    NOT_FOUND: 'Não encontrada no Visual Library',
+    UNAVAILABLE: 'Não verificado',
+  }[existence.value[id] ?? 'UNAVAILABLE']
+}
+function queueLookup(id?: string) {
+  if (!id || existence.value[id] || lookupAvailable.value === false || disposed) return
+  existence.value[id] = 'CHECKING'
+  pendingLookups.add(id)
+  void checkVisible()
+}
+async function checkVisible() {
+  if (lookupRunning || !pendingLookups.size || disposed) return
+  lookupRunning = true
+  const generation = lookupGeneration
+  try {
+    while (pendingLookups.size && !disposed && lookupAvailable.value !== false) {
+      const ids = [...pendingLookups].slice(0, 4)
+      for (const id of ids) pendingLookups.delete(id)
+      try {
+        const response = await $fetch<{
+          available: boolean
+          results: { id: string; state: Exclude<Existence, 'CHECKING'> }[]
+        }>(`/api/games/${props.gameId}/images/lookup`, {
+          baseURL: config.public.apiBase,
+          method: 'POST',
+          body: { ids },
+        })
+        if (disposed || generation !== lookupGeneration) return
+        lookupAvailable.value = response.available
+        for (const id of ids) {
+          const state = response.results.find((result) => result.id === id)?.state ?? 'UNAVAILABLE'
+          existence.value[id] = savedInSearch.has(id) && state !== 'UNAVAILABLE' ? 'IN_GALLERY' : state
+        }
+        if (!response.available) pendingLookups.clear()
+      } catch {
+        if (disposed || generation !== lookupGeneration) return
+        lookupAvailable.value = false
+        pendingLookups.clear()
+      }
+    }
+  } finally {
+    lookupRunning = false
+    if (pendingLookups.size && !disposed) void checkVisible()
+  }
+}
+function observeOptions() {
+  observer?.disconnect()
+  if (typeof IntersectionObserver === 'undefined') return
+  observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries)
+        if (entry.isIntersecting) {
+          observer?.unobserve(entry.target)
+          queueLookup((entry.target as HTMLElement).dataset.candidateId)
+        }
+    },
+    { rootMargin: '160px' },
+  )
+  for (const element of candidateGrid.value?.querySelectorAll<HTMLElement>('[data-candidate-id]') ?? [])
+    observer.observe(element)
+}
+function openCandidate(index: number) {
+  queueLookup(candidates.value[index]?.id)
+  candidateViewer.value?.open(index)
+}
+onBeforeUnmount(() => {
+  disposed = true
+  lookupGeneration++
+  observer?.disconnect()
+  pendingLookups.clear()
+})
 const selectionDisabled = (id: string) => busy.value || (selected.value.length >= 50 && !selected.value.includes(id))
 const kindLabel = (kind: string) =>
   ({
@@ -115,6 +221,12 @@ function errorMessage(cause: unknown, fallback: string) {
 async function loadImages() {
   if (busy.value) return
   loading.value = true
+  lookupGeneration++
+  observer?.disconnect()
+  pendingLookups.clear()
+  savedInSearch.clear()
+  existence.value = {}
+  lookupAvailable.value = null
   error.value = ''
   message.value = ''
   try {
@@ -126,6 +238,8 @@ async function loadImages() {
     warnings.value = result.warnings
     selected.value = selected.value.filter((id) => result.images.some((image) => image.id === id))
     opened.value = true
+    await nextTick()
+    observeOptions()
   } catch (cause) {
     error.value = errorMessage(cause, 'Não foi possível buscar as imagens. Tente novamente.')
   } finally {
@@ -147,6 +261,10 @@ async function saveImages() {
       },
     )
     selected.value = result.failedIds
+    for (const id of result.savedIds) {
+      savedInSearch.add(id)
+      if (lookupAvailable.value === true) existence.value[id] = 'IN_GALLERY'
+    }
     message.value = `${result.savedIds.length} imagem(ns) guardada(s).`
     if (result.failedIds.length)
       error.value = 'Algumas imagens não puderam ser guardadas. Elas continuam selecionadas para tentar novamente.'
@@ -231,6 +349,24 @@ p {
   padding: 8px;
   cursor: pointer;
   background: var(--base-color-surface-warm);
+}
+.existence-badge {
+  justify-self: start;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-secondary);
+  font-size: 0.75rem;
+}
+.preview-lookup {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+.preview-existence {
+  color: #e5e5e0;
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 .candidate.selected {
   border-color: var(--base-color-brand-red);

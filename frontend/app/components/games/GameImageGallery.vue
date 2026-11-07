@@ -84,6 +84,7 @@
 <script setup lang="ts">
 import SectionHeading from '~/components/home/SectionHeading.vue'
 const props = defineProps<{ images: string[]; title: string; viewerOnly?: boolean; previewImages?: string[] }>()
+const emit = defineEmits<{ imageChange: [index: number] }>()
 const { resolveMediaUrl } = useMediaUrl()
 const position = ref(0)
 const current = computed(() => props.images[position.value])
@@ -93,6 +94,7 @@ let previousOverflow = ''
 function open(index: number) {
   if (!dialog.value || dialog.value.open || !props.images[index]) return
   position.value = index
+  emit('imageChange', index)
   opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
   previousOverflow = document.body.style.overflow
   document.body.style.overflow = 'hidden'
@@ -122,6 +124,7 @@ function trapFocus(event: KeyboardEvent) {
 function backdrop(event: MouseEvent) {
   if (event.target === dialog.value) dialog.value?.close()
 }
+watch(position, (index) => emit('imageChange', index))
 watch(
   () => props.images.length,
   (length) => {

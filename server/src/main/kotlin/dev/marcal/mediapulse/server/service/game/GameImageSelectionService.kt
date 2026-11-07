@@ -2,10 +2,14 @@ package dev.marcal.mediapulse.server.service.game
 
 import dev.marcal.mediapulse.server.api.games.GameImageCandidateDto
 import dev.marcal.mediapulse.server.api.games.GameImageCandidatesResponse
+import dev.marcal.mediapulse.server.api.games.GameImageExistence
+import dev.marcal.mediapulse.server.api.games.GameImageLookupResponse
+import dev.marcal.mediapulse.server.api.games.GameImageLookupResult
 import dev.marcal.mediapulse.server.api.games.GameImageSelectionRequest
 import dev.marcal.mediapulse.server.api.games.GameImageSelectionResponse
 import dev.marcal.mediapulse.server.integration.igdb.IgdbApiClient
 import dev.marcal.mediapulse.server.integration.steamgriddb.SteamGridDbApiClient
+import dev.marcal.mediapulse.server.integration.visuallibrary.VisualLibraryClient
 import dev.marcal.mediapulse.server.model.game.Game
 import dev.marcal.mediapulse.server.repository.crud.GameImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.GameRepository
@@ -23,6 +27,7 @@ class GameImageSelectionService(
     private val igdb: IgdbApiClient,
     private val steam: SteamGridDbApiClient,
     private val storage: LibraryImageStorageService,
+    private val visualLibrary: VisualLibraryClient,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -94,6 +99,54 @@ class GameImageSelectionService(
             }
         }
         return GameImageCandidatesResponse(options.distinctBy { it.id }, warnings)
+    }
+
+    fun lookup(
+        gameId: Long,
+        request: GameImageSelectionRequest,
+    ): GameImageLookupResponse {
+        if (request.ids.size !in 1..8 || request.ids.any { !it.matches(Regex("[a-f0-9]{64}")) }) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Verifique entre uma e oito opções disponíveis.")
+        }
+        val game = game(gameId)
+        val ids = request.ids.distinct()
+
+        fun unavailable() = GameImageLookupResponse(false, ids.map { GameImageLookupResult(it, GameImageExistence.UNAVAILABLE) })
+        if (!visualLibrary.enabled) return unavailable()
+        val available = candidates(game).images.associateBy { it.id }
+        val hashes =
+            ids
+                .mapNotNull { id ->
+                    val option = available[id] ?: return@mapNotNull null
+                    runCatching {
+                        val bytes = storage.downloadProviderImage(option.url).bytes
+                        require(bytes.isNotEmpty() && bytes.size <= LibraryImageStorageService.MAX_BYTES)
+                        id to DigestUtils.sha256Hex(bytes)
+                    }.getOrNull()
+                }.toMap()
+        if (hashes.isEmpty()) return GameImageLookupResponse(true, ids.map { GameImageLookupResult(it, GameImageExistence.UNAVAILABLE) })
+        val matches =
+            try {
+                visualLibrary.lookupHashes(hashes.values.toList())
+            } catch (_: Exception) {
+                return unavailable()
+            }
+        val linked = (images.urlsForGame(gameId) + listOfNotNull(game.coverUrl)).mapNotNull { VisualLibraryClient.assetId(it) }.toSet()
+        return GameImageLookupResponse(
+            true,
+            ids.map { id ->
+                val hash = hashes[id]
+                val asset = hash?.let { matches[it] }
+                val state =
+                    when {
+                        hash == null || !matches.containsKey(hash) -> GameImageExistence.UNAVAILABLE
+                        asset == null -> GameImageExistence.NOT_FOUND
+                        asset in linked -> GameImageExistence.IN_GALLERY
+                        else -> GameImageExistence.IN_LIBRARY
+                    }
+                GameImageLookupResult(id, state)
+            },
+        )
     }
 
     fun save(

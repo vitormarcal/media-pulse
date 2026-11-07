@@ -45,6 +45,37 @@ class VisualLibraryClient(
         val id: UUID,
     )
 
+    private data class LookupResponse(
+        val results: List<LookupResult>,
+    )
+
+    private data class LookupResult(
+        val sha256: String,
+        val exists: Boolean?,
+        val asset: AssetResponse?,
+    )
+
+    fun lookupHashes(hashes: List<String>): Map<String, UUID?> {
+        require(hashes.size in 1..100 && hashes.all { it.matches(Regex("[a-f0-9]{64}")) })
+        try {
+            val response =
+                client
+                    .post()
+                    .uri("${properties.baseUrl.trimEnd('/')}/api/assets/lookup")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(mapOf("hashes" to hashes))
+                    .retrieve()
+                    .bodyToMono(LookupResponse::class.java)
+                    .block(Duration.ofSeconds(30))
+                    ?: error("Resposta vazia")
+            check(response.results.map { it.sha256 } == hashes)
+            check(response.results.all { it.exists != null && it.exists == (it.asset != null) })
+            return response.results.associate { it.sha256 to it.asset?.id }
+        } catch (_: Exception) {
+            throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Não foi possível verificar as imagens no Visual Library.")
+        }
+    }
+
     fun upload(
         image: ImageContent,
         metadata: VisualLibraryUploadMetadata,

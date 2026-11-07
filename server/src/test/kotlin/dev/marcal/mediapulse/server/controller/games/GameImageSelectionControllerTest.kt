@@ -1,6 +1,9 @@
 package dev.marcal.mediapulse.server.controller.games
 
 import dev.marcal.mediapulse.server.api.games.GameImageCandidatesResponse
+import dev.marcal.mediapulse.server.api.games.GameImageExistence
+import dev.marcal.mediapulse.server.api.games.GameImageLookupResponse
+import dev.marcal.mediapulse.server.api.games.GameImageLookupResult
 import dev.marcal.mediapulse.server.api.games.GameImageSelectionRequest
 import dev.marcal.mediapulse.server.api.games.GameImageSelectionResponse
 import dev.marcal.mediapulse.server.service.game.GameImageSelectionService
@@ -33,5 +36,16 @@ class GameImageSelectionControllerTest {
         mvc
             .perform(post("/api/games/7/images/selection").contentType(MediaType.APPLICATION_JSON).content("{}"))
             .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `lookup exposes individual states without saving a selection`() {
+        every { service.lookup(7, GameImageSelectionRequest(listOf("id"))) } returns
+            GameImageLookupResponse(true, listOf(GameImageLookupResult("id", GameImageExistence.IN_LIBRARY)))
+        mvc
+            .perform(post("/api/games/7/images/lookup").contentType(MediaType.APPLICATION_JSON).content("""{"ids":["id"]}"""))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.available").value(true))
+            .andExpect(jsonPath("$.results[0].state").value("IN_LIBRARY"))
     }
 }
