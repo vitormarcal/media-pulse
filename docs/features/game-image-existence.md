@@ -11,7 +11,7 @@ Informar a existência durante a escolha, mantendo o Visual Library responsável
 ## Escopo
 
 - Verificação progressiva das opções visíveis em pequenos lotes no backend.
-- Indicar “Já na galeria” e “Já no Visual Library”, também no visualizador ampliado.
+- Indicar “Já no jogo” e “No Visual Library”, também no visualizador ampliado.
 - Preservar seleção, navegação e salvamento durante verificações e falhas.
 
 ## API/UI
@@ -26,11 +26,11 @@ Persistir URLs/hashes/histórico de verificação, deduplicar por similaridade, 
 
 - Buscar originais apenas dos IDs revalidados nos resultados dos provedores; nunca baixar URL enviada pelo navegador.
 - Calcular SHA-256 dos bytes completos do original, nunca da miniatura ou da URL. Descartar bytes e hashes após a requisição.
-- Comparar IDs retornados com as referências remotas atuais da capa e da galeria do jogo. Sem vínculo no jogo, um asset encontrado é “Já no Visual Library”.
+- Comparar IDs retornados com as referências remotas atuais da capa e da galeria do jogo. Sem vínculo no jogo, um asset encontrado é “No Visual Library”.
 - Limitar cada download a 10 MiB e manter os timeouts existentes. Processar um lote da interface por vez.
 - Resultado negativo significa somente ausência de bytes exatos no índice; não exclui cópias parecidas ou legados sem hash.
-- Estado é transitório e informativo. Falha/serviço desabilitado resulta em “Não verificado”, sem classificar como imagem nova. A interface não bloqueia seleção ou envio e ignora respostas de uma busca anterior.
-- Salvar continua pelo upload existente para registrar referência/tags e obter o ID; o lookup não substitui esse passo. Após envio bem-sucedido com Visual Library ativo, o estado pode ser atualizado para “Já na galeria”.
+- Estado é transitório e informativo. Falha/serviço desabilitado é informado uma vez, sem classificar opções como novas. A interface não bloqueia seleção ou envio e ignora respostas de uma busca anterior.
+- Salvar continua pelo upload existente para registrar referência/tags e obter o ID; o lookup não substitui esse passo. Após envio bem-sucedido com Visual Library ativo, o estado pode ser atualizado para “Já no jogo”.
 
 ## Critérios de aceite
 
@@ -44,3 +44,5 @@ Persistir URLs/hashes/histórico de verificação, deduplicar por similaridade, 
 Testes de serviço conferem hash dos bytes originais, quatro estados, origem ausente, indisponibilidade, vínculo pela capa/galeria e ausência de persistência/upload na consulta. O cliente foi exercitado com servidor HTTP local para autenticação Bearer, lote com repetição, ausência, 401/404 e respostas inválidas. O contrato HTTP local também foi validado.
 
 Frontend passou lint, Prettier, tipos e build. Smoke Chromium em 1440 e 390px, com APIs simuladas e 24 opções, verificou consulta somente das opções visíveis, lotes de até quatro, uma requisição por vez, seleção sem bloqueio em todos os estados, avisos na ampliação e envio somente ao confirmar. Outra rodada reteve resposta antiga, iniciou nova busca e confirmou que o resultado antigo não substitui a nova verificação; falha e consulta pendente preservaram as escolhas. Nenhum acervo real foi usado.
+
+A revisão visual do [seletor em tela cheia](game-image-picker-ux.md) mantém os estados da API: `IN_GALLERY` aparece como “Já no jogo” e `IN_LIBRARY` como “No Visual Library”, com ícones distintos da seleção. Verificação fica discreta; ausência não ganha badge e falha geral é informada uma vez.

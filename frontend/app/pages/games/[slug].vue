@@ -29,7 +29,13 @@
         @saved="handleCoverSaved"
       />
 
-      <GameImagesPanel v-if="owner.authenticated" :key="data.gameId" :game-id="data.gameId" @imported="refresh()" />
+      <GameImagesPanel
+        v-if="owner.authenticated"
+        :key="data.gameId"
+        :game-id="data.gameId"
+        :game-title="data.title"
+        @imported="refresh()"
+      />
 
       <section class="context-grid">
         <article class="context-card">

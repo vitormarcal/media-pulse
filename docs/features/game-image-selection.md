@@ -17,7 +17,7 @@ Escolher visualmente quais imagens guardar no acervo, mantendo a capa atual.
 
 ## API/UI
 
-No detalhe, “Escolher imagens” busca prévias e “Salvar selecionadas” confirma a seleção. Clicar na prévia amplia a imagem original, permitindo navegar e selecionar/desmarcar na própria ampliação; abrir ou fechar não altera as escolhas. A galeria guardada usa masonry responsivo, fica disponível também sem login, mostra todas as imagens e permite ampliar cada imagem na própria página, com setas, miniaturas e Escape; o mosaico do cabeçalho mantém até quatro.
+No detalhe, “Escolher imagens” abre um seletor em tela cheia. A lista rola entre o cabeçalho e a barra fixa de contagem/“Salvar N imagens”; voltar ao jogo preserva escolhas durante a sessão. Atualizar opções é uma ação separada. Clicar na prévia amplia a imagem original, permitindo navegar e selecionar/desmarcar na própria ampliação; abrir ou fechar não altera as escolhas. A galeria guardada usa masonry responsivo, fica disponível também sem login, mostra todas as imagens e permite ampliar cada imagem na própria página, com setas, miniaturas e Escape; o mosaico do cabeçalho mantém até quatro.
 
 `GET /api/games/{gameId}/images/candidates` e `POST /api/games/{gameId}/images/selection`. Reutilizar `game_images` para guardar a referência retornada pelo armazenamento. Sem migration.
 

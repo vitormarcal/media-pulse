@@ -125,7 +125,7 @@ O Media Pulse guarda somente a referência retornada pelo armazenamento na galer
 
 As imagens salvas aparecem em galeria masonry, com proporção original e ampliação em tela cheia na própria página. O visualizador tem miniaturas, contador, setas e Escape; ao fechar, devolve o foco ao controle de origem. A galeria fica disponível sem login e as ações de adição continuam exclusivas do owner.
 
-Na seleção, clicar na prévia abre a URL original transitoriamente no visualizador, com setas, miniaturas e checkbox para marcar/desmarcar. Abrir, navegar e fechar não guardam imagens nem alteram as escolhas; o envio ocorre somente em “Salvar selecionadas”.
+Na seleção, clicar na prévia abre a URL original transitoriamente no visualizador, com setas, miniaturas e checkbox para marcar/desmarcar. Abrir, navegar e fechar não guardam imagens nem alteram as escolhas; o envio ocorre somente ao confirmar em “Salvar N imagens”.
 
 ## Existência de imagens na seleção
 
@@ -133,6 +133,12 @@ Na seleção, clicar na prévia abre a URL original transitoriamente no visualiz
 
 Com Visual Library habilitado, o backend baixa os originais solicitados (até 10 MiB cada), calcula SHA-256 dos bytes completos e consulta `POST /api/assets/lookup` com o Bearer existente. Compara IDs encontrados com as referências remotas atuais da capa/galeria. Nenhum arquivo, hash, URL de origem ou resultado é persistido. O contrato exige Visual Library 0.27.0; serviço desabilitado, versão anterior, falhas e respostas inválidas são tratados como indisponíveis, preservando seleção e upload.
 
-A UI observa as opções que entram na tela e envia um lote de até quatro por vez, sem baixar todas antecipadamente. Abrir/navegar no visualizador também prioriza a opção atual. “Verificando…”, “Já na galeria”, “Já no Visual Library”, “Não encontrada no Visual Library” e “Não verificado” são avisos informativos: nenhuma opção é oculta ou bloqueada. Respostas de buscas anteriores são ignoradas. A ausência indica somente falta dos bytes exatos no índice, sem comparação por similaridade nem garantia sobre legados sem hash. Falha isolada de download não marca a imagem como ausente.
+A UI observa as opções que entram na tela e envia um lote de até quatro por vez, sem baixar todas antecipadamente. Abrir/navegar no visualizador também prioriza a opção atual. “Já no jogo” e “No Visual Library” são avisos informativos distintos da seleção: nenhuma opção é oculta ou bloqueada. A verificação tem indicador discreto, ausência não ganha badge e falha geral é comunicada uma única vez. Respostas de buscas anteriores são ignoradas. A ausência indica somente falta dos bytes exatos no índice, sem comparação por similaridade nem garantia sobre legados sem hash. Falha isolada de download não marca a imagem como ausente.
 
 Salvar mantém o upload existente para registrar a referência e sugestões; o lookup não cria vínculos. Após sucesso, o aviso pode refletir a referência já na galeria durante a sessão atual. A consulta pode exigir novo download do original no envio; não há cache persistente nem migration. Veja [escopo aprovado](features/game-image-existence.md).
+
+## Seletor em tela cheia
+
+A interface abre a seleção em diálogo de tela cheia, com cabeçalho e barra de salvar sempre acessíveis. Fechar/reabrir preserva as marcações durante a sessão; “Atualizar opções” recarrega explicitamente e mantém as escolhas ainda disponíveis. Clicar na imagem amplia; o checkbox marca. A ampliação retorna ao seletor, mantendo o foco e o bloqueio de rolagem da página.
+
+Os mesmos estados de lookup aparecem com os rótulos “Já no jogo” e “No Visual Library”, diferenciados da seleção. Ausência de correspondência não cria indicação de imagem nova; indisponibilidade geral é informada uma única vez. Todas as opções permanecem selecionáveis. O lookup observa a área rolável do seletor e pausa quando ele fecha. APIs, limites, armazenamento e schema permanecem iguais. [Escopo e critérios](features/game-image-picker-ux.md).

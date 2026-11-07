@@ -39,7 +39,9 @@
           <p>
             {{ title }} <span role="status" aria-live="polite">{{ position + 1 }} / {{ images.length }}</span>
           </p>
-          <button type="button" class="viewer-control" autofocus @click="dialog?.close()">Fechar ✕</button>
+          <button type="button" class="viewer-control" autofocus @click="dialog?.close()">
+            {{ closeLabel || 'Fechar ✕' }}
+          </button>
         </div>
         <button
           v-if="images.length > 1"
@@ -83,7 +85,13 @@
 </template>
 <script setup lang="ts">
 import SectionHeading from '~/components/home/SectionHeading.vue'
-const props = defineProps<{ images: string[]; title: string; viewerOnly?: boolean; previewImages?: string[] }>()
+const props = defineProps<{
+  images: string[]
+  title: string
+  viewerOnly?: boolean
+  previewImages?: string[]
+  closeLabel?: string
+}>()
 const emit = defineEmits<{ imageChange: [index: number] }>()
 const { resolveMediaUrl } = useMediaUrl()
 const position = ref(0)
@@ -91,20 +99,24 @@ const current = computed(() => props.images[position.value])
 const dialog = ref<HTMLDialogElement>()
 let opener: HTMLElement | null = null
 let previousOverflow = ''
+let ownsScrollLock = false
 function open(index: number) {
   if (!dialog.value || dialog.value.open || !props.images[index]) return
   position.value = index
   emit('imageChange', index)
   opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
-  previousOverflow = document.body.style.overflow
-  document.body.style.overflow = 'hidden'
+  ownsScrollLock = !dialog.value.parentElement?.closest('dialog[open]')
+  if (ownsScrollLock) {
+    previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+  }
   dialog.value.showModal()
 }
 function move(direction: number) {
   if (props.images.length) position.value = (position.value + direction + props.images.length) % props.images.length
 }
 function closed() {
-  document.body.style.overflow = previousOverflow
+  if (ownsScrollLock) document.body.style.overflow = previousOverflow
   if (opener?.isConnected) opener.focus()
 }
 function trapFocus(event: KeyboardEvent) {
@@ -133,7 +145,7 @@ watch(
   },
 )
 onBeforeUnmount(() => {
-  if (dialog.value?.open) document.body.style.overflow = previousOverflow
+  if (dialog.value?.open && ownsScrollLock) document.body.style.overflow = previousOverflow
 })
 defineExpose({ open })
 </script>
@@ -218,7 +230,7 @@ defineExpose({ open })
   object-fit: contain;
 }
 .with-selection .lightbox-image {
-  bottom: 168px;
+  bottom: 208px;
 }
 .lightbox-selection {
   position: absolute;
