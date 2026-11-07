@@ -16,30 +16,52 @@
           Nenhuma imagem disponível nos provedores configurados.
         </p>
         <div class="candidate-grid">
-          <label
-            v-for="image in candidates"
+          <article
+            v-for="(image, index) in candidates"
             :key="image.id"
             class="candidate"
             :class="{ selected: selected.includes(image.id) }"
           >
-            <img
-              :src="image.previewUrl"
-              :alt="`${kindLabel(image.kind)} — ${image.provider}`"
-              loading="lazy"
-              referrerpolicy="no-referrer"
-            />
-            <span class="candidate-caption">
+            <button
+              type="button"
+              class="candidate-preview"
+              :aria-label="`Ampliar opção ${index + 1}: ${kindLabel(image.kind)}`"
+              @click="candidateViewer?.open(index)"
+            >
+              <img
+                :src="image.previewUrl"
+                :alt="`${kindLabel(image.kind)} — ${image.provider}`"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+              />
+              <span class="preview-hint" aria-hidden="true">Ampliar ↗</span>
+            </button>
+            <label class="candidate-caption">
+              <input v-model="selected" type="checkbox" :value="image.id" :disabled="selectionDisabled(image.id)" />
+              <span>{{ kindLabel(image.kind) }} · {{ providerLabel(image.provider) }}</span>
+              <span v-if="image.width && image.height" class="dimensions">{{ image.width }} × {{ image.height }}</span>
+            </label>
+          </article>
+        </div>
+        <GameImageGallery
+          ref="candidateViewer"
+          :images="candidates.map((image) => image.url)"
+          :preview-images="candidates.map((image) => image.previewUrl)"
+          title="Imagens disponíveis"
+          viewer-only
+        >
+          <template #selection="{ index }">
+            <label v-if="candidates[index]" class="preview-selection">
               <input
                 v-model="selected"
                 type="checkbox"
-                :value="image.id"
-                :disabled="busy || (selected.length >= 50 && !selected.includes(image.id))"
+                :value="candidates[index]!.id"
+                :disabled="selectionDisabled(candidates[index]!.id)"
               />
-              <span>{{ kindLabel(image.kind) }} · {{ providerLabel(image.provider) }}</span>
-              <span v-if="image.width && image.height" class="dimensions">{{ image.width }} × {{ image.height }}</span>
-            </span>
-          </label>
-        </div>
+              Selecionar imagem
+            </label>
+          </template>
+        </GameImageGallery>
         <div v-if="candidates.length" class="actions save-actions">
           <span class="copy-body">{{ selected.length }} selecionada(s) · até 50 por vez</span>
           <button v-owner type="button" class="primary-button" :disabled="busy || !selected.length" @click="saveImages">
@@ -51,17 +73,20 @@
   </section>
 </template>
 <script setup lang="ts">
+import GameImageGallery from '~/components/games/GameImageGallery.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 interface Candidate {
   id: string
   provider: string
   kind: string
+  url: string
   previewUrl: string
   width: number | null
   height: number | null
 }
 const props = defineProps<{ gameId: number }>()
 const emit = defineEmits<{ imported: [] }>()
+const candidateViewer = ref<InstanceType<typeof GameImageGallery> | null>(null)
 const config = useRuntimeConfig()
 const loading = ref(false)
 const saving = ref(false)
@@ -72,6 +97,7 @@ const message = ref('')
 const warnings = ref<string[]>([])
 const candidates = ref<Candidate[]>([])
 const selected = ref<string[]>([])
+const selectionDisabled = (id: string) => busy.value || (selected.value.length >= 50 && !selected.value.includes(id))
 const kindLabel = (kind: string) =>
   ({
     GRID: 'Capa vertical',
@@ -208,6 +234,52 @@ p {
 }
 .candidate.selected {
   border-color: var(--base-color-brand-red);
+}
+.candidate-preview {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  cursor: zoom-in;
+}
+.candidate-preview:focus-visible {
+  outline: 2px solid var(--base-color-focus);
+  outline-offset: 3px;
+}
+.preview-hint {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+  font-size: 0.75rem;
+}
+.preview-selection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 16px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+  font-size: 0.88rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.preview-selection input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--base-color-brand-red);
+}
+.preview-selection:focus-within {
+  outline: 3px solid var(--base-color-focus);
+  outline-offset: 3px;
 }
 .candidate img {
   width: 100%;

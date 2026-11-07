@@ -124,3 +124,5 @@ Salvar usa o armazenamento, validações e limites existentes e não atribui nem
 O Media Pulse guarda somente a referência retornada pelo armazenamento na galeria existente (`game_images`). Não persiste URLs de origem nem histórico de seleção. Selecionar novamente envia a imagem ao armazenamento; deduplicação e revisão de duplicadas pertencem ao Visual Library. Se o armazenamento retornar uma referência já vinculada ao jogo, a inserção existente preserva um único vínculo. Sem migration, nova variável ou dependência.
 
 As imagens salvas aparecem em galeria masonry, com proporção original e ampliação em tela cheia na própria página. O visualizador tem miniaturas, contador, setas e Escape; ao fechar, devolve o foco ao controle de origem. A galeria fica disponível sem login e as ações de adição continuam exclusivas do owner.
+
+Na seleção, clicar na prévia abre a URL original transitoriamente no visualizador, com setas, miniaturas e checkbox para marcar/desmarcar. Abrir, navegar e fechar não guardam imagens nem alteram as escolhas; o envio ocorre somente em “Salvar selecionadas”.

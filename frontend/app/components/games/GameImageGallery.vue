@@ -1,26 +1,29 @@
 <template>
-  <section v-if="images.length" class="game-gallery" aria-label="Galeria do jogo">
-    <SectionHeading
-      eyebrow="Imagens"
-      title="Galeria"
-      :summary="`${images.length} ${images.length === 1 ? 'imagem' : 'imagens'}`"
-    />
-    <div class="gallery-masonry">
-      <button
-        v-for="(image, index) in images"
-        :key="image"
-        type="button"
-        class="gallery-image"
-        :aria-label="`Ampliar imagem ${index + 1} de ${title}`"
-        @click="open(index)"
-      >
-        <MediaImage :src="resolveMediaUrl(image)" :alt="`Imagem ${index + 1} de ${title}`" loading="lazy" />
-        <span class="image-hint" aria-hidden="true">Ampliar ↗</span>
-      </button>
-    </div>
+  <section v-if="images.length" class="game-gallery" :aria-label="viewerOnly ? 'Prévia de imagens' : 'Galeria do jogo'">
+    <template v-if="!viewerOnly">
+      <SectionHeading
+        eyebrow="Imagens"
+        title="Galeria"
+        :summary="`${images.length} ${images.length === 1 ? 'imagem' : 'imagens'}`"
+      />
+      <div class="gallery-masonry">
+        <button
+          v-for="(image, index) in images"
+          :key="image"
+          type="button"
+          class="gallery-image"
+          :aria-label="`Ampliar imagem ${index + 1} de ${title}`"
+          @click="open(index)"
+        >
+          <MediaImage :src="resolveMediaUrl(image)" :alt="`Imagem ${index + 1} de ${title}`" loading="lazy" />
+          <span class="image-hint" aria-hidden="true">Ampliar ↗</span>
+        </button>
+      </div>
+    </template>
     <dialog
       ref="dialog"
       class="gallery-lightbox"
+      :class="{ 'with-selection': $slots.selection }"
       :aria-label="`Galeria de ${title}`"
       @close="closed"
       @click="backdrop"
@@ -56,6 +59,7 @@
         >
           →
         </button>
+        <div v-if="$slots.selection" class="lightbox-selection"><slot name="selection" :index="position" /></div>
         <div v-if="images.length > 1" class="lightbox-thumbnails" aria-label="Escolher imagem">
           <button
             v-for="(image, index) in images"
@@ -65,7 +69,12 @@
             :aria-pressed="index === position"
             @click="position = index"
           >
-            <MediaImage :src="resolveMediaUrl(image)" alt="" loading="lazy" />
+            <MediaImage
+              :src="resolveMediaUrl(previewImages?.[index] || image)"
+              alt=""
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            />
           </button>
         </div>
       </template>
@@ -74,7 +83,7 @@
 </template>
 <script setup lang="ts">
 import SectionHeading from '~/components/home/SectionHeading.vue'
-const props = defineProps<{ images: string[]; title: string }>()
+const props = defineProps<{ images: string[]; title: string; viewerOnly?: boolean; previewImages?: string[] }>()
 const { resolveMediaUrl } = useMediaUrl()
 const position = ref(0)
 const current = computed(() => props.images[position.value])
@@ -97,7 +106,9 @@ function closed() {
   if (opener?.isConnected) opener.focus()
 }
 function trapFocus(event: KeyboardEvent) {
-  const controls = Array.from(dialog.value?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') || [])
+  const controls = Array.from(
+    dialog.value?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled)') || [],
+  )
   const first = controls[0]
   const last = controls.at(-1)
   if (event.shiftKey && document.activeElement === first) {
@@ -202,6 +213,15 @@ defineExpose({ open })
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+.with-selection .lightbox-image {
+  bottom: 168px;
+}
+.lightbox-selection {
+  position: absolute;
+  bottom: 108px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 .lightbox-heading {
   position: absolute;

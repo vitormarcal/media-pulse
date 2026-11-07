@@ -17,7 +17,7 @@ Escolher visualmente quais imagens guardar no acervo, mantendo a capa atual.
 
 ## API/UI
 
-No detalhe, “Escolher imagens” busca prévias e “Salvar selecionadas” confirma a seleção. A galeria guardada usa masonry responsivo, fica disponível também sem login, mostra todas as imagens e permite ampliar cada imagem na própria página, com setas, miniaturas e Escape; o mosaico do cabeçalho mantém até quatro.
+No detalhe, “Escolher imagens” busca prévias e “Salvar selecionadas” confirma a seleção. Clicar na prévia amplia a imagem original, permitindo navegar e selecionar/desmarcar na própria ampliação; abrir ou fechar não altera as escolhas. A galeria guardada usa masonry responsivo, fica disponível também sem login, mostra todas as imagens e permite ampliar cada imagem na própria página, com setas, miniaturas e Escape; o mosaico do cabeçalho mantém até quatro.
 
 `GET /api/games/{gameId}/images/candidates` e `POST /api/games/{gameId}/images/selection`. Reutilizar `game_images` para guardar a referência retornada pelo armazenamento. Sem migration.
 
@@ -49,3 +49,5 @@ Testes direcionados cobrem seleção, falhas parciais, reenvio ao armazenamento,
 Frontend validado com lint, Prettier dos arquivos alterados, tipos e build estático. Smoke em Chromium com APIs simuladas, nas larguras 1440 e 390px, conferiu checkbox por teclado, CSRF, preservação de seleção após HTTP 503, sucesso parcial, retry apenas dos itens que falharam e atualização da galeria sem overflow. Não dependeu de credenciais reais dos provedores.
 
 A visualização do acervo foi conferida em Chromium em 1440, 768 e 390px: galeria sem login, proporções originais, abertura pelo cabeçalho e pela galeria, miniaturas, navegação circular com setas, foco contido no diálogo, fechamento por Escape e retorno ao botão de origem. A busca e o salvamento de novas imagens seguem separados da visualização.
+
+A ampliação durante a seleção foi validada em Chromium em 1440 e 390px: imagem original no visualizador, prévias pequenas nas miniaturas, marcar/desmarcar durante a navegação, preservação ao fechar, teclado/foco e envio somente após confirmação. A galeria salva foi revalidada nas três larguras.
