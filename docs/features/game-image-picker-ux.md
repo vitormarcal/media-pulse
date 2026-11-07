@@ -45,3 +45,9 @@ Alterar backend, deduplicação, armazenamento, limite de seleção ou capa; ocu
 Lint, Prettier, tipos e build estático passaram. Chromium com APIs simuladas em 1440, 768, 390 e 320px confirmou seletor em tela cheia, cabeçalho/barra de ações fixos, lookup progressivo, foco contido, navegação/ampliação, marcações e rolagem preservadas ao fechar/reabrir. Conferido espaço separado entre imagem ampliada e seus controles, inclusive em capas verticais.
 
 Cenários adicionais cobriram aviso único em indisponibilidade, retry de falha parcial, limpar sem salvar, retry de busca, fechar durante busca ou envio, e perda da sessão durante a ampliação sem deixar a página com rolagem bloqueada. A galeria salva foi revalidada em desktop, tablet e celular. Nenhum dado real ou endpoint de provedor foi alterado durante os testes.
+
+## Carregamento no visualizador
+
+Ao navegar, cada original tem seu próprio estado de carregamento. A imagem anterior sai imediatamente; o visualizador apresenta “Carregando imagem…” até o arquivo atual estar pronto ou “Imagem indisponível” se falhar. Respostas de uma imagem anterior não alteram a atual. O mesmo comportamento atende seleção e galeria salva, sem alterar marcações ou navegação.
+
+Validação do carregamento em Chromium (1440 e 390px), na seleção e na galeria salva: resposta do segundo original retida intencionalmente, remoção imediata do elemento anterior, indicador durante espera, navegação rápida para o terceiro sem interferência da resposta atrasada, erro de arquivo indisponível e retorno a imagem previamente carregada. As marcações permaneceram preservadas e nenhum envio foi disparado pela navegação. Lint, formatação, tipos e build aprovados.

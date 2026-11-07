@@ -33,7 +33,7 @@
     >
       <template v-if="current">
         <div class="lightbox-image">
-          <MediaImage :src="resolveMediaUrl(current)" :alt="`Imagem ${position + 1} de ${title}`" />
+          <GameViewerImage :key="current" :src="resolveMediaUrl(current)" :alt="`Imagem ${position + 1} de ${title}`" />
         </div>
         <div class="lightbox-heading">
           <p>
@@ -84,6 +84,7 @@
   </section>
 </template>
 <script setup lang="ts">
+import GameViewerImage from '~/components/games/GameViewerImage.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 const props = defineProps<{
   images: string[]
