@@ -10,7 +10,7 @@ interface GameRepository : CrudRepository<Game, Long> {
     @Query(nativeQuery = true, value = "UPDATE games SET cover_url = :url, updated_at = NOW() WHERE id = :id")
     fun updateCover(
         id: Long,
-        url: String,
+        url: String?,
     ): Int
 
     fun findByFingerprint(fingerprint: String): Game?

@@ -137,3 +137,5 @@ No detalhe do livro, pendências de atualização das tags de séries nas capas 
 Consulta pública; controles de edição/administração aparecem após login em `/login`. Criação/reset em `/auth/reset` exige o UUID configurado no backend e uma nova senha. O plugin `owner-auth.client.ts` centraliza cookie de sessão e token CSRF; a diretiva `v-owner` controla somente apresentação. O backend sempre valida as operações.
 
 Em desenvolvimento HTTP, configure `AUTH_COOKIE_SECURE=false` no backend, uma origem explícita no CORS e o mesmo hostname para UI/API. Consulte [configuração e contratos](../docs/authentication.md).
+
+No detalhe de jogos, a prévia do cabeçalho reúne capa em destaque e até três imagens complementares. “Ver todas as N imagens” abre o visualizador completo; a galeria não se repete abaixo do cabeçalho. O owner pode definir capa e remover a imagem atual com confirmação no visualizador, mantendo a busca de novas imagens separada. Consulte [galeria e ações](../docs/features/game-gallery-management.md).

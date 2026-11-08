@@ -2,10 +2,10 @@
   <section class="game-hero">
     <NuxtLink class="back-link" to="/games">Voltar para games</NuxtLink>
 
-    <div class="hero-grid" :style="heroShellStyle">
+    <div class="hero-grid" :class="{ 'without-images': !gallery.length }" :style="heroShellStyle">
       <div class="copy">
         <p class="eyebrow">Game</p>
-        <h1>{{ title }}</h1>
+        <h1 ref="heading" tabindex="-1">{{ title }}</h1>
         <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
         <p v-if="description" class="description">{{ description }}</p>
 
@@ -23,17 +23,22 @@
         </div>
       </div>
 
-      <div class="gallery">
-        <button
-          v-for="(image, index) in gallery"
-          :key="`${image}-${index}`"
-          type="button"
-          class="gallery-item"
-          :class="`slot-${index}`"
-          :aria-label="`Ampliar imagem ${index + 1} de ${title}`"
-          @click="$emit('viewImage', index)"
-        >
-          <MediaImage :src="resolveMediaUrl(image)" :alt="title" />
+      <div v-if="gallery.length" class="gallery-preview">
+        <div class="gallery" :class="`images-${gallery.length}`">
+          <button
+            v-for="(image, index) in gallery"
+            :key="`${image}-${index}`"
+            type="button"
+            class="gallery-item"
+            :class="`slot-${index}`"
+            :aria-label="`Ampliar imagem ${index + 1} de ${title}`"
+            @click="$emit('viewImage', index)"
+          >
+            <MediaImage :src="resolveMediaUrl(image)" :alt="`${index === 0 ? 'Capa' : 'Imagem'} de ${title}`" />
+          </button>
+        </div>
+        <button ref="viewAllButton" type="button" class="view-all" @click="$emit('viewImage', 0)">
+          {{ imageCount === 1 ? 'Ver imagem' : `Ver todas as ${imageCount} imagens` }}
         </button>
       </div>
     </div>
@@ -48,12 +53,16 @@ const props = defineProps<{
   subtitle: string | null
   description: string | null
   gallery: string[]
+  imageCount: number
   heroMeta: string[]
   identifiers: GamePageData['identifiers']
 }>()
 
 defineEmits<{ viewImage: [index: number] }>()
 
+const viewAllButton = ref<HTMLButtonElement>()
+const heading = ref<HTMLHeadingElement>()
+defineExpose({ focusGallery: () => (viewAllButton.value || heading.value)?.focus() })
 const { resolveMediaUrl } = useMediaUrl()
 const heroImageUrl = computed(() => props.gallery.map((image) => resolveMediaUrl(image)).find(Boolean) ?? null)
 const heroShellStyle = computed(() =>
@@ -90,6 +99,10 @@ const heroShellStyle = computed(() =>
   background-size: cover;
   background-position: center;
   border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
+}
+
+.hero-grid.without-images {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .copy {
@@ -156,11 +169,44 @@ h1 {
   color: var(--base-color-text-secondary);
 }
 
+.gallery-preview {
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  min-width: 0;
+}
 .gallery {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  min-height: 30rem;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  height: clamp(320px, 38vw, 520px);
+}
+.gallery.images-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+.gallery.images-2 {
+  grid-template-rows: minmax(0, 1fr);
+}
+.gallery.images-3 {
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+.view-all {
+  justify-self: end;
+  min-height: 44px;
+  border: 0;
+  border-radius: 16px;
+  padding: 10px 16px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.view-all:focus-visible {
+  outline: 3px solid var(--base-color-focus);
+  outline-offset: 4px;
 }
 
 .gallery-item {
@@ -168,6 +214,7 @@ h1 {
   padding: 0;
   cursor: zoom-in;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
   border-radius: 28px;
   background: var(--base-color-surface-warm);
@@ -178,14 +225,17 @@ h1 {
   outline-offset: 4px;
 }
 
-.gallery-item img {
+.gallery-item :deep(img) {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
 .slot-0 {
-  grid-row: span 2;
+  grid-row: 1 / -1;
+}
+.slot-0 :deep(img) {
+  object-fit: contain;
 }
 
 @media (max-width: 900px) {
@@ -194,7 +244,7 @@ h1 {
   }
 
   .gallery {
-    min-height: 20rem;
+    height: clamp(280px, 60vw, 420px);
   }
 }
 </style>

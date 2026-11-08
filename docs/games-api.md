@@ -123,7 +123,7 @@ Salvar usa o armazenamento, validações e limites existentes e não atribui nem
 
 O Media Pulse guarda somente a referência retornada pelo armazenamento na galeria existente (`game_images`). Não persiste URLs de origem nem histórico de seleção. Selecionar novamente envia a imagem ao armazenamento; deduplicação e revisão de duplicadas pertencem ao Visual Library. Se o armazenamento retornar uma referência já vinculada ao jogo, a inserção existente preserva um único vínculo. Sem migration, nova variável ou dependência.
 
-As imagens salvas aparecem em galeria masonry, com proporção original e ampliação em tela cheia na própria página. O visualizador tem miniaturas, contador, setas e Escape; ao fechar, devolve o foco ao controle de origem. A galeria fica disponível sem login e as ações de adição continuam exclusivas do owner.
+As imagens salvas têm uma prévia no cabeçalho: capa maior e até três imagens complementares. “Ver todas as N imagens” (ou “Ver imagem”) abre o acervo completo no visualizador; clicar em uma prévia abre a mesma galeria naquela imagem. Não há galeria duplicada abaixo do cabeçalho. O visualizador preserva proporção original, miniaturas, contador, setas e Escape; ao fechar, devolve o foco ao controle de origem ou ao cabeçalho se o controle deixou de existir. A galeria fica disponível sem login e as ações de adição continuam exclusivas do owner.
 
 Na seleção, clicar na prévia abre a URL original transitoriamente no visualizador, com setas, miniaturas e checkbox para marcar/desmarcar. Abrir, navegar e fechar não guardam imagens nem alteram as escolhas; o envio ocorre somente ao confirmar em “Salvar N imagens”.
 
@@ -142,3 +142,12 @@ Salvar mantém o upload existente para registrar a referência e sugestões; o l
 A interface abre a seleção em diálogo de tela cheia, com cabeçalho e barra de salvar sempre acessíveis. Fechar/reabrir preserva as marcações durante a sessão; “Atualizar opções” recarrega explicitamente e mantém as escolhas ainda disponíveis. Clicar na imagem amplia; o checkbox marca. A ampliação retorna ao seletor, mantendo o foco e o bloqueio de rolagem da página.
 
 Os mesmos estados de lookup aparecem com os rótulos “Já no jogo” e “No Visual Library”, diferenciados da seleção. Ausência de correspondência não cria indicação de imagem nova; indisponibilidade geral é informada uma única vez. Todas as opções permanecem selecionáveis. O lookup observa a área rolável do seletor e pausa quando ele fecha. APIs, limites, armazenamento e schema permanecem iguais. [Escopo e critérios](features/game-image-picker-ux.md).
+
+## Gerenciar imagens da galeria
+
+- `POST /api/games/{gameId}/images/primary`: recebe `{url}` com a referência exata de uma imagem salva no jogo (ou sua capa legada). Torna essa imagem a capa canônica e a única principal, sem upload.
+- `DELETE /api/games/{gameId}/images`: recebe o mesmo corpo JSON `{url}` e remove somente a associação. Não apaga arquivos locais nem assets do Visual Library. Remover a capa escolhe a primeira imagem restante na ordem da galeria (principal primeiro, ID decrescente); remover a última deixa o jogo sem capa. Remover outra imagem preserva a capa.
+
+Ambos exigem owner e CSRF, retornam 200 com `{coverUrl}` (anulável), 400 para corpo inválido e 404 para jogo/imagem ausente ou referência não vinculada. As alterações usam a mesma transação e lock do jogo usados pelo upload de capa. Não aceitam URLs arbitrárias para download. Nenhuma migration.
+
+No visualizador, o owner vê “Capa atual”, “Definir como capa” e “Remover imagem”, para a imagem atual. A remoção exige confirmação junto das ações. Carregamento bloqueia ações simultâneas; erros preservam a confirmação e permitem retry. O detalhe atualiza capa e galeria após sucesso, e a biblioteca lê a capa canônica. A troca de capa preserva a imagem em visualização apesar da reordenação; remover a última fecha o diálogo e devolve foco ao cabeçalho. [Escopo](features/game-gallery-management.md).

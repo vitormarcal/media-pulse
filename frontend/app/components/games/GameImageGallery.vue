@@ -1,5 +1,5 @@
 <template>
-  <section v-if="images.length" class="game-gallery" :aria-label="viewerOnly ? 'Prévia de imagens' : 'Galeria do jogo'">
+  <section class="game-gallery" :class="{ 'viewer-only': viewerOnly }" aria-label="Galeria do jogo">
     <template v-if="!viewerOnly">
       <SectionHeading
         eyebrow="Imagens"
@@ -7,23 +7,27 @@
         :summary="`${images.length} ${images.length === 1 ? 'imagem' : 'imagens'}`"
       />
       <div class="gallery-masonry">
-        <button
-          v-for="(image, index) in images"
-          :key="image"
-          type="button"
-          class="gallery-image"
-          :aria-label="`Ampliar imagem ${index + 1} de ${title}`"
-          @click="open(index)"
-        >
-          <MediaImage :src="resolveMediaUrl(image)" :alt="`Imagem ${index + 1} de ${title}`" loading="lazy" />
-          <span class="image-hint" aria-hidden="true">Ampliar ↗</span>
-        </button>
+        <div v-for="(image, index) in images" :key="image" class="gallery-item">
+          <button
+            type="button"
+            class="gallery-image"
+            :aria-label="`Ampliar imagem ${index + 1} de ${title}`"
+            @click="open(index)"
+          >
+            <MediaImage :src="resolveMediaUrl(image)" :alt="`Imagem ${index + 1} de ${title}`" loading="lazy" />
+            <span class="image-hint" aria-hidden="true">Ampliar ↗</span>
+          </button>
+        </div>
       </div>
     </template>
     <dialog
       ref="dialog"
       class="gallery-lightbox"
-      :class="{ 'with-selection': $slots.selection }"
+      :class="{
+        'with-selection': $slots.selection,
+        'with-actions': $slots.actions,
+        'multiple-images': images.length > 1,
+      }"
       :aria-label="`Galeria de ${title}`"
       @close="closed"
       @click="backdrop"
@@ -47,6 +51,7 @@
           v-if="images.length > 1"
           type="button"
           class="viewer-control previous"
+          :disabled="busy"
           aria-label="Imagem anterior"
           @click="move(-1)"
         >
@@ -56,11 +61,15 @@
           v-if="images.length > 1"
           type="button"
           class="viewer-control next"
+          :disabled="busy"
           aria-label="Próxima imagem"
           @click="move(1)"
         >
           →
         </button>
+        <div v-if="$slots.actions" class="lightbox-actions">
+          <slot name="actions" :image="current" :index="position" />
+        </div>
         <div v-if="$slots.selection" class="lightbox-selection"><slot name="selection" :index="position" /></div>
         <div v-if="images.length > 1" class="lightbox-thumbnails" aria-label="Escolher imagem">
           <button
@@ -69,6 +78,7 @@
             type="button"
             :aria-label="`Ver imagem ${index + 1}`"
             :aria-pressed="index === position"
+            :disabled="busy"
             @click="position = index"
           >
             <MediaImage
@@ -92,8 +102,9 @@ const props = defineProps<{
   viewerOnly?: boolean
   previewImages?: string[]
   closeLabel?: string
+  busy?: boolean
 }>()
-const emit = defineEmits<{ imageChange: [index: number] }>()
+const emit = defineEmits<{ imageChange: [index: number]; closed: [needsFocusFallback: boolean] }>()
 const { resolveMediaUrl } = useMediaUrl()
 const position = ref(0)
 const current = computed(() => props.images[position.value])
@@ -114,11 +125,13 @@ function open(index: number) {
   dialog.value.showModal()
 }
 function move(direction: number) {
-  if (props.images.length) position.value = (position.value + direction + props.images.length) % props.images.length
+  if (props.images.length && !props.busy)
+    position.value = (position.value + direction + props.images.length) % props.images.length
 }
 function closed() {
   if (ownsScrollLock) document.body.style.overflow = previousOverflow
   if (opener?.isConnected) opener.focus()
+  emit('closed', !opener?.isConnected)
 }
 function trapFocus(event: KeyboardEvent) {
   const controls = Array.from(
@@ -139,10 +152,16 @@ function backdrop(event: MouseEvent) {
 }
 watch(position, (index) => emit('imageChange', index))
 watch(
-  () => props.images.length,
-  (length) => {
-    if (!length && dialog.value?.open) dialog.value.close()
-    if (position.value >= length) position.value = 0
+  () => props.images,
+  async (images, previous) => {
+    const selected = previous[position.value]
+    const index = images.indexOf(selected || '')
+    position.value = index >= 0 ? index : Math.min(position.value, Math.max(0, images.length - 1))
+    if (!images.length && dialog.value?.open) dialog.value.close()
+    await nextTick()
+    if (dialog.value?.open && !dialog.value.contains(document.activeElement)) {
+      dialog.value.querySelector<HTMLButtonElement>('button[autofocus]')?.focus()
+    }
   },
 )
 onBeforeUnmount(() => {
@@ -155,16 +174,23 @@ defineExpose({ open })
   display: grid;
   gap: 24px;
 }
+.viewer-only {
+  display: contents;
+}
 .gallery-masonry {
   columns: 4;
   column-gap: 16px;
+}
+.gallery-item {
+  break-inside: avoid;
+  margin-bottom: 16px;
 }
 .gallery-image {
   position: relative;
   display: block;
   width: 100%;
   padding: 0;
-  margin: 0 0 16px;
+  margin: 0;
   break-inside: avoid;
   border: 0;
   border-radius: 20px;
@@ -211,6 +237,32 @@ defineExpose({ open })
   border: 0;
   background: #211f1b;
   color: #fff;
+}
+.gallery-lightbox.with-actions[open] {
+  display: grid;
+  grid-template-rows: 76px minmax(80px, 1fr) auto 100px;
+}
+.gallery-lightbox.with-actions:not(.multiple-images)[open] {
+  grid-template-rows: 76px minmax(80px, 1fr) auto 16px;
+}
+.with-actions .lightbox-image {
+  position: relative;
+  inset: auto;
+  grid-row: 2;
+  padding: 0 64px;
+}
+.lightbox-actions {
+  grid-row: 3;
+  width: min(760px, calc(100% - 32px));
+  justify-self: center;
+  max-height: 35dvh;
+  overflow-y: auto;
+  padding: 8px;
+}
+.viewer-control:disabled,
+.lightbox-thumbnails button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 .gallery-lightbox::backdrop {
   background: #211f1b;
@@ -337,6 +389,15 @@ defineExpose({ open })
   }
   .lightbox-image {
     inset: 80px 8px 100px;
+  }
+  .with-actions .lightbox-image {
+    padding: 0 8px;
+  }
+  .with-actions .previous,
+  .with-actions .next {
+    top: 40%;
+    bottom: auto;
+    transform: translateY(-50%);
   }
   .previous,
   .next {

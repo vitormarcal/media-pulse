@@ -8,6 +8,7 @@ import dev.marcal.mediapulse.server.repository.crud.BookRepository
 import dev.marcal.mediapulse.server.repository.crud.GameImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.GameRepository
 import dev.marcal.mediapulse.server.repository.hardcover.HardcoverNativeRepository
+import dev.marcal.mediapulse.server.service.game.GameImageManagementService
 import dev.marcal.mediapulse.server.service.image.ImageStorageService
 import dev.marcal.mediapulse.server.service.image.LibraryCoverService
 import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
@@ -51,6 +52,7 @@ class LibraryCoversIntegrationTest {
     private lateinit var factory: LocalContainerEntityManagerFactoryBean
     private lateinit var books: BookRepository
     private lateinit var games: GameRepository
+    private lateinit var management: GameImageManagementService
     private lateinit var service: LibraryCoverService
     private lateinit var native: HardcoverNativeRepository
     private lateinit var tx: TxUtil
@@ -81,6 +83,7 @@ class LibraryCoversIntegrationTest {
         games = repositories.getRepository(GameRepository::class.java)
         val images = repositories.getRepository(GameImageCrudRepository::class.java)
         tx = TxUtil(JpaTransactionManager(emf))
+        management = GameImageManagementService(games, images)
         service =
             LibraryCoverService(
                 books,
@@ -179,6 +182,23 @@ class LibraryCoversIntegrationTest {
         assertFailsWith<ResponseStatusException> { service.game(game.id, fake) }
         assertEquals(second, books.findById(book.id).get().coverUrl)
         assertEquals(gameUrl, games.findById(game.id).get().coverUrl)
+    }
+
+    @Test
+    fun `gallery management persists cover switches replacements and final removal without deleting files`() {
+        every { remote.enabled } returns false
+        val game = game()
+        val first = service.game(game.id, photo())
+        val second = service.game(game.id, photo())
+        tx.inTx { management.update(game.id, first, false) }
+        assertEquals(first, games.findById(game.id).get().coverUrl)
+        tx.inTx { management.update(game.id, first, true) }
+        assertEquals(second, games.findById(game.id).get().coverUrl)
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM game_images WHERE game_id = ? AND is_primary", Int::class.java, game.id))
+        tx.inTx { management.update(game.id, second, true) }
+        assertEquals(null, games.findById(game.id).get().coverUrl)
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM game_images WHERE game_id = ?", Int::class.java, game.id))
+        for (url in listOf(first, second)) assertTrue(Files.exists(root.resolve(url.removePrefix("/covers/"))))
     }
 
     companion object {

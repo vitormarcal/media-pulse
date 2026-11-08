@@ -10,6 +10,15 @@ interface GameImageCrudRepository : CrudRepository<GameImage, Long> {
     @Query(nativeQuery = true, value = "SELECT url FROM game_images WHERE game_id = :gameId")
     fun urlsForGame(gameId: Long): List<String>
 
+    fun findByGameIdOrderByIsPrimaryDescIdDesc(gameId: Long): List<GameImage>
+
+    @Modifying
+    @Query(nativeQuery = true, value = "DELETE FROM game_images WHERE game_id = :gameId AND url = :url")
+    fun removeForGame(
+        gameId: Long,
+        url: String,
+    ): Int
+
     fun existsByGameIdAndIsPrimaryTrue(gameId: Long): Boolean
 
     @Modifying
