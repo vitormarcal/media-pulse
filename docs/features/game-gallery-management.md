@@ -6,7 +6,7 @@ O owner precisa escolher uma imagem já salva como capa e remover imagens do jog
 
 ## Escopo e API/UI
 
-- O cabeçalho apresenta a capa maior e até três imagens complementares, com “Ver todas as N imagens”. A galeria completa abre sob demanda em tela cheia, preservando proporções, miniaturas e teclado. Não há repetição do acervo abaixo do cabeçalho.
+- O cabeçalho apresenta a capa maior e até três imagens complementares, com “Ver todas as N imagens”. As prévias preenchem seus cards com recorte central, sem barras; a ampliação preserva a composição integral. A galeria completa abre sob demanda em tela cheia, preservando proporções, miniaturas e teclado. Não há repetição do acervo abaixo do cabeçalho.
 - O visualizador apresenta Capa atual ou Definir como capa e Remover imagem para a imagem atual, somente para o owner.
 - Remover exige confirmação no visualizador; erros permitem nova tentativa. A imagem atual é preservada ao trocar capa; remoção continua na posição disponível e a última fecha o diálogo com retorno de foco.
 - `POST /api/games/{gameId}/images/primary` e `DELETE /api/games/{gameId}/images` recebem `{url}` de uma referência já vinculada ao jogo e retornam `{coverUrl}` anulável.
@@ -30,3 +30,5 @@ Lint, Prettier dos três componentes/página alterados, tipos e build estático 
 Regressão do seletor de novas imagens aprovada em 1440, 768, 390 e 320px, incluindo seleção preservada, navegação entre diálogos, envio explícito e retry parcial. O carregamento de originais foi revalidado em 1440 e 390px na seleção e na galeria pública: remoção imediata dos pixels anteriores, espera explícita, resposta atrasada ignorada, falha e retorno a imagem já carregada.
 
 Preparação da release 1.12.0: `npm run check` aprovado e suíte completa do backend com 601 testes, zero falhas/erros/ignorados, usando `JAVA_TOOL_OPTIONS=-Dapi.version=1.44`. Inclui os quatro testes PostgreSQL de `LibraryCoversIntegrationTest`, com troca de capa, substituição automática, remoção final e preservação dos arquivos armazenados.
+
+Correção 1.12.1: prévias do cabeçalho preenchem os cards com recorte central, eliminando as barras da capa observadas em HuniePop. A imagem ampliada permanece inteira. Conferido no exemplo publicado e com Chromium em 1440, 768 e 390px; lint, formatação, tipos e build aprovados.

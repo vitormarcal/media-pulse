@@ -234,9 +234,6 @@ h1 {
 .slot-0 {
   grid-row: 1 / -1;
 }
-.slot-0 :deep(img) {
-  object-fit: contain;
-}
 
 @media (max-width: 900px) {
   .hero-grid {
