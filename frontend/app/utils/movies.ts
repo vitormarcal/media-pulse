@@ -706,7 +706,7 @@ export function buildMoviePageData(movie: MovieDetailsResponse): MoviePageData {
     year: movie.year,
     description: movie.description,
     coverUrl: movie.coverUrl,
-    gallery: orderedGallery.slice(0, 4),
+    gallery: orderedGallery,
     rating: movie.rating,
     heroMeta: [
       movie.year ? String(movie.year) : null,

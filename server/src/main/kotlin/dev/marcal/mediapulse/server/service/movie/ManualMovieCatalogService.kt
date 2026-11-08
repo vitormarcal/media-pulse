@@ -7,10 +7,9 @@ import dev.marcal.mediapulse.server.model.Provider
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.model.movie.MovieTitleSource
 import dev.marcal.mediapulse.server.repository.crud.MovieCollectionCrudRepository
-import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTitleCrudRepository
-import dev.marcal.mediapulse.server.service.image.ImageStorageService
+import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.SlugTextUtil
 import org.apache.commons.codec.digest.DigestUtils
@@ -24,10 +23,10 @@ class ManualMovieCatalogService(
     private val movieRepository: MovieRepository,
     private val movieTitleCrudRepository: MovieTitleCrudRepository,
     private val movieCollectionCrudRepository: MovieCollectionCrudRepository,
-    private val movieImageCrudRepository: MovieImageCrudRepository,
     private val tmdbApiClient: TmdbApiClient,
     private val tmdbImageClient: TmdbImageClient,
-    private val imageStorageService: ImageStorageService,
+    private val imageStorageService: LibraryImageStorageService,
+    private val imageAssignment: MovieImageAssignmentService,
     private val tmdbProperties: TmdbProperties,
 ) {
     data class TmdbImageCandidate(
@@ -349,11 +348,12 @@ class ManualMovieCatalogService(
                 runCatching {
                     val image = tmdbImageClient.downloadImage(candidate.imageUrl)
                     val fileHint = "${movie.originalTitle}_${DigestUtils.sha1Hex(candidate.imageUrl).take(12)}"
-                    imageStorageService.saveImageForMovie(
+                    imageStorageService.saveMovie(
                         image = image,
                         provider = "TMDB",
                         movieId = movie.id,
-                        fileNameHint = fileHint,
+                        fileHint = fileHint,
+                        title = movie.originalTitle,
                     )
                 }.getOrNull() ?: return@forEach
             savedImages += localPath to candidate
@@ -368,27 +368,11 @@ class ManualMovieCatalogService(
                 ?: savedImages.firstOrNull { it.second.suggestedAsPrimary }?.first
                 ?: savedImages.first().first
 
-        savedImages.forEach { (localPath, _) ->
-            movieImageCrudRepository.insertIgnore(
-                movieId = movie.id,
-                url = localPath,
-                isPrimary = false,
-            )
-        }
-
-        val shouldPromotePrimary =
-            selection?.primaryKey != null || !movieImageCrudRepository.existsByMovieIdAndIsPrimaryTrue(movie.id)
-
-        if (shouldPromotePrimary) {
-            movieImageCrudRepository.lockMovieRowForPrimaryUpdate(movie.id)
-            movieImageCrudRepository.clearPrimaryForMovie(movie.id)
-            movieImageCrudRepository.markPrimaryForMovie(movie.id, primaryLocalPath)
-            movieRepository.save(movie.copy(coverUrl = primaryLocalPath, updatedAt = Instant.now()))
-        }
+        val assigned = imageAssignment.assign(movie.id, savedImages.map { it.first }, primaryLocalPath, selection?.primaryKey != null)
 
         return TmdbImageAssignmentResult(
             insertedCount = savedImages.size,
-            primaryImageUrl = if (shouldPromotePrimary) primaryLocalPath else null,
+            primaryImageUrl = assigned,
         )
     }
 

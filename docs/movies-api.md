@@ -449,3 +449,19 @@ Resumos e detalhes retornam `includeFavorites` e `includeAbandoned`. O detalhe i
 A reordenação recebe somente os IDs manuais, e a capa fixa é escolhida entre eles. Itens automáticos seguem os manuais, por ID crescente. Os painéis na página da obra continuam gerenciando vínculos manuais.
 
 Especificação, critérios de aceite e roadmap: [Listas mistas](features/mixed-media-lists.md).
+
+## Imagens no Visual Library e galeria
+
+[Escopo aprovado](features/movie-visual-library.md). Imagens do Plex/TMDb usam o armazenamento configurado, com referência `movie`/ID real e sugestões `filme` e título original. A migração opcional inclui capas e galeria locais e conserva a capa/principal. Novos imports preservam capas já salvas, inclusive em edição concorrente; somente `imageSelection.primaryKey` explícito ou a ação de curadoria substitui uma capa existente. Falhas de imagem preservam as anteriores; retry usa os fluxos existentes. A imagem de coleção é classificada após commit pela fila V77, sem consulta adicional ao provedor. [Configuração, limites e recuperação](visual-library-images.md#filmes-armazenamento-migração-e-tags-de-coleção).
+
+O cabeçalho exibe capa maior e até três prévias, preenchendo os cards com recorte central. “Ver todas as N imagens” abre o acervo completo, com proporção integral, miniaturas, contador, setas, Escape e foco contido. As prévias abrem a mesma galeria na imagem clicada. Não repetir a galeria abaixo do cabeçalho. O visualizador público preserva carregamento independente por original; o owner tem ações para a imagem atual:
+
+- `POST /api/movies/{movieId}/images/primary`, JSON `{url}`: torna uma referência já vinculada a capa canônica e a única principal, sem upload. Capas legadas sem linha de galeria também são aceitas.
+- `DELETE /api/movies/{movieId}/images`, mesmo JSON: remove somente o vínculo do filme, sem apagar arquivos/assets. Remover capa seleciona a primeira imagem restante na ordem da galeria (principal primeiro, ID decrescente); sem imagens, limpa a capa. Remover outra imagem preserva a capa.
+
+Ambos retornam 200 com `{coverUrl}` anulável, 400 para corpo inválido e 404 para filme/imagem ausente ou referência não vinculada. Exigem owner e CSRF. Alterações de principal/capa são atômicas sob o lock do filme. A UI exige confirmação para remover, bloqueia ações concorrentes, preserva retry e mantém a imagem visualizada ao reordenar por mudança de capa. A última remoção fecha e devolve o foco ao título.
+
+- `GET /api/movies/{movieId}/collection-tags/sync`: estado `{revision, pending, message, hasRemoteImages}`; sem imagens remotas, não sinaliza pendência.
+- `POST /api/movies/{movieId}/collection-tags/sync`: exige owner/CSRF e solicita retry; retorna o mesmo estado, sem executar chamadas remotas na requisição. Retorna 503 se houver imagens remotas e o Visual Library não estiver configurado. Filme ausente retorna 404.
+
+A UI mostra o estado junto da coleção e permite nova tentativa sem impedir o uso do detalhe. A sincronização de `movie-collection` preserva tags pessoais; classificação inválida ou conflito remoto mantém pendência visível. Desfazer coleção envia lista vazia e retira somente a contribuição gerenciada desta referência. A exclusão de imagem mantém sua referência histórica remota; as imagens ainda vinculadas continuam recebendo atualizações.

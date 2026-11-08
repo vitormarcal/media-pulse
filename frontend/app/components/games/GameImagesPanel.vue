@@ -144,7 +144,7 @@
           </div>
         </footer>
       </div>
-      <GameImageGallery
+      <MediaImageGallery
         ref="candidateViewer"
         :images="candidates.map((image) => image.url)"
         :preview-images="candidates.map((image) => image.previewUrl)"
@@ -167,13 +167,13 @@
             </label>
           </div>
         </template>
-      </GameImageGallery>
+      </MediaImageGallery>
     </dialog>
   </section>
 </template>
 <script setup lang="ts">
 import GameImageStateBadge from '~/components/games/GameImageStateBadge.vue'
-import GameImageGallery from '~/components/games/GameImageGallery.vue'
+import MediaImageGallery from '~/components/media/MediaImageGallery.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 interface Candidate {
   id: string
@@ -186,7 +186,7 @@ interface Candidate {
 }
 const props = defineProps<{ gameId: number; gameTitle?: string }>()
 const emit = defineEmits<{ imported: [] }>()
-const candidateViewer = ref<InstanceType<typeof GameImageGallery> | null>(null)
+const candidateViewer = ref<InstanceType<typeof MediaImageGallery> | null>(null)
 const config = useRuntimeConfig()
 const loading = ref(false)
 const saving = ref(false)

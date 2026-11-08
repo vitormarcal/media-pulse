@@ -4,14 +4,19 @@ import dev.marcal.mediapulse.server.integration.visuallibrary.VisualLibraryClien
 import dev.marcal.mediapulse.server.integration.visuallibrary.VisualLibraryUploadException
 import dev.marcal.mediapulse.server.model.book.Book
 import dev.marcal.mediapulse.server.model.game.Game
+import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.repository.crud.BookRepository
 import dev.marcal.mediapulse.server.repository.crud.GameImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.GameRepository
+import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
+import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.hardcover.HardcoverNativeRepository
 import dev.marcal.mediapulse.server.service.game.GameImageManagementService
 import dev.marcal.mediapulse.server.service.image.ImageStorageService
 import dev.marcal.mediapulse.server.service.image.LibraryCoverService
 import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
+import dev.marcal.mediapulse.server.service.movie.MovieImageAssignmentService
+import dev.marcal.mediapulse.server.service.movie.MovieImageManagementService
 import dev.marcal.mediapulse.server.util.TxUtil
 import io.mockk.every
 import io.mockk.mockk
@@ -50,6 +55,9 @@ import kotlin.test.assertTrue
 class LibraryCoversIntegrationTest {
     private val root: Path = Files.createTempDirectory("media-pulse-cover-test-")
     private lateinit var factory: LocalContainerEntityManagerFactoryBean
+    private lateinit var movies: MovieRepository
+    private lateinit var movieManagement: MovieImageManagementService
+    private lateinit var movieAssignment: MovieImageAssignmentService
     private lateinit var books: BookRepository
     private lateinit var games: GameRepository
     private lateinit var management: GameImageManagementService
@@ -71,7 +79,11 @@ class LibraryCoversIntegrationTest {
         factory =
             LocalContainerEntityManagerFactoryBean().apply {
                 dataSource = source
-                setPackagesToScan("dev.marcal.mediapulse.server.model.book", "dev.marcal.mediapulse.server.model.game")
+                setPackagesToScan(
+                    "dev.marcal.mediapulse.server.model.book",
+                    "dev.marcal.mediapulse.server.model.game",
+                    "dev.marcal.mediapulse.server.model.movie",
+                )
                 jpaVendorAdapter = HibernateJpaVendorAdapter()
                 setJpaPropertyMap(mapOf("hibernate.hbm2ddl.auto" to "validate"))
                 afterPropertiesSet()
@@ -82,6 +94,10 @@ class LibraryCoversIntegrationTest {
         books = repositories.getRepository(BookRepository::class.java)
         games = repositories.getRepository(GameRepository::class.java)
         val images = repositories.getRepository(GameImageCrudRepository::class.java)
+        movies = repositories.getRepository(MovieRepository::class.java)
+        val movieImages = repositories.getRepository(MovieImageCrudRepository::class.java)
+        movieManagement = MovieImageManagementService(movies, movieImages)
+        movieAssignment = MovieImageAssignmentService(movies, movieImages)
         tx = TxUtil(JpaTransactionManager(emf))
         management = GameImageManagementService(games, images)
         service =
@@ -101,7 +117,7 @@ class LibraryCoversIntegrationTest {
 
     @BeforeEach
     fun clear() {
-        jdbc.execute("TRUNCATE books, games RESTART IDENTITY CASCADE")
+        jdbc.execute("TRUNCATE books, games, movies RESTART IDENTITY CASCADE")
         every { remote.enabled } returns true
         every { remote.upload(any(), any()) } returns asset
     }
@@ -199,6 +215,45 @@ class LibraryCoversIntegrationTest {
         assertEquals(null, games.findById(game.id).get().coverUrl)
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM game_images WHERE game_id = ?", Int::class.java, game.id))
         for (url in listOf(first, second)) assertTrue(Files.exists(root.resolve(url.removePrefix("/covers/"))))
+    }
+
+    @Test
+    fun `movie gallery curation persists unique primary and imports preserve a freshly chosen cover`() {
+        val movie = tx.inTx { movies.save(Movie(originalTitle = "Filme", fingerprint = "movie")) }
+        tx.inTx {
+            movieAssignment.assign(movie.id, listOf("first", "second"), "first")
+            Unit
+        }
+        assertEquals("first", movies.findById(movie.id).get().coverUrl)
+        tx.inTx { movieManagement.update(movie.id, "second", false) }
+        // Import began before the edit and must read the persisted cover after locking.
+        tx.inTx {
+            movieAssignment.assign(movie.id, listOf("provider"), "provider")
+            Unit
+        }
+        assertEquals("second", movies.findById(movie.id).get().coverUrl)
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM movie_images WHERE movie_id=? AND is_primary", Int::class.java, movie.id))
+        tx.inTx { movieManagement.update(movie.id, "second", true) }
+        assertEquals("provider", movies.findById(movie.id).get().coverUrl)
+        tx.inTx { movieManagement.update(movie.id, "first", true) }
+        assertEquals("provider", movies.findById(movie.id).get().coverUrl)
+        tx.inTx { movieManagement.update(movie.id, "provider", true) }
+        assertEquals(null, movies.findById(movie.id).get().coverUrl)
+    }
+
+    @Test
+    fun `legacy movie cover without gallery is preserved unless primary choice is explicit`() {
+        val movie = tx.inTx { movies.save(Movie(originalTitle = "Filme", fingerprint = "movie", coverUrl = "legacy")) }
+        tx.inTx {
+            movieAssignment.assign(movie.id, listOf("new"), "new")
+            Unit
+        }
+        assertEquals("legacy", movies.findById(movie.id).get().coverUrl)
+        tx.inTx {
+            movieAssignment.assign(movie.id, listOf("new"), "new", true)
+            Unit
+        }
+        assertEquals("new", movies.findById(movie.id).get().coverUrl)
     }
 
     companion object {

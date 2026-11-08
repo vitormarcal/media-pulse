@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediaPulse API
-  version: 1.12.1
+  version: 1.13.0
   description: API surface for MediaPulse. This document covers the published HTTP surface, while the markdown files in `docs/` remain the canonical source for operational notes and endpoint semantics.
 servers:
   - url: http://localhost:8080
@@ -5572,6 +5572,146 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieTermDto"
 
+  /api/movies/{movieId}/images/primary:
+    post:
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      tags: [Movies]
+      summary: Choose an existing movie image as canonical cover
+      description: Validates a gallery or legacy cover reference under the movie lock. Removal preserves stored files and assets. Removing cover selects the first remaining gallery image (primary first, ID descending), or clears cover when empty.
+      parameters:
+        - in: path
+          name: movieId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+      responses:
+        '200':
+          description: Canonical cover after mutation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [coverUrl]
+                properties:
+                  coverUrl:
+                    type: string
+                    nullable: true
+        '400':
+          description: Invalid body
+        '401':
+          description: Owner login required
+        '403':
+          description: Invalid CSRF token
+        '404':
+          description: Movie or linked image not found
+  /api/movies/{movieId}/images:
+    delete:
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      tags: [Movies]
+      summary: Remove a movie image association and replace cover when necessary
+      description: Validates a gallery or legacy cover reference under the movie lock. Removal preserves stored files and assets. Removing cover selects the first remaining gallery image (primary first, ID descending), or clears cover when empty.
+      parameters:
+        - in: path
+          name: movieId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+      responses:
+        '200':
+          description: Canonical cover after mutation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [coverUrl]
+                properties:
+                  coverUrl:
+                    type: string
+                    nullable: true
+        '400':
+          description: Invalid body
+        '401':
+          description: Owner login required
+        '403':
+          description: Invalid CSRF token
+        '404':
+          description: Movie or linked image not found
+  /api/movies/{movieId}/collection-tags/sync:
+    parameters:
+      - in: path
+        name: movieId
+        required: true
+        schema:
+          type: integer
+          format: int64
+    get:
+      tags: [Movies]
+      summary: Read movie collection tag synchronization state
+      responses:
+        '200':
+          description: State of managed tags for current remote images
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [revision, pending, hasRemoteImages]
+                properties:
+                  revision:
+                    type: integer
+                    format: int64
+                  pending:
+                    type: boolean
+                  message:
+                    type: string
+                    nullable: true
+                  hasRemoteImages:
+                    type: boolean
+        '404':
+          description: Movie not found
+    post:
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      tags: [Movies]
+      summary: Schedule retry of managed movie collection tags
+      description: Returns the same state as GET without making remote calls or uploading bytes. If no remote images exist, returns current state unchanged.
+      responses:
+        '200':
+          description: Synchronization state after scheduling
+        '401':
+          description: Owner login required
+        '403':
+          description: Invalid CSRF token
+        '404':
+          description: Movie not found
+        '503':
+          description: Remote images exist but Visual Library is not configured
   /api/movies/{movieId}/enrichment/preview:
     post:
       security:

@@ -10,7 +10,7 @@ import dev.marcal.mediapulse.server.repository.crud.MovieCollectionCrudRepositor
 import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieTitleCrudRepository
-import dev.marcal.mediapulse.server.service.image.ImageStorageService
+import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -33,7 +33,7 @@ class ManualMovieCatalogServiceTest {
     private lateinit var movieImageCrudRepository: MovieImageCrudRepository
     private lateinit var tmdbApiClient: TmdbApiClient
     private lateinit var tmdbImageClient: TmdbImageClient
-    private lateinit var imageStorageService: ImageStorageService
+    private lateinit var imageStorageService: LibraryImageStorageService
     private lateinit var service: ManualMovieCatalogService
 
     @BeforeEach
@@ -54,10 +54,10 @@ class ManualMovieCatalogServiceTest {
                 movieRepository = movieRepository,
                 movieTitleCrudRepository = movieTitleCrudRepository,
                 movieCollectionCrudRepository = movieCollectionCrudRepository,
-                movieImageCrudRepository = movieImageCrudRepository,
                 tmdbApiClient = tmdbApiClient,
                 tmdbImageClient = tmdbImageClient,
                 imageStorageService = imageStorageService,
+                imageAssignment = MovieImageAssignmentService(movieRepository, movieImageCrudRepository),
                 tmdbProperties = TmdbProperties(imageBaseUrl = "https://image.tmdb.org"),
             )
     }
@@ -135,14 +135,13 @@ class ManualMovieCatalogServiceTest {
             ImageContent(bytes = byteArrayOf(1, 2, 3), contentType = MediaType.IMAGE_JPEG)
         every { tmdbImageClient.downloadImage("https://image.tmdb.org/t/p/w780/backdrop.jpg") } returns
             ImageContent(bytes = byteArrayOf(4, 5, 6), contentType = MediaType.IMAGE_JPEG)
-        every { imageStorageService.saveImageForMovie(any(), "TMDB", 51, any()) } returnsMany
+        every { imageStorageService.saveMovie(any(), 51, "Dune", "TMDB", any()) } returnsMany
             listOf(
                 "/covers/tmdb/movies/51/51_dune_poster.jpg",
                 "/covers/tmdb/movies/51/51_dune_backdrop.jpg",
             )
         every { movieImageCrudRepository.insertIgnore(any(), any(), any()) } just runs
-        every { movieRepository.save(match { it.id == 51L && it.coverUrl == "/covers/tmdb/movies/51/51_dune_poster.jpg" }) } returns
-            movie.copy(coverUrl = "/covers/tmdb/movies/51/51_dune_poster.jpg")
+        every { movieRepository.storedCover(51) } returns null
 
         val result =
             service.resolveOrCreate(
@@ -170,7 +169,7 @@ class ManualMovieCatalogServiceTest {
                 "/covers/tmdb/movies/51/51_dune_poster.jpg",
             )
         }
-        verify(exactly = 1) { movieRepository.save(match { it.id == 51L && it.coverUrl != null && it.tmdbId == null }) }
+        verify(exactly = 1) { movieRepository.updateCover(51, "/covers/tmdb/movies/51/51_dune_poster.jpg") }
     }
 
     @Test

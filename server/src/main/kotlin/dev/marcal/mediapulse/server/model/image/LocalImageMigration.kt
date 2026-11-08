@@ -11,6 +11,8 @@ enum class LocalImageTarget(
     MAGAZINE("magazine_issues", "cover_url"),
     ARTWORK("artwork_images", "url", "artwork_id"),
     ARTIST("artwork_artists", "portrait_url"),
+    MOVIE_COVER("movies", "cover_url"),
+    MOVIE_IMAGE("movie_images", "url", "movie_id"),
     GAME_COVER("games", "cover_url"),
     GAME_IMAGE("game_images", "url", "game_id"),
 }

@@ -40,6 +40,7 @@ As referências usam o ID real do Media Pulse convertido em **string**. O tipo s
 | Capa de revista | `magazine_issue` | `revista`, nome da publicação |
 | Imagem de obra | `artwork` | movimentos em grupo próprio; `arte visual`, título, artista, tipo e técnica como sugestões complementares |
 | Retrato de artista | `artwork_artist` | `artista`, nome, país de origem |
+| Capa e galeria de filme | `movie` | upload: `filme`, título original; coleção no grupo `movie-collection` após commit |
 | Capa de livro | `book` | upload: `livro`, título; séries no grupo `book-series` após commit |
 | Capa de edição | `book_edition` | upload: `livro`, título da edição; séries do livro no grupo `book-series` após commit |
 | Imagem/capa de jogo | `game` | `jogo`, título |
@@ -64,7 +65,7 @@ A flag controla somente novos uploads. Ao desligá-la, mantenha `VISUAL_LIBRARY_
 
 Rotina introduzida no backend **1.5.0**; o escopo atual inclui também livros e edições.
 
-Escopo aprovado em [migração do acervo local](features/visual-library-local-migration.md): somente `magazine_issues.cover_url`, `artwork_images.url`, `artwork_artists.portrait_url`, `games.cover_url`, `game_images.url`, `books.cover_url` e `book_editions.cover_url` que começam com `/covers/`. A migração abrange todos os tipos de entidade atualmente enviados ao Visual Library: `magazine_issue`, `artwork`, `artwork_artist`, `game`, `book` e `book_edition`. Música, filmes, séries e treinos não são migrados porque ainda não utilizam esse armazenamento. URLs externas, assets já remotos, imagens estáticas e arquivos órfãos anteriores também não entram na rotina. Nenhuma mudança no frontend ou em endpoints públicos.
+Escopo aprovado em [migração do acervo local](features/visual-library-local-migration.md): somente `magazine_issues.cover_url`, `artwork_images.url`, `artwork_artists.portrait_url`, `games.cover_url`, `game_images.url`, `books.cover_url` `book_editions.cover_url`, `movies.cover_url` e `movie_images.url` que começam com `/covers/`. A migração abrange todos os tipos de entidade atualmente enviados ao Visual Library: `magazine_issue`, `artwork`, `artwork_artist`, `game`, `book`, `book_edition` e `movie`. Música, séries e treinos não são migrados porque ainda não utilizam esse armazenamento. URLs externas, assets já remotos, imagens estáticas e arquivos órfãos anteriores também não entram na rotina. Nenhuma mudança no frontend ou em endpoints públicos.
 
 Para habilitar e reiniciar a aplicação:
 
@@ -222,3 +223,17 @@ No detalhe do jogo, “Escolher imagens” consulta prévias dos provedores sem 
 ## Consulta de existência na seleção de jogos
 
 Com Visual Library 0.27.0 ou posterior e uploads remotos habilitados, a seleção consulta `/api/assets/lookup` em lotes autenticados de hashes SHA-256 dos originais. “Já no jogo” depende de o ID encontrado estar entre as referências atuais do jogo; “No Visual Library” não cria associação. Consulta não altera assets, tags ou referências. Falhas, versão anterior e uploads remotos desligados mantêm a seleção utilizável, sem concluir que os arquivos são novos. Sem nova configuração, dependência ou migration. [Contrato e limites](games-api.md#existência-de-imagens-na-seleção).
+
+## Filmes: armazenamento, migração e tags de coleção
+
+Novas imagens de filmes do Plex e TMDb usam `LibraryImageStorageService` e a flag de novos uploads, com as mesmas validações e fallback local existentes. A referência é `movie` e o ID real do filme; sugestões são `filme` e título original canônico. A associação ocorre depois do upload; falhas preservam as imagens e os dados anteriores. Imports acrescentam imagens e só atribuem capa na ausência de capa/principal; uma escolha explícita de principal no enriquecimento pode substituir a atual. A atualização final usa lock e lê a capa persistida, protegendo alterações concluídas durante o download.
+
+A migração opcional abrange `movies.cover_url` e `movie_images.url` locais, preservando ordem, principal e referências compartilhadas. Deduplicação consolida vínculos iguais no mesmo filme e conserva a linha local e a seleção de principal. URLs externas e imagens de coleções/pessoas/empresas não entram. Bytes, commit, ausência de referências restantes e exclusão seguem as verificações e retomada já existentes.
+
+A V77 cria a fila durável de tags de coleção em `movies`, com revisão, pendência, mensagem, próxima tentativa e lease. Coleção é lida do vínculo local, sem consulta ao TMDb. Inserts/alterações das imagens, mudanças de capa/coleção e renomeação da coleção invalidam a fila na mesma transação. O backfill inicial cobre assets remotos já presentes. Upload e migração registram a referência e persistem a URL primeiro; em seguida o worker envia `PUT /api/assets/{id}/references/tags`, com `application=media-pulse`, `entityType=movie`, ID como string, `group=movie-collection`, lista completa (vazia ao desfazer coleção) e revisão monotônica. O Visual Library deve suportar o contrato de grupos nomeados, já utilizado por séries de livros.
+
+O worker próprio inicia após `ApplicationReadyEvent`, processa até dez filmes por lote, a cada cinco segundos após concluir o lote, e atua mesmo com novos uploads desligados quando a URL base estiver configurada. Claim e conclusão usam transações curtas; nenhuma chamada remota ocorre dentro delas. Lease de cinco minutos é renovado antes de cada imagem; erro mantém pendência com backoff de dez minutos, e interrupção libera elegibilidade após a expiração do lease. Atualizações concorrentes invalidam a revisão anterior e impedem conclusão obsoleta.
+
+Tags pessoais e de outras referências são preservadas pelo grupo gerenciado. Nome de coleção acima de 48 caracteres UTF-16 gera pendência, sem truncamento; limite total de oito tags ou conflito remoto também gera mensagem e retry. Sugestões genéricas seguem a política anterior de omissão/retry sem sugestões; não são sincronizadas após edições. Remover uma imagem da galeria preserva o asset e a referência histórica, incluindo sua última classificação; não há exclusão remota.
+
+Estado e nova tentativa: `GET/POST /api/movies/{movieId}/collection-tags/sync`. O detalhe do owner mostra pendências junto da coleção; falhas não bloqueiam imagens nem leituras. O retry agenda processamento, não reenviando os bytes. Sem nova variável ou dependência. Consulte [contrato de filmes](movies-api.md#imagens-no-visual-library-e-galeria).

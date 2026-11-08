@@ -70,7 +70,7 @@ class LocalImageMigrationIntegrationTest {
     @BeforeEach
     fun reset() {
         jdbc.execute(
-            "TRUNCATE local_image_migrations, games, magazine_publications, artworks, artwork_artists, books, artists RESTART IDENTITY CASCADE",
+            "TRUNCATE local_image_migrations, movies, games, magazine_publications, artworks, artwork_artists, books, artists RESTART IDENTITY CASCADE",
         )
         Files.walk(root).use { paths -> paths.filter { it != root }.sorted(Comparator.reverseOrder()).forEach(Files::deleteIfExists) }
         clearMocks(remote, artworks)
@@ -446,6 +446,48 @@ class LocalImageMigrationIntegrationTest {
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM game_images", Int::class.java))
         assertEquals(asset, jdbc.queryForObject("SELECT url FROM game_images WHERE id = 1 AND is_primary", String::class.java))
         assertFalse(exists(url))
+    }
+
+    @Test
+    fun `movies migrate with shared game links and merge remote gallery duplicate preserving original row and primary`() {
+        val url = file("movie.png")
+        game(url)
+        jdbc.update("INSERT INTO movies(id, original_title, fingerprint, cover_url) VALUES (100, 'Filme', 'movie', ?)", url)
+        jdbc.update("INSERT INTO movie_images(movie_id,url,is_primary) VALUES (100,?,false),(100,?,true)", url, asset)
+        val originalId = jdbc.queryForObject("SELECT id FROM movie_images WHERE url=?", Long::class.java, url)
+        service().runBatch()
+        assertEquals(asset, jdbc.queryForObject("SELECT cover_url FROM movies WHERE id=100", String::class.java))
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM movie_images WHERE movie_id=100", Int::class.java))
+        assertEquals(asset, jdbc.queryForObject("SELECT url FROM movie_images WHERE id=? AND is_primary", String::class.java, originalId))
+        assertFalse(exists(url))
+        verify(exactly = 2) {
+            remote.upload(
+                any(),
+                match {
+                    it.sourceReference.entityType == "movie" &&
+                        it.sourceReference.entityId == "100" &&
+                        it.tags == listOf("filme", "Filme")
+                },
+            )
+        }
+    }
+
+    @Test
+    fun `movie migration failure and concurrent edits preserve file and current cover`() {
+        val url = file("movie.png")
+        jdbc.update("INSERT INTO movies(id, original_title, fingerprint, cover_url) VALUES (100, 'Filme', 'movie', ?)", url)
+        every { remote.upload(any(), any()) } throws IllegalStateException("offline")
+        service().runBatch()
+        assertEquals(url, jdbc.queryForObject("SELECT cover_url FROM movies WHERE id=100", String::class.java))
+        assertTrue(exists(url))
+        retry()
+        every { remote.upload(any(), any()) } answers {
+            jdbc.update("UPDATE movies SET cover_url='/covers/new.png' WHERE id=100")
+            asset
+        }
+        service().runBatch()
+        assertEquals("/covers/new.png", jdbc.queryForObject("SELECT cover_url FROM movies WHERE id=100", String::class.java))
+        assertTrue(exists(url))
     }
 
     @Test

@@ -1,5 +1,5 @@
 <template>
-  <section class="game-gallery" :class="{ 'viewer-only': viewerOnly }" aria-label="Galeria do jogo">
+  <section class="game-gallery" :class="{ 'viewer-only': viewerOnly }" :aria-label="`Imagens de ${title}`">
     <template v-if="!viewerOnly">
       <SectionHeading
         eyebrow="Imagens"
@@ -37,7 +37,11 @@
     >
       <template v-if="current">
         <div class="lightbox-image">
-          <GameViewerImage :key="current" :src="resolveMediaUrl(current)" :alt="`Imagem ${position + 1} de ${title}`" />
+          <MediaGalleryImage
+            :key="current"
+            :src="resolveMediaUrl(current)"
+            :alt="`Imagem ${position + 1} de ${title}`"
+          />
         </div>
         <div class="lightbox-heading">
           <p>
@@ -94,7 +98,7 @@
   </section>
 </template>
 <script setup lang="ts">
-import GameViewerImage from '~/components/games/GameViewerImage.vue'
+import MediaGalleryImage from '~/components/media/MediaGalleryImage.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 const props = defineProps<{
   images: string[]
@@ -123,6 +127,7 @@ function open(index: number) {
     document.body.style.overflow = 'hidden'
   }
   dialog.value.showModal()
+  void nextTick(scrollCurrentThumbnail)
 }
 function move(direction: number) {
   if (props.images.length && !props.busy)
@@ -150,7 +155,18 @@ function trapFocus(event: KeyboardEvent) {
 function backdrop(event: MouseEvent) {
   if (event.target === dialog.value) dialog.value?.close()
 }
-watch(position, (index) => emit('imageChange', index))
+function scrollCurrentThumbnail() {
+  if (dialog.value?.open) {
+    dialog.value
+      .querySelector<HTMLButtonElement>('.lightbox-thumbnails button[aria-pressed="true"]')
+      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }
+}
+watch(position, async (index) => {
+  emit('imageChange', index)
+  await nextTick()
+  scrollCurrentThumbnail()
+})
 watch(
   () => props.images,
   async (images, previous) => {
@@ -159,6 +175,7 @@ watch(
     position.value = index >= 0 ? index : Math.min(position.value, Math.max(0, images.length - 1))
     if (!images.length && dialog.value?.open) dialog.value.close()
     await nextTick()
+    scrollCurrentThumbnail()
     if (dialog.value?.open && !dialog.value.contains(document.activeElement)) {
       dialog.value.querySelector<HTMLButtonElement>('button[autofocus]')?.focus()
     }

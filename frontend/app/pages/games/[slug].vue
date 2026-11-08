@@ -22,7 +22,7 @@
         @view-image="galleryViewer?.open($event)"
       />
 
-      <GameImageGallery
+      <MediaImageGallery
         ref="galleryViewer"
         :images="data.gallery"
         :title="data.title"
@@ -52,7 +52,7 @@
             <p v-if="imageMessage" class="image-feedback" role="status">{{ imageMessage }}</p>
           </div>
         </template>
-      </GameImageGallery>
+      </MediaImageGallery>
       <p v-if="imageMessage && !data.gallery.length" role="status">{{ imageMessage }}</p>
 
       <MediaCoverUpload
@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import GameImageGallery from '~/components/games/GameImageGallery.vue'
+import MediaImageGallery from '~/components/media/MediaImageGallery.vue'
 import GameImagesPanel from '~/components/games/GameImagesPanel.vue'
 import GameAddSessionPanel from '~/components/games/GameAddSessionPanel.vue'
 import GamePageHero from '~/components/games/GamePageHero.vue'
@@ -115,7 +115,7 @@ import { useGamePageData } from '~/composables/useGamePageData'
 import MediaCoverUpload from '~/components/media/MediaCoverUpload.vue'
 
 const gameHero = ref<InstanceType<typeof GamePageHero> | null>(null)
-const galleryViewer = ref<InstanceType<typeof GameImageGallery> | null>(null)
+const galleryViewer = ref<InstanceType<typeof MediaImageGallery> | null>(null)
 const owner = useOwnerAuth()
 const config = useRuntimeConfig()
 const imageBusy = ref(false)

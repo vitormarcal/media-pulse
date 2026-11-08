@@ -1,22 +1,17 @@
 package dev.marcal.mediapulse.server.service.plex
 
 import dev.marcal.mediapulse.server.model.movie.Movie
-import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
-import dev.marcal.mediapulse.server.repository.crud.MovieRepository
-import dev.marcal.mediapulse.server.service.image.ImageStorageService
-import dev.marcal.mediapulse.server.service.movie.MovieImagePrimaryService
+import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
+import dev.marcal.mediapulse.server.service.movie.MovieImageAssignmentService
 import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.time.Instant
 
 @Service
 class PlexMovieArtworkService(
     private val plexApi: dev.marcal.mediapulse.server.integration.plex.PlexApiClient,
-    private val imageStorageService: ImageStorageService,
-    private val movieImageCrudRepository: MovieImageCrudRepository,
-    private val movieImagePrimaryService: MovieImagePrimaryService,
-    private val movieRepository: MovieRepository,
+    private val imageStorageService: LibraryImageStorageService,
+    private val imageAssignment: MovieImageAssignmentService,
 ) {
     data class PlexMovieImageCandidate(
         val url: String?,
@@ -51,11 +46,12 @@ class PlexMovieArtworkService(
                 val image = plexApi.downloadImageContent(sourceUrl)
                 val fileHint = "${movie.originalTitle}_${DigestUtils.sha1Hex(sourceUrl).take(12)}"
                 val localPath =
-                    imageStorageService.saveImageForMovie(
+                    imageStorageService.saveMovie(
                         image = image,
                         provider = "PLEX",
                         movieId = movie.id,
-                        fileNameHint = fileHint,
+                        fileHint = fileHint,
+                        title = movie.originalTitle,
                     )
                 savedBySource[sourceUrl] = localPath
             }.onFailure { ex ->
@@ -71,30 +67,7 @@ class PlexMovieArtworkService(
 
         if (savedBySource.isEmpty()) return
 
-        savedBySource.values.forEach { localPath ->
-            movieImageCrudRepository.insertIgnore(
-                movieId = movie.id,
-                url = localPath,
-                isPrimary = false,
-            )
-        }
-
-        val primaryLocalPath = savedBySource[preferredPrimarySource] ?: savedBySource.values.first()
-
-        if (shouldPromotePlexImage(movie.coverUrl)) {
-            movieImagePrimaryService.setPrimaryForMovie(movie.id, primaryLocalPath)
-
-            if (movie.coverUrl != primaryLocalPath) {
-                movieRepository.save(
-                    movie.copy(
-                        coverUrl = primaryLocalPath,
-                        updatedAt = Instant.now(),
-                    ),
-                )
-            }
-        }
+        val preferred = savedBySource[preferredPrimarySource] ?: savedBySource.values.first()
+        imageAssignment.assign(movie.id, savedBySource.values.toList(), preferred)
     }
-
-    private fun shouldPromotePlexImage(currentCoverUrl: String?): Boolean =
-        currentCoverUrl.isNullOrBlank() || currentCoverUrl.startsWith("/covers/plex/")
 }

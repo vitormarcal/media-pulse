@@ -73,7 +73,7 @@ class LocalImageMigrationRepository(
     fun lockReferences() {
         jdbc.execute("SET LOCAL lock_timeout = '2s'")
         jdbc.execute(
-            "LOCK TABLE books, book_editions, magazine_issues, artwork_images, artwork_artists, artworks, games, game_images IN SHARE ROW EXCLUSIVE MODE",
+            "LOCK TABLE books, book_editions, magazine_issues, artwork_images, artwork_artists, artworks, games, game_images, movies, movie_images IN SHARE ROW EXCLUSIVE MODE",
         )
     }
 
@@ -86,6 +86,13 @@ class LocalImageMigrationRepository(
                 jdbc
                     .query(
                         "SELECT p.name FROM magazine_issues i JOIN magazine_publications p ON p.id = i.publication_id WHERE i.id = ?",
+                        { rs, _ -> rs.getString(1) },
+                        reference.entityId,
+                    ).singleOrNull()
+            LocalImageTarget.MOVIE_COVER, LocalImageTarget.MOVIE_IMAGE ->
+                jdbc
+                    .query(
+                        "SELECT original_title FROM movies WHERE id = ?",
                         { rs, _ -> rs.getString(1) },
                         reference.entityId,
                     ).singleOrNull()
@@ -107,7 +114,7 @@ class LocalImageMigrationRepository(
         newUrl: String,
     ) {
         val target = reference.target
-        if (target == LocalImageTarget.GAME_IMAGE) mergeGameDuplicate(reference, newUrl)
+        if (target in setOf(LocalImageTarget.GAME_IMAGE, LocalImageTarget.MOVIE_IMAGE)) mergeGalleryDuplicate(reference, newUrl)
         check(
             jdbc.update(
                 "UPDATE ${target.table} SET ${target.column} = ? WHERE id = ? AND ${target.column} = ?",
@@ -118,21 +125,23 @@ class LocalImageMigrationRepository(
         ) { "Vínculo de imagem alterado durante a migração." }
     }
 
-    private fun mergeGameDuplicate(
+    private fun mergeGalleryDuplicate(
         reference: LocalImageReference,
         newUrl: String,
     ) {
+        val table = reference.target.table
+        val entityColumn = reference.target.entityColumn
         val primary =
             jdbc
                 .query(
-                    "SELECT is_primary FROM game_images WHERE game_id = ? AND url = ? AND id <> ?",
+                    "SELECT is_primary FROM $table WHERE $entityColumn = ? AND url = ? AND id <> ?",
                     { rs, _ -> rs.getBoolean(1) },
                     reference.entityId,
                     newUrl,
                     reference.rowId,
                 ).singleOrNull() ?: return
-        jdbc.update("DELETE FROM game_images WHERE game_id = ? AND url = ? AND id <> ?", reference.entityId, newUrl, reference.rowId)
-        if (primary) jdbc.update("UPDATE game_images SET is_primary = TRUE WHERE id = ?", reference.rowId)
+        jdbc.update("DELETE FROM $table WHERE $entityColumn = ? AND url = ? AND id <> ?", reference.entityId, newUrl, reference.rowId)
+        if (primary) jdbc.update("UPDATE $table SET is_primary = TRUE WHERE id = ?", reference.rowId)
     }
 
     fun recordMigrated(

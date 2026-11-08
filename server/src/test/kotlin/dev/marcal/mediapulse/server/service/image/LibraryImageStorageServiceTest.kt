@@ -42,7 +42,13 @@ class LibraryImageStorageServiceTest {
         service.saveBook(image, 7, "Livro", "HARDCOVER")
         service.saveBook(image, 7, "Edição", "HARDCOVER", 8)
         service.saveGame(image, 7, "Jogo", "STEAMGRIDDB", "grid")
-        for ((type, id, tag) in listOf(Triple("book", "7", "livro"), Triple("book_edition", "8", "livro"), Triple("game", "7", "jogo"))) {
+        service.saveMovie(image, 9, "Filme", "TMDB", "poster")
+        for ((type, id, tag) in listOf(
+            Triple("book", "7", "livro"),
+            Triple("book_edition", "8", "livro"),
+            Triple("game", "7", "jogo"),
+            Triple("movie", "9", "filme"),
+        )) {
             verify {
                 remote.upload(
                     match { it.bytes.contentEquals(bytes) && it.contentType == MediaType.IMAGE_PNG },
@@ -80,7 +86,23 @@ class LibraryImageStorageServiceTest {
                         .randomUUID()
                         .toString(),
                 )
-            for (url in listOf(book, game)) assertContentEquals(bytes, Files.readAllBytes(root.resolve(url.removePrefix("/covers/"))))
+            val movie =
+                service.saveMovie(
+                    image,
+                    9,
+                    "Filme",
+                    "TMDB",
+                    java.util.UUID
+                        .randomUUID()
+                        .toString(),
+                )
+            for (url in listOf(
+                book,
+                game,
+                movie,
+            )) {
+                assertContentEquals(bytes, Files.readAllBytes(root.resolve(url.removePrefix("/covers/"))))
+            }
         }
         verify(exactly = 0) { remote.upload(any(), any()) }
     }

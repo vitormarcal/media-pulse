@@ -7,6 +7,15 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.transaction.annotation.Transactional
 
 interface MovieImageCrudRepository : CrudRepository<MovieImage, Long> {
+    fun findByMovieIdOrderByIsPrimaryDescIdDesc(movieId: Long): List<MovieImage>
+
+    @Modifying
+    @Query(nativeQuery = true, value = "DELETE FROM movie_images WHERE movie_id = :movieId AND url = :url")
+    fun removeForMovie(
+        movieId: Long,
+        url: String,
+    ): Int
+
     fun existsByMovieIdAndIsPrimaryTrue(movieId: Long): Boolean
 
     @Modifying

@@ -77,3 +77,5 @@ Read-only movie endpoints:
 - `GET /api/movies/{movieId}`
 - `GET /api/movies/search?q=...&limit=10`
 - `GET /api/movies/summary?range=month|year|custom&start=...&end=...`
+
+Imagens de filmes do Plex agora passam pelo armazenamento compartilhado com Visual Library, quando habilitado, com sugestões `filme` e título original e referência `movie`/ID real. Novos arquivos preservam a capa atual; somente uma escolha explícita de curadoria a substitui. A indisponibilidade de upload mantém o restante da ingestão utilizável. Consulte [armazenamento e migração](visual-library-images.md#filmes-armazenamento-migração-e-tags-de-coleção).

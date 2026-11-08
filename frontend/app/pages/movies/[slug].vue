@@ -29,22 +29,58 @@
 
       <div ref="heroTarget">
         <MoviePageHero
+          ref="movieHero"
           :movie-id="data.movieId"
           :editing-companies="activeAction === 'companies'"
           :editing-terms="activeAction === 'terms'"
           :title="data.title"
           :subtitle="heroSubtitle"
           :description="data.description"
-          :gallery="data.gallery"
+          :gallery="data.gallery.slice(0, 4)"
+          :image-count="data.gallery.length"
           :hero-meta="data.heroMeta"
           :identifiers="data.identifiers"
           :companies="data.companies"
           :terms="data.terms"
           :enrichment="data.enrichment"
+          @view-image="galleryViewer?.open($event)"
           @companies-changed="handleCompaniesChanged"
           @terms-changed="handleTermsChanged"
         />
       </div>
+
+      <MediaImageGallery
+        ref="galleryViewer"
+        :images="data.gallery"
+        :title="data.title"
+        viewer-only
+        :busy="imageBusy"
+        @image-change="handleGalleryImageChanged"
+        @closed="handleGalleryClosed"
+      >
+        <template v-if="owner.authenticated" #actions="{ image, index }">
+          <div class="image-actions" :aria-label="`Ações da imagem ${index + 1}`">
+            <span v-if="image === data.coverUrl" class="cover-label">Capa atual</span>
+            <button v-else type="button" :disabled="imageBusy" @click="manageImage(image, false)">
+              Definir como capa
+            </button>
+            <button type="button" :disabled="imageBusy" @click="confirmRemoval = image">Remover imagem</button>
+            <div v-if="confirmRemoval === image" class="remove-confirmation">
+              <p>
+                Remover esta imagem do filme?{{
+                  image === data.coverUrl ? ' Outra imagem será usada como capa, se disponível.' : ''
+                }}
+              </p>
+              <button type="button" :disabled="imageBusy" @click="manageImage(image, true)">Confirmar remoção</button>
+              <button type="button" :disabled="imageBusy" @click="confirmRemoval = ''">Cancelar</button>
+            </div>
+            <p v-if="imageBusy" class="image-feedback" role="status">Salvando alteração…</p>
+            <p v-if="imageError" class="image-feedback image-error" role="alert">{{ imageError }}</p>
+            <p v-if="imageMessage" class="image-feedback" role="status">{{ imageMessage }}</p>
+          </div>
+        </template>
+      </MediaImageGallery>
+      <p v-if="imageMessage && !data.gallery.length" role="status">{{ imageMessage }}</p>
 
       <MediaPersonalMarks
         :key="data.movieId"
@@ -109,6 +145,7 @@
       </div>
 
       <MovieCollectionPanel :collection="data.collection" @added="handleCatalogAdded" />
+      <MovieCollectionTagsPanel v-if="owner.authenticated" :key="data.movieId" :movie-id="data.movieId" />
 
       <div ref="listsTarget">
         <MovieListsPanel
@@ -136,6 +173,8 @@
 </template>
 
 <script setup lang="ts">
+import MediaImageGallery from '~/components/media/MediaImageGallery.vue'
+import MovieCollectionTagsPanel from '~/components/movies/MovieCollectionTagsPanel.vue'
 import MediaPersonalMarks from '~/components/media/MediaPersonalMarks.vue'
 import MovieAddWatchPanel from '~/components/movies/MovieAddWatchPanel.vue'
 import MovieCollectionPanel from '~/components/movies/MovieCollectionPanel.vue'
@@ -150,7 +189,14 @@ import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import { useMoviePageData } from '~/composables/useMoviePageData'
 import type { ManualMovieWatchCreateResponse, MovieEnrichmentApplyResponse } from '~/types/movies'
 
+const movieHero = ref<InstanceType<typeof MoviePageHero> | null>(null)
+const galleryViewer = ref<InstanceType<typeof MediaImageGallery> | null>(null)
 const owner = useOwnerAuth()
+const config = useRuntimeConfig()
+const imageBusy = ref(false)
+const imageError = ref('')
+const imageMessage = ref('')
+const confirmRemoval = ref('')
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
@@ -213,6 +259,18 @@ useHead(() => ({
   ],
 }))
 
+function handleGalleryImageChanged() {
+  confirmRemoval.value = ''
+  imageError.value = ''
+}
+
+async function handleGalleryClosed(needsFocusFallback: boolean) {
+  confirmRemoval.value = ''
+  imageError.value = ''
+  await nextTick()
+  if (needsFocusFallback) movieHero.value?.focusGallery()
+}
+
 async function handleEnrichmentApplied(_response: MovieEnrichmentApplyResponse) {
   await refresh()
 }
@@ -245,6 +303,31 @@ async function handlePeopleChanged() {
   await refresh()
 }
 
+async function manageImage(url: string, remove: boolean) {
+  if (!data.value || imageBusy.value) return
+  imageBusy.value = true
+  imageError.value = ''
+  imageMessage.value = ''
+  try {
+    const result = await $fetch<{ coverUrl: string | null }>(
+      `/api/movies/${data.value.movieId}/images${remove ? '' : '/primary'}`,
+      { baseURL: config.public.apiBase, method: remove ? 'DELETE' : 'POST', body: { url } },
+    )
+    data.value.coverUrl = result.coverUrl
+    const remaining = data.value.gallery.filter((image) => !remove || image !== url)
+    data.value.gallery = result.coverUrl
+      ? [result.coverUrl, ...remaining.filter((image) => image !== result.coverUrl)]
+      : remaining
+    confirmRemoval.value = ''
+    imageMessage.value = remove ? 'Imagem removida do filme.' : 'Capa atualizada.'
+    await refresh()
+  } catch {
+    imageError.value = 'Não foi possível concluir a alteração. Tente novamente.'
+  } finally {
+    imageBusy.value = false
+  }
+}
+
 async function toggleAction(action: MovieAction) {
   activeAction.value = activeAction.value === action ? null : action
   if (activeAction.value === null) return
@@ -268,6 +351,59 @@ async function toggleAction(action: MovieAction) {
   width: min(1480px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 28px 0 84px;
+}
+
+.image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  color: #e5e5e0;
+  padding: 8px 0;
+}
+.image-actions button {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--base-color-surface-warm);
+  color: var(--base-color-text-primary);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.image-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.image-actions button:focus-visible {
+  outline: 3px solid var(--base-color-focus);
+  outline-offset: 3px;
+}
+.cover-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #e5e5e0;
+}
+.image-feedback {
+  flex-basis: 100%;
+  margin: 4px 0;
+  text-align: center;
+  font-size: 0.88rem;
+}
+.remove-confirmation {
+  width: 100%;
+  text-align: center;
+}
+.remove-confirmation button + button {
+  margin-left: 8px;
+}
+.remove-confirmation p {
+  font-size: 0.88rem;
+}
+.image-error {
+  color: #ffb4b4;
 }
 
 .enrichment-state {

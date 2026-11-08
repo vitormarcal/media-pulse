@@ -56,6 +56,25 @@ class VisualLibraryClientTest {
     }
 
     @Test
+    fun `movie collection updates only its named reference group with uploads disabled`() {
+        server.createContext("/api/assets/$id/references/tags") { exchange ->
+            assertEquals("Bearer $token", exchange.requestHeaders.getFirst("Authorization"))
+            assertEquals("PUT", exchange.requestMethod)
+            val body = mapper.readTree(exchange.requestBody.readAllBytes())
+            assertEquals("movie", body["entityType"].asText())
+            assertEquals("17", body["entityId"].asText())
+            assertEquals("movie-collection", body["group"].asText())
+            assertEquals(9, body["revision"].asInt())
+            assertEquals(listOf("Collection"), body["tags"].map { it.asText() })
+            val bytes = """{"preservedTags":["personal"],"legacyTagsPreserved":false}""".toByteArray()
+            exchange.responseHeaders.set("Content-Type", "application/json")
+            exchange.sendResponseHeaders(200, bytes.size.toLong())
+            exchange.responseBody.use { it.write(bytes) }
+        }
+        assertEquals(listOf("personal"), client(false).synchronizeMovieCollection(id, 17, listOf("Collection"), 9).preservedTags)
+    }
+
+    @Test
     fun `classification update sends all movements with a string entity id and numeric revision`() {
         server.createContext("/api/assets/$id/references/tags") { exchange ->
             assertEquals("Bearer $token", exchange.requestHeaders.getFirst("Authorization"))

@@ -5,8 +5,8 @@ import dev.marcal.mediapulse.server.model.image.ImageContent
 import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
-import dev.marcal.mediapulse.server.service.image.ImageStorageService
-import dev.marcal.mediapulse.server.service.movie.MovieImagePrimaryService
+import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
+import dev.marcal.mediapulse.server.service.movie.MovieImageAssignmentService
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -15,13 +15,12 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
-import kotlin.test.assertEquals
 
 class PlexMovieArtworkServiceTest {
     private lateinit var plexApiClient: PlexApiClient
-    private lateinit var imageStorageService: ImageStorageService
+    private lateinit var imageStorageService: LibraryImageStorageService
     private lateinit var movieImageCrudRepository: MovieImageCrudRepository
-    private lateinit var movieImagePrimaryService: MovieImagePrimaryService
+    private lateinit var movieImagePrimaryService: MovieImageAssignmentService
     private lateinit var movieRepository: MovieRepository
     private lateinit var service: PlexMovieArtworkService
 
@@ -30,16 +29,15 @@ class PlexMovieArtworkServiceTest {
         plexApiClient = mockk(relaxed = true)
         imageStorageService = mockk(relaxed = true)
         movieImageCrudRepository = mockk(relaxed = true)
-        movieImagePrimaryService = mockk(relaxed = true)
         movieRepository = mockk(relaxed = true)
+        every { movieRepository.storedCover(any()) } returns null
+        movieImagePrimaryService = MovieImageAssignmentService(movieRepository, movieImageCrudRepository)
 
         service =
             PlexMovieArtworkService(
                 plexApi = plexApiClient,
                 imageStorageService = imageStorageService,
-                movieImageCrudRepository = movieImageCrudRepository,
-                movieImagePrimaryService = movieImagePrimaryService,
-                movieRepository = movieRepository,
+                imageAssignment = movieImagePrimaryService,
             )
     }
 
@@ -52,11 +50,12 @@ class PlexMovieArtworkServiceTest {
 
             coEvery { plexApiClient.downloadImageContent(any()) } returns imageContent
             every {
-                imageStorageService.saveImageForMovie(
+                imageStorageService.saveMovie(
                     image = any(),
                     provider = "PLEX",
                     movieId = 10,
-                    fileNameHint = any(),
+                    fileHint = any(),
+                    title = any(),
                 )
             } returnsMany
                 listOf(
@@ -74,8 +73,8 @@ class PlexMovieArtworkServiceTest {
             service.ensureMovieImagesFromPlex(movie = movie, images = images, fallbackThumbPath = null)
 
             verify(exactly = 2) { movieImageCrudRepository.insertIgnore(movieId = 10, url = any(), isPrimary = false) }
-            verify(exactly = 1) { movieImagePrimaryService.setPrimaryForMovie(10, "/covers/plex/movies/10/poster.jpg") }
-            verify(exactly = 1) { movieRepository.save(match { it.coverUrl == "/covers/plex/movies/10/poster.jpg" }) }
+            verify(exactly = 1) { movieRepository.updateCover(10, "/covers/plex/movies/10/poster.jpg") }
+            verify(exactly = 1) { movieImageCrudRepository.markPrimaryForMovie(10, "/covers/plex/movies/10/poster.jpg") }
         }
 
     @Test
@@ -86,11 +85,12 @@ class PlexMovieArtworkServiceTest {
 
             coEvery { plexApiClient.downloadImageContent(any()) } returns imageContent
             every {
-                imageStorageService.saveImageForMovie(
+                imageStorageService.saveMovie(
                     image = any(),
                     provider = "PLEX",
                     movieId = 11,
-                    fileNameHint = any(),
+                    fileHint = any(),
+                    title = any(),
                 )
             } returns "/covers/plex/movies/11/cover.jpg"
             every { movieRepository.save(any()) } answers { firstArg() }
@@ -102,11 +102,8 @@ class PlexMovieArtworkServiceTest {
             )
 
             verify(exactly = 1) { movieImageCrudRepository.insertIgnore(11, "/covers/plex/movies/11/cover.jpg", false) }
-            verify(exactly = 1) { movieImagePrimaryService.setPrimaryForMovie(11, "/covers/plex/movies/11/cover.jpg") }
-            io.mockk.slot<Movie>().also { slot ->
-                verify(exactly = 1) { movieRepository.save(capture(slot)) }
-                assertEquals("/covers/plex/movies/11/cover.jpg", slot.captured.coverUrl)
-            }
+            verify(exactly = 1) { movieRepository.updateCover(11, "/covers/plex/movies/11/cover.jpg") }
+            verify { movieRepository.updateCover(11, "/covers/plex/movies/11/cover.jpg") }
         }
 
     @Test
@@ -125,11 +122,12 @@ class PlexMovieArtworkServiceTest {
 
             coEvery { plexApiClient.downloadImageContent(any()) } returns imageContent
             every {
-                imageStorageService.saveImageForMovie(
+                imageStorageService.saveMovie(
                     image = any(),
                     provider = "PLEX",
                     movieId = 58,
-                    fileNameHint = any(),
+                    fileHint = any(),
+                    title = any(),
                 )
             } returnsMany
                 listOf(
@@ -137,6 +135,7 @@ class PlexMovieArtworkServiceTest {
                     "/covers/plex/movies/58/58_le_mepris_poster.jpg",
                 )
 
+            every { movieRepository.storedCover(58) } returns movie.coverUrl
             service.ensureMovieImagesFromPlex(
                 movie = movie,
                 images =
@@ -148,7 +147,7 @@ class PlexMovieArtworkServiceTest {
             )
 
             verify(exactly = 2) { movieImageCrudRepository.insertIgnore(movieId = 58, url = any(), isPrimary = false) }
-            verify(exactly = 0) { movieImagePrimaryService.setPrimaryForMovie(any(), any()) }
+            verify(exactly = 0) { movieRepository.updateCover(any(), any()) }
             verify(exactly = 0) { movieRepository.save(any()) }
         }
 }

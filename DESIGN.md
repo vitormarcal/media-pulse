@@ -282,3 +282,9 @@ No detalhe, apresentar capa representativa e nome, autores, descrição expansí
 Gerenciar séries distingue associar a uma série existente, criar uma série e buscar sugestões do Hardcover. Cada sugestão identifica sua origem, mostra capas e livros locais, marca os já associados e permite escolher o destino local. Metadados têm seleção explícita e comparação com valores atuais; preservar escolhas e feedback em falha. Usar tokens, superfícies quentes, controles de 16px, foco visível, operação por teclado e composição responsiva das listas existentes.
 
 Pendências de tags das capas aparecem junto das séries do livro em um bloco discreto com superfície quente, texto de estado/erro e botão de retry com raio de 16px. Preservar leitura e atribuição utilizáveis durante falhas externas; não expor revisões, leases ou detalhes de implementação na UI.
+
+## 15. Imagens de filmes
+
+Filmes reutilizam a prévia e o visualizador de jogos: capa maior, até três imagens complementares, cards preenchidos com recorte central e “Ver todas as N imagens”. Uma imagem ocupa a prévia sozinha; sem imagens, não reservar coluna vazia. A galeria completa abre sob demanda, com imagem integral, miniaturas, setas, Escape, carregamento independente por original e retorno de foco. Curadoria de capa e remoção ficam no visualizador para o owner, com confirmação, retry e substituição automática da capa removida. Não repetir a galeria abaixo do cabeçalho. Preservar os painéis de pessoas, termos, empresas, coleção, listas e sessões.
+
+Pendências de tags de coleção aparecem junto da coleção no detalhe, em superfície quente e controles de 16px, com mensagem e retry. A falha de classificação não bloqueia cadastro, imagens ou leitura. Não expor revisão, lease ou detalhes internos na interface.
