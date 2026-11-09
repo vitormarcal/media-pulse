@@ -145,6 +145,16 @@ A investigação posterior em cópias de três JPEGs recusados confirmou a causa
 
 **Validação:** `VisualLibraryClientTest` usa servidor HTTP local para resposta 415 com diagnóstico estruturado, verifica contexto, limite/redação do log e ausência de retry específico de 415. A repetição posterior da rotina continua preservada. Para confirmar um caso concreto, examinar uma cópia do arquivo recusado e o detalhe HTTP; a mensagem genérica do Visual Library não identifica qual regra estrutural falhou.
 
+### JPEGs do Plex recusados na integração de filmes
+
+Na investigação da 1.13.0, o container do Visual Library em execução foi identificado como 0.27.0 pela igualdade entre o digest da imagem em uso e a tag publicada. O validador já aceita SEF, mas ainda recusa outros sufixos após EOI.
+
+Três cópias de imagens vinculadas aos filmes envolvidos reproduziram 415 no validador local: dois arquivos quadrados de 237.718 e 1.017.186 bytes têm trailer AFCP (`AXS!`), com diretório e entradas IPTC, miniatura e prévia; um JPEG de 16.384 bytes contém uma imagem completa seguida de 6.619 bytes nulos. No arquivo de 237.718 bytes, o nome local corresponde ao hash do caminho Plex informado no log. Os diretórios AFCP começam no fim do fluxo JPEG principal, com 41.359 e 90.224 bytes de metadados/rodapé, respectivamente. Buscar apenas a última ocorrência de `FF D9` é incorreto nesses casos: há JPEGs de miniatura/prévia dentro do trailer.
+
+Remover esses sufixos somente em memória para diagnóstico fez as três cópias passarem na validação estrutural; ImageIO decodificou original e fluxo principal com pixels idênticos (1400×1400, 151×227 e 2000×2000). Os originais e serviços remotos não foram alterados. A requisição multipart, o MIME e as tags não explicam esses casos; a recusa ocorre na validação estrutural do arquivo no Visual Library.
+
+A correção recomendada pertence ao Visual Library: validar explicitamente AFCP e uma política delimitada de padding nulo, mantendo rejeição de trailers arbitrários, arquivos incompletos, offsets fora do arquivo e diretórios sobrepostos. Preservar todos os bytes originais no armazenamento e no hash; não converter nem truncar os arquivos no Media Pulse. Após aprovação, a correção foi implementada localmente no Visual Library, com validação de AFCP e padding exclusivamente nulo limitado a 64 KiB. A suíte de 95 testes e o build passaram; upload/reenvio/download das três cópias em handlers HTTP reais e biblioteca temporária preservaram os bytes e hashes. A correção foi publicada no Visual Library 0.27.1, também na tag `latest`; a publicação não altera automaticamente o container em execução no Mordor. Referência técnica do formato: [parser AFCP do ExifTool](https://github.com/exiftool/exiftool/blob/master/lib/Image/ExifTool/AFCP.pm).
+
 ## Retenção e backup
 
 No Media Pulse, remover/substituir uma imagem remota ou excluir seu registro remove apenas a associação. Não excluir o asset: ele pode ser compartilhado pela deduplicação e a API externa não oferece exclusão. Rollback após upload pode deixar assets sem vínculo; sem rotina automática de limpeza remota. Capas locais de revistas continuam sendo removidas após commit e compensadas após rollback.
@@ -237,3 +247,15 @@ O worker próprio inicia após `ApplicationReadyEvent`, processa até dez filmes
 Tags pessoais e de outras referências são preservadas pelo grupo gerenciado. Nome de coleção acima de 48 caracteres UTF-16 gera pendência, sem truncamento; limite total de oito tags ou conflito remoto também gera mensagem e retry. Sugestões genéricas seguem a política anterior de omissão/retry sem sugestões; não são sincronizadas após edições. Remover uma imagem da galeria preserva o asset e a referência histórica, incluindo sua última classificação; não há exclusão remota.
 
 Estado e nova tentativa: `GET/POST /api/movies/{movieId}/collection-tags/sync`. O detalhe do owner mostra pendências junto da coleção; falhas não bloqueiam imagens nem leituras. O retry agenda processamento, não reenviando os bytes. Sem nova variável ou dependência. Consulte [contrato de filmes](movies-api.md#imagens-no-visual-library-e-galeria).
+
+### Verificação operacional da migração de filmes — 2026-11-09
+
+Com Media Pulse 1.13.0 e Visual Library 0.27.1, foram migrados e removidos 3.430 arquivos locais de filmes. A fila de limpeza terminou vazia e nenhuma capa de filme permaneceu em `/covers/`. Upload, conferência SHA-256, atualização transacional das referências e limpeza foram executados pelo worker existente. A configuração temporária foi retirada ao final, mantendo a mesma imagem da aplicação e restaurando a migração desabilitada. Após a recriação, consultas de três filmes e downloads de suas capas responderam HTTP 200.
+
+Dos 3.432 caminhos inicialmente referenciados, dois ficaram pendentes: imagens não principais de `EVANGELION:3.0（−46h）` apontam para um diretório de ID antigo, cujos arquivos estão ausentes. O filme atual já possui capa e imagens remotas; os dois vínculos antigos foram preservados para correção separada. O aviso genérico “arquivo preservado” também aparece quando a leitura falha por ausência do arquivo, portanto não comprova sua existência. Não atribuir essas duas falhas ao validador do Visual Library.
+
+Uma imagem PNG de aproximadamente 6,5 MB, sem referência no banco e sem registro de migração, permaneceu no disco. Arquivos órfãos anteriores não são abrangidos pela rotina; sua remoção exige revisão separada. Nenhuma exclusão manual de imagem ou alteração direta de referência no banco foi realizada nesta operação.
+
+Após análise das cópias e autorização explícita do proprietário, as três pendências foram tratadas separadamente: o PNG órfão foi excluído depois de confirmar ausência de referências e seu SHA-256; os dois vínculos não principais de Evangelion e suas duas tentativas de migração sem destino remoto foram removidos em transação com verificações de identidade e capa. Resultado: nenhum arquivo local de filme, nenhuma capa ou imagem de galeria de filme em `/covers/`, nenhuma migração pendente e nenhuma limpeza pendente. As quatro imagens remotas e a capa de Evangelion foram mantidas; a API do filme e a capa responderam HTTP 200. Nenhum asset do Visual Library foi excluído.
+
+Por autorização posterior, os diretórios vazios `covers/plex/movies` e `covers/tmdb/movies` também foram removidos, após nova verificação de ausência de arquivos, links simbólicos e referências aos dois prefixos nas colunas textuais do banco, exceto o histórico de migração. As pastas superiores dos provedores foram preservadas.
