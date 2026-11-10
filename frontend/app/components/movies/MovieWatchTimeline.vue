@@ -1,20 +1,14 @@
 <template>
   <section class="watch-timeline">
-    <SectionHeading eyebrow="Histórico" title="Sessões recentes" />
+    <p v-if="!watches.length" class="empty-copy">Nenhuma sessão registrada.</p>
 
     <div class="timeline-list">
       <article v-for="watch in watches" :key="watch.id" class="timeline-item">
         <div class="timeline-marker" />
         <div class="timeline-body">
           <div class="timeline-header">
-            <div>
-              <p class="timeline-context">{{ watch.source }}</p>
-              <h3>{{ watch.title }}</h3>
-            </div>
-            <div class="timeline-dates">
-              <strong>{{ watch.relativeWatchedAt }}</strong>
-              <span>{{ watch.meta }}</span>
-            </div>
+            <p class="timeline-date">{{ watch.meta }}</p>
+            <span class="timeline-context">{{ watch.source }}</span>
           </div>
           <div class="timeline-actions">
             <button
@@ -67,7 +61,6 @@
 </template>
 
 <script setup lang="ts">
-import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { MovieWatchEntryModel } from '~/types/movies'
 
 const props = defineProps<{
@@ -158,6 +151,8 @@ async function confirmRemoval() {
   align-items: start;
 }
 
+.timeline-date,
+.empty-copy,
 .timeline-context,
 .timeline-dates span {
   margin: 0;

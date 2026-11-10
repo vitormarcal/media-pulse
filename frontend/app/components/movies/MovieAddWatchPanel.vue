@@ -1,12 +1,6 @@
 <template>
   <section v-owner class="add-watch-panel">
-    <SectionHeading eyebrow="Sessão" title="Registrar sessão" />
-
     <article class="panel-card">
-      <div class="panel-copy">
-        <p class="panel-title">Registrar sessão</p>
-      </div>
-
       <form v-owner class="panel-form" @submit.prevent="handleSubmit">
         <label class="field">
           <span>Data e hora</span>
@@ -27,7 +21,6 @@
 </template>
 
 <script setup lang="ts">
-import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { ExistingMovieWatchCreateRequest, ManualMovieWatchCreateResponse } from '~/types/movies'
 
 const props = defineProps<{

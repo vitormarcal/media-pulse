@@ -1,6 +1,6 @@
 <template>
   <section class="lists-panel">
-    <SectionHeading eyebrow="Listas" :title="sectionTitle" :description="sectionDescription" :summary="lists.summary" />
+    <h2 class="lists-title">Listas</h2>
 
     <div v-if="lists.items.length" class="lists-masonry">
       <article v-for="item in lists.items" :key="item.id" class="list-card" :style="cardShellStyle(item)">
@@ -60,7 +60,7 @@
       <h3>Este filme não tem inclusões manuais.</h3>
     </article>
 
-    <p v-else class="quiet-empty">Nenhuma inclusão manual.</p>
+    <p v-else class="quiet-empty">Este filme ainda não está em nenhuma lista.</p>
 
     <div v-if="editingEnabled" class="editor-panel">
       <p class="editor-note">Regras automáticas podem manter o filme na lista após remover a inclusão manual.</p>
@@ -115,7 +115,6 @@
 
 <script setup lang="ts">
 import { NuxtLink } from '#components'
-import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { MovieListAttachRequest, MovieListSummaryDto, MoviePageData } from '~/types/movies'
 
 const props = defineProps<{
@@ -137,10 +136,6 @@ const creating = ref(false)
 const feedback = ref<string | null>(null)
 const draftName = ref('')
 const draftDescription = ref('')
-
-const sectionTitle = computed(() => (props.lists.visibleCount ? 'Listas com este filme' : 'Listas'))
-
-const sectionDescription = computed(() => '')
 
 const currentListIds = computed(() => new Set(props.lists.items.map((item) => item.listId)))
 const availableLists = computed(() => allLists.value.filter((item) => !currentListIds.value.has(item.listId)))
@@ -273,6 +268,10 @@ watch(
 </script>
 
 <style scoped>
+.lists-title {
+  margin: 0;
+  font-size: 1.25rem;
+}
 .lists-panel,
 .editor-panel,
 .editor-group,

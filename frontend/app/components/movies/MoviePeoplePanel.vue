@@ -2,13 +2,11 @@
   <article v-if="people.visibleCount || editingEnabled" class="people-card">
     <div class="people-head">
       <div class="people-copy">
-        <p class="eyebrow">Pessoas</p>
         <h2>Direção, roteiro e elenco</h2>
       </div>
 
       <div class="head-meta">
         <span v-if="people.curated" class="curation-badge">Curadoria manual</span>
-        <span class="summary-pill">{{ people.visibleCount }} pessoas</span>
       </div>
     </div>
 

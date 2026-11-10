@@ -2,10 +2,9 @@
   <article class="terms-card" :class="{ embedded }">
     <div class="terms-head">
       <div class="terms-copy">
-        <p class="eyebrow">{{ embedded ? 'Marcações do filme' : 'Marcações' }}</p>
+        <p class="eyebrow">{{ embedded ? 'Gêneros e tags' : 'Marcações' }}</p>
         <h2 v-if="!embedded">Gêneros e tags</h2>
       </div>
-      <span class="summary-pill">{{ terms.visibleCount }} ativas</span>
     </div>
 
     <div class="term-groups">

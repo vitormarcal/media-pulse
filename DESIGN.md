@@ -288,3 +288,9 @@ Pendências de tags das capas aparecem junto das séries do livro em um bloco di
 Filmes reutilizam a prévia e o visualizador de jogos: capa maior, até três imagens complementares, cards preenchidos com recorte central e “Ver todas as N imagens”. Uma imagem ocupa a prévia sozinha; sem imagens, não reservar coluna vazia. A galeria completa abre sob demanda, com imagem integral, miniaturas, setas, Escape, carregamento independente por original e retorno de foco. Curadoria de capa e remoção ficam no visualizador para o owner, com confirmação, retry e substituição automática da capa removida. Não repetir a galeria abaixo do cabeçalho. Preservar os painéis de pessoas, termos, empresas, coleção, listas e sessões.
 
 Pendências de tags de coleção aparecem junto da coleção no detalhe, em superfície quente e controles de 16px, com mensagem e retry. A falha de classificação não bloqueia cadastro, imagens ou leitura. Não expor revisão, lease ou detalhes internos na interface.
+
+## 16. Detalhe de filme
+
+Priorizar imagens, identificação da obra e memória pessoal. Após o cabeçalho, agrupar favorito/abandonado e nota compacta, seguidos de comentários e sessões. Comentários seguem a hierarquia de livros: título simples, data absoluta uma vez e texto, sem contagem ou resumo do último comentário. Registrar sessão revela o formulário sob demanda junto do histórico; cada sessão mostra data e origem, sem repetir títulos ou estatísticas em outro painel.
+
+Agrupar créditos, gêneros/tags e empresas em “Sobre o filme”. Ações de edição ficam junto da seção, apenas para o owner; “Atualizar dados” revela o enriquecimento e os identificadores. Preservar coleção e listas navegáveis, galeria e confirmações de exclusão. Usar espaçamento de 32px entre seções, leitura com largura limitada, superfícies quentes e controles com foco visível. Não adicionar duração enquanto o contrato de detalhe não fornecer esse dado.

@@ -10,45 +10,6 @@
         <h1 ref="heading" tabindex="-1">{{ title }}</h1>
         <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
         <p v-if="description" class="description">{{ description }}</p>
-
-        <div class="meta-list">
-          <span v-for="item in heroMeta" :key="item" class="meta-pill">{{ item }}</span>
-        </div>
-
-        <div
-          v-if="identifiers.length || companies.visibleCount || terms.visibleCount || editingCompanies || editingTerms"
-          class="detail-stack"
-        >
-          <div v-if="identifiers.length" class="detail-row">
-            <p class="detail-label">IDs</p>
-            <div class="detail-pills">
-              <span v-for="identifier in identifiers" :key="identifier.id" class="detail-pill identifier-pill">
-                {{ identifier.provider }} {{ identifier.externalId }}
-              </span>
-            </div>
-          </div>
-
-          <div v-if="companies.visibleCount || editingCompanies" class="detail-row companies-row">
-            <MovieCompaniesPanel
-              :movie-id="movieId"
-              :companies="companies"
-              :enrichment-status="enrichment.companies"
-              :editing="editingCompanies"
-              @changed="$emit('companiesChanged')"
-            />
-          </div>
-
-          <div v-if="terms.visibleCount || editingTerms" class="detail-row terms-row">
-            <MovieTermsPanel
-              :movie-id="movieId"
-              :terms="terms"
-              :enrichment-status="enrichment.terms"
-              :editing="editingTerms"
-              embedded
-              @changed="$emit('termsChanged')"
-            />
-          </div>
-        </div>
       </div>
 
       <div v-if="gallery.length" class="gallery-preview">
@@ -74,27 +35,15 @@
 </template>
 
 <script setup lang="ts">
-import MovieCompaniesPanel from '~/components/movies/MovieCompaniesPanel.vue'
-import MovieTermsPanel from '~/components/movies/MovieTermsPanel.vue'
-import type { MoviePageData } from '~/types/movies'
-
 const props = defineProps<{
-  movieId: number
-  editingCompanies: boolean
-  editingTerms: boolean
   title: string
   subtitle: string | null
   description: string | null
   gallery: string[]
   imageCount: number
-  heroMeta: string[]
-  identifiers: MoviePageData['identifiers']
-  companies: MoviePageData['companies']
-  terms: MoviePageData['terms']
-  enrichment: MoviePageData['enrichment']
 }>()
 
-defineEmits<{ viewImage: [index: number]; companiesChanged: []; termsChanged: [] }>()
+defineEmits<{ viewImage: [index: number] }>()
 const viewAllButton = ref<HTMLButtonElement>()
 const heading = ref<HTMLHeadingElement>()
 defineExpose({ focusGallery: () => (viewAllButton.value || heading.value)?.focus() })
@@ -178,59 +127,6 @@ h1 {
   margin: 0;
   color: var(--base-color-text-secondary);
   line-height: 1.6;
-}
-
-.meta-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.detail-stack {
-  display: grid;
-  gap: 14px;
-  margin-top: 2px;
-}
-
-.detail-row {
-  display: grid;
-  gap: 8px;
-}
-
-.detail-label {
-  margin: 0;
-  color: var(--base-color-text-secondary);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.detail-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.meta-pill {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--base-color-surface-wash) 72%, white);
-  color: var(--base-color-text-primary);
-  font-size: 0.8rem;
-}
-
-.detail-pill {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
-  color: var(--base-color-text-secondary);
-  font-size: 0.76rem;
-}
-
-.terms-row {
-  padding-top: 2px;
 }
 
 .gallery-preview {

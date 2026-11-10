@@ -1,7 +1,7 @@
 <template>
   <section class="comments-panel" :class="{ compact }">
     <div v-if="compact" class="compact-header">
-      <h2>Comentários</h2>
+      <h2>{{ localComments.length === 1 ? 'Comentário' : 'Comentários' }}</h2>
       <button
         v-owner
         class="button button-secondary"
@@ -9,7 +9,7 @@
         :aria-expanded="composerOpen"
         @click="composerOpen = !composerOpen"
       >
-        {{ composerOpen ? 'Cancelar' : 'Comentar' }}
+        {{ composerOpen ? 'Cancelar' : localComments.length ? 'Adicionar comentário' : 'Escrever comentário' }}
       </button>
     </div>
     <SectionHeading v-else eyebrow="Comentários" :title="title" :description="description" />
@@ -208,7 +208,9 @@ function splitParagraphs(body: string) {
 }
 
 function buildCommentLabel(comment: MediaCommentDto) {
-  return `${formatRelativeDate(comment.commentedAt)} · ${formatAbsoluteDate(comment.commentedAt)}`
+  return props.compact
+    ? formatAbsoluteDate(comment.commentedAt)
+    : `${formatRelativeDate(comment.commentedAt)} · ${formatAbsoluteDate(comment.commentedAt)}`
 }
 
 function startEdit(comment: MediaCommentDto) {

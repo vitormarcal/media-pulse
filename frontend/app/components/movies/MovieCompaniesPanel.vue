@@ -1,8 +1,7 @@
 <template>
   <article class="companies-card">
     <div class="companies-head">
-      <p class="eyebrow">Empresas do filme</p>
-      <span class="summary-pill">{{ companies.visibleCount }} ativas</span>
+      <p class="eyebrow">Empresas</p>
     </div>
 
     <div v-if="companies.items.length" class="chip-list">
