@@ -40,6 +40,18 @@ data class TmdbMovieDetailsResponse(
     val productionCompanies: List<TmdbMovieCompanyResponse> = emptyList(),
 )
 
+data class TmdbMovieImagesResponse(
+    val posters: List<TmdbMovieImageResponse> = emptyList(),
+    val backdrops: List<TmdbMovieImageResponse> = emptyList(),
+)
+
+data class TmdbMovieImageResponse(
+    @JsonProperty("file_path")
+    val filePath: String? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+)
+
 data class TmdbMovieCompanyResponse(
     val id: Long? = null,
     val name: String? = null,
@@ -583,6 +595,21 @@ class TmdbApiClient(
     )
 
     private val logger = LoggerFactory.getLogger(javaClass)
+
+    fun fetchMovieImages(tmdbId: String): TmdbMovieImagesResponse {
+        tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
+        return tmdbWebClient
+            .get()
+            .uri { uriBuilder ->
+                val builder = uriBuilder.path("/movie/{id}/images")
+                if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
+                    builder.queryParam("api_key", tmdbProperties.apiKey)
+                }
+                builder.build(tmdbId)
+            }.retrieve()
+            .bodyToMono<TmdbMovieImagesResponse>()
+            .block() ?: error("Resposta de imagens vazia.")
+    }
 
     fun fetchMovieDetails(tmdbId: String): TmdbMovieDetails? {
         if (!tmdbProperties.enabled) return null

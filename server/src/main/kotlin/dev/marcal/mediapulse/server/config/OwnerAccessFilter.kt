@@ -40,6 +40,7 @@ class OwnerAccessFilter(
                 path == "/api/admin" ||
                     path.startsWith("/api/admin/") ||
                     path == "/oauth/spotify/login" ||
+                    MOVIE_IMAGE_CANDIDATES.matches(path.replace(MATRIX_PARAMETERS, "")) ||
                     (!safe && !ensure && !authAction)
             val session = request.getSession(false)
             if (protected && session?.getAttribute("ownerGeneration") != auth.generation()) {
@@ -56,5 +57,10 @@ class OwnerAccessFilter(
             if (path.startsWith("/api/auth/") || protected) response.setHeader("Cache-Control", "no-store")
         }
         chain.doFilter(request, response)
+    }
+
+    companion object {
+        private val MOVIE_IMAGE_CANDIDATES = Regex("/api/movies/[^/]+/images/candidates/?")
+        private val MATRIX_PARAMETERS = Regex(";[^/]*")
     }
 }

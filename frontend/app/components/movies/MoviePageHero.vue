@@ -4,7 +4,14 @@
       <NuxtLink class="back-link" to="/movies"> Voltar para filmes </NuxtLink>
     </div>
 
-    <div class="hero-grid" :class="{ 'without-images': !gallery.length, 'with-personal': !!$slots.personal }">
+    <div
+      class="hero-grid"
+      :class="{
+        'without-images': !gallery.length,
+        'with-personal': !!$slots.personal,
+        'with-image-actions': !!$slots['image-actions'],
+      }"
+    >
       <div class="copy">
         <h1 ref="heading" tabindex="-1">{{ title }}</h1>
         <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
@@ -24,8 +31,8 @@
 
       <div v-if="$slots.personal" class="personal-slot"><slot name="personal" /></div>
 
-      <div v-if="gallery.length" class="gallery-preview">
-        <div class="gallery" :class="`images-${previewImages.length}`">
+      <div v-if="gallery.length || $slots['image-actions']" class="gallery-preview">
+        <div v-if="gallery.length" class="gallery" :class="`images-${previewImages.length}`">
           <button
             v-for="(image, index) in previewImages"
             :key="`${image}-${index}`"
@@ -38,9 +45,18 @@
             <MediaImage :src="resolveMediaUrl(image)" :alt="`${index === 0 ? 'Capa' : 'Imagem'} de ${title}`" />
           </button>
         </div>
-        <button ref="viewAllButton" type="button" class="view-all" @click="$emit('viewImage', 0)">
-          {{ imageCount === 1 ? 'Ver imagem' : `Ver todas as ${imageCount} imagens` }}
-        </button>
+        <div class="gallery-actions">
+          <button
+            v-if="gallery.length"
+            ref="viewAllButton"
+            type="button"
+            class="view-all"
+            @click="$emit('viewImage', 0)"
+          >
+            {{ imageCount === 1 ? 'Ver imagem' : `Ver todas as ${imageCount} imagens` }}
+          </button>
+          <slot name="image-actions" />
+        </div>
       </div>
     </div>
   </section>
@@ -194,6 +210,13 @@ h1 {
 .gallery.images-3 {
   grid-template-rows: repeat(2, minmax(0, 1fr));
 }
+.gallery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: flex-end;
+  gap: 8px;
+}
 .view-all {
   justify-self: end;
   min-height: 44px;
@@ -266,5 +289,15 @@ h1 {
 }
 .hero-grid.without-images:not(.with-personal) {
   grid-template-areas: 'copy';
+}
+.hero-grid.without-images.with-image-actions {
+  grid-template-areas: 'copy' 'gallery' 'personal';
+  grid-template-rows: auto;
+}
+.hero-grid.without-images.with-image-actions:not(.with-personal) {
+  grid-template-areas: 'copy' 'gallery';
+}
+.without-images .gallery-actions {
+  justify-content: flex-start;
 }
 </style>

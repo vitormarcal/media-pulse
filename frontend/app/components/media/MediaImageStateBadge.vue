@@ -53,12 +53,13 @@
 const props = defineProps<{
   state?: 'CHECKING' | 'IN_GALLERY' | 'IN_LIBRARY' | 'NOT_FOUND' | 'UNAVAILABLE'
   dark?: boolean
+  movie?: boolean
 }>()
 const label = computed(
   () =>
     ({
       CHECKING: 'Verificando',
-      IN_GALLERY: 'Já no jogo',
+      IN_GALLERY: props.movie ? 'Já no filme' : 'Já no jogo',
       IN_LIBRARY: 'No Visual Library',
       NOT_FOUND: '',
       UNAVAILABLE: 'Sem verificação',
@@ -68,8 +69,8 @@ const description = computed(
   () =>
     ({
       CHECKING: 'Verificando se a imagem já existe no Visual Library.',
-      IN_GALLERY: 'Já no jogo. Esta imagem já está na galeria e continua selecionável.',
-      IN_LIBRARY: 'No Visual Library. Esta imagem já existe e pode ser associada ao jogo.',
+      IN_GALLERY: `Já no ${props.movie ? 'filme' : 'jogo'}. Esta imagem já está na galeria e continua selecionável.`,
+      IN_LIBRARY: `No Visual Library. Esta imagem já existe e pode ser associada ao ${props.movie ? 'filme' : 'jogo'}.`,
       NOT_FOUND: '',
       UNAVAILABLE: 'Não foi possível verificar esta imagem. Você pode selecioná-la normalmente.',
     })[props.state ?? 'NOT_FOUND'],

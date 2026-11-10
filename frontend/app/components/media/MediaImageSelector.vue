@@ -1,24 +1,30 @@
 <template>
-  <section class="images-panel">
-    <SectionHeading eyebrow="Catálogo" title="Adicionar imagens" />
+  <section class="images-panel" :class="{ compact }">
+    <SectionHeading v-if="!compact" eyebrow="Catálogo" title="Adicionar imagens" />
     <div class="launch-card">
-      <p>Explore capas, fundos e imagens do jogo. A capa atual será mantida.</p>
-      <button v-owner type="button" class="primary-button" :disabled="saving" @click="openSelector">
+      <p v-if="!compact">Explore capas, fundos e imagens do jogo. A capa atual será mantida.</p>
+      <button
+        v-owner
+        type="button"
+        :class="compact ? 'secondary-button' : 'primary-button'"
+        :disabled="saving"
+        @click="openSelector"
+      >
         {{ selected.length ? `Continuar seleção (${selected.length})` : 'Escolher imagens' }}
       </button>
       <p v-if="message && !selectorOpen" class="feedback" role="status">{{ message }}</p>
       <p v-if="error && !selectorOpen" class="feedback error" role="alert">{{ error }}</p>
     </div>
-    <dialog ref="selector" class="image-selector" aria-labelledby="image-selector-title" @close="selectorClosed">
+    <dialog ref="selector" class="image-selector" :aria-labelledby="selectorTitleId" @close="selectorClosed">
       <div class="selector-layout">
         <header class="selector-header">
           <div class="selector-heading">
-            <p class="eyebrow">{{ gameTitle || 'Imagens do jogo' }}</p>
-            <h2 id="image-selector-title">Escolher imagens</h2>
+            <p class="eyebrow">{{ title || (mediaType === 'movies' ? 'Imagens do filme' : 'Imagens do jogo') }}</p>
+            <h2 :id="selectorTitleId">Escolher imagens</h2>
             <p class="selector-description">Amplie para conferir os detalhes e marque o que quer guardar.</p>
           </div>
           <button type="button" class="secondary-button return-button" autofocus @click="selector?.close()">
-            Voltar ao jogo <span aria-hidden="true">✕</span>
+            {{ mediaType === 'movies' ? 'Voltar ao filme' : 'Voltar ao jogo' }} <span aria-hidden="true">✕</span>
           </button>
         </header>
         <div ref="selectorScroll" class="selector-scroll" :aria-busy="loading">
@@ -89,7 +95,9 @@
                     {{ providerLabel(image.provider)
                     }}<span v-if="image.width && image.height"> · {{ image.width }} × {{ image.height }}</span>
                   </p>
-                  <div class="candidate-state"><GameImageStateBadge :state="badgeState(image.id)" /></div>
+                  <div class="candidate-state">
+                    <MediaImageStateBadge :movie="mediaType === 'movies'" :state="badgeState(image.id)" />
+                  </div>
                 </div>
               </article>
             </div>
@@ -155,7 +163,7 @@
       >
         <template #selection="{ index }">
           <div v-if="candidates[index]" class="preview-lookup">
-            <GameImageStateBadge :state="badgeState(candidates[index]!.id)" dark />
+            <MediaImageStateBadge :movie="mediaType === 'movies'" :state="badgeState(candidates[index]!.id)" dark />
             <label class="preview-selection" :class="{ chosen: selected.includes(candidates[index]!.id) }">
               <input
                 v-model="selected"
@@ -172,7 +180,7 @@
   </section>
 </template>
 <script setup lang="ts">
-import GameImageStateBadge from '~/components/games/GameImageStateBadge.vue'
+import MediaImageStateBadge from '~/components/media/MediaImageStateBadge.vue'
 import MediaImageGallery from '~/components/media/MediaImageGallery.vue'
 import SectionHeading from '~/components/home/SectionHeading.vue'
 interface Candidate {
@@ -184,7 +192,9 @@ interface Candidate {
   width: number | null
   height: number | null
 }
-const props = defineProps<{ gameId: number; gameTitle?: string }>()
+const props = defineProps<{ mediaType: 'games' | 'movies'; entityId: number; title?: string; compact?: boolean }>()
+const selectorTitleId = useId()
+const endpoint = computed(() => `/api/${props.mediaType}/${props.entityId}/images`)
 const emit = defineEmits<{ imported: [] }>()
 const candidateViewer = ref<InstanceType<typeof MediaImageGallery> | null>(null)
 const config = useRuntimeConfig()
@@ -276,7 +286,7 @@ async function checkVisible() {
         const response = await $fetch<{
           available: boolean
           results: { id: string; state: Exclude<Existence, 'CHECKING'> }[]
-        }>(`/api/games/${props.gameId}/images/lookup`, {
+        }>(`${endpoint.value}/lookup`, {
           baseURL: config.public.apiBase,
           method: 'POST',
           body: { ids },
@@ -337,6 +347,8 @@ function clearSelection() {
 const selectionDisabled = (id: string) => busy.value || (selected.value.length >= 50 && !selected.value.includes(id))
 const kindLabel = (kind: string) =>
   ({
+    POSTER: 'Pôster',
+    BACKDROP: 'Fundo',
     GRID: 'Capa vertical',
     GRID_HORIZONTAL: 'Capa horizontal',
     COVER: 'Capa',
@@ -344,7 +356,8 @@ const kindLabel = (kind: string) =>
     SCREENSHOT: 'Screenshot',
     ARTWORK: 'Arte promocional',
   })[kind] ?? kind
-const providerLabel = (provider: string) => (provider === 'IGDB' ? 'IGDB' : 'SteamGridDB')
+const providerLabel = (provider: string) =>
+  ({ IGDB: 'IGDB', STEAMGRIDDB: 'SteamGridDB', TMDB: 'TMDb' })[provider] ?? provider
 function errorMessage(cause: unknown, fallback: string) {
   const data = (cause as { data?: { detail?: string; message?: string } }).data
   return data?.detail || data?.message || fallback
@@ -361,10 +374,9 @@ async function loadImages() {
   error.value = ''
   message.value = ''
   try {
-    const result = await $fetch<{ images: Candidate[]; warnings: string[] }>(
-      `/api/games/${props.gameId}/images/candidates`,
-      { baseURL: config.public.apiBase },
-    )
+    const result = await $fetch<{ images: Candidate[]; warnings: string[] }>(`${endpoint.value}/candidates`, {
+      baseURL: config.public.apiBase,
+    })
     candidates.value = result.images
     warnings.value = result.warnings
     selected.value = selected.value.filter((id) => result.images.some((image) => image.id === id))
@@ -384,18 +396,15 @@ async function saveImages() {
   error.value = ''
   message.value = ''
   try {
-    const result = await $fetch<{ savedIds: string[]; failedIds: string[] }>(
-      `/api/games/${props.gameId}/images/selection`,
-      {
-        baseURL: config.public.apiBase,
-        method: 'POST',
-        body: { ids: selected.value },
-      },
-    )
+    const result = await $fetch<{ savedIds: string[]; failedIds: string[] }>(`${endpoint.value}/selection`, {
+      baseURL: config.public.apiBase,
+      method: 'POST',
+      body: { ids: selected.value },
+    })
     selected.value = result.failedIds
     for (const id of result.savedIds) {
       savedInSearch.add(id)
-      if (lookupAvailable.value === true) existence.value[id] = 'IN_GALLERY'
+      if (lookupAvailable.value === true || props.mediaType === 'movies') existence.value[id] = 'IN_GALLERY'
     }
     message.value = `${result.savedIds.length} ${result.savedIds.length === 1 ? 'imagem salva' : 'imagens salvas'}.`
     if (result.failedIds.length)
@@ -437,6 +446,15 @@ button {
   border: 1px solid var(--base-color-border);
   border-radius: 28px;
   background: var(--base-color-surface-wash);
+}
+.compact .launch-card {
+  padding: 0;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+}
+.compact .launch-card .feedback {
+  flex-basis: 100%;
 }
 .launch-card > p:first-child {
   max-width: 42rem;

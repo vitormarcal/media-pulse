@@ -62,11 +62,12 @@
         @saved="handleCoverSaved"
       />
 
-      <GameImagesPanel
+      <MediaImageSelector
         v-if="owner.authenticated"
         :key="data.gameId"
-        :game-id="data.gameId"
-        :game-title="data.title"
+        media-type="games"
+        :entity-id="data.gameId"
+        :title="data.title"
         @imported="refresh()"
       />
 
@@ -104,7 +105,7 @@
 
 <script setup lang="ts">
 import MediaImageGallery from '~/components/media/MediaImageGallery.vue'
-import GameImagesPanel from '~/components/games/GameImagesPanel.vue'
+import MediaImageSelector from '~/components/media/MediaImageSelector.vue'
 import GameAddSessionPanel from '~/components/games/GameAddSessionPanel.vue'
 import GamePageHero from '~/components/games/GamePageHero.vue'
 import GameSessionsTimeline from '~/components/games/GameSessionsTimeline.vue'

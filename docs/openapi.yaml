@@ -5572,6 +5572,193 @@ paths:
               schema:
                 $ref: "#/components/schemas/MovieTermDto"
 
+  /api/movies/{movieId}/images/candidates:
+    get:
+      tags: [Movies]
+      summary: Preview provider images without storing files
+      description: Lists posters and backdrops from the confirmed TMDb movie link. Movies without a link return an empty list with guidance.
+      security:
+        - OwnerSession: []
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Available candidates and provider warnings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [images, warnings]
+                properties:
+                  images:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, provider, kind, url, previewUrl]
+                      properties:
+                        id:
+                          type: string
+                          description: Opaque candidate ID revalidated against current provider results on save
+                        provider:
+                          type: string
+                          enum: [TMDB]
+                        kind:
+                          type: string
+                          enum: [POSTER, BACKDROP]
+                        url:
+                          type: string
+                        previewUrl:
+                          type: string
+                        width:
+                          type: integer
+                          nullable: true
+                        height:
+                          type: integer
+                          nullable: true
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+        '401':
+          description: Owner login required
+        '404':
+          description: Movie not found
+        '502':
+          description: TMDb image request failed
+        '503':
+          description: TMDb is not configured
+  /api/movies/{movieId}/images/lookup:
+    post:
+      tags: [Movies]
+      summary: Check candidate original bytes against Visual Library
+      description: Downloads only the requested originals, computes transient SHA-256 hashes and queries Visual Library 0.27.0. Does not store images or hashes. Distinguishes an existing movie gallery reference from an asset found elsewhere. Failures remain unavailable and never mean not found.
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  minItems: 1
+                  maxItems: 8
+                  items:
+                    type: string
+                    pattern: '^[a-f0-9]{64}$'
+      responses:
+        '200':
+          description: Informational results; unavailable service does not block selection
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [available, results]
+                properties:
+                  available:
+                    type: boolean
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, state]
+                      properties:
+                        id:
+                          type: string
+                        state:
+                          type: string
+                          enum: [IN_GALLERY, IN_LIBRARY, NOT_FOUND, UNAVAILABLE]
+        '400':
+          description: Invalid candidate IDs or batch size
+        '401':
+          description: Owner login required
+        '403':
+          description: Invalid CSRF token
+        '404':
+          description: Movie not found
+        '502':
+          description: TMDb image request failed
+        '503':
+          description: TMDb is not configured
+        '409':
+          description: No confirmed TMDb link
+  /api/movies/{movieId}/images/selection:
+    post:
+      tags: [Movies]
+      summary: Store only selected provider images
+      description: Preserves the existing cover and primary image, including when absent. Revalidates candidate IDs and stores the returned image reference using the existing gallery flow. Deduplication is delegated to storage. Individual failures, including missing candidates, are returned for retry without undoing successful saves.
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      parameters:
+        - name: movieId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  items:
+                    type: string
+                    pattern: '^[a-f0-9]{64}$'
+      responses:
+        '200':
+          description: Per-image results, including partial or total failures
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [savedIds, failedIds]
+                properties:
+                  savedIds:
+                    type: array
+                    items:
+                      type: string
+                  failedIds:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Invalid selection
+        '401':
+          description: Owner login required
+        '403':
+          description: Invalid CSRF token
+        '404':
+          description: Movie not found
+        '502':
+          description: TMDb image request failed
+        '503':
+          description: TMDb is not configured
+        '409':
+          description: No confirmed TMDb link
   /api/movies/{movieId}/images/primary:
     post:
       security:

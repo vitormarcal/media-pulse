@@ -37,6 +37,16 @@
           :image-count="data.gallery.length"
           @view-image="galleryViewer?.open($event)"
         >
+          <template v-if="owner.authenticated" #image-actions>
+            <MediaImageSelector
+              :key="data.movieId"
+              media-type="movies"
+              :entity-id="data.movieId"
+              :title="data.title"
+              compact
+              @imported="refresh()"
+            />
+          </template>
           <template
             v-if="owner.authenticated || data.comments.length || data.rating != null || data.favorite || data.abandoned"
             #personal
@@ -246,6 +256,7 @@
 
 <script setup lang="ts">
 import MediaImageGallery from '~/components/media/MediaImageGallery.vue'
+import MediaImageSelector from '~/components/media/MediaImageSelector.vue'
 import MovieCollectionTagsPanel from '~/components/movies/MovieCollectionTagsPanel.vue'
 import MediaPersonalMarks from '~/components/media/MediaPersonalMarks.vue'
 import MovieAddWatchPanel from '~/components/movies/MovieAddWatchPanel.vue'

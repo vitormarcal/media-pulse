@@ -454,7 +454,7 @@ Especificação, critérios de aceite e roadmap: [Listas mistas](features/mixed-
 
 [Escopo aprovado](features/movie-visual-library.md). Imagens do Plex/TMDb usam o armazenamento configurado, com referência `movie`/ID real e sugestões `filme` e título original. A migração opcional inclui capas e galeria locais e conserva a capa/principal. Novos imports preservam capas já salvas, inclusive em edição concorrente; somente `imageSelection.primaryKey` explícito ou a ação de curadoria substitui uma capa existente. Falhas de imagem preservam as anteriores; retry usa os fluxos existentes. A imagem de coleção é classificada após commit pela fila V77, sem consulta adicional ao provedor. [Configuração, limites e recuperação](visual-library-images.md#filmes-armazenamento-migração-e-tags-de-coleção).
 
-O cabeçalho exibe capa maior e até três prévias, preenchendo os cards com recorte central. “Ver todas as N imagens” abre o acervo completo, com proporção integral, miniaturas, contador, setas, Escape e foco contido. As prévias abrem a mesma galeria na imagem clicada. Não repetir a galeria abaixo do cabeçalho. O visualizador público preserva carregamento independente por original; o owner tem ações para a imagem atual:
+Com até duas imagens, o cabeçalho exibe a capa integral; com três ou mais, apresenta um mosaico de até quatro imagens. “Ver todas as N imagens” abre o acervo completo. As prévias abrem a mesma galeria na imagem clicada. O visualizador público preserva proporção, miniaturas, navegação por setas, Escape e foco; o owner tem ações para a imagem atual:
 
 - `POST /api/movies/{movieId}/images/primary`, JSON `{url}`: torna uma referência já vinculada a capa canônica e a única principal, sem upload. Capas legadas sem linha de galeria também são aceitas.
 - `DELETE /api/movies/{movieId}/images`, mesmo JSON: remove somente o vínculo do filme, sem apagar arquivos/assets. Remover capa seleciona a primeira imagem restante na ordem da galeria (principal primeiro, ID decrescente); sem imagens, limpa a capa. Remover outra imagem preserva a capa.
@@ -465,3 +465,14 @@ Ambos retornam 200 com `{coverUrl}` anulável, 400 para corpo inválido e 404 pa
 - `POST /api/movies/{movieId}/collection-tags/sync`: exige owner/CSRF e solicita retry; retorna o mesmo estado, sem executar chamadas remotas na requisição. Retorna 503 se houver imagens remotas e o Visual Library não estiver configurado. Filme ausente retorna 404.
 
 A UI mostra o estado junto da coleção e permite nova tentativa sem impedir o uso do detalhe. A sincronização de `movie-collection` preserva tags pessoais; classificação inválida ou conflito remoto mantém pendência visível. Desfazer coleção envia lista vazia e retira somente a contribuição gerenciada desta referência. A exclusão de imagem mantém sua referência histórica remota; as imagens ainda vinculadas continuam recebendo atualizações.
+
+
+### Escolher imagens do TMDb
+
+O owner abre “Escolher imagens” junto da galeria, inclusive em filmes sem imagens. O seletor usa a experiência de jogos e não altera metadados. Veja [escopo aprovado](features/movie-image-selection.md).
+
+- `GET /api/movies/{movieId}/images/candidates`: exige sessão do owner. Consulta [as imagens do filme no TMDb](https://developer.themoviedb.org/reference/movie-images) pelo vínculo local e retorna `{images, warnings}` com pôsteres e fundos. Sem vínculo, retorna lista vazia e orientação para “Atualizar dados”. A busca não baixa originais nem salva imagens.
+- `POST /api/movies/{movieId}/images/lookup`: recebe `{ids}` (1–8 opções) e retorna `{available, results}`. Verifica hashes dos originais no Visual Library, sem armazenar imagens. A indisponibilidade dessa consulta não impede seleção ou salvamento.
+- `POST /api/movies/{movieId}/images/selection`: recebe `{ids}` (1–50 opções) e retorna `{savedIds, failedIds}`. Ambos os POSTs exigem owner e CSRF. IDs são revalidados contra os candidatos atuais; nenhuma URL de download é aceita no corpo. Cada sucesso cria um vínculo não primário no armazenamento existente e não altera capa nem imagem principal, mesmo se ausentes. Falhas individuais não desfazem sucessos; a interface mantém as escolhas que falharam para nova tentativa.
+
+Filme ausente retorna 404; seleção inválida, 400; vínculo ausente no POST, 409. Indisponibilidade do TMDb retorna 502 ou 503. O Visual Library, quando habilitado, continua responsável pela deduplicação por conteúdo.

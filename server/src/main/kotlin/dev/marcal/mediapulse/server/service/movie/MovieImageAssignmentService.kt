@@ -13,17 +13,22 @@ class MovieImageAssignmentService(
     private val images: MovieImageCrudRepository,
 ) {
     @Transactional
+    fun append(
+        movieId: Long,
+        url: String,
+    ) {
+        lockMovie(movieId)
+        images.insertIgnore(movieId, url, false)
+    }
+
+    @Transactional
     fun assign(
         movieId: Long,
         urls: List<String>,
         preferred: String,
         replaceCover: Boolean = false,
     ): String? {
-        if (images.lockMovieRowForPrimaryUpdate(movieId) ==
-            null
-        ) {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Filme não encontrado.")
-        }
+        lockMovie(movieId)
         val currentCover = movies.storedCover(movieId)
         urls.distinct().forEach { images.insertIgnore(movieId, it, false) }
         if (!replaceCover && (!currentCover.isNullOrBlank() || images.existsByMovieIdAndIsPrimaryTrue(movieId))) return null
@@ -32,5 +37,13 @@ class MovieImageAssignmentService(
         images.markPrimaryForMovie(movieId, preferred)
         movies.updateCover(movieId, preferred)
         return preferred
+    }
+
+    private fun lockMovie(movieId: Long) {
+        if (images.lockMovieRowForPrimaryUpdate(movieId) ==
+            null
+        ) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Filme não encontrado.")
+        }
     }
 }

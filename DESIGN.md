@@ -287,6 +287,8 @@ Pendências de tags das capas aparecem junto das séries do livro em um bloco di
 
 Filmes reutilizam o visualizador de jogos. O cabeçalho segue a composição definida na seção 16: com uma ou duas imagens, mostrar a capa integral em sua proporção natural; com três ou mais, mostrar mosaico com capa e até três imagens complementares, preenchidas com recorte central. “Ver todas as N imagens” abre a galeria completa, e cada prévia abre a imagem correspondente. Sem imagens, não reservar coluna vazia. A galeria completa abre sob demanda, com imagem integral, miniaturas, setas, Escape, carregamento independente por original e retorno de foco. Curadoria de capa e remoção ficam no visualizador para o owner, com confirmação, retry e substituição automática da capa removida. Não repetir a galeria abaixo do cabeçalho. Preservar pessoas, termos, empresas, coleção, listas e sessões. Esta regra de capa integral é específica de filmes; jogos mantêm a prévia descrita na seção 13.
 
+O owner pode abrir “Escolher imagens” junto da galeria, inclusive sem imagens salvas. Filmes compartilham o seletor de tela cheia de jogos, com pôsteres e fundos do TMDb, mantendo rótulos próprios do domínio. Preservar seleção ao voltar, ampliação, foco, scroll e retry parcial. Salvar adiciona imagens sem alterar a capa; curadoria continua no visualizador salvo.
+
 Pendências de tags de coleção aparecem junto da coleção no detalhe, em superfície quente e controles de 16px, com mensagem e retry. A falha de classificação não bloqueia cadastro, imagens ou leitura. Não expor revisão, lease ou detalhes internos na interface.
 
 ## 16. Detalhe de filme
