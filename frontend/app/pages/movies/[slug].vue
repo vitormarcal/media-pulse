@@ -36,7 +36,50 @@
           :gallery="data.gallery.slice(0, 4)"
           :image-count="data.gallery.length"
           @view-image="galleryViewer?.open($event)"
-        />
+        >
+          <template
+            v-if="owner.authenticated || data.comments.length || data.rating != null || data.favorite || data.abandoned"
+            #personal
+          >
+            <div class="personal-memory">
+              <div v-if="owner.authenticated || data.favorite || data.abandoned" class="personal-context">
+                <MediaPersonalMarks
+                  :key="data.movieId"
+                  v-model:favorite="data.favorite"
+                  v-model:abandoned="data.abandoned"
+                  media-type="movies"
+                  :entity-id="data.movieId"
+                  @saved="refresh()"
+                />
+              </div>
+
+              <MediaCommentsPanel
+                v-if="owner.authenticated || data.comments.length || data.rating != null"
+                :entity-id="data.movieId"
+                media-type="movies"
+                title="Comentários"
+                description=""
+                :comments="data.comments"
+                empty-label="Nenhum comentário."
+                compact
+                editorial
+              >
+                <template #meta>
+                  <MediaRatingPanel
+                    v-if="owner.authenticated || data.rating != null"
+                    :key="`rating-${data.movieId}`"
+                    media-type="movies"
+                    :entity-id="data.movieId"
+                    :initial-rating="data.rating"
+                    label="Nota"
+                    compact
+                    minimal
+                  />
+                </template>
+              </MediaCommentsPanel>
+            </div>
+          </template>
+        </MoviePageHero>
       </div>
 
       <MediaImageGallery
@@ -72,40 +115,7 @@
       </MediaImageGallery>
       <p v-if="imageMessage && !data.gallery.length" role="status">{{ imageMessage }}</p>
 
-      <div
-        v-if="owner.authenticated || data.favorite || data.abandoned || data.rating != null"
-        class="personal-context"
-      >
-        <MediaPersonalMarks
-          v-if="owner.authenticated || data.favorite || data.abandoned"
-          :key="data.movieId"
-          v-model:favorite="data.favorite"
-          v-model:abandoned="data.abandoned"
-          media-type="movies"
-          :entity-id="data.movieId"
-          @saved="refresh()"
-        />
-        <MediaRatingPanel
-          :key="`rating-${data.movieId}`"
-          media-type="movies"
-          :entity-id="data.movieId"
-          :initial-rating="data.rating"
-          compact
-          minimal
-        />
-      </div>
-
-      <MediaCommentsPanel
-        :entity-id="data.movieId"
-        media-type="movies"
-        title="Comentários"
-        description=""
-        :comments="data.comments"
-        empty-label="Nenhum comentário."
-        compact
-      />
-
-      <section class="sessions-section" aria-labelledby="sessions-title">
+      <section class="sessions-section detail-surface" aria-labelledby="sessions-title">
         <div class="section-header">
           <h2 id="sessions-title">Sessões</h2>
           <button
@@ -126,7 +136,7 @@
         <MovieWatchTimeline :movie-id="data.movieId" :watches="data.recentWatches" @deleted="handleWatchDeleted" />
       </section>
 
-      <section class="movie-details" aria-labelledby="details-title">
+      <section class="movie-details detail-surface" aria-labelledby="details-title">
         <div class="section-header">
           <h2 id="details-title">Sobre o filme</h2>
           <button
@@ -145,34 +155,28 @@
           :identifiers="data.identifiers"
           @applied="handleEnrichmentApplied"
         />
-        <div>
-          <button
-            v-if="owner.authenticated"
-            class="edit-button"
-            type="button"
-            :aria-expanded="activeAction === 'people'"
-            @click="toggleAction('people')"
-          >
-            {{ activeAction === 'people' ? 'Concluir edição' : 'Editar créditos' }}
-          </button>
+        <div v-if="data.people.visibleCount || owner.authenticated" class="detail-group">
           <MoviePeoplePanel
             :movie-id="data.movieId"
             :people="data.people"
             :enrichment-status="data.enrichment.credits"
             :editing="activeAction === 'people'"
             @changed="handlePeopleChanged"
-          />
-        </div>
-        <div>
-          <button
-            v-if="owner.authenticated"
-            class="edit-button"
-            type="button"
-            :aria-expanded="activeAction === 'terms'"
-            @click="toggleAction('terms')"
           >
-            {{ activeAction === 'terms' ? 'Concluir edição' : 'Editar gêneros e tags' }}
-          </button>
+            <template #actions>
+              <button
+                v-if="owner.authenticated"
+                class="edit-button"
+                type="button"
+                :aria-expanded="activeAction === 'people'"
+                @click="toggleAction('people')"
+              >
+                {{ activeAction === 'people' ? 'Concluir edição' : 'Editar créditos' }}
+              </button>
+            </template>
+          </MoviePeoplePanel>
+        </div>
+        <div class="detail-group">
           <MovieTermsPanel
             :movie-id="data.movieId"
             :terms="data.terms"
@@ -180,25 +184,40 @@
             :editing="activeAction === 'terms'"
             embedded
             @changed="handleTermsChanged"
-          />
-        </div>
-        <div>
-          <button
-            v-if="owner.authenticated"
-            class="edit-button"
-            type="button"
-            :aria-expanded="activeAction === 'companies'"
-            @click="toggleAction('companies')"
           >
-            {{ activeAction === 'companies' ? 'Concluir edição' : 'Editar empresas' }}
-          </button>
+            <template #actions>
+              <button
+                v-if="owner.authenticated"
+                class="edit-button"
+                type="button"
+                :aria-expanded="activeAction === 'terms'"
+                @click="toggleAction('terms')"
+              >
+                {{ activeAction === 'terms' ? 'Concluir edição' : 'Editar gêneros e tags' }}
+              </button>
+            </template>
+          </MovieTermsPanel>
+        </div>
+        <div class="detail-group">
           <MovieCompaniesPanel
             :movie-id="data.movieId"
             :companies="data.companies"
             :enrichment-status="data.enrichment.companies"
             :editing="activeAction === 'companies'"
             @changed="handleCompaniesChanged"
-          />
+          >
+            <template #actions>
+              <button
+                v-if="owner.authenticated"
+                class="edit-button"
+                type="button"
+                :aria-expanded="activeAction === 'companies'"
+                @click="toggleAction('companies')"
+              >
+                {{ activeAction === 'companies' ? 'Concluir edição' : 'Editar empresas' }}
+              </button>
+            </template>
+          </MovieCompaniesPanel>
         </div>
       </section>
 
@@ -380,7 +399,7 @@ function toggleAction(action: MovieAction) {
 .movie-page {
   display: grid;
   gap: 32px;
-  width: min(1200px, calc(100vw - 32px));
+  width: min(1120px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 28px 0 84px;
 }
@@ -443,7 +462,7 @@ function toggleAction(action: MovieAction) {
   align-items: center;
   gap: 8px;
   width: fit-content;
-  margin: 0 12px calc(-1 * var(--sema-space-section));
+  margin: 0;
   padding: 8px 12px;
   border-radius: 16px;
   background: var(--base-color-surface-warm);
@@ -469,11 +488,27 @@ function toggleAction(action: MovieAction) {
   }
 }
 
+.personal-memory,
 .personal-context,
 .sessions-section,
 .movie-details {
   display: grid;
   gap: 20px;
+}
+.personal-memory {
+  gap: 16px;
+}
+.detail-surface {
+  padding: clamp(20px, 3vw, 32px);
+  border-radius: 28px;
+  background: var(--base-color-surface-strong);
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 35%, white);
+}
+.detail-group {
+  display: grid;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid color-mix(in srgb, var(--base-color-border) 35%, white);
 }
 .personal-context {
   display: flex;

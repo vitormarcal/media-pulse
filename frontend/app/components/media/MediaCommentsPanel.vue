@@ -1,7 +1,10 @@
 <template>
-  <section class="comments-panel" :class="{ compact }">
+  <section class="comments-panel" :class="{ compact, editorial }">
     <div v-if="compact" class="compact-header">
-      <h2>{{ localComments.length === 1 ? 'Comentário' : 'Comentários' }}</h2>
+      <div class="compact-heading">
+        <h2>{{ localComments.length === 1 ? 'Comentário' : 'Comentários' }}</h2>
+        <slot name="meta" />
+      </div>
       <button
         v-owner
         class="button button-secondary"
@@ -148,6 +151,7 @@ import { formatAbsoluteDate, formatRelativeDate } from '~/utils/formatting'
 
 const props = defineProps<{
   compact?: boolean
+  editorial?: boolean
   title: string
   description: string
   mediaType: 'movies' | 'shows' | 'albums' | 'books' | 'games' | 'magazines'
@@ -467,7 +471,14 @@ function sortComments(comments: MediaCommentDto[]) {
   }
 }
 
+.compact-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px 24px;
+  flex-wrap: wrap;
+}
 .compact-header {
+  flex-wrap: wrap;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -494,5 +505,20 @@ function sortComments(comments: MediaCommentDto[]) {
   color: var(--base-color-text-secondary);
   font-size: 0.88rem;
   margin-bottom: 12px;
+}
+.compact.editorial .comment-card {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.compact.editorial .comment-date {
+  color: var(--base-color-text-secondary);
+  font-size: 0.82rem;
+}
+.compact.editorial .comment-paragraph {
+  max-width: 42rem;
+}
+.compact.editorial {
+  gap: 16px;
 }
 </style>

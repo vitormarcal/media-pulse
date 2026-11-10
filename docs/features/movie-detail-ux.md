@@ -1,25 +1,23 @@
-# Detalhe de filme: revisão de UI, UX e copy
+# Detalhe de filme: UI, UX e copy
 
-Escopo aprovado: reorganizar a página com a referência do detalhe de livro.
+Escopo aprovado: reorganizar o detalhe com a simplicidade editorial de livros, preservando imagens e memória pessoal.
 
-- Problema: contagens e datas repetidas, ações de catálogo em destaque e memória pessoal dispersa.
-- Objetivo: priorizar identificação, comentários e sessões com menos ruído.
-- UI: cabeçalho visual; marcações e nota compacta; comentários; sessões; sobre o filme; coleção e listas. Edição contextual e formulário de sessão sob demanda.
-- API/dados: reutilizar contratos existentes, sem migração, dependência ou novo provedor.
-- Fora do escopo: alterar importação, avaliações, regras de exclusão ou dados armazenados.
-- Regras: comentários com uma data absoluta por item, sem contador/resumo; sessões sem card separado de estatísticas; manter edição, exclusão, registro, vínculos e galeria.
-- Aceitação: informação pessoal antes dos créditos; títulos diretos; controles de owner preservados; layout responsivo; lint, formatação, tipos e build válidos.
+## Experiência final
 
-## Acabamento após revisão visual
+- Cabeçalho branco uniforme: identificação e sinopse à esquerda; memória pessoal abaixo do texto; capa/galeria à direita. No celular: identificação, imagem, memória pessoal.
+- Nota compacta junto do título dos comentários; favorito/abandonado próximos. Comentários sem contador/resumo e com uma data absoluta por item, sem card aninhado.
+- Capa única com proporção natural, integral e sem faixas laterais; altura máxima de 440px no desktop e 380px no celular. Com até duas imagens, mostrar só a capa; demais ficam na galeria. A partir de três, manter o mosaico.
+- Sinopse longa expansível; título pode quebrar sem overflow.
+- Sessões e “Sobre o filme” em superfícies brancas consistentes, sem cards internos. Datas de sessão sem estatísticas repetidas; registro sob demanda.
+- Créditos, gêneros/tags e empresas com subtítulos neutros. Elenco inicia com seis nomes, com expansão; edição não limita nomes.
+- Edição contextual, enriquecimento via “Atualizar dados”, galeria e confirmações preservados. Listas vazias ocultas para visitantes.
 
-A página publicada de The Last House foi revisada em desktop e celular. Foram identificados cabeçalho alto, duplicação visual das duas imagens, nota deslocada por uma coluna vazia, elenco extenso no celular e rótulos repetidos.
+## Decisões
 
-- Cabeçalho menor, texto centralizado verticalmente e capa integral quando há até duas imagens; demais imagens continuam na galeria.
-- Nota alinhada às marcações, sem descrição da escala competindo com o comentário.
-- Elenco com seis nomes e “Ver elenco completo”/“Ver menos”, sem limitar a edição.
-- Remoção de funções repetidas em direção/roteiro, origem manual nas sessões e seção pública de listas vazias.
-- Publicação mantida em 1.14.0, com atualização explícita da tag existente solicitada pelo owner.
+A avaliação visual publicada revelou cabeçalho com grande área vazia, nota isolada e tratamentos diferentes para seções relacionadas. Integrar memória pessoal ao espaço ao lado da capa resolve a composição sem diminuir a imagem. Fundo branco uniforme deixa a arte definir a personalidade visual; não duplicar a capa como fundo. A prévia com `contain` em caixa larga criou faixas cinzas: usar dimensões naturais limitadas pela área disponível. As seções 15 e 16 de DESIGN.md foram reconciliadas para distinguir capa integral e mosaico.
 
-Validar ausência de overflow em desktop e celular, expansão do elenco e acesso à galeria, além dos checks do frontend e build de produção.
+## Escopo técnico e aceitação
 
-Correção visual: a capa única com `contain` dentro de uma caixa larga ganhou faixas cinzas e pareceu menor em produção. A prévia passa a seguir a proporção natural da imagem, sem fundo lateral, com altura máxima de 440px no desktop e 380px no celular. Manter a imagem integral e validar medidas renderizadas e acesso à galeria. Correção incluída na versão 1.14.0 existente.
+Reutilizar contratos e dados existentes, sem API, migração, dependência ou novo provedor. Não alterar importação, escala de avaliação, exclusões ou dados armazenados. Manter os demais domínios inalterados; o tratamento editorial de comentários é opcional.
+
+Validar layout em desktop, tablet e celular, ausência de overflow, proporção da capa, galeria e retorno do foco, expansão do elenco/sinopse e formulários de owner. Conferir ausência de imagens, títulos/sinopses longos e diferentes quantidades de imagens. Rodar lint, formatação, tipos e build de produção. Manter a publicação na versão 1.14.0 existente conforme solicitação do owner.

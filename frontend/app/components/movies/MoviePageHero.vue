@@ -4,13 +4,25 @@
       <NuxtLink class="back-link" to="/movies"> Voltar para filmes </NuxtLink>
     </div>
 
-    <div class="hero-grid" :class="{ 'without-images': !gallery.length }">
+    <div class="hero-grid" :class="{ 'without-images': !gallery.length, 'with-personal': !!$slots.personal }">
       <div class="copy">
-        <p class="eyebrow">Filme</p>
         <h1 ref="heading" tabindex="-1">{{ title }}</h1>
         <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
-        <p v-if="description" class="description">{{ description }}</p>
+        <div v-if="description" class="synopsis">
+          <p class="description">{{ descriptionExpanded ? description : descriptionPreview }}</p>
+          <button
+            v-if="description.length > 320"
+            type="button"
+            class="synopsis-toggle"
+            :aria-expanded="descriptionExpanded"
+            @click="descriptionExpanded = !descriptionExpanded"
+          >
+            {{ descriptionExpanded ? 'Ler menos' : 'Ler mais' }}
+          </button>
+        </div>
       </div>
+
+      <div v-if="$slots.personal" class="personal-slot"><slot name="personal" /></div>
 
       <div v-if="gallery.length" class="gallery-preview">
         <div class="gallery" :class="`images-${previewImages.length}`">
@@ -48,6 +60,11 @@ const viewAllButton = ref<HTMLButtonElement>()
 const heading = ref<HTMLHeadingElement>()
 defineExpose({ focusGallery: () => (viewAllButton.value || heading.value)?.focus() })
 const { resolveMediaUrl } = useMediaUrl()
+const descriptionExpanded = ref(false)
+const descriptionPreview = computed(() => {
+  const description = props.description || ''
+  return description.length > 320 ? `${description.slice(0, 320).replace(/\s+\S*$/, '')}…` : description
+})
 const previewImages = computed(() => (props.gallery.length <= 2 ? props.gallery.slice(0, 1) : props.gallery))
 </script>
 
@@ -75,37 +92,30 @@ const previewImages = computed(() => (props.gallery.length <= 2 ? props.gallery.
 
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.02fr) minmax(20rem, 0.98fr);
-  gap: 24px;
-  padding: clamp(24px, 4vw, 42px);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.75fr);
+  grid-template-areas: 'copy gallery' 'personal gallery';
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  gap: 24px 40px;
+  padding: clamp(20px, 3vw, 32px);
   border-radius: 40px;
-  background-image:
-    radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
-  background-size: cover;
-  background-position: center;
-  border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
+  background: var(--base-color-surface-strong);
+  border: 1px solid color-mix(in srgb, var(--base-color-border) 35%, white);
 }
 
 .copy {
+  grid-area: copy;
+  min-width: 0;
   display: grid;
-  align-content: center;
+  align-content: start;
   gap: 12px;
-}
-
-.eyebrow {
-  margin: 0;
-  color: var(--base-color-brand-red);
-  font-size: 0.74rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
 }
 
 h1 {
   margin: 0;
-  font-size: clamp(2rem, 4.2vw, 3.5rem);
-  line-height: 0.92;
+  font-size: clamp(2rem, 3.8vw, 3rem);
+  overflow-wrap: anywhere;
+  line-height: 1.06;
   letter-spacing: -0.04em;
 }
 
@@ -115,6 +125,26 @@ h1 {
   font-size: 1.02rem;
 }
 
+.synopsis {
+  display: grid;
+  gap: 8px;
+}
+.synopsis-toggle {
+  justify-self: start;
+  border: 0;
+  padding: 8px 0;
+  background: transparent;
+  color: var(--base-color-text-primary);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.synopsis-toggle:focus-visible {
+  outline: 3px solid var(--base-color-focus);
+  outline-offset: 3px;
+}
 .description {
   max-width: 42rem;
   margin: 0;
@@ -122,7 +152,13 @@ h1 {
   line-height: 1.6;
 }
 
+.personal-slot {
+  grid-area: personal;
+  min-width: 0;
+}
 .gallery-preview {
+  grid-area: gallery;
+  align-self: start;
   display: grid;
   align-content: center;
   gap: 12px;
@@ -202,13 +238,15 @@ h1 {
   grid-row: 1 / -1;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 760px) {
   .hero-topbar {
     align-items: flex-start;
     flex-direction: column;
   }
   .hero-grid {
     grid-template-columns: 1fr;
+    grid-template-areas: 'copy' 'gallery' 'personal';
+    gap: 24px;
   }
   .gallery {
     height: clamp(240px, 50vw, 320px);
@@ -221,5 +259,12 @@ h1 {
 }
 .hero-grid.without-images {
   grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'copy' 'personal';
+}
+.hero-grid:not(.with-personal) {
+  grid-template-rows: auto;
+}
+.hero-grid.without-images:not(.with-personal) {
+  grid-template-areas: 'copy';
 }
 </style>

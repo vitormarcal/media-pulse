@@ -1,12 +1,13 @@
 <template>
-  <article v-if="people.visibleCount || editingEnabled" class="people-card">
+  <article v-if="people.visibleCount || editingEnabled || owner.authenticated" class="people-card">
     <div class="people-head">
       <div class="people-copy">
-        <h2>Direção, roteiro e elenco</h2>
+        <h3>Créditos</h3>
       </div>
 
       <div class="head-meta">
         <span v-if="people.curated" class="curation-badge">Curadoria manual</span>
+        <slot name="actions" />
       </div>
     </div>
 
@@ -240,6 +241,7 @@ import type {
   CreditBatchImportResponse,
 } from '~/types/movies'
 
+const owner = useOwnerAuth()
 const props = defineProps<{
   movieId: number
   people: MoviePageData['people']
@@ -562,12 +564,11 @@ onBeforeUnmount(() => {
 .people-card {
   display: grid;
   gap: 18px;
-  padding: 22px 24px;
-  border-radius: 28px;
-  background: color-mix(in srgb, var(--base-color-surface-strong) 84%, var(--base-color-surface-soft));
+  padding: 0;
 }
 
 .people-head {
+  flex-wrap: wrap;
   display: flex;
   justify-content: space-between;
   gap: 18px;
@@ -591,22 +592,22 @@ onBeforeUnmount(() => {
 .eyebrow,
 .group-label {
   margin: 0;
-  color: var(--base-color-brand-red);
-  font-size: 0.74rem;
+  color: var(--base-color-text-secondary);
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-h2,
+h3,
 .empty-copy,
 .feedback,
 .tmdb-state {
   margin: 0;
 }
 
-h2 {
-  font-size: 1.4rem;
+h3 {
+  font-size: 1rem;
   line-height: 1;
   letter-spacing: -0.04em;
 }
@@ -837,7 +838,7 @@ h2 {
 
 .field span {
   margin: 0;
-  color: var(--base-color-brand-red);
+  color: var(--base-color-text-secondary);
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -882,11 +883,6 @@ h2 {
 }
 
 @media (max-width: 900px) {
-  .people-head {
-    grid-template-columns: 1fr;
-    display: grid;
-  }
-
   .head-meta {
     justify-content: flex-start;
   }

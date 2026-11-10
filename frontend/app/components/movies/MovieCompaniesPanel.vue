@@ -1,7 +1,8 @@
 <template>
   <article class="companies-card">
     <div class="companies-head">
-      <p class="eyebrow">Empresas</p>
+      <h3>Empresas</h3>
+      <slot name="actions" />
     </div>
 
     <div v-if="companies.items.length" class="chip-list">
@@ -87,6 +88,10 @@ async function syncFromTmdb() {
 </script>
 
 <style scoped>
+h3 {
+  margin: 0;
+  font-size: 1rem;
+}
 .companies-card,
 .companies-head,
 .editor-toolbar {

@@ -4,13 +4,12 @@
 
     <div class="timeline-list">
       <article v-for="watch in watches" :key="watch.id" class="timeline-item">
-        <div class="timeline-marker" />
         <div class="timeline-body">
           <div class="timeline-header">
             <p class="timeline-date">{{ watch.meta }}</p>
             <span v-if="watch.source !== 'MANUAL'" class="timeline-context">{{ watch.source }}</span>
           </div>
-          <div class="timeline-actions">
+          <div v-if="owner.authenticated" class="timeline-actions">
             <button
               v-owner
               type="button"
@@ -73,6 +72,7 @@ const emit = defineEmits<{
 }>()
 
 const config = useRuntimeConfig()
+const owner = useOwnerAuth()
 const pendingRemoval = ref<MovieWatchEntryModel | null>(null)
 const deletingWatchId = ref<number | null>(null)
 const feedback = ref<string | null>(null)
@@ -123,25 +123,15 @@ async function confirmRemoval() {
 
 .timeline-item {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
-}
-
-.timeline-marker {
-  width: 18px;
-  height: 18px;
-  margin-top: 14px;
-  border-radius: 50%;
-  background: var(--base-color-brand-red);
-  box-shadow: 0 0 0 8px color-mix(in srgb, var(--base-color-brand-red) 8%, white);
 }
 
 .timeline-body {
   display: grid;
   gap: 12px;
-  padding: 18px 20px;
-  border-radius: 26px;
-  background: color-mix(in srgb, var(--base-color-surface-strong) 84%, var(--base-color-surface-soft));
+  padding: 16px 0;
+  border-top: 1px solid color-mix(in srgb, var(--base-color-border) 35%, white);
 }
 
 .timeline-header {

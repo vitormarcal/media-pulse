@@ -2,9 +2,10 @@
   <article class="terms-card" :class="{ embedded }">
     <div class="terms-head">
       <div class="terms-copy">
-        <p class="eyebrow">{{ embedded ? 'Gêneros e tags' : 'Marcações' }}</p>
-        <h2 v-if="!embedded">Gêneros e tags</h2>
+        <h3 v-if="embedded">Gêneros e tags</h3>
+        <h2 v-else>Gêneros e tags</h2>
       </div>
+      <slot name="actions" />
     </div>
 
     <div class="term-groups">
@@ -372,6 +373,7 @@ onBeforeUnmount(() => {
 }
 
 .terms-head {
+  flex-wrap: wrap;
   display: flex;
   justify-content: space-between;
   gap: 16px;
@@ -388,13 +390,17 @@ onBeforeUnmount(() => {
 .hidden-title,
 .field span {
   margin: 0;
-  color: var(--base-color-brand-red);
-  font-size: 0.74rem;
+  color: var(--base-color-text-secondary);
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
+h3 {
+  margin: 0;
+  font-size: 1rem;
+}
 h2 {
   margin: 0;
   font-size: 1.4rem;
