@@ -3,17 +3,19 @@ package dev.marcal.mediapulse.server.integration.tmdb
 import com.sun.net.httpserver.HttpServer
 import dev.marcal.mediapulse.server.config.TmdbProperties
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.web.reactive.function.client.WebClient
 import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicReference
 
 class TmdbMovieImagesTest {
-    @Test
-    fun `fetches alternative posters and backdrops without a language filter`() {
+    @ParameterizedTest
+    @ValueSource(strings = ["movie", "tv"])
+    fun `fetches alternative posters and backdrops without a language filter`(kind: String) {
         val request = AtomicReference<String>()
         val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
-        server.createContext("/3/movie/42/images") { exchange ->
+        server.createContext("/3/$kind/42/images") { exchange ->
             request.set("${exchange.requestMethod} ${exchange.requestURI}")
             val body =
                 """
@@ -32,8 +34,8 @@ class TmdbMovieImagesTest {
         try {
             val properties = TmdbProperties(apiBaseUrl = "http://127.0.0.1:${server.address.port}/3", apiKey = "fixture")
             val client = TmdbApiClient(TmdbClientConfig(properties).tmdbWebClient(WebClient.builder()), properties, TmdbRateLimiter())
-            val result = client.fetchMovieImages("42")
-            assertEquals("GET /3/movie/42/images?api_key=fixture", request.get())
+            val result = if (kind == "tv") client.fetchShowImages("42") else client.fetchMovieImages("42")
+            assertEquals("GET /3/$kind/42/images?api_key=fixture", request.get())
             assertEquals(listOf("/one.jpg", "/two.jpg"), result.posters.map { it.filePath })
             assertEquals(780, result.posters.first().width)
             assertEquals("/background.jpg", result.backdrops.single().filePath)

@@ -596,12 +596,19 @@ class TmdbApiClient(
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun fetchMovieImages(tmdbId: String): TmdbMovieImagesResponse {
+    fun fetchMovieImages(tmdbId: String) = fetchImages("/movie/{id}/images", tmdbId)
+
+    fun fetchShowImages(tmdbId: String) = fetchImages("/tv/{id}/images", tmdbId)
+
+    private fun fetchImages(
+        path: String,
+        tmdbId: String,
+    ): TmdbMovieImagesResponse {
         tmdbRateLimiter.acquire(tmdbProperties.rateLimitPerSecond)
         return tmdbWebClient
             .get()
             .uri { uriBuilder ->
-                val builder = uriBuilder.path("/movie/{id}/images")
+                val builder = uriBuilder.path(path)
                 if (tmdbProperties.token.isBlank() && tmdbProperties.apiKey.isNotBlank()) {
                     builder.queryParam("api_key", tmdbProperties.apiKey)
                 }

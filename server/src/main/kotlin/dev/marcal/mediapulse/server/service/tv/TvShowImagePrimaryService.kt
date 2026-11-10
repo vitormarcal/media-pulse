@@ -11,6 +11,15 @@ class TvShowImagePrimaryService(
     private val shows: TvShowRepository,
 ) {
     @Transactional
+    fun append(
+        showId: Long,
+        url: String,
+    ) {
+        checkNotNull(images.lockShowRowForPrimaryUpdate(showId)) { "Série não encontrada." }
+        images.insertIgnore(showId, url, false)
+    }
+
+    @Transactional
     fun assign(
         showId: Long,
         urls: List<String>,

@@ -13,6 +13,16 @@
         :image-count="data.gallery.length"
         @view-image="galleryViewer?.open($event)"
       >
+        <template v-if="owner.authenticated" #image-actions>
+          <MediaImageSelector
+            :key="data.showId"
+            media-type="shows"
+            :entity-id="data.showId"
+            :title="data.title"
+            compact
+            @imported="refresh()"
+          />
+        </template>
         <template v-if="owner.authenticated || data.favorite || data.abandoned" #personal>
           <MediaPersonalMarks
             :key="data.showId"
@@ -191,6 +201,7 @@ import MediaPersonalMarks from '~/components/media/MediaPersonalMarks.vue'
 import ShowAddWatchPanel from '~/components/shows/ShowAddWatchPanel.vue'
 import MoviePageHero from '~/components/movies/MoviePageHero.vue'
 import MediaImageGallery from '~/components/media/MediaImageGallery.vue'
+import MediaImageSelector from '~/components/media/MediaImageSelector.vue'
 import ShowTermsPanel from '~/components/shows/ShowTermsPanel.vue'
 import ShowMetadataEnrichmentPanel from '~/components/shows/ShowMetadataEnrichmentPanel.vue'
 import ShowListsPanel from '~/components/shows/ShowListsPanel.vue'

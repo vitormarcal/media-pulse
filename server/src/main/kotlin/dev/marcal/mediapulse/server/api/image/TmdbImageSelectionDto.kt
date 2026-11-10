@@ -1,6 +1,6 @@
-package dev.marcal.mediapulse.server.api.movies
+package dev.marcal.mediapulse.server.api.image
 
-data class MovieImageCandidateDto(
+data class TmdbImageCandidateDto(
     val id: String,
     val kind: String,
     val url: String,
@@ -10,26 +10,26 @@ data class MovieImageCandidateDto(
     val provider: String = "TMDB",
 )
 
-data class MovieImageCandidatesResponse(
-    val images: List<MovieImageCandidateDto>,
+data class TmdbImageCandidatesResponse(
+    val images: List<TmdbImageCandidateDto>,
     val warnings: List<String> = emptyList(),
 )
 
-data class MovieImageSelectionRequest(
+data class TmdbImageSelectionRequest(
     val ids: List<String?> = emptyList(),
 )
 
-data class MovieImageSelectionResponse(
+data class TmdbImageSelectionResponse(
     val savedIds: List<String>,
     val failedIds: List<String>,
 )
 
-data class MovieImageLookupResult(
+data class TmdbImageLookupResult(
     val id: String,
     val state: String,
 )
 
-data class MovieImageLookupResponse(
+data class TmdbImageLookupResponse(
     val available: Boolean,
-    val results: List<MovieImageLookupResult>,
+    val results: List<TmdbImageLookupResult>,
 )

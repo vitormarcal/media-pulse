@@ -53,13 +53,15 @@
 const props = defineProps<{
   state?: 'CHECKING' | 'IN_GALLERY' | 'IN_LIBRARY' | 'NOT_FOUND' | 'UNAVAILABLE'
   dark?: boolean
-  movie?: boolean
+  mediaType: 'games' | 'movies' | 'shows'
 }>()
+const entity = computed(() => ({ games: 'no jogo', movies: 'no filme', shows: 'na série' })[props.mediaType])
+const association = computed(() => ({ games: 'ao jogo', movies: 'ao filme', shows: 'à série' })[props.mediaType])
 const label = computed(
   () =>
     ({
       CHECKING: 'Verificando',
-      IN_GALLERY: props.movie ? 'Já no filme' : 'Já no jogo',
+      IN_GALLERY: `Já ${entity.value}`,
       IN_LIBRARY: 'No Visual Library',
       NOT_FOUND: '',
       UNAVAILABLE: 'Sem verificação',
@@ -69,8 +71,8 @@ const description = computed(
   () =>
     ({
       CHECKING: 'Verificando se a imagem já existe no Visual Library.',
-      IN_GALLERY: `Já no ${props.movie ? 'filme' : 'jogo'}. Esta imagem já está na galeria e continua selecionável.`,
-      IN_LIBRARY: `No Visual Library. Esta imagem já existe e pode ser associada ao ${props.movie ? 'filme' : 'jogo'}.`,
+      IN_GALLERY: `Já ${entity.value}. Esta imagem já está na galeria e continua selecionável.`,
+      IN_LIBRARY: `No Visual Library. Esta imagem já existe e pode ser associada ${association.value}.`,
       NOT_FOUND: '',
       UNAVAILABLE: 'Não foi possível verificar esta imagem. Você pode selecioná-la normalmente.',
     })[props.state ?? 'NOT_FOUND'],

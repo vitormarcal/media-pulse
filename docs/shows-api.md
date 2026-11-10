@@ -280,3 +280,14 @@ Especificação, critérios de aceite e roadmap: [Listas mistas](features/mixed-
 ## Imagens no Visual Library
 
 A importação de imagens de séries pelo Plex e pelo TMDb respeita a configuração de armazenamento do Visual Library. As URLs de capa e galeria seguem o contrato atual. A migração opcional inclui o acervo local de capas e galerias de séries, com preservação da imagem principal. Consulte a [configuração de imagens](visual-library-images.md#imagens-de-séries).
+
+
+### Escolher imagens do TMDb
+
+O owner pode abrir “Escolher imagens” junto da galeria, inclusive sem imagens iniciais. O seletor consulta pôsteres e fundos pelo vínculo salvo, com ampliação e seleção múltipla. [Referência do TMDb](https://developer.themoviedb.org/reference/tv-series-images)
+
+- `GET /api/shows/{showId}/images/candidates` retorna `{images, warnings}`. Uma série sem vínculo recebe a orientação para usar “Atualizar dados”.
+- `POST /api/shows/{showId}/images/lookup` recebe `{ids}` com 1 a 8 itens e consulta a presença dos originais no Visual Library.
+- `POST /api/shows/{showId}/images/selection` recebe `{ids}` com 1 a 50 itens e retorna `{savedIds, failedIds}`. O backend revalida os IDs e adiciona as imagens à galeria preservando a capa. A interface atualiza a galeria após sucessos e mantém as falhas selecionadas.
+
+A consulta de candidatos exige sessão do owner. Os POSTs exigem sessão e CSRF. Os contratos de candidatos e resultados são os mesmos do [seletor de filmes](movies-api.md#escolher-imagens-do-tmdb).

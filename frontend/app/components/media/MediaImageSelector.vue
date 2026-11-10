@@ -19,12 +19,12 @@
       <div class="selector-layout">
         <header class="selector-header">
           <div class="selector-heading">
-            <p class="eyebrow">{{ title || (mediaType === 'movies' ? 'Imagens do filme' : 'Imagens do jogo') }}</p>
+            <p class="eyebrow">{{ title || labels.images }}</p>
             <h2 :id="selectorTitleId">Escolher imagens</h2>
             <p class="selector-description">Amplie para conferir os detalhes e marque o que quer guardar.</p>
           </div>
           <button type="button" class="secondary-button return-button" autofocus @click="selector?.close()">
-            {{ mediaType === 'movies' ? 'Voltar ao filme' : 'Voltar ao jogo' }} <span aria-hidden="true">✕</span>
+            {{ labels.back }} <span aria-hidden="true">✕</span>
           </button>
         </header>
         <div ref="selectorScroll" class="selector-scroll" :aria-busy="loading">
@@ -96,7 +96,7 @@
                     }}<span v-if="image.width && image.height"> · {{ image.width }} × {{ image.height }}</span>
                   </p>
                   <div class="candidate-state">
-                    <MediaImageStateBadge :movie="mediaType === 'movies'" :state="badgeState(image.id)" />
+                    <MediaImageStateBadge :media-type="mediaType" :state="badgeState(image.id)" />
                   </div>
                 </div>
               </article>
@@ -163,7 +163,7 @@
       >
         <template #selection="{ index }">
           <div v-if="candidates[index]" class="preview-lookup">
-            <MediaImageStateBadge :movie="mediaType === 'movies'" :state="badgeState(candidates[index]!.id)" dark />
+            <MediaImageStateBadge :media-type="mediaType" :state="badgeState(candidates[index]!.id)" dark />
             <label class="preview-selection" :class="{ chosen: selected.includes(candidates[index]!.id) }">
               <input
                 v-model="selected"
@@ -192,7 +192,20 @@ interface Candidate {
   width: number | null
   height: number | null
 }
-const props = defineProps<{ mediaType: 'games' | 'movies'; entityId: number; title?: string; compact?: boolean }>()
+const props = defineProps<{
+  mediaType: 'games' | 'movies' | 'shows'
+  entityId: number
+  title?: string
+  compact?: boolean
+}>()
+const labels = computed(
+  () =>
+    ({
+      games: { images: 'Imagens do jogo', back: 'Voltar ao jogo' },
+      movies: { images: 'Imagens do filme', back: 'Voltar ao filme' },
+      shows: { images: 'Imagens da série', back: 'Voltar à série' },
+    })[props.mediaType],
+)
 const selectorTitleId = useId()
 const endpoint = computed(() => `/api/${props.mediaType}/${props.entityId}/images`)
 const emit = defineEmits<{ imported: [] }>()
@@ -404,7 +417,7 @@ async function saveImages() {
     selected.value = result.failedIds
     for (const id of result.savedIds) {
       savedInSearch.add(id)
-      if (lookupAvailable.value === true || props.mediaType === 'movies') existence.value[id] = 'IN_GALLERY'
+      if (lookupAvailable.value === true || props.mediaType !== 'games') existence.value[id] = 'IN_GALLERY'
     }
     message.value = `${result.savedIds.length} ${result.savedIds.length === 1 ? 'imagem salva' : 'imagens salvas'}.`
     if (result.failedIds.length)

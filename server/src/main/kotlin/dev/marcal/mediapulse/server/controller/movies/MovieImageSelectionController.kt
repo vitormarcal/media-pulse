@@ -1,6 +1,6 @@
 package dev.marcal.mediapulse.server.controller.movies
 
-import dev.marcal.mediapulse.server.api.movies.MovieImageSelectionRequest
+import dev.marcal.mediapulse.server.api.image.TmdbImageSelectionRequest
 import dev.marcal.mediapulse.server.service.movie.MovieImageSelectionService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -22,12 +22,12 @@ class MovieImageSelectionController(
     @PostMapping("/lookup")
     fun lookup(
         @PathVariable movieId: Long,
-        @RequestBody request: MovieImageSelectionRequest,
+        @RequestBody request: TmdbImageSelectionRequest,
     ) = service.lookup(movieId, request)
 
     @PostMapping("/selection")
     fun save(
         @PathVariable movieId: Long,
-        @RequestBody request: MovieImageSelectionRequest,
+        @RequestBody request: TmdbImageSelectionRequest,
     ) = service.save(movieId, request)
 }

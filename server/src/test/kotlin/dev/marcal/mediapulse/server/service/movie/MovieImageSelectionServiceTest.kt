@@ -1,6 +1,6 @@
 package dev.marcal.mediapulse.server.service.movie
 
-import dev.marcal.mediapulse.server.api.movies.MovieImageSelectionRequest
+import dev.marcal.mediapulse.server.api.image.TmdbImageSelectionRequest
 import dev.marcal.mediapulse.server.config.TmdbProperties
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbApiClient
 import dev.marcal.mediapulse.server.integration.tmdb.TmdbMovieImageResponse
@@ -11,6 +11,7 @@ import dev.marcal.mediapulse.server.model.movie.Movie
 import dev.marcal.mediapulse.server.repository.crud.MovieImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.MovieRepository
 import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
+import dev.marcal.mediapulse.server.service.image.TmdbImageSelectionService
 import io.mockk.Called
 import io.mockk.every
 import io.mockk.mockk
@@ -32,7 +33,13 @@ class MovieImageSelectionServiceTest {
     private val storage = mockk<LibraryImageStorageService>()
     private val library = mockk<VisualLibraryClient>()
     private val assignment = MovieImageAssignmentService(movies, images)
-    private val service = MovieImageSelectionService(movies, images, tmdb, TmdbProperties(enabled = true), storage, assignment, library)
+    private val service =
+        MovieImageSelectionService(
+            movies,
+            images,
+            TmdbImageSelectionService(tmdb, TmdbProperties(enabled = true), storage, library),
+            assignment,
+        )
     private val film = Movie(id = 7, originalTitle = "Movie", coverUrl = "current", tmdbId = "42", fingerprint = "movie")
     private val poster = TmdbMovieImageResponse("/poster.jpg", 780, 1170)
     private val backdrop = TmdbMovieImageResponse("/backdrop.jpg", 1920, 1080)
@@ -63,7 +70,7 @@ class MovieImageSelectionServiceTest {
         every { storage.saveMovie(content, 7, "Movie", "TMDB", first.id.take(24)) } returns "stored"
         every { images.lockMovieRowForPrimaryUpdate(7) } returns 7
 
-        val result = service.save(7, MovieImageSelectionRequest(listOf(first.id, second.id, unknown, first.id)))
+        val result = service.save(7, TmdbImageSelectionRequest(listOf(first.id, second.id, unknown, first.id)))
 
         assertEquals(listOf(first.id), result.savedIds)
         assertEquals(listOf(second.id, unknown), result.failedIds)
@@ -82,7 +89,7 @@ class MovieImageSelectionServiceTest {
     @Test
     fun `invalid or oversized selection is rejected before provider calls`() {
         for (ids in listOf(emptyList(), listOf(null), listOf("https://example.test/image.jpg"), List(51) { "a".repeat(64) })) {
-            val error = assertThrows<ResponseStatusException> { service.save(7, MovieImageSelectionRequest(ids)) }
+            val error = assertThrows<ResponseStatusException> { service.save(7, TmdbImageSelectionRequest(ids)) }
             assertEquals(HttpStatus.BAD_REQUEST, error.statusCode)
         }
         verify { tmdb wasNot Called }
@@ -101,7 +108,7 @@ class MovieImageSelectionServiceTest {
     @Test
     fun `unavailable library skips downloads without blocking selection`() {
         every { library.enabled } returns false
-        val response = service.lookup(7, MovieImageSelectionRequest(listOf("a".repeat(64))))
+        val response = service.lookup(7, TmdbImageSelectionRequest(listOf("a".repeat(64))))
         assertFalse(response.available)
         assertEquals("UNAVAILABLE", response.results.single().state)
         verify { storage wasNot Called }
