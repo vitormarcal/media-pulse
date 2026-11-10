@@ -36,7 +36,7 @@ class VisualLibraryClient(
             .clone()
             .defaultHeaders { headers ->
                 if (properties.token.isNotEmpty()) headers.setBearerAuth(properties.token)
-            }.codecs { it.defaultCodecs().maxInMemorySize(10 * 1024 * 1024) }
+            }.codecs { it.defaultCodecs().maxInMemorySize(properties.maxInMemoryMb * 1024 * 1024) }
             .build()
     val enabled: Boolean get() = properties.enabled
     val migrationEnabled: Boolean get() = properties.migrationEnabled

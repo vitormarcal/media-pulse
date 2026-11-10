@@ -126,6 +126,7 @@ media-pulse:
     api-base-url: ${STEAMGRIDDB_API_BASE_URL:https://www.steamgriddb.com/api/v2}
     api-key: ${STEAMGRIDDB_API_KEY:}
   visual-library:
+    max-in-memory-mb: ${VISUAL_LIBRARY_MAX_IN_MEMORY_MB:30}
     enabled: ${VISUAL_LIBRARY_ENABLED:false}
     base-url: ${VISUAL_LIBRARY_BASE_URL:}
     token: ${VISUAL_LIBRARY_TOKEN:}

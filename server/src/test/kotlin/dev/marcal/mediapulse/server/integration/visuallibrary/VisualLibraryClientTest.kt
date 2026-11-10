@@ -50,6 +50,24 @@ class VisualLibraryClientTest {
         mapper,
     )
 
+    @Test
+    fun `content above old ten MiB limit loads and configured limit is enforced`() {
+        val payload = ByteArray(11 * 1024 * 1024) { 42 }
+        server.createContext("/api/assets/$id/content") { exchange ->
+            exchange.responseHeaders.set("Content-Type", "image/png")
+            exchange.sendResponseHeaders(200, payload.size.toLong())
+            exchange.responseBody.use { it.write(payload) }
+        }
+        assertContentEquals(payload, client(false).content(id, null, null).body)
+        val restricted =
+            VisualLibraryClient(
+                VisualLibraryProperties(baseUrl = "http://127.0.0.1:${server.address.port}", maxInMemoryMb = 1),
+                WebClient.builder(),
+                mapper,
+            )
+        assertEquals(503, assertFailsWith<ResponseStatusException> { restricted.content(id, null, null) }.statusCode.value())
+    }
+
     @AfterEach
     fun close() {
         server.stop(0)

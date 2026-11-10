@@ -11,8 +11,10 @@ data class VisualLibraryProperties(
     val migrationBatchSize: Int = 10,
     val migrationIntervalMs: Long = 60_000,
     val token: String = "",
+    val maxInMemoryMb: Int = 30,
 ) {
     init {
+        require(maxInMemoryMb in 1..1024) { "Visual Library max-in-memory-mb deve estar entre 1 e 1024." }
         require(token.all { it in '!'..'~' }) { "Visual Library token deve ser informado sem espaços, controles ou prefixo Bearer." }
         require(migrationBatchSize in 1..100) { "Visual Library migration-batch-size deve estar entre 1 e 100." }
         require(migrationIntervalMs >= 1_000) { "Visual Library migration-interval-ms deve ser pelo menos 1000." }
