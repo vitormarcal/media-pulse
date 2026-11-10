@@ -2,13 +2,11 @@
   <article class="people-card">
     <div class="people-head">
       <div class="people-copy">
-        <p class="eyebrow">Pessoas</p>
-        <h2>Direção, roteiro e elenco</h2>
+        <h3>Créditos</h3>
       </div>
 
       <div class="head-meta">
         <span v-if="people.curated" class="curation-badge">Curadoria manual</span>
-        <span class="summary-pill">{{ people.visibleCount }} pessoas</span>
       </div>
     </div>
 
@@ -312,9 +310,6 @@ function showMore(groupId: string) {
 .people-card {
   display: grid;
   gap: 18px;
-  padding: 22px 24px;
-  border-radius: 28px;
-  background: color-mix(in srgb, var(--base-color-surface-strong) 84%, var(--base-color-surface-soft));
 }
 
 .people-head {
@@ -332,33 +327,24 @@ function showMore(groupId: string) {
   gap: 10px;
 }
 
-.eyebrow,
 .group-label {
   margin: 0;
-  color: var(--base-color-brand-red);
+  color: var(--base-color-text-secondary);
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-h2,
+h3,
 .empty-copy {
   margin: 0;
 }
 
-.people-copy h2 {
-  font-size: 1.4rem;
+.people-copy h3 {
+  font-size: 1rem;
   line-height: 1;
   letter-spacing: -0.04em;
-}
-
-.summary-pill {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--base-color-surface-wash) 76%, white);
-  color: var(--base-color-text-primary);
-  font-size: 0.78rem;
 }
 
 .head-meta {

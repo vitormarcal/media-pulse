@@ -1,12 +1,12 @@
 <template>
   <section class="lists-panel">
-    <SectionHeading eyebrow="Listas" :title="lists.length ? 'Listas com esta série' : 'Listas'" :summary="summary" />
+    <h3>Listas</h3>
     <div v-if="lists.length" class="list-grid">
       <article v-for="list in lists" :key="list.listId" class="list-card">
         <NuxtLink :to="`/shows/lists/${list.slug}`"
           ><strong>{{ list.name }}</strong
           ><small>{{ list.itemCount }} séries</small>
-          <p>{{ list.description || 'Curadoria pessoal.' }}</p></NuxtLink
+          <p v-if="list.description">{{ list.description }}</p></NuxtLink
         >
         <button
           v-if="editing && !list.includedAutomatically"
@@ -49,7 +49,6 @@
   </section>
 </template>
 <script setup lang="ts">
-import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { ShowListAttachRequest, ShowListSummaryDto } from '~/types/shows'
 const props = defineProps<{ showId: number; lists: ShowListSummaryDto[]; editing: boolean }>()
 const emit = defineEmits<{ changed: [] }>()
@@ -60,9 +59,6 @@ const creating = ref(false)
 const name = ref('')
 const description = ref('')
 const feedback = ref<string | null>(null)
-const summary = computed(() =>
-  props.lists.length ? `${props.lists.length} ${props.lists.length === 1 ? 'lista' : 'listas'}` : '',
-)
 const current = computed(() => new Set(props.lists.map((list) => list.listId)))
 const available = computed(() => all.value.filter((list) => !current.value.has(list.listId)))
 watch(
@@ -140,6 +136,10 @@ function resolveError(error: unknown) {
 }
 </script>
 <style scoped>
+h3 {
+  margin: 0;
+  font-size: 1rem;
+}
 .lists-panel {
   display: grid;
   gap: 20px;

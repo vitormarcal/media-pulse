@@ -1,8 +1,7 @@
 <template>
   <article class="terms-card">
     <div class="terms-head">
-      <p class="eyebrow">Marcações da série</p>
-      <span class="summary-pill">{{ terms.visibleCount }} ativas</span>
+      <h3>Gêneros e tags</h3>
     </div>
 
     <section v-for="group in visibleGroups" :key="group.id" class="term-group">
@@ -304,6 +303,10 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+h3 {
+  margin: 0;
+  font-size: 1rem;
+}
 .terms-card,
 .editor-panel,
 .term-group,
@@ -324,18 +327,16 @@ onBeforeUnmount(() => {
 .terms-head {
   justify-content: space-between;
 }
-.eyebrow,
 .group-label,
 .hidden-title,
 .field > span {
   margin: 0;
-  color: var(--base-color-brand-red);
+  color: var(--base-color-text-secondary);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.summary-pill,
 .term-pill,
 .hidden-pill {
   border: 0;

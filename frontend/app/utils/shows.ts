@@ -366,9 +366,9 @@ export function buildShowPageData(show: ShowDetailsResponse): ShowPageData {
     year: show.year,
     description: show.description,
     coverUrl: show.coverUrl,
-    gallery: [...(show.coverUrl ? [show.coverUrl] : []), ...show.images.map((image) => image.url)]
-      .filter((value, index, array) => array.indexOf(value) === index)
-      .slice(0, 4),
+    gallery: [...(show.coverUrl ? [show.coverUrl] : []), ...show.images.map((image) => image.url)].filter(
+      (value, index, array) => array.indexOf(value) === index,
+    ),
     externalIds: show.externalIds,
     lists: show.lists,
     rating: show.rating,

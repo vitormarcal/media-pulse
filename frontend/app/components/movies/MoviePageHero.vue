@@ -1,7 +1,7 @@
 <template>
   <section class="movie-hero">
     <div class="hero-topbar">
-      <NuxtLink class="back-link" to="/movies"> Voltar para filmes </NuxtLink>
+      <NuxtLink class="back-link" :to="backTo"> {{ backLabel }} </NuxtLink>
     </div>
 
     <div
@@ -63,13 +63,18 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
-  title: string
-  subtitle: string | null
-  description: string | null
-  gallery: string[]
-  imageCount: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    title: string
+    subtitle: string | null
+    description: string | null
+    gallery: string[]
+    imageCount: number
+    backTo?: string
+    backLabel?: string
+  }>(),
+  { backTo: '/movies', backLabel: 'Voltar para filmes' },
+)
 
 defineEmits<{ viewImage: [index: number] }>()
 const viewAllButton = ref<HTMLButtonElement>()

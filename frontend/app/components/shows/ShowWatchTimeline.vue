@@ -1,121 +1,50 @@
 <template>
-  <section class="watch-timeline">
-    <SectionHeading eyebrow="Histórico" title="Episódios recentes" />
-
-    <div class="timeline-list">
-      <article v-for="watch in watches" :key="watch.id" class="timeline-item">
-        <div class="timeline-marker" />
-        <div class="timeline-body">
-          <div class="timeline-header">
-            <div>
-              <p class="timeline-context">{{ watch.context }}</p>
-              <h3>{{ watch.title }}</h3>
-            </div>
-            <div class="timeline-dates">
-              <strong>{{ watch.relativeWatchedAt }}</strong>
-              <span>{{ watch.meta }}</span>
-            </div>
-          </div>
-
-          <div class="timeline-footer">
-            <span>{{ watch.source }}</span>
-          </div>
+  <section aria-labelledby="show-sessions-title">
+    <h3 id="show-sessions-title">Sessões recentes</h3>
+    <ul>
+      <li v-for="watch in watches" :key="watch.id">
+        <div>
+          <strong>{{ watch.title }}</strong>
+          <p>{{ watch.context }}</p>
         </div>
-      </article>
-    </div>
+        <time :datetime="watch.watchedAt">{{ watch.meta }}</time>
+      </li>
+    </ul>
   </section>
 </template>
 
 <script setup lang="ts">
-import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { ShowWatchEntryModel } from '~/types/shows'
 
-defineProps<{
-  watches: ShowWatchEntryModel[]
-}>()
+defineProps<{ watches: ShowWatchEntryModel[] }>()
 </script>
 
 <style scoped>
-.watch-timeline,
-.timeline-list {
-  display: grid;
-  gap: 24px;
-}
-
-.timeline-item {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 16px;
-}
-
-.timeline-marker {
-  width: 18px;
-  height: 18px;
-  margin-top: 14px;
-  border-radius: 50%;
-  background: var(--base-color-brand-red);
-  box-shadow: 0 0 0 8px color-mix(in srgb, var(--base-color-brand-red) 8%, white);
-}
-
-.timeline-body {
-  display: grid;
-  gap: 12px;
-  padding: 18px 20px;
-  border-radius: 26px;
-  background: color-mix(in srgb, var(--base-color-surface-strong) 84%, var(--base-color-surface-soft));
-}
-
-.timeline-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 18px;
-  align-items: start;
-}
-
-.timeline-context,
-.timeline-footer,
-.timeline-dates span {
+h3,
+p,
+ul {
   margin: 0;
-  color: var(--base-color-text-secondary);
 }
-
-.timeline-context {
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
 h3 {
-  margin: 6px 0 0;
-  font-size: 1.14rem;
-  line-height: 1.03;
+  font-size: 1rem;
 }
-
-.timeline-dates {
-  display: grid;
-  justify-items: end;
-  gap: 6px;
-  text-align: right;
+ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 8px;
 }
-
-.timeline-dates strong {
-  font-size: 0.9rem;
+li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--base-color-surface-soft);
 }
-
-.timeline-dates span,
-.timeline-footer {
-  font-size: 0.84rem;
-}
-
-@media (max-width: 820px) {
-  .timeline-header {
-    flex-direction: column;
-  }
-
-  .timeline-dates {
-    justify-items: start;
-    text-align: left;
-  }
+p,
+time {
+  color: var(--base-color-text-secondary);
+  font-size: 0.875rem;
 }
 </style>

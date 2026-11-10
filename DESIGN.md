@@ -310,3 +310,11 @@ Revisar UI, UX e copy de um domínio por vez, no seu próprio ritmo. O detalhe d
 Consistência significa compartilhar tokens, tipografia, espaçamento, tratamento das superfícies e clareza das ações; não exige telas idênticas nem transpor literalmente a disposição de filmes. Preservar as particularidades e a linguagem de cada entidade: séries precisam acomodar temporadas, episódios e progresso; livros podem manter uma apresentação mais editorial; filmes valorizam imagens e sessões.
 
 A próxima revisão prevista é Séries (TV). Livros já recebeu uma revisão de conteúdo e UX que deve ser preservada; quando chegar sua vez, comparar com a direção atual e ajustar somente o que trouxer benefício. Diferenças entre páginas durante essa evolução gradual são esperadas e não justificam padronização em massa nem desfazer resultados aprovados. Cada revisão deve avaliar o domínio, conferir desktop e celular e registrar suas decisões específicas neste documento, sem converter uma escolha local em regra universal.
+
+## 18. Detalhe de série e temporada
+
+O detalhe de série usa o cabeçalho branco e a galeria sob demanda de filmes, com marcações pessoais junto da identificação. Progresso e temporadas aparecem imediatamente abaixo. A contagem geral aparece uma vez, e cada temporada mostra sua própria contagem. Temporadas sem rota são texto. Atualizar episódios fica junto do progresso.
+
+Nota, comentários e sessões ficam em Atividade, com registro sob demanda. Sobre a série reúne créditos, gêneros, tags e listas, com edição contextual e atualização de dados sob demanda.
+
+O detalhe de temporada usa cabeçalho compacto com retorno à série e uma contagem de progresso. Os episódios aparecem em ordem, separados por linhas. Marcar como assistido registra a hora atual. Opções de registro oferecem data personalizada e marcação em lote até o episódio escolhido. Se houver falha parcial, recarregar os episódios e mostrar quantos foram registrados. A atualização de dados da temporada é aberta pelo owner junto da lista.

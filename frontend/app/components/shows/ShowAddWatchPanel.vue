@@ -1,7 +1,5 @@
 <template>
   <section v-owner class="add-watch-panel">
-    <SectionHeading eyebrow="Episódio" title="Marcar episódio" />
-
     <article class="panel-card">
       <form v-owner class="panel-form" @submit.prevent="handleSubmit">
         <div class="episode-grid">
@@ -40,7 +38,6 @@
 </template>
 
 <script setup lang="ts">
-import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { ExistingShowWatchCreateRequest, ManualShowWatchCreateResponse } from '~/types/shows'
 
 const props = defineProps<{
