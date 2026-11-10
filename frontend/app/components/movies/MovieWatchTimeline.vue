@@ -8,7 +8,7 @@
         <div class="timeline-body">
           <div class="timeline-header">
             <p class="timeline-date">{{ watch.meta }}</p>
-            <span class="timeline-context">{{ watch.source }}</span>
+            <span v-if="watch.source !== 'MANUAL'" class="timeline-context">{{ watch.source }}</span>
           </div>
           <div class="timeline-actions">
             <button

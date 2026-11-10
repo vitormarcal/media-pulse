@@ -9,3 +9,15 @@ Escopo aprovado: reorganizar a página com a referência do detalhe de livro.
 - Fora do escopo: alterar importação, avaliações, regras de exclusão ou dados armazenados.
 - Regras: comentários com uma data absoluta por item, sem contador/resumo; sessões sem card separado de estatísticas; manter edição, exclusão, registro, vínculos e galeria.
 - Aceitação: informação pessoal antes dos créditos; títulos diretos; controles de owner preservados; layout responsivo; lint, formatação, tipos e build válidos.
+
+## Acabamento após revisão visual
+
+A página publicada de The Last House foi revisada em desktop e celular. Foram identificados cabeçalho alto, duplicação visual das duas imagens, nota deslocada por uma coluna vazia, elenco extenso no celular e rótulos repetidos.
+
+- Cabeçalho menor, texto centralizado verticalmente e capa integral quando há até duas imagens; demais imagens continuam na galeria.
+- Nota alinhada às marcações, sem descrição da escala competindo com o comentário.
+- Elenco com seis nomes e “Ver elenco completo”/“Ver menos”, sem limitar a edição.
+- Remoção de funções repetidas em direção/roteiro, origem manual nas sessões e seção pública de listas vazias.
+- Publicação mantida em 1.14.0, com atualização explícita da tag existente solicitada pelo owner.
+
+Validar ausência de overflow em desktop e celular, expansão do elenco e acesso à galeria, além dos checks do frontend e build de produção.

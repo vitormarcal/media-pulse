@@ -15,7 +15,7 @@
         <p class="group-label">{{ group.title }}</p>
 
         <div class="chip-list">
-          <div v-for="item in group.items" :key="item.id" class="person-pill">
+          <div v-for="item in visiblePeople(group)" :key="item.id" class="person-pill">
             <div class="person-avatar">
               <img
                 v-if="resolveMediaUrl(item.profileUrl)"
@@ -27,7 +27,9 @@
 
             <div class="person-copy">
               <NuxtLink :to="item.href" class="person-name">{{ item.name }}</NuxtLink>
-              <small class="person-role">{{ item.roleLabel }}</small>
+              <small v-if="item.roleLabel && item.roleLabel !== group.title" class="person-role">{{
+                item.roleLabel
+              }}</small>
             </div>
             <button
               v-if="editingEnabled"
@@ -42,6 +44,15 @@
             </button>
           </div>
         </div>
+        <button
+          v-if="group.id === 'cast' && group.items.length > 6 && !editingEnabled"
+          type="button"
+          class="ghost-button cast-toggle"
+          :aria-expanded="castExpanded"
+          @click="castExpanded = !castExpanded"
+        >
+          {{ castExpanded ? 'Ver menos' : 'Ver elenco completo' }}
+        </button>
       </section>
 
       <p v-if="!people.groups.length" class="empty-copy">
@@ -260,6 +271,11 @@ const linkGroup = ref<'DIRECTORS' | 'WRITERS' | 'CAST'>('DIRECTORS')
 const linkRoleLabel = ref('')
 const suggestions = ref<PersonSuggestionDto[]>([])
 const editingEnabled = computed(() => props.editing ?? false)
+const castExpanded = ref(false)
+function visiblePeople(group: MoviePageData['people']['groups'][number]) {
+  return group.id === 'cast' && !castExpanded.value && !editingEnabled.value ? group.items.slice(0, 6) : group.items
+}
+
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const normalizedSearchQuery = computed(() => searchQuery.value.trim().replace(/\s+/g, ' ').toLowerCase())
@@ -539,6 +555,10 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.cast-toggle {
+  justify-self: start;
+  min-height: 44px;
+}
 .people-card {
   display: grid;
   gap: 18px;

@@ -4,7 +4,7 @@
       <NuxtLink class="back-link" to="/movies"> Voltar para filmes </NuxtLink>
     </div>
 
-    <div class="hero-grid" :class="{ 'without-images': !gallery.length }" :style="heroShellStyle">
+    <div class="hero-grid" :class="{ 'without-images': !gallery.length }">
       <div class="copy">
         <p class="eyebrow">Filme</p>
         <h1 ref="heading" tabindex="-1">{{ title }}</h1>
@@ -13,9 +13,9 @@
       </div>
 
       <div v-if="gallery.length" class="gallery-preview">
-        <div class="gallery" :class="`images-${gallery.length}`">
+        <div class="gallery" :class="`images-${previewImages.length}`">
           <button
-            v-for="(image, index) in gallery"
+            v-for="(image, index) in previewImages"
             :key="`${image}-${index}`"
             type="button"
             class="gallery-item"
@@ -48,14 +48,7 @@ const viewAllButton = ref<HTMLButtonElement>()
 const heading = ref<HTMLHeadingElement>()
 defineExpose({ focusGallery: () => (viewAllButton.value || heading.value)?.focus() })
 const { resolveMediaUrl } = useMediaUrl()
-const heroImageUrl = computed(() => props.gallery.map((image) => resolveMediaUrl(image)).find(Boolean) ?? null)
-const heroShellStyle = computed(() =>
-  heroImageUrl.value
-    ? {
-        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${heroImageUrl.value}")`,
-      }
-    : undefined,
-)
+const previewImages = computed(() => (props.gallery.length <= 2 ? props.gallery.slice(0, 1) : props.gallery))
 </script>
 
 <style scoped>
@@ -96,7 +89,7 @@ const heroShellStyle = computed(() =>
 
 .copy {
   display: grid;
-  align-content: end;
+  align-content: center;
   gap: 12px;
 }
 
@@ -111,9 +104,9 @@ const heroShellStyle = computed(() =>
 
 h1 {
   margin: 0;
-  font-size: clamp(3rem, 7vw, 5.8rem);
+  font-size: clamp(2rem, 4.2vw, 3.5rem);
   line-height: 0.92;
-  letter-spacing: -0.07em;
+  letter-spacing: -0.04em;
 }
 
 .subtitle {
@@ -140,10 +133,13 @@ h1 {
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
   grid-template-rows: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  height: clamp(320px, 38vw, 520px);
+  height: clamp(240px, 26vw, 340px);
 }
 .gallery.images-1 {
   grid-template-columns: minmax(0, 1fr);
+}
+.gallery.images-1 :deep(img) {
+  object-fit: contain;
 }
 .gallery.images-2 {
   grid-template-rows: minmax(0, 1fr);
@@ -204,7 +200,7 @@ h1 {
     grid-template-columns: 1fr;
   }
   .gallery {
-    height: clamp(280px, 60vw, 420px);
+    height: clamp(240px, 50vw, 320px);
   }
 }
 .hero-grid.without-images {

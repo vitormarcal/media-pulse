@@ -25,7 +25,7 @@
           </div>
         </div>
 
-        <p v-if="currentScaleItem" class="compact-copy">{{ currentScaleItem.compactHint }}</p>
+        <p v-if="currentScaleItem && !minimal" class="compact-copy">{{ currentScaleItem.compactHint }}</p>
         <p v-if="errorMessage" class="feedback error">{{ errorMessage }}</p>
       </template>
 

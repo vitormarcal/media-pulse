@@ -72,8 +72,12 @@
       </MediaImageGallery>
       <p v-if="imageMessage && !data.gallery.length" role="status">{{ imageMessage }}</p>
 
-      <div class="personal-context">
+      <div
+        v-if="owner.authenticated || data.favorite || data.abandoned || data.rating != null"
+        class="personal-context"
+      >
         <MediaPersonalMarks
+          v-if="owner.authenticated || data.favorite || data.abandoned"
           :key="data.movieId"
           v-model:favorite="data.favorite"
           v-model:abandoned="data.abandoned"
@@ -87,6 +91,7 @@
           :entity-id="data.movieId"
           :initial-rating="data.rating"
           compact
+          minimal
         />
       </div>
 
@@ -199,7 +204,7 @@
 
       <MovieCollectionPanel :collection="data.collection" @added="handleCatalogAdded" />
       <MovieCollectionTagsPanel v-if="owner.authenticated" :key="data.movieId" :movie-id="data.movieId" />
-      <section class="movie-details" aria-label="Listas">
+      <section v-if="owner.authenticated || data.lists.items.length" class="movie-details" aria-label="Listas">
         <button
           v-if="owner.authenticated"
           class="edit-button"
@@ -471,8 +476,13 @@ function toggleAction(action: MovieAction) {
   gap: 20px;
 }
 .personal-context {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 32px;
+}
+.personal-context :deep(.compact-row) {
+  justify-content: flex-start;
 }
 .section-header {
   display: flex;
@@ -500,11 +510,6 @@ function toggleAction(action: MovieAction) {
 .edit-button:focus-visible {
   outline: 3px solid var(--base-color-focus);
   outline-offset: 3px;
-}
-@media (max-width: 720px) {
-  .personal-context {
-    grid-template-columns: 1fr;
-  }
 }
 
 .state-card {
