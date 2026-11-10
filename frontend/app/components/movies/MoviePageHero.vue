@@ -136,10 +136,21 @@ h1 {
   height: clamp(240px, 26vw, 340px);
 }
 .gallery.images-1 {
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  justify-content: center;
+  height: auto;
+}
+.gallery.images-1 .gallery-item {
+  display: flex;
+  max-width: 100%;
+  background: transparent;
 }
 .gallery.images-1 :deep(img) {
-  object-fit: contain;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 440px;
+  border-radius: 28px;
 }
 .gallery.images-2 {
   grid-template-rows: minmax(0, 1fr);
@@ -201,6 +212,11 @@ h1 {
   }
   .gallery {
     height: clamp(240px, 50vw, 320px);
+  }
+}
+@media (max-width: 576px) {
+  .gallery.images-1 :deep(img) {
+    max-height: 380px;
   }
 }
 .hero-grid.without-images {

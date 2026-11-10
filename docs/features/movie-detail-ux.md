@@ -21,3 +21,5 @@ A página publicada de The Last House foi revisada em desktop e celular. Foram i
 - Publicação mantida em 1.14.0, com atualização explícita da tag existente solicitada pelo owner.
 
 Validar ausência de overflow em desktop e celular, expansão do elenco e acesso à galeria, além dos checks do frontend e build de produção.
+
+Correção visual: a capa única com `contain` dentro de uma caixa larga ganhou faixas cinzas e pareceu menor em produção. A prévia passa a seguir a proporção natural da imagem, sem fundo lateral, com altura máxima de 440px no desktop e 380px no celular. Manter a imagem integral e validar medidas renderizadas e acesso à galeria. Correção incluída na versão 1.14.0 existente.
