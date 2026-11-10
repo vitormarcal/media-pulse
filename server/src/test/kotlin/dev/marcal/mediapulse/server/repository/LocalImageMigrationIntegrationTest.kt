@@ -70,7 +70,7 @@ class LocalImageMigrationIntegrationTest {
     @BeforeEach
     fun reset() {
         jdbc.execute(
-            "TRUNCATE local_image_migrations, movies, games, magazine_publications, artworks, artwork_artists, books, artists RESTART IDENTITY CASCADE",
+            "TRUNCATE local_image_migrations, movies, tv_shows, games, magazine_publications, artworks, artwork_artists, books, artists RESTART IDENTITY CASCADE",
         )
         Files.walk(root).use { paths -> paths.filter { it != root }.sorted(Comparator.reverseOrder()).forEach(Files::deleteIfExists) }
         clearMocks(remote, artworks)
@@ -467,6 +467,30 @@ class LocalImageMigrationIntegrationTest {
                     it.sourceReference.entityType == "movie" &&
                         it.sourceReference.entityId == "100" &&
                         it.tags == listOf("filme", "Filme")
+                },
+            )
+        }
+    }
+
+    @Test
+    fun `shows migrate with shared game links and merge remote gallery duplicate preserving original row and primary`() {
+        val url = file("show.png")
+        game(url)
+        jdbc.update("INSERT INTO tv_shows(id, original_title, fingerprint, cover_url) VALUES (100, 'Série', 'show', ?)", url)
+        jdbc.update("INSERT INTO tv_show_images(show_id,url,is_primary) VALUES (100,?,false),(100,?,true)", url, asset)
+        val originalId = jdbc.queryForObject("SELECT id FROM tv_show_images WHERE url=?", Long::class.java, url)
+        service().runBatch()
+        assertEquals(asset, jdbc.queryForObject("SELECT cover_url FROM tv_shows WHERE id=100", String::class.java))
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM tv_show_images WHERE show_id=100", Int::class.java))
+        assertEquals(asset, jdbc.queryForObject("SELECT url FROM tv_show_images WHERE id=? AND is_primary", String::class.java, originalId))
+        assertFalse(exists(url))
+        verify(exactly = 2) {
+            remote.upload(
+                any(),
+                match {
+                    it.sourceReference.entityType == "tv_show" &&
+                        it.sourceReference.entityId == "100" &&
+                        it.tags == listOf("série", "Série")
                 },
             )
         }

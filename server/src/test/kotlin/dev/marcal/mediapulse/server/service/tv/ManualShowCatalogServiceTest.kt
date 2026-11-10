@@ -12,7 +12,7 @@ import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowTitleCrudRepository
-import dev.marcal.mediapulse.server.service.image.ImageStorageService
+import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -35,7 +35,7 @@ class ManualShowCatalogServiceTest {
     private lateinit var tvShowImageCrudRepository: TvShowImageCrudRepository
     private lateinit var tmdbApiClient: TmdbApiClient
     private lateinit var tmdbImageClient: TmdbImageClient
-    private lateinit var imageStorageService: ImageStorageService
+    private lateinit var imageStorageService: LibraryImageStorageService
     private lateinit var service: ManualShowCatalogService
 
     @BeforeEach
@@ -44,6 +44,7 @@ class ManualShowCatalogServiceTest {
         tvShowTitleCrudRepository = mockk(relaxed = true)
         tvEpisodeRepository = mockk(relaxed = true)
         tvShowImageCrudRepository = mockk(relaxed = true)
+        every { tvShowImageCrudRepository.lockShowRowForPrimaryUpdate(any()) } answers { firstArg() }
         every { tvEpisodeRepository.findByTmdbId(any()) } returns null
         tmdbApiClient = mockk(relaxed = true)
         tmdbImageClient = mockk(relaxed = true)
@@ -59,7 +60,7 @@ class ManualShowCatalogServiceTest {
                 tvShowRepository = tvShowRepository,
                 tvShowTitleCrudRepository = tvShowTitleCrudRepository,
                 tvEpisodeRepository = tvEpisodeRepository,
-                tvShowImageCrudRepository = tvShowImageCrudRepository,
+                tvShowImagePrimaryService = TvShowImagePrimaryService(tvShowImageCrudRepository, tvShowRepository),
                 tmdbApiClient = tmdbApiClient,
                 tmdbImageClient = tmdbImageClient,
                 imageStorageService = imageStorageService,
@@ -187,7 +188,7 @@ class ManualShowCatalogServiceTest {
             ImageContent(bytes = byteArrayOf(1, 2, 3), contentType = MediaType.IMAGE_JPEG)
         every { tmdbImageClient.downloadImage("https://image.tmdb.org/t/p/w780/backdrop.jpg") } returns
             ImageContent(bytes = byteArrayOf(4, 5, 6), contentType = MediaType.IMAGE_JPEG)
-        every { imageStorageService.saveImageForTvShow(any(), "TMDB", 51, any()) } returnsMany
+        every { imageStorageService.saveShow(any(), 51, "Severance", "TMDB", any()) } returnsMany
             listOf(
                 "/covers/tmdb/tv-shows/51/51_severance_poster.jpg",
                 "/covers/tmdb/tv-shows/51/51_severance_backdrop.jpg",
@@ -214,10 +215,10 @@ class ManualShowCatalogServiceTest {
             tvShowImageCrudRepository.insertIgnore(
                 51,
                 "/covers/tmdb/tv-shows/51/51_severance_poster.jpg",
-                true,
+                false,
             )
         }
-        verify(exactly = 1) { tvShowRepository.save(match { it.id == 51L && it.coverUrl != null }) }
+        verify(exactly = 1) { tvShowRepository.updateCover(51, "/covers/tmdb/tv-shows/51/51_severance_poster.jpg") }
     }
 
     @Test

@@ -73,7 +73,7 @@ class LocalImageMigrationRepository(
     fun lockReferences() {
         jdbc.execute("SET LOCAL lock_timeout = '2s'")
         jdbc.execute(
-            "LOCK TABLE books, book_editions, magazine_issues, artwork_images, artwork_artists, artworks, games, game_images, movies, movie_images IN SHARE ROW EXCLUSIVE MODE",
+            "LOCK TABLE books, book_editions, magazine_issues, artwork_images, artwork_artists, artworks, games, game_images, movies, movie_images, tv_shows, tv_show_images IN SHARE ROW EXCLUSIVE MODE",
         )
     }
 
@@ -96,6 +96,13 @@ class LocalImageMigrationRepository(
                         { rs, _ -> rs.getString(1) },
                         reference.entityId,
                     ).singleOrNull()
+            LocalImageTarget.SHOW_COVER, LocalImageTarget.SHOW_IMAGE ->
+                jdbc
+                    .query(
+                        "SELECT original_title FROM tv_shows WHERE id = ?",
+                        { rs, _ -> rs.getString(1) },
+                        reference.entityId,
+                    ).singleOrNull()
             LocalImageTarget.GAME_COVER, LocalImageTarget.GAME_IMAGE ->
                 jdbc.query("SELECT title FROM games WHERE id = ?", { rs, _ -> rs.getString(1) }, reference.entityId).singleOrNull()
             LocalImageTarget.BOOK, LocalImageTarget.BOOK_EDITION ->
@@ -114,7 +121,9 @@ class LocalImageMigrationRepository(
         newUrl: String,
     ) {
         val target = reference.target
-        if (target in setOf(LocalImageTarget.GAME_IMAGE, LocalImageTarget.MOVIE_IMAGE)) mergeGalleryDuplicate(reference, newUrl)
+        if (target in setOf(LocalImageTarget.GAME_IMAGE, LocalImageTarget.MOVIE_IMAGE, LocalImageTarget.SHOW_IMAGE)) {
+            mergeGalleryDuplicate(reference, newUrl)
+        }
         check(
             jdbc.update(
                 "UPDATE ${target.table} SET ${target.column} = ? WHERE id = ? AND ${target.column} = ?",
@@ -185,8 +194,6 @@ class LocalImageMigrationRepository(
                 "artists" to "profile_image_url",
                 "movies" to "cover_url",
                 "movie_images" to "url",
-                "tv_shows" to "cover_url",
-                "tv_show_images" to "url",
                 "workouts" to "photo_url",
                 "people" to "profile_url",
                 "movie_companies" to "logo_url",

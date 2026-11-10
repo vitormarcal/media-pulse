@@ -1,12 +1,23 @@
 package dev.marcal.mediapulse.server.repository.crud
 
 import dev.marcal.mediapulse.server.model.tv.TvShow
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 
 interface TvShowRepository : CrudRepository<TvShow, Long> {
     @Query(value = "SELECT * FROM tv_shows WHERE id = :showId FOR UPDATE", nativeQuery = true)
     fun findByIdForUpdate(showId: Long): TvShow?
+
+    @Query(value = "SELECT cover_url FROM tv_shows WHERE id = :showId", nativeQuery = true)
+    fun storedCover(showId: Long): String?
+
+    @Modifying
+    @Query(value = "UPDATE tv_shows SET cover_url = :url, updated_at = now() WHERE id = :showId", nativeQuery = true)
+    fun updateCover(
+        showId: Long,
+        url: String,
+    ): Int
 
     fun findByFingerprint(fingerprint: String): TvShow?
 

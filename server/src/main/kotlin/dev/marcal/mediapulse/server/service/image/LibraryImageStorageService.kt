@@ -88,6 +88,22 @@ class LibraryImageStorageService(
         }
     }
 
+    fun saveShow(
+        image: ImageContent,
+        showId: Long,
+        title: String,
+        provider: String,
+        fileHint: String,
+    ): String {
+        val validated = LibraryImageValidator.validate(image.bytes)
+        return if (visualLibrary.enabled) {
+            visualLibrary.upload(validated, VisualLibraryUploadMetadata.forEntity("tv_show", showId, "série", title))
+        } else {
+            val localHint = if (visualLibrary.migrationEnabled) "${fileHint}_${UUID.randomUUID()}" else fileHint
+            storage.saveImageForTvShow(validated, provider, showId, localHint)
+        }
+    }
+
     companion object {
         const val MAX_BYTES = 10 * 1024 * 1024
     }

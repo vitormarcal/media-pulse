@@ -9,10 +9,9 @@ import dev.marcal.mediapulse.server.model.tv.TvEpisode
 import dev.marcal.mediapulse.server.model.tv.TvShow
 import dev.marcal.mediapulse.server.model.tv.TvShowTitleSource
 import dev.marcal.mediapulse.server.repository.crud.TvEpisodeRepository
-import dev.marcal.mediapulse.server.repository.crud.TvShowImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowTitleCrudRepository
-import dev.marcal.mediapulse.server.service.image.ImageStorageService
+import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.SlugTextUtil
 import org.apache.commons.codec.digest.DigestUtils
@@ -27,10 +26,10 @@ class ManualShowCatalogService(
     private val tvShowRepository: TvShowRepository,
     private val tvShowTitleCrudRepository: TvShowTitleCrudRepository,
     private val tvEpisodeRepository: TvEpisodeRepository,
-    private val tvShowImageCrudRepository: TvShowImageCrudRepository,
+    private val tvShowImagePrimaryService: TvShowImagePrimaryService,
     private val tmdbApiClient: TmdbApiClient,
     private val tmdbImageClient: TmdbImageClient,
-    private val imageStorageService: ImageStorageService,
+    private val imageStorageService: LibraryImageStorageService,
     private val tmdbProperties: TmdbProperties,
 ) {
     data class TmdbShowSnapshot(
@@ -261,24 +260,15 @@ class ManualShowCatalogService(
                 runCatching {
                     val image = tmdbImageClient.downloadImage(candidate.imageUrl)
                     val fileHint = "${show.originalTitle}_${DigestUtils.sha1Hex(candidate.imageUrl).take(12)}"
-                    imageStorageService.saveImageForTvShow(image, "TMDB", show.id, fileHint) to candidate
+                    imageStorageService.saveShow(image, show.id, show.originalTitle, "TMDB", fileHint) to candidate
                 }.getOrNull()
             }
         if (savedImages.isEmpty()) return TmdbImageAssignmentResult(0)
 
-        val primaryPath =
-            selection?.primaryKey?.let { key -> savedImages.firstOrNull { it.second.key == key }?.first }
-                ?: savedImages.firstOrNull { it.second.suggestedAsPrimary }?.first
-                ?: savedImages.first().first
-        savedImages.forEach { (path, _) -> tvShowImageCrudRepository.insertIgnore(show.id, path, false) }
-        val promote = selection?.primaryKey != null || !tvShowImageCrudRepository.existsByShowIdAndIsPrimaryTrue(show.id)
-        if (promote) {
-            tvShowImageCrudRepository.lockShowRowForPrimaryUpdate(show.id)
-            tvShowImageCrudRepository.clearPrimaryForShow(show.id)
-            tvShowImageCrudRepository.markPrimaryForShow(show.id, primaryPath)
-            tvShowRepository.save(show.copy(coverUrl = primaryPath, updatedAt = Instant.now()))
-        }
-        return TmdbImageAssignmentResult(savedImages.size, if (promote) primaryPath else null)
+        val explicitPrimary = selection?.primaryKey?.let { key -> savedImages.firstOrNull { it.second.key == key }?.first }
+        val primaryPath = explicitPrimary ?: savedImages.firstOrNull { it.second.suggestedAsPrimary }?.first ?: savedImages.first().first
+        val assigned = tvShowImagePrimaryService.assign(show.id, savedImages.map { it.first }, primaryPath, explicitPrimary != null)
+        return TmdbImageAssignmentResult(savedImages.size, assigned)
     }
 
     private data class ShowUpsertResult(
@@ -614,11 +604,12 @@ class ManualShowCatalogService(
                     val fullUrl = buildTmdbImageUrl(path)
                     val image = tmdbImageClient.downloadImage(fullUrl)
                     val fileHint = "${show.originalTitle}_${DigestUtils.sha1Hex(fullUrl).take(12)}"
-                    imageStorageService.saveImageForTvShow(
+                    imageStorageService.saveShow(
                         image = image,
                         provider = "TMDB",
                         showId = show.id,
-                        fileNameHint = fileHint,
+                        fileHint = fileHint,
+                        title = show.originalTitle,
                     )
                 }.getOrNull() ?: return@forEach
             savedImages += localPath to preferredPrimary
@@ -626,29 +617,8 @@ class ManualShowCatalogService(
 
         if (savedImages.isEmpty()) return false
 
-        val hasPrimaryImage = tvShowImageCrudRepository.existsByShowIdAndIsPrimaryTrue(show.id)
-        if (hasPrimaryImage) {
-            savedImages.forEach { (localPath, _) ->
-                tvShowImageCrudRepository.insertIgnore(show.id, localPath, false)
-            }
-            return false
-        }
-
-        val primaryLocalPath = savedImages.firstOrNull { it.second }?.first ?: savedImages.first().first
-
-        savedImages.forEach { (localPath, _) ->
-            tvShowImageCrudRepository.insertIgnore(
-                showId = show.id,
-                url = localPath,
-                isPrimary = localPath == primaryLocalPath,
-            )
-        }
-
-        if (show.coverUrl == null) {
-            tvShowRepository.save(show.copy(coverUrl = primaryLocalPath, updatedAt = Instant.now()))
-        }
-
-        return true
+        val preferred = savedImages.firstOrNull { it.second }?.first ?: savedImages.first().first
+        return tvShowImagePrimaryService.assign(show.id, savedImages.map { it.first }, preferred) != null
     }
 
     private fun resolveSlug(title: String): String? {

@@ -65,7 +65,7 @@ A flag controla somente novos uploads. Ao desligá-la, mantenha `VISUAL_LIBRARY_
 
 Rotina introduzida no backend **1.5.0**; o escopo atual inclui também livros e edições.
 
-Escopo aprovado em [migração do acervo local](features/visual-library-local-migration.md): somente `magazine_issues.cover_url`, `artwork_images.url`, `artwork_artists.portrait_url`, `games.cover_url`, `game_images.url`, `books.cover_url` `book_editions.cover_url`, `movies.cover_url` e `movie_images.url` que começam com `/covers/`. A migração abrange todos os tipos de entidade atualmente enviados ao Visual Library: `magazine_issue`, `artwork`, `artwork_artist`, `game`, `book`, `book_edition` e `movie`. Música, séries e treinos não são migrados porque ainda não utilizam esse armazenamento. URLs externas, assets já remotos, imagens estáticas e arquivos órfãos anteriores também não entram na rotina. Nenhuma mudança no frontend ou em endpoints públicos.
+Escopo aprovado em [migração do acervo local](features/visual-library-local-migration.md): somente `magazine_issues.cover_url`, `artwork_images.url`, `artwork_artists.portrait_url`, `games.cover_url`, `game_images.url`, `books.cover_url`, `book_editions.cover_url`, `movies.cover_url`, `movie_images.url`, `tv_shows.cover_url` e `tv_show_images.url` que começam com `/covers/`. A migração abrange todos os tipos de entidade atualmente enviados ao Visual Library: `magazine_issue`, `artwork`, `artwork_artist`, `game`, `book`, `book_edition`, `movie` e `tv_show`. Música e treinos não são migrados porque ainda não utilizam esse armazenamento. URLs externas, assets já remotos, imagens estáticas e arquivos órfãos anteriores também não entram na rotina. Nenhuma mudança no frontend ou em endpoints públicos.
 
 Para habilitar e reiniciar a aplicação:
 
@@ -259,3 +259,12 @@ Uma imagem PNG de aproximadamente 6,5 MB, sem referência no banco e sem registr
 Após análise das cópias e autorização explícita do proprietário, as três pendências foram tratadas separadamente: o PNG órfão foi excluído depois de confirmar ausência de referências e seu SHA-256; os dois vínculos não principais de Evangelion e suas duas tentativas de migração sem destino remoto foram removidos em transação com verificações de identidade e capa. Resultado: nenhum arquivo local de filme, nenhuma capa ou imagem de galeria de filme em `/covers/`, nenhuma migração pendente e nenhuma limpeza pendente. As quatro imagens remotas e a capa de Evangelion foram mantidas; a API do filme e a capa responderam HTTP 200. Nenhum asset do Visual Library foi excluído.
 
 Por autorização posterior, os diretórios vazios `covers/plex/movies` e `covers/tmdb/movies` também foram removidos, após nova verificação de ausência de arquivos, links simbólicos e referências aos dois prefixos nas colunas textuais do banco, exceto o histórico de migração. As pastas superiores dos provedores foram preservadas.
+
+
+## Imagens de séries
+
+Imagens de séries do Plex e do TMDb usam o Visual Library quando os novos uploads estão habilitados. Cada envio leva a referência `tv_show` com o ID da série e as sugestões de tags `série` e título original. Com uploads desabilitados, o arquivo fica no armazenamento local. O vínculo na galeria só é gravado após o armazenamento bem-sucedido.
+
+A atribuição de principal consulta a capa persistida sob lock. Imports automáticos só escolhem capa na ausência de capa e principal. O enriquecimento pode substituir a capa por escolha explícita de uma imagem salva com sucesso. Atualizações de metadados por JPA não gravam a coluna de capa de séries, protegendo referências atualizadas em paralelo pela migração.
+
+A migração opcional inclui `tv_shows.cover_url` e `tv_show_images.url` sob `/covers/`. O worker verifica os bytes remotos, atualiza os vínculos e consolida referências duplicadas preservando a seleção principal. A limpeza segue as verificações e a retomada do fluxo existente. Consulte o [escopo de séries](features/show-visual-library.md).

@@ -275,3 +275,8 @@ Resumos e detalhes retornam `includeFavorites` e `includeAbandoned`. O detalhe i
 A reordenação recebe somente os IDs manuais, e a capa fixa é escolhida entre eles. Itens automáticos seguem os manuais, por ID crescente. Os painéis na página da obra continuam gerenciando vínculos manuais.
 
 Especificação, critérios de aceite e roadmap: [Listas mistas](features/mixed-media-lists.md).
+
+
+## Imagens no Visual Library
+
+A importação de imagens de séries pelo Plex e pelo TMDb respeita a configuração de armazenamento do Visual Library. As URLs de capa e galeria seguem o contrato atual. A migração opcional inclui o acervo local de capas e galerias de séries, com preservação da imagem principal. Consulte a [configuração de imagens](visual-library-images.md#imagens-de-séries).

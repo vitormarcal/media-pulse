@@ -5,7 +5,7 @@ import dev.marcal.mediapulse.server.model.image.ImageContent
 import dev.marcal.mediapulse.server.model.tv.TvShow
 import dev.marcal.mediapulse.server.repository.crud.TvShowImageCrudRepository
 import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
-import dev.marcal.mediapulse.server.service.image.ImageStorageService
+import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
 import dev.marcal.mediapulse.server.service.tv.TvShowImagePrimaryService
 import io.mockk.coEvery
 import io.mockk.every
@@ -15,11 +15,10 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
-import kotlin.test.assertEquals
 
 class PlexShowArtworkServiceTest {
     private lateinit var plexApiClient: PlexApiClient
-    private lateinit var imageStorageService: ImageStorageService
+    private lateinit var imageStorageService: LibraryImageStorageService
     private lateinit var tvShowImageCrudRepository: TvShowImageCrudRepository
     private lateinit var tvShowImagePrimaryService: TvShowImagePrimaryService
     private lateinit var tvShowRepository: TvShowRepository
@@ -30,16 +29,15 @@ class PlexShowArtworkServiceTest {
         plexApiClient = mockk(relaxed = true)
         imageStorageService = mockk(relaxed = true)
         tvShowImageCrudRepository = mockk(relaxed = true)
-        tvShowImagePrimaryService = mockk(relaxed = true)
         tvShowRepository = mockk(relaxed = true)
+        tvShowImagePrimaryService = TvShowImagePrimaryService(tvShowImageCrudRepository, tvShowRepository)
+        every { tvShowImageCrudRepository.lockShowRowForPrimaryUpdate(any()) } answers { firstArg() }
 
         service =
             PlexShowArtworkService(
                 plexApi = plexApiClient,
                 imageStorageService = imageStorageService,
-                tvShowImageCrudRepository = tvShowImageCrudRepository,
                 tvShowImagePrimaryService = tvShowImagePrimaryService,
-                tvShowRepository = tvShowRepository,
             )
     }
 
@@ -51,18 +49,18 @@ class PlexShowArtworkServiceTest {
 
             coEvery { plexApiClient.downloadImageContent(any()) } returns imageContent
             every {
-                imageStorageService.saveImageForTvShow(
+                imageStorageService.saveShow(
                     image = any(),
                     provider = "PLEX",
                     showId = 10,
-                    fileNameHint = any(),
+                    fileHint = any(),
+                    title = show.originalTitle,
                 )
             } returnsMany
                 listOf(
                     "/covers/plex/tv-shows/10/background.jpg",
                     "/covers/plex/tv-shows/10/poster.jpg",
                 )
-            every { tvShowRepository.save(any()) } answers { firstArg() }
 
             val images =
                 listOf(
@@ -73,8 +71,8 @@ class PlexShowArtworkServiceTest {
             service.ensureShowImagesFromPlex(show = show, images = images, fallbackThumbPath = null)
 
             verify(exactly = 2) { tvShowImageCrudRepository.insertIgnore(showId = 10, url = any(), isPrimary = false) }
-            verify(exactly = 1) { tvShowImagePrimaryService.setPrimaryForShow(10, "/covers/plex/tv-shows/10/poster.jpg") }
-            verify(exactly = 1) { tvShowRepository.save(match { it.coverUrl == "/covers/plex/tv-shows/10/poster.jpg" }) }
+            verify(exactly = 1) { tvShowImageCrudRepository.markPrimaryForShow(10, "/covers/plex/tv-shows/10/poster.jpg") }
+            verify(exactly = 1) { tvShowRepository.updateCover(10, "/covers/plex/tv-shows/10/poster.jpg") }
         }
 
     @Test
@@ -85,14 +83,14 @@ class PlexShowArtworkServiceTest {
 
             coEvery { plexApiClient.downloadImageContent(any()) } returns imageContent
             every {
-                imageStorageService.saveImageForTvShow(
+                imageStorageService.saveShow(
                     image = any(),
                     provider = "PLEX",
                     showId = 11,
-                    fileNameHint = any(),
+                    fileHint = any(),
+                    title = show.originalTitle,
                 )
             } returns "/covers/plex/tv-shows/11/cover.jpg"
-            every { tvShowRepository.save(any()) } answers { firstArg() }
 
             service.ensureShowImagesFromPlex(
                 show = show,
@@ -101,10 +99,20 @@ class PlexShowArtworkServiceTest {
             )
 
             verify(exactly = 1) { tvShowImageCrudRepository.insertIgnore(11, "/covers/plex/tv-shows/11/cover.jpg", false) }
-            verify(exactly = 1) { tvShowImagePrimaryService.setPrimaryForShow(11, "/covers/plex/tv-shows/11/cover.jpg") }
-            io.mockk.slot<TvShow>().also { slot ->
-                verify(exactly = 1) { tvShowRepository.save(capture(slot)) }
-                assertEquals("/covers/plex/tv-shows/11/cover.jpg", slot.captured.coverUrl)
-            }
+            verify(exactly = 1) { tvShowImageCrudRepository.markPrimaryForShow(11, "/covers/plex/tv-shows/11/cover.jpg") }
+            verify(exactly = 1) { tvShowRepository.updateCover(11, "/covers/plex/tv-shows/11/cover.jpg") }
+        }
+
+    @Test
+    fun `failed upload does not change gallery or cover`() =
+        runBlocking {
+            val show = TvShow(id = 12, originalTitle = "Dark", coverUrl = "chosen", fingerprint = "fp3")
+            coEvery { plexApiClient.downloadImageContent(any()) } returns ImageContent(byteArrayOf(1), MediaType.IMAGE_JPEG)
+            every { imageStorageService.saveShow(any(), 12, "Dark", "PLEX", any()) } throws IllegalStateException("unavailable")
+
+            service.ensureShowImagesFromPlex(show, emptyList(), "/thumb")
+
+            verify(exactly = 0) { tvShowImageCrudRepository.insertIgnore(any(), any(), any()) }
+            verify(exactly = 0) { tvShowRepository.updateCover(any(), any()) }
         }
 }

@@ -1,22 +1,17 @@
 package dev.marcal.mediapulse.server.service.plex
 
 import dev.marcal.mediapulse.server.model.tv.TvShow
-import dev.marcal.mediapulse.server.repository.crud.TvShowImageCrudRepository
-import dev.marcal.mediapulse.server.repository.crud.TvShowRepository
-import dev.marcal.mediapulse.server.service.image.ImageStorageService
+import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
 import dev.marcal.mediapulse.server.service.tv.TvShowImagePrimaryService
 import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.time.Instant
 
 @Service
 class PlexShowArtworkService(
     private val plexApi: dev.marcal.mediapulse.server.integration.plex.PlexApiClient,
-    private val imageStorageService: ImageStorageService,
-    private val tvShowImageCrudRepository: TvShowImageCrudRepository,
+    private val imageStorageService: LibraryImageStorageService,
     private val tvShowImagePrimaryService: TvShowImagePrimaryService,
-    private val tvShowRepository: TvShowRepository,
 ) {
     data class PlexShowImageCandidate(
         val url: String?,
@@ -50,11 +45,12 @@ class PlexShowArtworkService(
                 val image = plexApi.downloadImageContent(sourceUrl)
                 val fileHint = "${show.originalTitle}_${DigestUtils.sha1Hex(sourceUrl).take(12)}"
                 val localPath =
-                    imageStorageService.saveImageForTvShow(
+                    imageStorageService.saveShow(
                         image = image,
                         provider = "PLEX",
                         showId = show.id,
-                        fileNameHint = fileHint,
+                        fileHint = fileHint,
+                        title = show.originalTitle,
                     )
                 savedBySource[sourceUrl] = localPath
             }.onFailure { ex ->
@@ -70,25 +66,7 @@ class PlexShowArtworkService(
 
         if (savedBySource.isEmpty()) return
 
-        savedBySource.values.forEach { localPath ->
-            tvShowImageCrudRepository.insertIgnore(
-                showId = show.id,
-                url = localPath,
-                isPrimary = false,
-            )
-        }
-
-        val primaryLocalPath = savedBySource[preferredPrimarySource] ?: savedBySource.values.first()
-
-        tvShowImagePrimaryService.setPrimaryForShow(show.id, primaryLocalPath)
-
-        if (show.coverUrl != primaryLocalPath) {
-            tvShowRepository.save(
-                show.copy(
-                    coverUrl = primaryLocalPath,
-                    updatedAt = Instant.now(),
-                ),
-            )
-        }
+        val preferred = savedBySource[preferredPrimarySource] ?: savedBySource.values.first()
+        tvShowImagePrimaryService.assign(show.id, savedBySource.values.toList(), preferred)
     }
 }

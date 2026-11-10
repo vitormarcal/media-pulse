@@ -43,11 +43,13 @@ class LibraryImageStorageServiceTest {
         service.saveBook(image, 7, "Edição", "HARDCOVER", 8)
         service.saveGame(image, 7, "Jogo", "STEAMGRIDDB", "grid")
         service.saveMovie(image, 9, "Filme", "TMDB", "poster")
+        service.saveShow(image, 10, "Série", "TMDB", "poster")
         for ((type, id, tag) in listOf(
             Triple("book", "7", "livro"),
             Triple("book_edition", "8", "livro"),
             Triple("game", "7", "jogo"),
             Triple("movie", "9", "filme"),
+            Triple("tv_show", "10", "série"),
         )) {
             verify {
                 remote.upload(
@@ -100,6 +102,15 @@ class LibraryImageStorageServiceTest {
                 book,
                 game,
                 movie,
+                service.saveShow(
+                    image,
+                    10,
+                    "Série",
+                    "TMDB",
+                    java.util.UUID
+                        .randomUUID()
+                        .toString(),
+                ),
             )) {
                 assertContentEquals(bytes, Files.readAllBytes(root.resolve(url.removePrefix("/covers/"))))
             }

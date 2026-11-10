@@ -13,6 +13,8 @@ enum class LocalImageTarget(
     ARTIST("artwork_artists", "portrait_url"),
     MOVIE_COVER("movies", "cover_url"),
     MOVIE_IMAGE("movie_images", "url", "movie_id"),
+    SHOW_COVER("tv_shows", "cover_url"),
+    SHOW_IMAGE("tv_show_images", "url", "show_id"),
     GAME_COVER("games", "cover_url"),
     GAME_IMAGE("game_images", "url", "game_id"),
 }

@@ -19,7 +19,7 @@ data class TvShow(
     val description: String? = null,
     @Column(name = "year")
     val year: Int? = null,
-    @Column(name = "cover_url")
+    @Column(name = "cover_url", updatable = false)
     val coverUrl: String? = null,
     @Column(name = "slug")
     val slug: String? = null,

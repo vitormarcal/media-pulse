@@ -125,6 +125,8 @@ class LocalImageMigrationService(
                 VisualLibraryUploadMetadata.forEntity("magazine_issue", reference.entityId, "revista", repository.title(reference))
             LocalImageTarget.MOVIE_COVER, LocalImageTarget.MOVIE_IMAGE ->
                 VisualLibraryUploadMetadata.forEntity("movie", reference.entityId, "filme", repository.title(reference))
+            LocalImageTarget.SHOW_COVER, LocalImageTarget.SHOW_IMAGE ->
+                VisualLibraryUploadMetadata.forEntity("tv_show", reference.entityId, "série", repository.title(reference))
             LocalImageTarget.GAME_COVER, LocalImageTarget.GAME_IMAGE ->
                 VisualLibraryUploadMetadata.forEntity("game", reference.entityId, "jogo", repository.title(reference))
         }
