@@ -8,26 +8,50 @@
           ><span class="join-phrase">{{ artist.joinPhrase }}</span></template
         >
       </p>
-      <p v-if="heroMeta.length" class="year">{{ heroMeta.join(' · ') }}</p>
+      <p v-if="displayMeta.length" class="year">{{ displayMeta.join(' · ') }}</p>
+      <AlbumIntroduction v-if="context?.introduction" :introduction="context.introduction" />
     </div>
     <div class="cover-frame">
-      <img v-if="resolvedCoverUrl" :src="resolvedCoverUrl" :alt="`Capa de ${title}`" @error="coverFailed = true" />
+      <button
+        v-if="resolvedCoverUrl"
+        class="cover-button"
+        type="button"
+        :aria-label="`Ampliar capa de ${title}`"
+        @click="gallery?.open(0)"
+      >
+        <img :src="resolvedCoverUrl" :alt="`Capa de ${title}`" @error="coverFailed = true" />
+      </button>
       <div v-else class="cover-fallback" role="img" :aria-label="`Álbum sem capa: ${title}`">
         {{ title.slice(0, 1) }}
       </div>
+      <button v-if="resolvedCoverUrl" type="button" class="view-image" @click="gallery?.open(0)">Ver imagem</button>
+      <MediaImageGallery
+        ref="gallery"
+        :images="coverUrl && !coverFailed ? [coverUrl] : []"
+        :title="title"
+        viewer-only
+      />
     </div>
     <div class="memory"><slot /></div>
   </section>
 </template>
 
 <script setup lang="ts">
-import type { AlbumPageData } from '~/types/music'
+import AlbumIntroduction from '~/components/music/AlbumIntroduction.vue'
+import MediaImageGallery from '~/components/media/MediaImageGallery.vue'
+import { albumContextMeta } from '~/utils/albumContext'
+import type { AlbumContext, AlbumPageData } from '~/types/music'
 const props = defineProps<{
   title: string
   artists: AlbumPageData['artists']
   coverUrl: string | null
   heroMeta: string[]
+  context?: AlbumContext | null
 }>()
+const gallery = ref<InstanceType<typeof MediaImageGallery> | null>(null)
+const displayMeta = computed(() =>
+  props.context ? albumContextMeta(props.context, Number(props.heroMeta[0]) || null) : props.heroMeta,
+)
 const { resolveMediaUrl } = useMediaUrl()
 const coverFailed = ref(false)
 watch(
@@ -123,5 +147,32 @@ h1 {
   .memory {
     grid-row: 3;
   }
+}
+
+.cover-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  background: transparent;
+  cursor: zoom-in;
+}
+.view-image {
+  margin-top: 12px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 16px;
+  padding: 10px 14px;
+  background: var(--base-color-surface-soft);
+  color: var(--base-color-text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.cover-button:focus-visible,
+.view-image:focus-visible {
+  outline: 2px solid var(--base-color-focus, #435ee5);
+  outline-offset: 3px;
 }
 </style>

@@ -4,7 +4,13 @@
     <div v-if="status === 'pending'" class="panel state-card"><p>Carregando álbum...</p></div>
     <div v-else-if="error" class="panel state-card" role="alert"><p>Não foi possível carregar este álbum.</p></div>
     <template v-else-if="data">
-      <AlbumPageHero :title="data.title" :artists="data.artists" :cover-url="data.coverUrl" :hero-meta="data.heroMeta">
+      <AlbumPageHero
+        :title="data.title"
+        :artists="data.artists"
+        :cover-url="data.coverUrl"
+        :hero-meta="data.heroMeta"
+        :context="data.context"
+      >
         <div v-if="owner.authenticated || data.comments.length || data.rating" class="personal-memory">
           <MediaCommentsPanel
             :key="data.id"
@@ -54,7 +60,12 @@
       </section>
       <AlbumContextPanel class="panel" :stats="data.stats" :recent-days="data.recentDays" />
       <section
-        v-if="owner.authenticated || data.terms.visibleCount || data.lists.length"
+        v-if="
+          owner.authenticated ||
+          data.terms.visibleCount ||
+          data.lists.length ||
+          Object.keys(data.context?.links || {}).length
+        "
         class="panel about-panel"
         aria-labelledby="about-album"
       >
@@ -115,6 +126,16 @@
             Este álbum ainda não está em uma lista.
           </p>
         </div>
+        <nav v-if="Object.keys(data.context?.links || {}).length" class="external-links" aria-label="Links do álbum">
+          <a
+            v-for="(url, label) in data.context?.links"
+            :key="label"
+            :href="url"
+            target="_blank"
+            rel="noopener noreferrer"
+            >{{ label }} ↗</a
+          >
+        </nav>
         <AlbumMusicBrainzPanel
           v-if="owner.authenticated && activeAction === 'metadata'"
           :album-id="Number(data.id)"
@@ -244,5 +265,16 @@ h3 {
     gap: 24px;
     padding-top: 20px;
   }
+}
+
+.external-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.85rem;
+}
+.external-links a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 </style>

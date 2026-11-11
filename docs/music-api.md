@@ -294,3 +294,17 @@ Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, últ
 - endpoints documentados existem em `MusicSummaryController` ou `MusicDuplicateReviewController`
 - DTOs citados existem em `api/music`
 - cursor é tratado como contrato opaco
+
+
+## Contexto do álbum e ampliação da capa
+
+O detalhe usa o visualizador compartilhado para ampliar a capa existente, com “Ver imagem”, Escape e retorno de foco. Esta entrega não adiciona imagens, player nem curadoria de capa.
+
+`GET /api/music/albums/{albumId}` acrescenta `context` opcional, lido exclusivamente do snapshot local em `album_context` (Flyway V78). O contexto contém `releaseGroupMbid`, `primaryType`, `secondaryTypes`, `firstReleaseDate` na precisão original, `links`, `fetchedAt` e `introduction` opcional. A introdução registra texto, idioma pt/en, URL do artigo, revisão quando disponível, licença e URL da licença.
+
+- `POST /api/music/albums/{albumId}/context/preview`: exige owner/CSRF e vínculo MusicBrainz existente. Consulta relações do release group, resolve artigo vinculado diretamente ou por sitelinks Wikidata e prioriza português, com inglês como alternativa. Não pesquisa apenas pelo título. Retorna `token`, `current`, `proposed`, `expiresAt`, sem escrever no banco.
+- `POST /api/music/albums/{albumId}/context`: recebe `{ "token": "..." }`, exige owner/CSRF e salva exatamente a prévia revisada, sem nova consulta remota nem alteração de créditos, faixas, capa ou termos.
+
+Prévias são temporárias, limitadas a 100 na instância, expiram após 15 minutos e são invalidadas em reinício. Mudança de vínculo ou contexto entre prévia e confirmação retorna 409, assim como token expirado/inválido. Falha de provedor retorna 502 e não altera o conteúdo salvo; ausência de artigo/introdução retorna prévia sem texto novo e preserva a introdução anterior quando o vínculo é o mesmo. Sem vínculo, retorna 409 antes de consultar provedores. Artigos de desambiguação são ignorados. Requisições Wikimedia usam somente endpoints fixos pt/en Wikipedia e Wikidata; URLs externas não são buscadas arbitrariamente.
+
+Na interface, “Atualizar dados” oferece “Consultar contexto” separado da aplicação MusicBrainz existente. A prévia permite comparar texto, tipo, data e links com o snapshot salvo. O cabeçalho apresenta a introdução expansível e atribuição com fonte/revisão, idioma e licença. Ausência de contexto mantém o detalhe existente utilizável. Links MusicBrainz, Spotify, Discogs e Bandcamp aparecem quando disponíveis nas relações; não dependem de um catálogo externo em tempo de leitura.

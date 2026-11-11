@@ -327,3 +327,10 @@ Usar largura de até 1120px e painéis brancos uniformes sobre o fundo quente, c
 Faixas vêm logo após o cabeçalho, em linhas compactas separadas por bordas suaves, preservando discos, posições e ordem. Reproduções e última escuta têm rótulos claros. A nota existente permanece visível e sua alteração é revelada sob demanda, sem repetir explicações da escala. Revisar duplicatas fica junto das faixas.
 
 Comentários usam o tratamento editorial compartilhado, sem contagem nem resumo redundante; nota compacta do álbum fica junto deles. Ocultar memória pessoal vazia para visitantes. Histórico reúne reproduções de faixas, primeira data registrada e última escuta; os dias recentes são revelados sob demanda. Registros não equivalem a audições completas. Sobre o álbum reúne gêneros, tags e listas, com edição contextual e atualização MusicBrainz preservando prévia e confirmação. Busca/filtro de faixas, duração e imagens adicionais ficam fora desta revisão.
+
+
+### Contexto e ampliação do álbum
+
+A capa do álbum abre o visualizador compartilhado por clique ou “Ver imagem”, preservando composição integral, Escape, foco e scroll. Com uma capa não mostrar setas ou miniaturas desnecessárias; sem capa, não mostrar ação de ampliação. A consulta de novas imagens continua fora desta entrega.
+
+Tipo e primeiro lançamento compõem uma única linha de contexto junto dos créditos, respeitando a precisão da data e evitando repetir o ano. A introdução aparece abaixo dos créditos e antes da memória pessoal, no próprio fundo branco, com “Ler mais”/“Ler menos” para textos longos. Mostrar atribuição, idioma, fonte e licença em texto secundário legível. Sem introdução, não reservar espaço. Links externos ficam em Sobre o álbum. “Consultar contexto” oferece prévia e confirmação independentes da atualização de créditos e marcações.

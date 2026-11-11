@@ -679,6 +679,7 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
   const artistLabel = artists.map((artist) => artist.creditedName + artist.joinPhrase).join('')
 
   return {
+    context: album.context ?? null,
     artists,
     id: String(album.albumId),
     title: album.albumTitle,

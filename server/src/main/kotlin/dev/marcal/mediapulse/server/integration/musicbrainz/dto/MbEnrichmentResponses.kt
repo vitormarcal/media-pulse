@@ -14,6 +14,8 @@ data class MbReleaseGroupCandidate(
     val title: String,
     @JsonProperty("first-release-date") val firstReleaseDate: String? = null,
     @JsonProperty("primary-type") val primaryType: String? = null,
+    @JsonProperty("secondary-types") val secondaryTypes: List<String> = emptyList(),
+    val relations: List<MbUrlRelation> = emptyList(),
     val disambiguation: String? = null,
     @JsonProperty("artist-credit") val artistCredit: List<MbArtistCredit> = emptyList(),
     val genres: List<MbReleaseGroupResponse.MbGenre> = emptyList(),

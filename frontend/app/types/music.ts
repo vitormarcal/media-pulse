@@ -51,6 +51,7 @@ export interface AlbumPageResponse {
   comments: MediaCommentDto[]
   musicBrainz: MusicBrainzLink | null
   lists: AlbumListSummaryDto[]
+  context?: AlbumContext | null
 }
 
 export interface MusicBrainzLink {
@@ -579,6 +580,7 @@ export interface AlbumDayModel {
 }
 
 export interface AlbumPageData {
+  context: AlbumContext | null
   artists: AlbumArtistCredit[]
   id: string
   title: string
@@ -774,4 +776,28 @@ export interface MusicLibraryPageData {
   }>
   libraryCursor: string | null
   mode: 'library' | 'search' | 'year'
+}
+
+export interface AlbumIntroduction {
+  text: string
+  language: string
+  sourceUrl: string
+  revisionId: number | null
+  license: string
+  licenseUrl: string
+}
+export interface AlbumContext {
+  releaseGroupMbid: string
+  primaryType: string | null
+  secondaryTypes: string[]
+  firstReleaseDate: string | null
+  links: Record<string, string>
+  introduction: AlbumIntroduction | null
+  fetchedAt: string
+}
+export interface AlbumContextPreview {
+  token: string
+  current: AlbumContext | null
+  proposed: AlbumContext
+  expiresAt: string
 }

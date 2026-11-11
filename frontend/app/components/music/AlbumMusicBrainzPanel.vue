@@ -11,6 +11,13 @@
       </button>
     </div>
 
+    <AlbumContextEditor
+      :key="`${albumId}-${link?.mbid}`"
+      :album-id="albumId"
+      :linked="!!link"
+      @applied="$emit('applied')"
+    />
+
     <p v-if="message" class="message">{{ message }}</p>
 
     <div v-if="candidates.length" class="candidates">
@@ -42,6 +49,7 @@
 </template>
 
 <script setup lang="ts">
+import AlbumContextEditor from '~/components/music/AlbumContextEditor.vue'
 import type { MusicBrainzAlbumCandidate, MusicBrainzAlbumPreview, MusicBrainzLink } from '~/types/music'
 
 const props = defineProps<{ albumId: number; link: MusicBrainzLink | null }>()

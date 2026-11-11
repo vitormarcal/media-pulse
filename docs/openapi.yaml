@@ -2871,6 +2871,61 @@ paths:
                 $ref: '#/components/schemas/AlbumCreditBackfillBatch'
         '404':
           description: Batch not found
+  /api/music/albums/{albumId}/context/preview:
+    post:
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      tags: [Music]
+      summary: Preview album context from MusicBrainz and Wikipedia without writing
+      parameters:
+        - in: path
+          name: albumId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: Context snapshot; absence of an introduction is represented by null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumContextPreview"
+        "409":
+          description: Missing MusicBrainz association, expired preview or concurrent album change
+        "502":
+          description: Provider unavailable; saved context remains unchanged
+  /api/music/albums/{albumId}/context:
+    post:
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      tags: [Music]
+      summary: Save the exact album context snapshot previously reviewed
+      parameters:
+        - in: path
+          name: albumId
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        "200":
+          description: Context snapshot; absence of an introduction is represented by null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumContext"
+        "409":
+          description: Missing MusicBrainz association, expired preview or concurrent album change
+        "502":
+          description: Provider unavailable; saved context remains unchanged
   /api/music/albums/{albumId}/musicbrainz/candidates:
     post:
       security:
@@ -9353,6 +9408,10 @@ components:
     AlbumPageResponse:
       type: object
       properties:
+        context:
+          allOf:
+            - $ref: "#/components/schemas/AlbumContext"
+          nullable: true
         albumId:
           type: integer
           format: int64
@@ -13558,3 +13617,49 @@ components:
           type: boolean
       required:
       - favorite
+
+    AlbumIntroduction:
+      type: object
+      required: [text, language, sourceUrl, license, licenseUrl]
+      properties:
+        text: { type: string }
+        language: { type: string, enum: [pt, en] }
+        sourceUrl: { type: string, format: uri }
+        revisionId: { type: integer, format: int64, nullable: true }
+        license: { type: string }
+        licenseUrl: { type: string, format: uri }
+    AlbumContext:
+      type: object
+      required: [releaseGroupMbid, secondaryTypes, links, fetchedAt]
+      properties:
+        releaseGroupMbid: { type: string }
+        primaryType: { type: string, nullable: true }
+        secondaryTypes:
+          type: array
+          items: { type: string }
+        firstReleaseDate:
+          type: string
+          nullable: true
+          description: Original precision retained as YYYY, YYYY-MM or YYYY-MM-DD
+        links:
+          type: object
+          additionalProperties: { type: string, format: uri }
+        introduction:
+          allOf:
+            - $ref: "#/components/schemas/AlbumIntroduction"
+          nullable: true
+        fetchedAt: { type: string, format: date-time }
+    AlbumContextPreview:
+      type: object
+      required: [token, proposed, expiresAt]
+      properties:
+        token:
+          type: string
+          description: Opaque owner preview token, expires after 15 minutes and on application restart
+        current:
+          allOf:
+            - $ref: "#/components/schemas/AlbumContext"
+          nullable: true
+        proposed:
+          $ref: "#/components/schemas/AlbumContext"
+        expiresAt: { type: string, format: date-time }

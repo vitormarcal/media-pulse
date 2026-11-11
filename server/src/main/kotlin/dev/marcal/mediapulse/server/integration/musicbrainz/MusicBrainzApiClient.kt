@@ -202,7 +202,7 @@ class MusicBrainzApiClient(
     suspend fun getReleaseGroup(mbid: String) =
         mbGet(
             path = "/ws/2/release-group/$mbid",
-            inc = "artist-credits+genres+tags",
+            inc = "artist-credits+genres+tags+url-rels",
             clazz = dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbReleaseGroupCandidate::class.java,
             mbid = mbid,
         )

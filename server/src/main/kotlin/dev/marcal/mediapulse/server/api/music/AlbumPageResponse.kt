@@ -23,6 +23,7 @@ data class AlbumPageResponse(
     val musicBrainz: MusicBrainzLinkDto? = null,
     val lists: List<AlbumListSummaryDto> = emptyList(),
     val artists: List<AlbumArtistDto> = emptyList(),
+    val context: AlbumContextDto? = null,
 )
 
 data class AlbumTrackRow(
