@@ -1,6 +1,12 @@
 <template>
   <section class="track-list">
-    <SectionHeading eyebrow="Álbum" title="Faixas" />
+    <div class="track-heading">
+      <h2>
+        Faixas <span>{{ tracks.length }}</span>
+      </h2>
+      <slot />
+    </div>
+    <p v-if="!tracks.length">Nenhuma faixa cadastrada.</p>
 
     <div class="tracks">
       <article v-for="track in tracks" :key="track.id" class="track-row">
@@ -8,15 +14,31 @@
         <div class="content">
           <h3>{{ track.title }}</h3>
           <p>{{ track.meta }}</p>
+          <details v-if="owner.authenticated">
+            <summary>
+              {{ trackRatings[track.trackId] ? `Nota ${trackRatings[track.trackId]} · Alterar` : 'Avaliar faixa' }}
+            </summary>
+            <MediaRatingPanel
+              media-type="tracks"
+              :entity-id="track.trackId"
+              :initial-rating="track.rating"
+              compact
+              minimal
+              label="Nota da faixa"
+              @changed="trackRatings[track.trackId] = $event?.rating ?? null"
+            />
+          </details>
           <MediaRatingPanel
+            v-else-if="track.rating"
             media-type="tracks"
             :entity-id="track.trackId"
             :initial-rating="track.rating"
             compact
-            label="Nota da faixa"
+            minimal
+            label="Nota"
           />
         </div>
-        <strong>{{ track.lastPlayed }}</strong>
+        <span class="last-play">Última escuta: {{ track.lastPlayed }}</span>
       </article>
     </div>
   </section>
@@ -24,68 +46,98 @@
 
 <script setup lang="ts">
 import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
-import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { AlbumTrackModel } from '~/types/music'
+const owner = useOwnerAuth()
 
-defineProps<{
+const props = defineProps<{
   tracks: AlbumTrackModel[]
 }>()
+const trackRatings = ref<Record<number, number | null>>({})
+watch(
+  () => props.tracks,
+  (tracks) => {
+    trackRatings.value = Object.fromEntries(tracks.map((track) => [track.trackId, track.rating?.rating ?? null]))
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped>
-.track-list,
+.track-list {
+  display: grid;
+  gap: 20px;
+}
 .tracks {
   display: grid;
-  gap: 24px;
 }
-
-.track-row {
-  display: grid;
-  grid-template-columns: 60px minmax(0, 1fr) auto;
-  gap: 18px;
+.track-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
-  padding: 16px 18px;
-  border-radius: 22px;
-  background: color-mix(in srgb, var(--base-color-surface-strong) 84%, var(--base-color-surface-soft));
+  gap: 12px;
 }
-
-.position,
-.track-row p {
+h2 {
   margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+h2 span {
+  font-size: 0.85rem;
+  font-weight: 400;
   color: var(--base-color-text-secondary);
 }
-
+.track-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  border-top: 1px solid var(--base-color-border);
+  padding: 16px 0;
+}
 .position {
   font-size: 0.82rem;
   font-weight: 700;
+  color: var(--base-color-text-secondary);
 }
-
 .content {
   min-width: 0;
 }
-
 h3 {
   margin: 0;
   font-size: 1.05rem;
-  line-height: 1.03;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
-
 .track-row p {
-  margin-top: 6px;
+  margin: 6px 0 0;
   font-size: 0.88rem;
+  color: var(--base-color-text-secondary);
 }
-
-.track-row strong {
-  color: var(--base-color-text-primary);
-  font-size: 0.85rem;
+.last-play {
+  font-size: 0.8rem;
+  color: var(--base-color-text-secondary);
 }
-
+summary {
+  padding: 10px 0;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--base-color-text-secondary);
+}
+summary:focus-visible {
+  outline: 2px solid var(--base-color-focus, #435ee5);
+  outline-offset: 3px;
+}
+.content :deep(.rating-panel.compact) {
+  width: fit-content;
+  margin-top: 8px;
+}
 @media (max-width: 820px) {
   .track-row {
-    grid-template-columns: 48px 1fr;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 8px 12px;
   }
-
-  .track-row strong {
+  .last-play {
     grid-column: 2;
   }
 }

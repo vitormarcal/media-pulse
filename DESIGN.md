@@ -318,3 +318,12 @@ O detalhe de série usa o cabeçalho branco e a galeria sob demanda de filmes, c
 Nota, comentários e sessões ficam em Atividade, com registro sob demanda. Sobre a série reúne créditos, gêneros, tags e listas, com edição contextual e atualização de dados sob demanda.
 
 O detalhe de temporada usa cabeçalho compacto com retorno à série e uma contagem de progresso. Os episódios aparecem em ordem, separados por linhas. Marcar como assistido registra a hora atual. Opções de registro oferecem data personalizada e marcação em lote até o episódio escolhido. Se houver falha parcial, recarregar os episódios e mostrar quantos foram registrados. A atualização de dados da temporada é aberta pelo owner junto da lista.
+
+
+## 19. Detalhe de álbum
+
+Usar largura de até 1120px e painéis brancos uniformes sobre o fundo quente, com cantos de 28px e espaçamento de 32px. Identificação e comentários ficam à esquerda da capa no desktop; no celular, a ordem é identificação, capa e memória pessoal. A capa mantém a proporção original, sem recorte, arte de fundo ou faixas acrescentadas; a composição favorece as capas quadradas de música. Créditos preservam nomes, ordem, conectivos e links individuais dos artistas. Mostrar o ano uma vez.
+
+Faixas vêm logo após o cabeçalho, em linhas compactas separadas por bordas suaves, preservando discos, posições e ordem. Reproduções e última escuta têm rótulos claros. A nota existente permanece visível e sua alteração é revelada sob demanda, sem repetir explicações da escala. Revisar duplicatas fica junto das faixas.
+
+Comentários usam o tratamento editorial compartilhado, sem contagem nem resumo redundante; nota compacta do álbum fica junto deles. Ocultar memória pessoal vazia para visitantes. Histórico reúne reproduções de faixas, primeira data registrada e última escuta; os dias recentes são revelados sob demanda. Registros não equivalem a audições completas. Sobre o álbum reúne gêneros, tags e listas, com edição contextual e atualização MusicBrainz preservando prévia e confirmação. Busca/filtro de faixas, duração e imagens adicionais ficam fora desta revisão.

@@ -1,6 +1,7 @@
 <template>
-  <section class="lists-panel">
+  <section class="lists-panel" :class="{ embedded }">
     <SectionHeading
+      v-if="!embedded"
       eyebrow="Listas de álbuns"
       title="Listas"
       :summary="lists.length ? `${lists.length} ${lists.length === 1 ? 'lista' : 'listas'}` : ''"
@@ -22,9 +23,8 @@
           </div>
 
           <div class="list-copy">
-            <p>Lista manual</p>
             <h3>{{ list.name }}</h3>
-            <span>{{ list.description || `${list.itemCount} álbuns em ordem manual.` }}</span>
+            <span v-if="list.description">{{ list.description }}</span>
           </div>
 
           <div class="list-meta">
@@ -95,6 +95,7 @@ const props = defineProps<{
   albumId: number
   lists: AlbumListSummaryDto[]
   editing: boolean
+  embedded?: boolean
 }>()
 
 const emit = defineEmits<{ changed: [] }>()
@@ -357,5 +358,25 @@ watch(
   .lists-grid {
     columns: 1;
   }
+}
+
+.embedded .lists-grid {
+  columns: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+}
+.embedded .list-card {
+  margin: 0;
+  border-radius: 20px;
+  background: var(--base-color-surface-strong);
+}
+.embedded .cover-mosaic {
+  min-height: 0;
+  height: 150px;
+}
+.embedded .editor-panel {
+  border-radius: 20px;
+  background: var(--base-color-surface-soft);
 }
 </style>

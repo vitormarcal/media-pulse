@@ -1,6 +1,6 @@
 <template>
   <article class="terms-card" :class="{ embedded }">
-    <div class="terms-head">
+    <div v-if="!embedded" class="terms-head">
       <div class="terms-copy">
         <p class="eyebrow">{{ embedded ? 'Marcações do álbum' : 'Marcações' }}</p>
         <h2 v-if="!embedded">Gêneros e tags</h2>
@@ -22,7 +22,9 @@
             :class="[{ editing: editingEnabled }, item.kind.toLowerCase()]"
           >
             <span class="term-name">{{ item.name }}</span>
-            <small v-if="editingEnabled" class="term-source">Manual</small>
+            <small v-if="editingEnabled" class="term-source">{{
+              item.source === 'MUSICBRAINZ' ? 'MusicBrainz' : 'Manual'
+            }}</small>
 
             <div v-if="editingEnabled" class="pill-actions">
               <button
@@ -48,7 +50,7 @@
         </div>
       </section>
 
-      <p v-if="!visibleGroups.length" class="empty-copy">Ainda não há marcações ativas para este álbum.</p>
+      <p v-if="!visibleGroups.length" class="empty-copy">Nenhum gênero ou tag adicionado.</p>
     </div>
 
     <div v-if="editingEnabled" class="editor-panel">
@@ -526,5 +528,15 @@ h2 {
   .add-form {
     grid-template-columns: 1fr;
   }
+}
+
+.terms-card.embedded {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.primary-button {
+  color: white;
 }
 </style>

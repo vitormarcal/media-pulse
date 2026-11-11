@@ -1,101 +1,127 @@
 <template>
   <main class="album-page">
-    <div v-if="status === 'pending'" class="state-card">
-      <p>Carregando...</p>
-    </div>
-
-    <div v-else-if="error" class="state-card error">
-      <p>Não foi possível carregar este álbum.</p>
-      <pre>{{ error.message }}</pre>
-    </div>
-
+    <NuxtLink class="back-link" to="/music">← Música</NuxtLink>
+    <div v-if="status === 'pending'" class="panel state-card"><p>Carregando álbum...</p></div>
+    <div v-else-if="error" class="panel state-card" role="alert"><p>Não foi possível carregar este álbum.</p></div>
     <template v-else-if="data">
-      <div ref="termsTarget">
-        <AlbumPageHero
-          :album-id="Number(data.id)"
-          :editing="activeAction === 'terms'"
-          :title="data.title"
-          :artists="data.artists"
-          :cover-url="data.coverUrl"
-          :hero-meta="data.heroMeta"
-          :terms="data.terms"
-          @terms-changed="handleTermsChanged"
-        />
-      </div>
-
-      <section class="album-actions" aria-labelledby="album-actions-title">
-        <div class="actions-copy">
-          <p class="actions-eyebrow">Curadoria</p>
-          <h2 id="album-actions-title">Ações do álbum</h2>
-          <p>Escolha o que deseja revisar ou organizar.</p>
-        </div>
-
-        <div class="action-list">
-          <button
-            v-for="action in albumActions"
-            :key="action.id"
-            v-owner
-            type="button"
-            class="action-button"
-            :class="{ active: activeAction === action.id }"
-            :aria-pressed="activeAction === action.id"
-            @click="toggleAction(action.id)"
+      <AlbumPageHero :title="data.title" :artists="data.artists" :cover-url="data.coverUrl" :hero-meta="data.heroMeta">
+        <div v-if="owner.authenticated || data.comments.length || data.rating" class="personal-memory">
+          <MediaCommentsPanel
+            :key="data.id"
+            :entity-id="Number(data.id)"
+            media-type="albums"
+            title="Comentários"
+            description=""
+            empty-label="Nenhum comentário."
+            :comments="data.comments"
+            compact
+            editorial
           >
-            <span>{{ action.label }}</span>
-            <small>{{ activeAction === action.id ? 'Fechar' : action.description }}</small>
-          </button>
+            <template #meta>
+              <MediaRatingPanel
+                v-if="owner.authenticated || data.rating"
+                media-type="albums"
+                :entity-id="Number(data.id)"
+                :initial-rating="data.rating"
+                compact
+                minimal
+                label="Nota do álbum"
+              />
+            </template>
+          </MediaCommentsPanel>
         </div>
-      </section>
-
-      <AlbumContextPanel :stats="data.stats" :recent-days="data.recentDays" />
-
-      <div ref="listsTarget">
-        <AlbumListsPanel
-          :album-id="Number(data.id)"
-          :lists="data.lists"
-          :editing="activeAction === 'lists'"
-          @changed="refresh"
-        />
-      </div>
-
-      <div v-if="activeAction === 'metadata'" ref="metadataTarget">
-        <AlbumMusicBrainzPanel
-          v-if="owner.authenticated"
-          :album-id="Number(data.id)"
-          :link="data.musicBrainz"
-          @applied="refresh"
-        />
-      </div>
-
-      <div v-if="activeAction === 'duplicates'" ref="duplicatesTarget">
+      </AlbumPageHero>
+      <section class="panel">
+        <AlbumTrackList :tracks="data.tracks">
+          <button
+            v-owner
+            class="section-action"
+            type="button"
+            :aria-expanded="activeAction === 'duplicates'"
+            @click="toggleAction('duplicates')"
+          >
+            {{ activeAction === 'duplicates' ? 'Fechar revisão' : 'Revisar duplicatas' }}
+          </button>
+        </AlbumTrackList>
         <AlbumDuplicateTracksPanel
-          v-if="owner.authenticated"
+          v-if="owner.authenticated && activeAction === 'duplicates'"
+          class="context-editor"
           :album-id="Number(data.id)"
           :album-title="data.title"
           :tracks="data.tracks"
           @merged="refresh"
         />
-      </div>
-
-      <MediaRatingPanel
-        media-type="albums"
-        :entity-id="Number(data.id)"
-        :initial-rating="data.rating"
-        title="Avaliação"
-        description=""
-        minimal
-      />
-
-      <MediaCommentsPanel
-        :entity-id="Number(data.id)"
-        media-type="albums"
-        title="Comentários do álbum"
-        description=""
-        :comments="data.comments"
-        empty-label="Nenhum comentário."
-      />
-
-      <AlbumTrackList :tracks="data.tracks" />
+      </section>
+      <AlbumContextPanel class="panel" :stats="data.stats" :recent-days="data.recentDays" />
+      <section
+        v-if="owner.authenticated || data.terms.visibleCount || data.lists.length"
+        class="panel about-panel"
+        aria-labelledby="about-album"
+      >
+        <div class="section-head">
+          <h2 id="about-album">Sobre o álbum</h2>
+          <button
+            v-owner
+            type="button"
+            class="section-action"
+            :aria-expanded="activeAction === 'metadata'"
+            @click="toggleAction('metadata')"
+          >
+            {{ activeAction === 'metadata' ? 'Fechar atualização' : 'Atualizar dados' }}
+          </button>
+        </div>
+        <div v-if="data.terms.visibleCount || owner.authenticated" class="about-group">
+          <div class="section-head">
+            <h3>Gêneros e tags</h3>
+            <button
+              v-owner
+              type="button"
+              class="section-action"
+              :aria-expanded="activeAction === 'terms'"
+              @click="toggleAction('terms')"
+            >
+              {{ activeAction === 'terms' ? 'Concluir edição' : 'Editar' }}
+            </button>
+          </div>
+          <AlbumTermsPanel
+            :album-id="Number(data.id)"
+            :terms="data.terms"
+            :editing="activeAction === 'terms'"
+            embedded
+            @changed="handleTermsChanged"
+          />
+        </div>
+        <div v-if="data.lists.length || owner.authenticated" class="about-group">
+          <div class="section-head">
+            <h3>Listas</h3>
+            <button
+              v-owner
+              type="button"
+              class="section-action"
+              :aria-expanded="activeAction === 'lists'"
+              @click="toggleAction('lists')"
+            >
+              {{ activeAction === 'lists' ? 'Concluir organização' : 'Organizar' }}
+            </button>
+          </div>
+          <AlbumListsPanel
+            :album-id="Number(data.id)"
+            :lists="data.lists"
+            :editing="activeAction === 'lists'"
+            embedded
+            @changed="refresh"
+          />
+          <p v-if="!data.lists.length && activeAction !== 'lists'" class="muted">
+            Este álbum ainda não está em uma lista.
+          </p>
+        </div>
+        <AlbumMusicBrainzPanel
+          v-if="owner.authenticated && activeAction === 'metadata'"
+          :album-id="Number(data.id)"
+          :link="data.musicBrainz"
+          @applied="refresh"
+        />
+      </section>
     </template>
   </main>
 </template>
@@ -106,6 +132,7 @@ import AlbumDuplicateTracksPanel from '~/components/music/AlbumDuplicateTracksPa
 import AlbumListsPanel from '~/components/music/AlbumListsPanel.vue'
 import AlbumPageHero from '~/components/music/AlbumPageHero.vue'
 import AlbumMusicBrainzPanel from '~/components/music/AlbumMusicBrainzPanel.vue'
+import AlbumTermsPanel from '~/components/music/AlbumTermsPanel.vue'
 import AlbumTrackList from '~/components/music/AlbumTrackList.vue'
 import MediaCommentsPanel from '~/components/media/MediaCommentsPanel.vue'
 import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
@@ -118,17 +145,6 @@ const id = computed(() => String(route.params.id))
 type AlbumAction = 'terms' | 'lists' | 'metadata' | 'duplicates'
 
 const activeAction = ref<AlbumAction | null>(null)
-const termsTarget = ref<HTMLElement | null>(null)
-const listsTarget = ref<HTMLElement | null>(null)
-const metadataTarget = ref<HTMLElement | null>(null)
-const duplicatesTarget = ref<HTMLElement | null>(null)
-const albumActions: Array<{ id: AlbumAction; label: string; description: string }> = [
-  { id: 'terms', label: 'Editar gêneros e tags', description: 'Revisar marcações' },
-  { id: 'lists', label: 'Organizar em listas', description: 'Adicionar ou remover' },
-  { id: 'metadata', label: 'Enriquecer dados', description: 'Consultar MusicBrainz' },
-  { id: 'duplicates', label: 'Revisar duplicatas', description: 'Sanear faixas' },
-]
-
 const { data, error, status, refresh } = await useAlbumPageData(id.value)
 
 useHead(() => ({
@@ -147,148 +163,86 @@ async function handleTermsChanged() {
   await refresh()
 }
 
-async function toggleAction(action: AlbumAction) {
+function toggleAction(action: AlbumAction) {
   activeAction.value = activeAction.value === action ? null : action
-  if (activeAction.value === null) return
-
-  await nextTick()
-  const targets: Record<AlbumAction, HTMLElement | null> = {
-    terms: termsTarget.value,
-    lists: listsTarget.value,
-    metadata: metadataTarget.value,
-    duplicates: duplicatesTarget.value,
-  }
-  targets[action]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 </script>
 
 <style scoped>
 .album-page {
   display: grid;
-  gap: var(--sema-space-section);
-  width: min(1480px, calc(100vw - 32px));
+  gap: 32px;
+  width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 28px 0 84px;
+  padding: 28px 0 80px;
 }
-
-.album-actions {
-  display: grid;
-  grid-template-columns: minmax(12rem, 0.34fr) minmax(0, 1fr);
-  gap: 24px;
-  align-items: center;
-  padding: 22px;
-  border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
+.panel {
+  min-width: 0;
+  padding: clamp(20px, 3vw, 32px);
+  border: 1px solid var(--base-color-border);
   border-radius: 28px;
-  background: color-mix(in srgb, var(--base-color-surface-wash) 72%, white);
+  background: var(--base-color-surface-strong);
 }
-
-.actions-copy {
-  display: grid;
-  gap: 4px;
+.back-link {
+  width: fit-content;
+  color: var(--base-color-text-secondary);
 }
-
-.actions-copy h2,
-.actions-copy p {
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+h2,
+h3,
+p {
   margin: 0;
 }
-
-.actions-copy h2 {
+h2 {
   font-size: 1.35rem;
   letter-spacing: -0.03em;
 }
-
-.actions-copy > p:last-child {
-  color: var(--base-color-text-secondary);
-  font-size: 0.82rem;
+h3 {
+  font-size: 1rem;
 }
-
-.actions-eyebrow {
-  color: var(--base-color-brand-red);
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-}
-
-.action-list {
+.about-panel,
+.about-group {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 20px;
 }
-
-.action-button {
-  display: grid;
-  gap: 4px;
-  min-height: 68px;
-  padding: 12px 14px;
-  border: 2px solid transparent;
+.about-group {
+  padding-top: 24px;
+  border-top: 1px solid var(--base-color-border);
+}
+.section-action {
+  border: 0;
   border-radius: 16px;
-  background: var(--base-color-surface-warm);
-  color: var(--base-color-text-primary);
+  padding: 10px 14px;
+  min-height: 44px;
   font: inherit;
-  text-align: left;
+  font-size: 0.82rem;
+  background: var(--base-color-surface-soft);
+  color: var(--base-color-text-primary);
   cursor: pointer;
 }
-
-.action-button:hover {
-  background: color-mix(in srgb, var(--base-color-surface-warm) 80%, white);
-}
-
-.action-button:focus-visible {
+.section-action:focus-visible,
+.back-link:focus-visible {
   outline: 2px solid var(--base-color-focus, #435ee5);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
-
-.action-button.active {
-  border-color: var(--base-color-brand-red);
-  background: white;
+.context-editor {
+  margin-top: 24px;
 }
-
-.action-button span {
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.action-button small {
-  color: var(--base-color-text-secondary);
-  font-size: 0.7rem;
-}
-
+.muted,
 .state-card {
-  padding: 24px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.82);
   color: var(--base-color-text-secondary);
 }
-
-.state-card.error {
-  color: #7a1414;
-}
-
-pre {
-  margin: 12px 0 0;
-  white-space: pre-wrap;
-}
-
-@media (max-width: 720px) {
+@media (max-width: 600px) {
   .album-page {
-    width: min(100vw - 20px, 1480px);
-    padding: 20px 0 64px;
-  }
-
-  .album-actions {
-    grid-template-columns: 1fr;
-    padding: 18px;
-  }
-
-  .action-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 420px) {
-  .action-list {
-    grid-template-columns: 1fr;
+    width: calc(100% - 20px);
+    gap: 24px;
+    padding-top: 20px;
   }
 }
 </style>

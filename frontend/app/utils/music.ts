@@ -37,6 +37,13 @@ import type {
 } from '~/types/music'
 import { formatAbsoluteDate, formatRelativeDate, formatShortNumber } from '~/utils/formatting'
 
+function formatAlbumDay(day: string): string {
+  const [year, month, date] = day.split('-').map(Number)
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(
+    new Date(year!, month! - 1, date!),
+  )
+}
+
 function trackPosition(track: AlbumPageResponse['tracks'][number]) {
   const disc = track.discNumber != null ? `${track.discNumber}.` : ''
   const number = track.trackNumber != null ? String(track.trackNumber).padStart(2, '0') : '00'
@@ -49,8 +56,8 @@ function mapTrack(track: AlbumPageResponse['tracks'][number]): AlbumTrackModel {
     trackId: track.trackId,
     title: track.title,
     position: trackPosition(track),
-    meta: `${track.playCount} plays`,
-    lastPlayed: track.lastPlayed ? formatRelativeDate(track.lastPlayed) : 'Ainda sem play',
+    meta: `${track.playCount} ${track.playCount === 1 ? 'reprodução' : 'reproduções'}`,
+    lastPlayed: track.lastPlayed ? formatAbsoluteDate(track.lastPlayed) : 'Sem registro',
     rating: track.rating,
   }
 }
@@ -680,15 +687,11 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
     year: album.year,
     coverUrl: album.coverUrl,
     rating: album.rating,
-    heroMeta: [
-      album.year ? String(album.year) : null,
-      artistLabel,
-      `${album.totalPlays} plays`,
-      album.lastPlayed ? `Último ${formatRelativeDate(album.lastPlayed)}` : 'Sem play recente',
-    ].filter(Boolean) as string[],
+    heroMeta: album.year ? [String(album.year)] : [],
     stats: {
       totalPlays: album.totalPlays,
       tracksCount: album.tracks.length,
+      firstPlay: album.playsByDay.length ? formatAlbumDay(album.playsByDay[0]!.day) : null,
       latestPlay: album.lastPlayed ? formatRelativeDate(album.lastPlayed) : 'Sem play recente',
       latestPlayAbsolute: album.lastPlayed ? formatAbsoluteDate(album.lastPlayed) : null,
     },
@@ -754,7 +757,7 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
     tracks: album.tracks.map(mapTrack),
     recentDays: album.playsByDay.slice(-12).map((day) => ({
       id: day.day,
-      label: day.day,
+      label: formatAlbumDay(day.day),
       plays: day.plays,
     })),
     comments: album.comments,

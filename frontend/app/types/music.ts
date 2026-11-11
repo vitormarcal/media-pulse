@@ -591,6 +591,7 @@ export interface AlbumPageData {
   stats: {
     totalPlays: number
     tracksCount: number
+    firstPlay: string | null
     latestPlay: string
     latestPlayAbsolute: string | null
   }
