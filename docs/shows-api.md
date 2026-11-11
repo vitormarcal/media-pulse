@@ -291,3 +291,11 @@ O owner pode abrir “Escolher imagens” junto da galeria, inclusive sem imagen
 - `POST /api/shows/{showId}/images/selection` recebe `{ids}` com 1 a 50 itens e retorna `{savedIds, failedIds}`. O backend revalida os IDs e adiciona as imagens à galeria preservando a capa. A interface atualiza a galeria após sucessos e mantém as falhas selecionadas.
 
 A consulta de candidatos exige sessão do owner. Os POSTs exigem sessão e CSRF. Os contratos de candidatos e resultados são os mesmos do [seletor de filmes](movies-api.md#escolher-imagens-do-tmdb).
+
+
+### Gerenciar imagens da galeria
+
+- `POST /api/shows/{showId}/images/primary` define a imagem vinculada como capa e única imagem principal.
+- `DELETE /api/shows/{showId}/images` remove o vínculo. Ao remover a capa ou principal, usa a próxima imagem da galeria, ou deixa a série sem capa quando a galeria fica vazia. O arquivo ou asset permanece no armazenamento.
+
+As operações recebem `{url}`, retornam `{coverUrl}` e exigem owner e CSRF. Capas legadas sem uma linha na galeria também são válidas. A atualização da capa e da imagem principal ocorre na mesma transação.

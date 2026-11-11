@@ -92,38 +92,17 @@
         </MoviePageHero>
       </div>
 
-      <MediaImageGallery
+      <ManagedMediaImageGallery
+        :key="data.movieId"
         ref="galleryViewer"
-        :images="data.gallery"
+        v-model:images="data.gallery"
+        v-model:cover-url="data.coverUrl"
+        media-type="movies"
+        :entity-id="data.movieId"
         :title="data.title"
-        viewer-only
-        :busy="imageBusy"
-        @image-change="handleGalleryImageChanged"
-        @closed="handleGalleryClosed"
-      >
-        <template v-if="owner.authenticated" #actions="{ image, index }">
-          <div class="image-actions" :aria-label="`Ações da imagem ${index + 1}`">
-            <span v-if="image === data.coverUrl" class="cover-label">Capa atual</span>
-            <button v-else type="button" :disabled="imageBusy" @click="manageImage(image, false)">
-              Definir como capa
-            </button>
-            <button type="button" :disabled="imageBusy" @click="confirmRemoval = image">Remover imagem</button>
-            <div v-if="confirmRemoval === image" class="remove-confirmation">
-              <p>
-                Remover esta imagem do filme?{{
-                  image === data.coverUrl ? ' Outra imagem será usada como capa, se disponível.' : ''
-                }}
-              </p>
-              <button type="button" :disabled="imageBusy" @click="manageImage(image, true)">Confirmar remoção</button>
-              <button type="button" :disabled="imageBusy" @click="confirmRemoval = ''">Cancelar</button>
-            </div>
-            <p v-if="imageBusy" class="image-feedback" role="status">Salvando alteração…</p>
-            <p v-if="imageError" class="image-feedback image-error" role="alert">{{ imageError }}</p>
-            <p v-if="imageMessage" class="image-feedback" role="status">{{ imageMessage }}</p>
-          </div>
-        </template>
-      </MediaImageGallery>
-      <p v-if="imageMessage && !data.gallery.length" role="status">{{ imageMessage }}</p>
+        :refresh="refresh"
+        @closed="restoreGalleryFocus"
+      />
 
       <section class="sessions-section detail-surface" aria-labelledby="sessions-title">
         <div class="section-header">
@@ -255,7 +234,7 @@
 </template>
 
 <script setup lang="ts">
-import MediaImageGallery from '~/components/media/MediaImageGallery.vue'
+import ManagedMediaImageGallery from '~/components/media/ManagedMediaImageGallery.vue'
 import MediaImageSelector from '~/components/media/MediaImageSelector.vue'
 import MovieCollectionTagsPanel from '~/components/movies/MovieCollectionTagsPanel.vue'
 import MediaPersonalMarks from '~/components/media/MediaPersonalMarks.vue'
@@ -274,13 +253,8 @@ import { useMoviePageData } from '~/composables/useMoviePageData'
 import type { ManualMovieWatchCreateResponse, MovieEnrichmentApplyResponse } from '~/types/movies'
 
 const movieHero = ref<InstanceType<typeof MoviePageHero> | null>(null)
-const galleryViewer = ref<InstanceType<typeof MediaImageGallery> | null>(null)
+const galleryViewer = ref<InstanceType<typeof ManagedMediaImageGallery> | null>(null)
 const owner = useOwnerAuth()
-const config = useRuntimeConfig()
-const imageBusy = ref(false)
-const imageError = ref('')
-const imageMessage = ref('')
-const confirmRemoval = ref('')
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
@@ -332,15 +306,7 @@ useHead(() => ({
   ],
 }))
 
-function handleGalleryImageChanged() {
-  confirmRemoval.value = ''
-  imageError.value = ''
-}
-
-async function handleGalleryClosed(needsFocusFallback: boolean) {
-  confirmRemoval.value = ''
-  imageError.value = ''
-  await nextTick()
+function restoreGalleryFocus(needsFocusFallback: boolean) {
   if (needsFocusFallback) movieHero.value?.focusGallery()
 }
 
@@ -376,31 +342,6 @@ async function handlePeopleChanged() {
   await refresh()
 }
 
-async function manageImage(url: string, remove: boolean) {
-  if (!data.value || imageBusy.value) return
-  imageBusy.value = true
-  imageError.value = ''
-  imageMessage.value = ''
-  try {
-    const result = await $fetch<{ coverUrl: string | null }>(
-      `/api/movies/${data.value.movieId}/images${remove ? '' : '/primary'}`,
-      { baseURL: config.public.apiBase, method: remove ? 'DELETE' : 'POST', body: { url } },
-    )
-    data.value.coverUrl = result.coverUrl
-    const remaining = data.value.gallery.filter((image) => !remove || image !== url)
-    data.value.gallery = result.coverUrl
-      ? [result.coverUrl, ...remaining.filter((image) => image !== result.coverUrl)]
-      : remaining
-    confirmRemoval.value = ''
-    imageMessage.value = remove ? 'Imagem removida do filme.' : 'Capa atualizada.'
-    await refresh()
-  } catch {
-    imageError.value = 'Não foi possível concluir a alteração. Tente novamente.'
-  } finally {
-    imageBusy.value = false
-  }
-}
-
 function toggleAction(action: MovieAction) {
   activeAction.value = activeAction.value === action ? null : action
 }
@@ -413,59 +354,6 @@ function toggleAction(action: MovieAction) {
   width: min(1120px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 28px 0 84px;
-}
-
-.image-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  justify-content: center;
-  color: #e5e5e0;
-  padding: 8px 0;
-}
-.image-actions button {
-  min-height: 44px;
-  padding: 8px 14px;
-  border: 0;
-  border-radius: 16px;
-  background: var(--base-color-surface-warm);
-  color: var(--base-color-text-primary);
-  font: inherit;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-.image-actions button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-.image-actions button:focus-visible {
-  outline: 3px solid var(--base-color-focus);
-  outline-offset: 3px;
-}
-.cover-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #e5e5e0;
-}
-.image-feedback {
-  flex-basis: 100%;
-  margin: 4px 0;
-  text-align: center;
-  font-size: 0.88rem;
-}
-.remove-confirmation {
-  width: 100%;
-  text-align: center;
-}
-.remove-confirmation button + button {
-  margin-left: 8px;
-}
-.remove-confirmation p {
-  font-size: 0.88rem;
-}
-.image-error {
-  color: #ffb4b4;
 }
 
 .enrichment-state {

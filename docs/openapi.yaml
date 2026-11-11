@@ -6251,6 +6251,97 @@ paths:
         '409':
           description: No confirmed TMDb link
 
+  /api/shows/{showId}/images/primary:
+    post:
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      tags: [Shows]
+      summary: Choose an existing series image as canonical cover
+      description: Validates a gallery or legacy cover reference under the series lock. Removal preserves stored files and assets. Removing cover selects the first remaining gallery image (primary first, ID descending), or clears cover when empty.
+      parameters:
+        - in: path
+          name: showId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+      responses:
+        '200':
+          description: Canonical cover after mutation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [coverUrl]
+                properties:
+                  coverUrl:
+                    type: string
+                    nullable: true
+        '400':
+          description: Invalid body
+        '401':
+          description: Owner login required
+        '403':
+          description: Invalid CSRF token
+        '404':
+          description: Series or linked image not found
+  /api/shows/{showId}/images:
+    delete:
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      tags: [Shows]
+      summary: Remove a series image association and replace cover when necessary
+      description: Validates a gallery or legacy cover reference under the series lock. Removal preserves stored files and assets. Removing cover selects the first remaining gallery image (primary first, ID descending), or clears cover when empty.
+      parameters:
+        - in: path
+          name: showId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+      responses:
+        '200':
+          description: Canonical cover after mutation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [coverUrl]
+                properties:
+                  coverUrl:
+                    type: string
+                    nullable: true
+        '400':
+          description: Invalid body
+        '401':
+          description: Owner login required
+        '403':
+          description: Invalid CSRF token
+        '404':
+          description: Series or linked image not found
+
   /api/shows/{showId}/episodes/refresh:
     post:
       security:

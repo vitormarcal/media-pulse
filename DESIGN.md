@@ -313,7 +313,7 @@ A próxima revisão prevista é Séries (TV). Livros já recebeu uma revisão de
 
 ## 18. Detalhe de série e temporada
 
-O detalhe de série usa o cabeçalho branco e a galeria sob demanda de filmes, com marcações pessoais junto da identificação. O owner pode abrir “Escolher imagens” junto da galeria para ampliar e salvar pôsteres e fundos do TMDb. O seletor compartilhado preserva a capa e mantém as escolhas que falharam para nova tentativa. Progresso e temporadas aparecem imediatamente abaixo. A contagem geral aparece uma vez, e cada temporada mostra sua própria contagem. Temporadas sem rota são texto. Atualizar episódios fica junto do progresso.
+O detalhe de série usa o cabeçalho branco e a galeria sob demanda de filmes, com marcações pessoais junto da identificação. O owner pode abrir “Escolher imagens” junto da galeria para ampliar e salvar pôsteres e fundos do TMDb. O seletor compartilhado preserva a capa e mantém as escolhas que falharam para nova tentativa. Na galeria salva, séries e filmes compartilham os controles do owner para definir a capa e remover um vínculo com confirmação. Progresso e temporadas aparecem imediatamente abaixo. A contagem geral aparece uma vez, e cada temporada mostra sua própria contagem. Temporadas sem rota são texto. Atualizar episódios fica junto do progresso.
 
 Nota, comentários e sessões ficam em Atividade, com registro sob demanda. Sobre a série reúne créditos, gêneros, tags e listas, com edição contextual e atualização de dados sob demanda.
 

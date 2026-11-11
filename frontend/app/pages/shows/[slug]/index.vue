@@ -4,6 +4,7 @@
     <p v-else-if="error" role="alert">Não foi possível carregar esta série.</p>
     <template v-else-if="data">
       <MoviePageHero
+        ref="showHero"
         back-to="/shows"
         back-label="Voltar para séries"
         :title="data.title"
@@ -34,7 +35,17 @@
           />
         </template>
       </MoviePageHero>
-      <MediaImageGallery ref="galleryViewer" :images="data.gallery" :title="data.title" viewer-only />
+      <ManagedMediaImageGallery
+        :key="data.showId"
+        ref="galleryViewer"
+        v-model:images="data.gallery"
+        v-model:cover-url="data.coverUrl"
+        media-type="shows"
+        :entity-id="data.showId"
+        :title="data.title"
+        :refresh="refresh"
+        @closed="restoreGalleryFocus"
+      />
 
       <ShowProgressPanel class="detail-surface" :progress="data.progress" :seasons="data.seasons">
         <template v-if="owner.authenticated" #actions>
@@ -200,7 +211,7 @@
 import MediaPersonalMarks from '~/components/media/MediaPersonalMarks.vue'
 import ShowAddWatchPanel from '~/components/shows/ShowAddWatchPanel.vue'
 import MoviePageHero from '~/components/movies/MoviePageHero.vue'
-import MediaImageGallery from '~/components/media/MediaImageGallery.vue'
+import ManagedMediaImageGallery from '~/components/media/ManagedMediaImageGallery.vue'
 import MediaImageSelector from '~/components/media/MediaImageSelector.vue'
 import ShowTermsPanel from '~/components/shows/ShowTermsPanel.vue'
 import ShowMetadataEnrichmentPanel from '~/components/shows/ShowMetadataEnrichmentPanel.vue'
@@ -221,7 +232,8 @@ const episodesRefreshMessage = ref('')
 const episodesRefreshFailed = ref(false)
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
-const galleryViewer = ref<InstanceType<typeof MediaImageGallery> | null>(null)
+const showHero = ref<InstanceType<typeof MoviePageHero> | null>(null)
+const galleryViewer = ref<InstanceType<typeof ManagedMediaImageGallery> | null>(null)
 const editingTerms = ref(false)
 const editingPeople = ref(false)
 const editingLists = ref(false)
@@ -252,6 +264,10 @@ useHead(() => ({
     },
   ],
 }))
+
+function restoreGalleryFocus(needsFocusFallback: boolean) {
+  if (needsFocusFallback) showHero.value?.focusGallery()
+}
 
 async function refreshEpisodes() {
   if (!data.value || refreshingEpisodes.value) return

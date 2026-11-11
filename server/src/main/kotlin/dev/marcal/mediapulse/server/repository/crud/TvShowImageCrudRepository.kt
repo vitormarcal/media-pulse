@@ -12,6 +12,13 @@ interface TvShowImageCrudRepository : CrudRepository<TvShowImage, Long> {
     fun existsByShowIdAndIsPrimaryTrue(showId: Long): Boolean
 
     @Modifying
+    @Query(value = "DELETE FROM tv_show_images WHERE show_id = :showId AND url = :url", nativeQuery = true)
+    fun removeForShow(
+        showId: Long,
+        url: String,
+    ): Int
+
+    @Modifying
     @Transactional
     @Query(
         nativeQuery = true,

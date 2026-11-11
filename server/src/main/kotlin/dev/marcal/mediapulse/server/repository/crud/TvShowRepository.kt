@@ -16,7 +16,7 @@ interface TvShowRepository : CrudRepository<TvShow, Long> {
     @Query(value = "UPDATE tv_shows SET cover_url = :url, updated_at = now() WHERE id = :showId", nativeQuery = true)
     fun updateCover(
         showId: Long,
-        url: String,
+        url: String?,
     ): Int
 
     fun findByFingerprint(fingerprint: String): TvShow?
