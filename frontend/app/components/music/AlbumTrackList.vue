@@ -12,7 +12,22 @@
       <article v-for="track in tracks" :key="track.id" class="track-row">
         <span class="position">{{ track.position }}</span>
         <div class="content">
-          <h3>{{ track.title }}</h3>
+          <h3>
+            {{ track.title }}
+            <span
+              v-if="track.listeningHighlight"
+              class="listening-highlight"
+              tabindex="0"
+              role="img"
+              aria-label="Destaque de escuta"
+              :aria-describedby="`listening-highlight-${track.id}`"
+            >
+              <span aria-hidden="true">🔥</span>
+              <span :id="`listening-highlight-${track.id}`" class="highlight-tooltip" role="tooltip"
+                >Entre as mais ouvidas por você neste álbum</span
+              >
+            </span>
+          </h3>
           <p>{{ track.meta }}</p>
           <details v-if="owner.authenticated">
             <summary>
@@ -140,5 +155,43 @@ summary:focus-visible {
   .last-play {
     grid-column: 2;
   }
+}
+
+.listening-highlight {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 2px 4px;
+  font-size: 0.95rem;
+  font-weight: 400;
+  cursor: help;
+  border-radius: 6px;
+}
+.listening-highlight:focus-visible {
+  outline: 2px solid var(--base-color-focus, #435ee5);
+  outline-offset: 2px;
+}
+h3 {
+  position: relative;
+}
+.highlight-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 2;
+  width: max-content;
+  max-width: min(260px, 100%);
+  padding: 10px 12px;
+  border: 1px solid var(--base-color-border);
+  border-radius: 12px;
+  background: var(--base-color-text-primary);
+  color: var(--base-color-surface-strong);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  visibility: hidden;
+  pointer-events: none;
+}
+.listening-highlight:hover .highlight-tooltip,
+.listening-highlight:focus .highlight-tooltip {
+  visibility: visible;
 }
 </style>

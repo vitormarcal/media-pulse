@@ -11,6 +11,22 @@
       </button>
     </div>
 
+    <form class="manual-link" @submit.prevent="previewManual">
+      <label for="album-musicbrainz-reference">Link ou identificador do MusicBrainz</label>
+      <div class="manual-controls">
+        <input
+          id="album-musicbrainz-reference"
+          v-model="manualReference"
+          type="text"
+          :disabled="loading"
+          placeholder="https://musicbrainz.org/release-group/..."
+          aria-describedby="album-musicbrainz-help"
+        />
+        <button class="secondary" type="submit" :disabled="loading || !manualReference.trim()">Consultar</button>
+      </div>
+      <p id="album-musicbrainz-help">Cole o link do álbum ou de uma edição, ou o identificador do álbum.</p>
+    </form>
+
     <AlbumContextEditor
       :key="`${albumId}-${link?.mbid}`"
       :album-id="albumId"
@@ -18,7 +34,7 @@
       @applied="$emit('applied')"
     />
 
-    <p v-if="message" class="message">{{ message }}</p>
+    <p v-if="message" class="message" role="status">{{ message }}</p>
 
     <div v-if="candidates.length" class="candidates">
       <button
@@ -27,6 +43,7 @@
         v-owner
         type="button"
         class="candidate"
+        :disabled="loading"
         @click="previewCandidate(candidate)"
       >
         <strong>{{ candidate.title }}</strong>
@@ -37,6 +54,13 @@
 
     <div v-if="preview" class="preview">
       <h3>Prévia</h3>
+      <p><strong>Álbum:</strong> {{ preview.candidate.title }}</p>
+      <a
+        :href="`https://musicbrainz.org/release-group/${preview.candidate.releaseGroupMbid}`"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Ver no MusicBrainz ↗</a
+      >
       <p><strong>Artistas:</strong> {{ creditLabel(preview.candidate) }}</p>
       <ul>
         <li v-for="change in preview.changes" :key="change">{{ change }}</li>
@@ -49,6 +73,8 @@
 </template>
 
 <script setup lang="ts">
+import { parseMusicBrainzAlbumReference } from '~/utils/musicBrainzReference'
+import type { MusicBrainzAlbumReference } from '~/utils/musicBrainzReference'
 import AlbumContextEditor from '~/components/music/AlbumContextEditor.vue'
 import type { MusicBrainzAlbumCandidate, MusicBrainzAlbumPreview, MusicBrainzLink } from '~/types/music'
 
@@ -59,6 +85,11 @@ const candidates = ref<MusicBrainzAlbumCandidate[]>([])
 const preview = ref<MusicBrainzAlbumPreview | null>(null)
 const loading = ref(false)
 const message = ref('')
+const manualReference = ref('')
+watch(manualReference, () => {
+  preview.value = null
+  message.value = ''
+})
 
 function creditLabel(candidate: MusicBrainzAlbumCandidate) {
   return candidate.artists?.length
@@ -84,16 +115,37 @@ async function search() {
 }
 
 async function previewCandidate(candidate: MusicBrainzAlbumCandidate) {
+  await loadPreview({ mbid: candidate.releaseGroupMbid, entityType: 'release-group' })
+}
+
+async function previewManual() {
+  const reference = parseMusicBrainzAlbumReference(manualReference.value)
+  preview.value = null
+  if (!reference) {
+    message.value = 'Informe um link de álbum ou edição do MusicBrainz, ou um identificador de álbum válido.'
+    return
+  }
+  await loadPreview(reference)
+}
+
+async function loadPreview(reference: MusicBrainzAlbumReference) {
   loading.value = true
   message.value = ''
+  preview.value = null
   try {
     preview.value = await $fetch(`/api/music/albums/${props.albumId}/musicbrainz/preview`, {
       baseURL: config.public.apiBase,
       method: 'POST',
-      query: { releaseGroupMbid: candidate.releaseGroupMbid },
+      query: { releaseGroupMbid: reference.mbid, entityType: reference.entityType },
     })
-  } catch {
-    message.value = 'Não foi possível montar a prévia.'
+  } catch (error) {
+    const status = (error as { statusCode?: number }).statusCode
+    message.value =
+      status === 404
+        ? 'Correspondência não encontrada no MusicBrainz. Confira o link ou identificador.'
+        : status === 409
+          ? 'Esta correspondência não pode ser vinculada. Confira o álbum e os dados informados.'
+          : 'Não foi possível montar a prévia. Confira o valor informado ou tente novamente.'
   } finally {
     loading.value = false
   }
@@ -210,6 +262,51 @@ button:disabled {
 @media (max-width: 640px) {
   .panel-heading {
     align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+.manual-link {
+  display: grid;
+  gap: 10px;
+}
+.manual-link label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.manual-controls {
+  display: flex;
+  gap: 12px;
+}
+.manual-controls input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--base-color-border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  font: inherit;
+  background: var(--base-color-surface-strong);
+  color: var(--base-color-text-primary);
+}
+.manual-link p {
+  color: var(--base-color-text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+input:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--base-color-focus, #435ee5);
+  outline-offset: 3px;
+}
+.preview a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 0.85rem;
+}
+@media (max-width: 600px) {
+  .manual-controls {
     flex-direction: column;
   }
 }

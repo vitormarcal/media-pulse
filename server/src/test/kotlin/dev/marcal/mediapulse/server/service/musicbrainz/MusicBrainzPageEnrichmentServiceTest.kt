@@ -1,6 +1,7 @@
 package dev.marcal.mediapulse.server.service.musicbrainz
 
 import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzApiClient
+import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzClientException
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArea
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistAlias
 import dev.marcal.mediapulse.server.integration.musicbrainz.dto.MbArtistCandidate
@@ -74,6 +75,82 @@ class MusicBrainzPageEnrichmentServiceTest {
             genres = listOf(MbReleaseGroupResponse.MbGenre("rock")),
             tags = listOf(MbReleaseGroupResponse.MbTag("indie")),
         )
+
+    @Test
+    fun `manual provider failure maps missing entity and unavailable provider separately`() =
+        runBlocking {
+            val mbid = "12345678-1234-1234-1234-123456789abc"
+            every { albums.findById(10) } returns Optional.of(album)
+            for ((failure, expected) in listOf(
+                MusicBrainzClientException.NotFound("Missing entity") to 404,
+                MusicBrainzClientException.Retryable("Transport failure") to 502,
+                MusicBrainzClientException.Fatal("Upstream failure") to 502,
+            )) {
+                coEvery { client.getReleaseGroup(mbid) } throws failure
+                val error =
+                    kotlin.test.assertFailsWith<org.springframework.web.server.ResponseStatusException> {
+                        service.previewAlbumReference(10, mbid)
+                    }
+                assertEquals(expected, error.statusCode.value())
+            }
+            verify(exactly = 0) { albums.save(any()) }
+        }
+
+    @Test
+    fun `manual group reference uses the same read only preview`() =
+        runBlocking {
+            val mbid = "12345678-1234-1234-1234-123456789abc"
+            every { albums.findById(10) } returns Optional.of(album)
+            coEvery { client.getReleaseGroup(mbid) } returns candidate.copy(id = mbid)
+            val result = service.previewAlbumReference(10, mbid)
+            assertEquals(mbid, result.candidate.releaseGroupMbid)
+            verify(exactly = 0) { albums.save(any()) }
+            io.mockk.coVerify(exactly = 0) { client.resolveReleaseGroupFromRelease(any()) }
+        }
+
+    @Test
+    fun `manual release reference resolves group without writing`() =
+        runBlocking {
+            val release = "12345678-1234-1234-1234-123456789abc"
+            every { albums.findById(10) } returns Optional.of(album)
+            coEvery { client.resolveReleaseGroupFromRelease(release) } returns "rg-1"
+            coEvery { client.getReleaseGroup("rg-1") } returns candidate
+            assertEquals("rg-1", service.previewAlbumReference(10, release, "release").candidate.releaseGroupMbid)
+            verify(exactly = 0) { albums.save(any()) }
+            verify(exactly = 0) { credits.applyMusicBrainz(any(), any()) }
+        }
+
+    @Test
+    fun `invalid manual type or identifier cannot call provider`() =
+        runBlocking {
+            for ((id, type) in listOf(
+                "bad" to "release-group",
+                "https://musicbrainz.org/release/x" to "release",
+                "12345678-1234-1234-1234-123456789abc" to "artist",
+            )) {
+                val error =
+                    kotlin.test.assertFailsWith<org.springframework.web.server.ResponseStatusException> {
+                        service.previewAlbumReference(10, id, type)
+                    }
+                assertEquals(400, error.statusCode.value())
+            }
+            io.mockk.coVerify(exactly = 0) { client.getReleaseGroup(any()) }
+            io.mockk.coVerify(exactly = 0) { client.resolveReleaseGroupFromRelease(any()) }
+        }
+
+    @Test
+    fun `release without group returns not found and does not preview another album`() =
+        runBlocking {
+            val release = "12345678-1234-1234-1234-123456789abc"
+            every { albums.findById(10) } returns Optional.of(album)
+            coEvery { client.resolveReleaseGroupFromRelease(release) } returns null
+            val error =
+                kotlin.test.assertFailsWith<org.springframework.web.server.ResponseStatusException> {
+                    service.previewAlbumReference(10, release, "release")
+                }
+            assertEquals(404, error.statusCode.value())
+            io.mockk.coVerify(exactly = 0) { client.getReleaseGroup(any()) }
+        }
 
     @Test
     fun `preview is read only and reports preserved fields`() =

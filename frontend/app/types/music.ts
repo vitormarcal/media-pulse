@@ -567,6 +567,7 @@ export interface AlbumTrackModel {
   id: string
   trackId: number
   title: string
+  listeningHighlight: boolean
   position: string
   meta: string
   lastPlayed: string

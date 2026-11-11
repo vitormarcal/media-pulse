@@ -1,3 +1,4 @@
+import { albumTrackHighlights } from '~/utils/albumTrackHighlights'
 import { albumArtistLabel } from '~/utils/musicCredits'
 import type {
   EditorialHighlight,
@@ -50,11 +51,12 @@ function trackPosition(track: AlbumPageResponse['tracks'][number]) {
   return `${disc}${number}`
 }
 
-function mapTrack(track: AlbumPageResponse['tracks'][number]): AlbumTrackModel {
+function mapTrack(track: AlbumPageResponse['tracks'][number], highlighted: Set<number>): AlbumTrackModel {
   return {
     id: `track-${track.trackId}`,
     trackId: track.trackId,
     title: track.title,
+    listeningHighlight: highlighted.has(track.trackId),
     position: trackPosition(track),
     meta: `${track.playCount} ${track.playCount === 1 ? 'reprodução' : 'reproduções'}`,
     lastPlayed: track.lastPlayed ? formatAbsoluteDate(track.lastPlayed) : 'Sem registro',
@@ -661,6 +663,7 @@ export function buildMusicLibraryPageData(payload: {
 }
 
 export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
+  const highlighted = albumTrackHighlights(album.tracks)
   const visibleTerms = album.terms.filter((term) => term.active)
   const hiddenTerms = album.terms.filter((term) => !term.active)
 
@@ -755,7 +758,7 @@ export function buildAlbumPageData(album: AlbumPageResponse): AlbumPageData {
         },
       ],
     },
-    tracks: album.tracks.map(mapTrack),
+    tracks: album.tracks.map((track) => mapTrack(track, highlighted)),
     recentDays: album.playsByDay.slice(-12).map((day) => ({
       id: day.day,
       label: formatAlbumDay(day.day),

@@ -36,7 +36,8 @@ class MusicBrainzPageEnrichmentController(
     suspend fun albumPreview(
         @PathVariable albumId: Long,
         @RequestParam releaseGroupMbid: String,
-    ) = service.previewAlbum(albumId, releaseGroupMbid)
+        @RequestParam(defaultValue = "release-group") entityType: String,
+    ) = service.previewAlbumReference(albumId, releaseGroupMbid, entityType)
 
     @PostMapping("/albums/{albumId}/musicbrainz")
     suspend fun applyAlbum(

@@ -1,8 +1,10 @@
 <template>
   <main class="album-page">
     <NuxtLink class="back-link" to="/music">← Música</NuxtLink>
-    <div v-if="status === 'pending'" class="panel state-card"><p>Carregando álbum...</p></div>
-    <div v-else-if="error" class="panel state-card" role="alert"><p>Não foi possível carregar este álbum.</p></div>
+    <div v-if="status === 'pending' && !data" class="panel state-card"><p>Carregando álbum...</p></div>
+    <div v-else-if="error && !data" class="panel state-card" role="alert">
+      <p>Não foi possível carregar este álbum.</p>
+    </div>
     <template v-else-if="data">
       <AlbumPageHero
         :title="data.title"
@@ -76,10 +78,14 @@
             type="button"
             class="section-action"
             :aria-expanded="activeAction === 'metadata'"
+            aria-controls="album-metadata-panel"
             @click="toggleAction('metadata')"
           >
             {{ activeAction === 'metadata' ? 'Fechar atualização' : 'Atualizar dados' }}
           </button>
+        </div>
+        <div v-if="owner.authenticated" v-show="activeAction === 'metadata'" id="album-metadata-panel">
+          <AlbumMusicBrainzPanel :album-id="Number(data.id)" :link="data.musicBrainz" @applied="refresh" />
         </div>
         <div v-if="data.terms.visibleCount || owner.authenticated" class="about-group">
           <div class="section-head">
@@ -136,12 +142,6 @@
             >{{ label }} ↗</a
           >
         </nav>
-        <AlbumMusicBrainzPanel
-          v-if="owner.authenticated && activeAction === 'metadata'"
-          :album-id="Number(data.id)"
-          :link="data.musicBrainz"
-          @applied="refresh"
-        />
       </section>
     </template>
   </main>

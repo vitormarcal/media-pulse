@@ -2963,6 +2963,10 @@ paths:
           name: releaseGroupMbid
           required: true
           schema: { type: string }
+        - in: query
+          name: entityType
+          description: Interpret releaseGroupMbid as a release-group ID or resolve a release ID to its group
+          schema: { type: string, enum: [release-group, release], default: release-group }
       responses:
         "200":
           description: Read-only enrichment preview, including all ordered artist credits
@@ -2970,6 +2974,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MusicBrainzAlbumPreview"
+        "400": { description: Invalid UUID or entity type }
+        "404": { description: MusicBrainz entity or associated group not found }
+        "502": { description: MusicBrainz unavailable }
         "409": { description: Incomplete artist credits from MusicBrainz }
   /api/music/albums/{albumId}/musicbrainz:
     post:

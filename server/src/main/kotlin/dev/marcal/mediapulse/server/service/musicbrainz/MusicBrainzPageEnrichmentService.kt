@@ -11,6 +11,7 @@ import dev.marcal.mediapulse.server.api.music.MusicBrainzDiscographyPreviewRespo
 import dev.marcal.mediapulse.server.api.music.MusicBrainzDiscographyStatus
 import dev.marcal.mediapulse.server.api.music.MusicBrainzEnrichmentResult
 import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzApiClient
+import dev.marcal.mediapulse.server.integration.musicbrainz.MusicBrainzClientException
 import dev.marcal.mediapulse.server.model.music.Album
 import dev.marcal.mediapulse.server.model.music.Artist
 import dev.marcal.mediapulse.server.repository.ArtistProfileRepository
@@ -70,6 +71,33 @@ class MusicBrainzPageEnrichmentService(
         val album = requireAlbum(albumId)
         val artist = requireArtist(album.artistId)
         return client.searchReleaseGroups(album.title, artist.name).map { it.toDto() }
+    }
+
+    suspend fun previewAlbumReference(
+        albumId: Long,
+        mbid: String,
+        entityType: String = "release-group",
+    ): MusicBrainzAlbumPreviewResponse {
+        if (entityType !in setOf("release-group", "release") ||
+            !Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}").matches(mbid)
+        ) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe um identificador de álbum ou edição válido.")
+        }
+        requireAlbum(albumId)
+        return try {
+            val group =
+                if (entityType == "release") {
+                    client.resolveReleaseGroupFromRelease(mbid)
+                        ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Edição sem álbum correspondente no MusicBrainz.")
+                } else {
+                    mbid
+                }
+            previewAlbum(albumId, group)
+        } catch (ex: MusicBrainzClientException.NotFound) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Correspondência não encontrada no MusicBrainz.")
+        } catch (ex: MusicBrainzClientException) {
+            throw ResponseStatusException(HttpStatus.BAD_GATEWAY, "Não foi possível consultar o MusicBrainz agora.")
+        }
     }
 
     suspend fun previewAlbum(
