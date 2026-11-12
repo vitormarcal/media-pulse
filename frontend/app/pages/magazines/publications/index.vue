@@ -5,35 +5,23 @@
       Não foi possível carregar as publicações. <button class="mag-button" @click="refresh()">Tentar novamente</button>
     </div>
     <template v-else-if="data">
-      <BooksLibraryHero
-        eyebrow="Revistas"
-        title="Publicações"
-        intro=""
-        back-link="/magazines"
-        back-label="Voltar para revistas"
-        accent-link="/magazines?add=1"
-        accent-label="Adicionar número"
-        :spotlight="null"
-        :show-empty-spotlight="false"
-      />
+      <MagazineHeader title="Publicações" back-link="/magazines" back-label="Voltar para revistas"
+        ><div v-if="isOwner" class="mag-actions mag-header-actions">
+          <NuxtLink class="mag-button primary" to="/magazines?add=1">Adicionar número</NuxtLink>
+        </div></MagazineHeader
+      >
       <MagazineCollectionNav />
-      <BooksLibraryGrid
-        layout="regular"
-        eyebrow="Acervo"
-        title="Publicações"
-        description=""
-        summary=""
-        :items="cards"
-        empty-message="Nenhuma publicação cadastrada."
-      />
+      <MagazineGrid :items="cards" empty-message="Nenhuma publicação cadastrada." />
     </template>
   </main>
 </template>
 <script setup lang="ts">
-import BooksLibraryHero from '~/components/books/BooksLibraryHero.vue'
-import BooksLibraryGrid from '~/components/books/BooksLibraryGrid.vue'
+import MagazineHeader from '~/components/magazines/MagazineHeader.vue'
+import MagazineGrid from '~/components/magazines/MagazineGrid.vue'
 import MagazineCollectionNav from '~/components/magazines/MagazineCollectionNav.vue'
 import type { MagazinePublication } from '~/types/magazines'
+const owner = useOwnerAuth()
+const isOwner = computed(() => owner.value.authenticated)
 const config = useRuntimeConfig()
 const { data, pending, error, refresh } = await useAsyncData('magazine-publications', () =>
   $fetch<MagazinePublication[]>('/api/magazines/publications', { baseURL: config.public.apiBase }),

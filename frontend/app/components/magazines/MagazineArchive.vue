@@ -28,12 +28,6 @@
           <option value="UNREAD">Não lida</option>
         </select>
       </label>
-      <label v-if="!publicationId"
-        ><span>Ordenar por</span>
-        <select value="PUBLICATION_DATE">
-          <option value="PUBLICATION_DATE">Publicação mais recente</option>
-        </select>
-      </label>
       <div class="mag-actions">
         <button class="mag-button primary" type="submit">Filtrar</button>
         <NuxtLink v-if="filtered" class="mag-button" :to="clearLink">Limpar</NuxtLink>
@@ -45,25 +39,17 @@
     </div>
     <template v-else-if="data">
       <template v-if="publicationId">
-        <BooksLibraryGrid
+        <MagazineGrid
           v-for="group in yearGroups"
           :key="group.year"
-          layout="regular"
-          eyebrow=""
           :title="group.year"
-          description=""
-          summary=""
-          :items="group.items.map(magazineCard)"
+          :items="group.items.map((issue) => ({ ...magazineCard(issue), title: magazineNumber(issue), subtitle: '' }))"
         />
         <p v-if="!items.length" class="mag-muted">Nenhum número encontrado.</p>
       </template>
-      <BooksLibraryGrid
+      <MagazineGrid
         v-else
-        layout="regular"
-        eyebrow="Arquivo"
         title="Todos os números"
-        description=""
-        summary=""
         :items="items.map(magazineCard)"
         empty-message="Nenhum número encontrado."
       />
@@ -77,9 +63,9 @@
   </section>
 </template>
 <script setup lang="ts">
-import BooksLibraryGrid from '~/components/books/BooksLibraryGrid.vue'
+import MagazineGrid from '~/components/magazines/MagazineGrid.vue'
 import type { MagazineIssue, MagazineLibrary, MagazinePublication } from '~/types/magazines'
-import { magazineCard, magazineError, magazineStates } from '~/utils/magazines'
+import { magazineCard, magazineError, magazineNumber, magazineStates } from '~/utils/magazines'
 const props = defineProps<{ publicationId?: number; publications?: MagazinePublication[] }>()
 const route = useRoute()
 const config = useRuntimeConfig()

@@ -5,60 +5,46 @@
       Não foi possível carregar as revistas. <button class="mag-button" @click="refresh()">Tentar novamente</button>
     </div>
     <template v-else-if="data">
-      <MoviesCollectionHero
-        eyebrow="Revistas"
-        title="Revistas"
-        intro=""
-        :lead="spotlight ? magazineHighlight(spotlight) : null"
-        :supporting="[]"
-        :show-empty-lead="false"
-        accent-link="/magazines?add=1"
-        accent-label="Adicionar número"
-      />
+      <MagazineHeader title="Revistas" back-link="/" back-label="Voltar para o início"
+        ><div v-if="isOwner" class="mag-actions mag-header-actions">
+          <NuxtLink class="mag-button primary" :to="addMode ? '/magazines' : '/magazines?add=1'">{{
+            addMode ? 'Fechar cadastro' : 'Adicionar número'
+          }}</NuxtLink>
+        </div></MagazineHeader
+      >
       <MagazineCollectionNav />
-      <div v-show="addMode" ref="issueForm">
+      <div v-if="isOwner" v-show="addMode" ref="issueForm">
         <MagazineIssueForm v-if="openedOnce" :publications="data.publications" @saved="created" @cancel="toggleAdd" />
       </div>
-      <template v-if="showEditorial">
-        <section v-if="data.overview.inProgress.length" class="mag-section">
-          <SectionHeading eyebrow="Leitura" title="Em andamento" />
-          <div class="mag-strip">
-            <MediaStripCard
-              v-for="issue in data.overview.inProgress"
-              :key="issue.id"
-              :item="magazineShelf(issue)"
-              variant="large"
-            />
-          </div>
+      <template v-if="showEditorial"
+        ><section v-if="data.overview.inProgress.length" class="mag-panel">
+          <MagazineGrid title="Em andamento" :items="data.overview.inProgress.map(magazineCard)" />
         </section>
-        <section v-if="data.overview.recent.length" class="mag-section">
-          <SectionHeading eyebrow="Histórico" title="Últimas leituras" />
-          <div class="mag-strip">
-            <MediaStripCard
-              v-for="journey in data.overview.recent"
-              :key="journey.read.id"
-              :item="{
-                ...magazineShelf(journey.issue),
-                meta: `Lida em ${magazineDate(journey.read.finishedAt)}`,
-                detail: journey.issue.totalPages ? `${journey.issue.totalPages} páginas` : '',
-              }"
-            />
-          </div>
-        </section>
-      </template>
+        <section v-if="data.overview.recent.length" class="mag-panel">
+          <MagazineGrid
+            title="Últimas leituras"
+            :items="
+              data.overview.recent.map((journey) => ({
+                ...magazineCard(journey.issue),
+                id: `read-${journey.read.id}`,
+                progressLabel: `Lida em ${magazineDate(journey.read.finishedAt)}`,
+                aside: '',
+              }))
+            "
+          /></section
+      ></template>
       <MagazineArchive :publications="data.publications" />
     </template>
   </main>
 </template>
 <script setup lang="ts">
-import MoviesCollectionHero from '~/components/movies/MoviesCollectionHero.vue'
-import MediaStripCard from '~/components/home/MediaStripCard.vue'
-import SectionHeading from '~/components/home/SectionHeading.vue'
+import MagazineHeader from '~/components/magazines/MagazineHeader.vue'
+import MagazineGrid from '~/components/magazines/MagazineGrid.vue'
 import MagazineIssueForm from '~/components/magazines/MagazineIssueForm.vue'
 import MagazineArchive from '~/components/magazines/MagazineArchive.vue'
 import MagazineCollectionNav from '~/components/magazines/MagazineCollectionNav.vue'
 import type { MagazineDetails, MagazineOverview, MagazinePublication } from '~/types/magazines'
-import { magazineDate, magazineHighlight, magazineShelf } from '~/utils/magazines'
+import { magazineDate, magazineCard } from '~/utils/magazines'
 definePageMeta({
   middleware: (to) => {
     if (to.query.view === 'publications') return navigateTo('/magazines/publications', { replace: true })
@@ -68,9 +54,11 @@ definePageMeta({
     }
   },
 })
+const owner = useOwnerAuth()
+const isOwner = computed(() => owner.value.authenticated)
 const route = useRoute()
 const config = useRuntimeConfig()
-const addMode = computed(() => route.query.add === '1')
+const addMode = computed(() => isOwner.value && route.query.add === '1')
 const showEditorial = computed(() => !route.query.q && !route.query.status && !route.query.view && !addMode.value)
 const openedOnce = ref(addMode.value)
 watch(addMode, (open) => {
@@ -83,7 +71,6 @@ const { data, pending, error, refresh } = await useAsyncData('magazines-dashboar
   ])
   return { publications, overview }
 })
-const spotlight = computed(() => data.value?.overview.inProgress[0] || data.value?.overview.recent[0]?.issue)
 const issueForm = ref<HTMLElement>()
 watch(addMode, async (open) => {
   if (open) {

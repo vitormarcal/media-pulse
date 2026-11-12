@@ -225,3 +225,92 @@ summary {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Magazine review: local domain styles, preserving shared book/movie components. */
+.mag-page {
+  width: min(1120px, calc(100% - 32px));
+  gap: 32px;
+}
+.mag-panel,
+.mag-reads,
+.mag-detail :deep(.comments-panel.editorial) {
+  padding: clamp(20px, 4vw, 32px);
+  border: 1px solid var(--base-color-border);
+  border-radius: 28px;
+  background: var(--base-color-surface-strong);
+  min-width: 0;
+}
+.mag-page h2 {
+  font-size: 1.3rem;
+  margin: 0;
+}
+.mag-page h3 {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.mag-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.mag-about {
+  display: grid;
+  gap: 16px;
+}
+.mag-about > p {
+  margin: 0;
+  line-height: 1.6;
+}
+.mag-header-actions {
+  margin-top: 20px;
+}
+.mag-read {
+  border-radius: 0;
+  padding: 18px 0;
+  background: transparent;
+  border-top: 1px solid var(--base-color-border);
+}
+.mag-read-row {
+  flex-wrap: wrap;
+}
+.mag-reads {
+  display: grid;
+  gap: 20px;
+}
+.mag-detail .mag-reads .mag-panel,
+.mag-about .mag-panel {
+  border-radius: 16px;
+  padding: 20px;
+  background: var(--base-color-surface-soft);
+}
+.mag-page :focus-visible {
+  outline: 2px solid #435ee5;
+  outline-offset: 3px;
+}
+@media (max-width: 620px) {
+  .mag-page {
+    width: calc(100% - 32px);
+    gap: 32px;
+  }
+  .mag-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.mag-read {
+  border-bottom: 0;
+}
+.mag-filters {
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto;
+}
+.mag-filters.publication-filters {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+}
+@media (max-width: 800px) {
+  .mag-filters,
+  .mag-filters.publication-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

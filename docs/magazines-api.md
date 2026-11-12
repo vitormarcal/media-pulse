@@ -91,3 +91,9 @@ Links legados `/magazines?view=publications` e `/magazines?publicationId={id}` s
 ## Metadados de imagem no Visual Library 0.6.0
 
 Uploads remotos incluem sugestões de tags derivadas dos metadados existentes e referência à entidade com tipo e ID real em string. A referência é enviada também em substituições e novas tentativas, evitando reaplicar tags da mesma associação. Em revistas o tipo é `magazine_issue`; obras usam `artwork` e retratos `artwork_artist`. Omitir sugestões longas ou vazias não remove dados do Media Pulse. Ver [mapeamento, limites e tratamento de recusas](visual-library-images.md). Não há backfill automático nem sincronização contínua de tags.
+
+### Revisão visual de revistas
+
+A revisão de número/publicação/acervo reutiliza os endpoints e contratos existentes, sem migração. Nome e mês/ano do número, jornadas, datas civis, comentários e regras de exclusão são preservados. A capa abre o visualizador compartilhado e atualizações recebidas pelo formulário são aplicadas ao estado do detalhe. Retry de upload parcial continua usando somente POST /{id}/cover.
+
+A manutenção é contextual e exclusiva do owner. Edição de nome/ISSN usa um formulário compartilhado por publicação e número e continua afetando toda a publicação. O arquivo preserva a ordenação PUBLICATION_DATE, embora o seletor com uma única opção tenha sido removido. Cartões no recorte de publicação mostram a identificação do número; fora dele, preservam o nome da publicação. Paginação, agrupamento anual, Não lida e redirecionamentos legados mantêm a lógica existente. A troca de número na navegação remonta a página para carregar seu próprio estado.
