@@ -20,7 +20,7 @@
           </label>
         </div>
         <p v-if="!data.books.length" class="muted">Nenhum livro deste autor no acervo.</p>
-        <div v-else id="author-books-grid" class="author-books">
+        <div v-else id="author-books-grid" class="author-books" :class="{ single: data.books.length === 1 }">
           <article v-for="book in visibleBooks" :key="book.bookId" class="author-book">
             <NuxtLink class="book-cover" :to="`/books/${book.slug}`" :aria-label="`Ver ${book.title}`">
               <MediaImage
@@ -30,17 +30,19 @@
                 fallback="Capa indisponível"
               />
             </NuxtLink>
-            <NuxtLink :to="`/books/${book.slug}`"
-              ><h3>{{ book.title }}</h3></NuxtLink
-            >
-            <p v-if="coauthors(book).length" class="book-authors">
-              <span>Com </span>
-              <template v-for="(author, index) in coauthors(book)" :key="author.id"
-                ><span v-if="index">, </span
-                ><NuxtLink :to="`/books/authors/${author.id}`">{{ author.name }}</NuxtLink></template
+            <div class="book-copy">
+              <NuxtLink :to="`/books/${book.slug}`"
+                ><h3>{{ book.title }}</h3></NuxtLink
               >
-            </p>
-            <p class="muted book-year">{{ book.releaseDate?.slice(0, 4) || 'Ano não informado' }}</p>
+              <p v-if="coauthors(book).length" class="book-authors">
+                <span>Outros créditos: </span>
+                <template v-for="(author, index) in coauthors(book)" :key="author.id"
+                  ><span v-if="index">, </span
+                  ><NuxtLink :to="`/books/authors/${author.id}`">{{ author.name }}</NuxtLink></template
+                >
+              </p>
+              <p class="muted book-year">{{ book.releaseDate?.slice(0, 4) || 'Ano não informado' }}</p>
+            </div>
           </article>
         </div>
         <button
@@ -186,6 +188,31 @@ button {
   gap: 8px;
   min-width: 0;
 }
+.book-copy {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+.author-books.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+.single .author-book {
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+}
+.single .book-cover {
+  height: 260px;
+  margin: 0;
+}
+.single .book-copy {
+  max-width: 60ch;
+  gap: 12px;
+}
+.single h3 {
+  font-size: 1.25rem;
+}
 .book-cover {
   height: 240px;
   display: flex;
@@ -278,6 +305,17 @@ button {
   }
 }
 @media (max-width: 560px) {
+  .single .author-book {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .single .book-cover {
+    height: 240px;
+  }
+  .single h3 {
+    font-size: 1.1rem;
+  }
+
   .author-books {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 24px 16px;

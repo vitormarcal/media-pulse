@@ -374,3 +374,6 @@ Leituras recentes vêm depois, em linhas com livro navegável, estado e datas id
 
 
 No autor, manter grade regular por linhas, sem masonry: a ordem de títulos e volumes deve ser previsível. Exibir inicialmente até 12 livros, com Ver todos/Mostrar menos quando houver mais; a ordenação considera todo o acervo antes do recorte. Omitir o próprio autor nos créditos dos cartões, preservando links de coautores com o rótulo Com. Ordenação numérica de títulos não unifica nomes ou edições diferentes. Cartões de séries precisam do contexto de estilos book-groups, limitado ao próprio bloco, com mosaico de altura controlada e largura responsiva.
+
+
+Com um único livro no autor, usar composição própria em toda a largura: capa integral à esquerda e informações à direita no desktop; capa seguida das informações em uma coluna no celular. Manter a grade regular para vários livros. Créditos adicionais preservam links e usam Outros créditos, pois o contrato não distingue funções como autoria, tradução e outras contribuições.

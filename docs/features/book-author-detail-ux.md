@@ -55,3 +55,8 @@ Aprovado manter grade regular, sem masonry. A página de Akira Toriyama (autor 2
 Validação adicional: dados reais do endpoint do autor 28 reproduzidos localmente em desktop e celular, incluindo série com quatro capas, expansão dos 54 livros, recolhimento, ordenação e ausência de transbordamento.
 
 Correções publicadas na versão 1.24.1, tag v1.24.1 e imagens 1.24.1/latest, para implantação no Mordor.
+
+
+Ajuste aprovado após revisão do autor 19 (Eduardo Foresti): composição de livro único em toda a largura, com capa/texto lado a lado no desktop e empilhados no celular. Substituído Com por Outros créditos, mantendo os nomes navegáveis sem inferir a função da contribuição. Grade regular de múltiplos livros preservada.
+
+Composição de livro único e copy dos créditos publicadas na versão 1.24.2, tag v1.24.2 e imagens 1.24.2/latest, para implantação no Mordor. Validação local dos autores 19 e 28 em desktop/celular, incluindo links dos créditos, composição adaptativa e preservação da grade regular.
