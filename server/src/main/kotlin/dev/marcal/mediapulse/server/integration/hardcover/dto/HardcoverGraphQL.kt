@@ -117,6 +117,7 @@ data class HardcoverContribution(
 
 data class HardcoverAuthor(
     val name: String? = null,
+    val id: Long? = null,
 )
 
 // Catalog suggestions are fetched only on an explicit owner action.

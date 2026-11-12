@@ -39,6 +39,32 @@ class HardcoverAuthorApiClientTest {
             }
         }
 
+    @Test
+    fun `book import retains external contributor identity without a name lookup`() =
+        runBlocking {
+            val result =
+                client(
+                    """{"data":{"user_books":[{"id":1,"edition":{"id":2,"contributions":[
+            {"contribution":"Translator","author":{"id":42,"name":"Pessoa"}}]}}]}}""",
+                ).fetchUserBooksPage(1, 10, 0).single()
+            assertEquals(
+                42L,
+                result.edition
+                    ?.contributions
+                    ?.single()
+                    ?.author
+                    ?.id,
+            )
+            assertEquals(
+                "Pessoa",
+                result.edition
+                    ?.contributions
+                    ?.single()
+                    ?.author
+                    ?.name,
+            )
+        }
+
     private fun client(json: String) =
         HardcoverApiClient(
             WebClient

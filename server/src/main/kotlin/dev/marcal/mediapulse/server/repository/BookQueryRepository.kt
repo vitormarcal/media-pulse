@@ -410,7 +410,7 @@ class BookQueryRepository(
             books = books,
             recentReads = recentReads,
             series = bookSeriesRepository.forAuthor(authorId),
-            profile = authorProfiles.find(authorId),
+            profile = authorProfiles.visible(authorId),
         )
     }
 

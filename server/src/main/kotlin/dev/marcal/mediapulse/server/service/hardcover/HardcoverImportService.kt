@@ -3,11 +3,13 @@ package dev.marcal.mediapulse.server.service.hardcover
 import com.fasterxml.jackson.databind.ObjectMapper
 import dev.marcal.mediapulse.server.config.HardcoverProperties
 import dev.marcal.mediapulse.server.integration.hardcover.HardcoverApiClient
+import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverUserBook
 import dev.marcal.mediapulse.server.model.EventSource
 import dev.marcal.mediapulse.server.repository.hardcover.HardcoverNativeRepository
 import dev.marcal.mediapulse.server.service.eventsource.EventSourceService
 import dev.marcal.mediapulse.server.service.eventsource.ProcessEventSourceService
 import dev.marcal.mediapulse.server.util.FingerprintUtil
+import kotlinx.coroutines.CancellationException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.concurrent.atomic.AtomicBoolean
@@ -20,6 +22,7 @@ class HardcoverImportService(
     private val processEventSourceService: ProcessEventSourceService,
     private val objectMapper: ObjectMapper,
     private val nativeRepository: HardcoverNativeRepository,
+    private val authorImport: HardcoverAuthorImportService,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val running = AtomicBoolean(false)
@@ -50,6 +53,20 @@ class HardcoverImportService(
         var ignored = 0
         var failed = 0
         var fetched = 0
+        var completeCatalog = false
+        var reliableAuthorEvidence = true
+        val authorIds = linkedSetOf<Long>()
+
+        fun observeAuthors(item: HardcoverUserBook) {
+            try {
+                authorIds.addAll(authorImport.observe(item))
+            } catch (ex: CancellationException) {
+                throw ex
+            } catch (ex: Exception) {
+                reliableAuthorEvidence = false
+                logger.warn("Hardcover author evidence deferred | error={}", ex.javaClass.simpleName)
+            }
+        }
         try {
             val pageSize = props.poll.pageSize.coerceAtLeast(1)
             var offset = 0
@@ -59,10 +76,14 @@ class HardcoverImportService(
                 if (maxPages != null && pages >= maxPages) break
 
                 val items = api.fetchUserBooksPage(props.userId, pageSize, offset)
-                if (items.isEmpty()) break
+                if (items.isEmpty()) {
+                    completeCatalog = true
+                    break
+                }
 
                 fetched += items.size
                 for (item in items) {
+                    observeAuthors(item)
                     val payload = objectMapper.writeValueAsString(item)
                     val event =
                         eventSourceService.save(
@@ -84,7 +105,10 @@ class HardcoverImportService(
                         }
 
                         processEventSourceService.execute(event.id)
+                        observeAuthors(item)
                         processed++
+                    } catch (ex: CancellationException) {
+                        throw ex
                     } catch (ex: Exception) {
                         failed++
                     }
@@ -92,6 +116,20 @@ class HardcoverImportService(
 
                 offset += items.size
                 pages++
+            }
+
+            if (completeCatalog && reliableAuthorEvidence) {
+                try {
+                    authorImport.enrich(authorIds)
+                } catch (
+                    ex: CancellationException,
+                ) {
+                    throw ex
+                } catch (
+                    ex: Exception,
+                ) {
+                    logger.warn("Hardcover author enrichment deferred | error={}", ex.javaClass.simpleName)
+                }
             }
 
             logger.info(

@@ -42,6 +42,7 @@ class HardcoverBookIdentityTest {
                     processor,
                     jacksonObjectMapper(),
                     repository,
+                    mockk(relaxed = true),
                 )
             assertEquals(0, service.importUserBooks())
             verify { repository.retainHardcoverBookIdByFingerprint(FingerprintUtil.bookFp("Existing"), 20) }

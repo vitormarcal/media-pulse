@@ -56,3 +56,7 @@ Backend: 41 testes passaram, sem skips, incluindo serviço, controle de acesso/C
 Chromium em 1440px e 390px, owner/visitante: consulta com erro/retry, seleção, falha de aplicação com entrada preservada, atualização reativa do retrato e texto, fonte, ano sem data inventada, galeria por teclado/Escape/retorno do foco, biografia longa, invalidação da prévia ao alterar entrada, troca de identidade e perfil ausente. Regressões de autores 19/28, livro, revista, séries/universos. Frontend com lint/formatação/tipos/build; backend com ktlintFormat, testes e bootJar.
 
 Publicação solicitada na versão 1.26.0, com tag v1.26.0 e imagens 1.26.0/latest. Implantação no Mordor pelo serviço Compose existente, incluindo migração V80 e verificação de leitura pública sem enriquecimento prévio.
+
+## Evolução aprovada: importação automática
+
+A restrição inicial de enriquecimento exclusivamente manual foi ampliada pela solicitação posterior do owner. Ver [enriquecimento na importação](book-author-import-enrichment.md): IDs de contribuições como evidência, perfis manuais protegidos, preenchimento de lacunas e tratamento conservador de ambiguidades. A revisão manual continua disponível para exceções.

@@ -146,7 +146,7 @@ class HardcoverApiClient(
                   publisher { name }
                   image { url }
                   images { url }
-                  contributions { contribution author { name } }
+                  contributions { contribution author { id name } }
                 }
                 book {
                   id

@@ -6,6 +6,7 @@ import dev.marcal.mediapulse.server.api.books.AuthorEnrichmentDto
 import dev.marcal.mediapulse.server.api.books.AuthorEnrichmentField
 import dev.marcal.mediapulse.server.api.books.AuthorEnrichmentPreview
 import dev.marcal.mediapulse.server.integration.hardcover.HardcoverApiClient
+import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverAuthorProfile
 import dev.marcal.mediapulse.server.repository.BookAuthorProfileRepository
 import dev.marcal.mediapulse.server.service.image.LibraryImageStorageService
 import dev.marcal.mediapulse.server.util.TxUtil
@@ -55,21 +56,7 @@ class BookAuthorEnrichmentService(
             fail(HttpStatus.CONFLICT, "Este perfil já está vinculado a outro autor local. Revise os autores antes de associar.")
         }
         val now = Instant.now()
-        val photo = remote.image?.url?.takeIf(::allowedPhoto)
-        val proposal =
-            AuthorEnrichmentDto(
-                hardcoverId = remote.id,
-                externalName = remote.name,
-                sourceUrl = "https://hardcover.app/authors/${remote.slug?.takeIf { it.matches(Regex("[a-zA-Z0-9_-]+")) } ?: remote.id}",
-                fetchedAt = now,
-                biography = remote.bio?.trim()?.takeIf(String::isNotEmpty),
-                born = date(remote.bornDate, remote.bornYear),
-                died = date(remote.deathDate, remote.deathYear),
-                location = remote.location?.trim()?.takeIf(String::isNotEmpty),
-                links = collectLinks(remote.links),
-                photoUrl = photo,
-                photoSourceUrl = photo,
-            )
+        val proposal = mapProfile(remote, now)
         val result = AuthorEnrichmentPreview(UUID.randomUUID().toString(), profiles.find(authorId), proposal, now.plusSeconds(900))
         synchronized(pending) {
             pending.entries.removeIf {
@@ -196,6 +183,26 @@ class BookAuthorEnrichmentService(
     }
 
     companion object {
+        internal fun mapProfile(
+            remote: HardcoverAuthorProfile,
+            now: Instant = Instant.now(),
+        ): AuthorEnrichmentDto {
+            val photo = remote.image?.url?.takeIf(::allowedPhoto)
+            return AuthorEnrichmentDto(
+                hardcoverId = remote.id,
+                externalName = remote.name,
+                sourceUrl = "https://hardcover.app/authors/${remote.slug?.takeIf { it.matches(Regex("[a-zA-Z0-9_-]+")) } ?: remote.id}",
+                fetchedAt = now,
+                biography = remote.bio?.trim()?.takeIf(String::isNotEmpty),
+                born = date(remote.bornDate, remote.bornYear),
+                died = date(remote.deathDate, remote.deathYear),
+                location = remote.location?.trim()?.takeIf(String::isNotEmpty),
+                links = collectLinks(remote.links),
+                photoUrl = photo,
+                photoSourceUrl = photo,
+            )
+        }
+
         internal fun parseReference(reference: String): Pair<Long?, String?> {
             val value = reference.trim()
             value.toLongOrNull()?.takeIf { it in 1..Int.MAX_VALUE.toLong() }?.let { return it to null }
