@@ -153,3 +153,21 @@ data class HardcoverSeriesAuthor(
 data class HardcoverSeriesLookupData(
     @JsonProperty("series_by_pk") val series: HardcoverSuggestedSeries? = null,
 )
+
+data class HardcoverAuthorProfileData(
+    val authors: List<HardcoverAuthorProfile> = emptyList(),
+)
+
+data class HardcoverAuthorProfile(
+    val id: Long,
+    val name: String,
+    val slug: String? = null,
+    val bio: String? = null,
+    @JsonProperty("born_date") val bornDate: String? = null,
+    @JsonProperty("born_year") val bornYear: Int? = null,
+    @JsonProperty("death_date") val deathDate: String? = null,
+    @JsonProperty("death_year") val deathYear: Int? = null,
+    val location: String? = null,
+    val links: com.fasterxml.jackson.databind.JsonNode? = null,
+    val image: HardcoverImage? = null,
+)

@@ -201,3 +201,14 @@ O detalhe de autor reutiliza AuthorDetailsResponse sem alteração de API ou mig
 ### Apresentação de séries e universos
 
 A revisão visual de listagem/detalhe usa os contratos e endpoints existentes, sem migração. A sequência de items é preservada, com posição visual ordinal; não é deduzida dos títulos. Universo contém séries, não uma agregação de leituras. Contagens e situação editorial do Hardcover ficam no contexto externo, separadas do acervo local. Inclusão, remoção, ordem, associação de universo e aplicação seletiva mantêm suas semânticas. Ausência de universo em produção é validada com fixtures, sem criação de registros reais.
+
+
+### Enriquecimento do autor pelo Hardcover
+
+O GET `/api/books/authors/{authorId}` acrescenta `profile` opcional: ID/nome externo, `sourceUrl`, `fetchedAt`, biografia, nascimento/falecimento (`YYYY` ou data ISO), origem, links e retrato armazenado. O nome, ID, fingerprint e livros locais não mudam. A leitura não consulta o Hardcover.
+
+- `POST /api/books/authors/{authorId}/enrichment/preview`, body `{reference}`: recebe ID positivo ou link HTTPS de perfil Hardcover. Consulta por ID/slug, nunca por correspondência automática de nome. Retorna `current`, `proposed`, token e validade de 15 minutos; sem gravação do perfil ou imagem. URL remota de foto aparece apenas na proposta e somente para hosts de imagens Hardcover permitidos.
+- `POST /api/books/authors/{authorId}/enrichment`, body `{token, fields, confirmIdentityChange?}`: campos `PHOTO`, `BIOGRAPHY`, `DATES`, `LOCATION`, `LINKS`. Exige owner e CSRF, como a prévia. Aplica o snapshot consultado; campos não selecionados ou ausentes são preservados no mesmo vínculo. Selecionar campo indisponível retorna 400.
+- Trocar de ID externo exige `confirmIdentityChange=true` e limpa o contexto anterior, aplicando apenas os campos selecionados da nova pessoa. Um perfil externo só pode pertencer a um autor local; conflitos retornam 409, sem fusão. Tokens expirados, consumidos ou incompatíveis com o snapshot atual também retornam 409.
+- Retratos são validados e salvos no Visual Library com referência `book_author` quando habilitado; fallback local usa o armazenamento de imagens existente. Fonte original é mantida, sem inventar autoria/licença. Falha na foto retorna 502 e não aplica nenhum campo; a mesma prévia permite retry ou aplicação sem PHOTO enquanto válida. Falha da consulta não altera dados locais.
+- V80 cria `book_author_profiles`, com FK para authors, perfil JSONB e unicidade de ID externo. A importação atual continua preservada e não substitui o enriquecimento confirmado. Homônimos previamente consolidados pelo importador não são separados automaticamente.

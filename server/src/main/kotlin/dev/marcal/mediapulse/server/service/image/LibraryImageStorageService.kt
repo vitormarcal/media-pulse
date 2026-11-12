@@ -29,6 +29,19 @@ class LibraryImageStorageService(
         return ImageContent(response.body ?: byteArrayOf(), response.headers.contentType)
     }
 
+    fun saveBookAuthor(
+        image: ImageContent,
+        authorId: Long,
+        name: String,
+    ): String {
+        val validated = LibraryImageValidator.validate(image.bytes)
+        return if (visualLibrary.enabled) {
+            visualLibrary.upload(validated, VisualLibraryUploadMetadata.forEntity("book_author", authorId, "autor", name))
+        } else {
+            storage.saveImageForArtist(validated, "hardcover-authors", authorId, UUID.randomUUID().toString())
+        }
+    }
+
     fun saveBook(
         image: ImageContent,
         bookId: Long,

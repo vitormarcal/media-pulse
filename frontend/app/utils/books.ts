@@ -624,6 +624,7 @@ export function buildBookPageData(book: BookDetailsResponse): BookPageData {
 export function buildAuthorPageData(author: AuthorDetailsResponse): AuthorPageData {
   return {
     id: String(author.authorId),
+    profile: author.profile ?? null,
     series: author.series,
     name: author.name,
     stats: {

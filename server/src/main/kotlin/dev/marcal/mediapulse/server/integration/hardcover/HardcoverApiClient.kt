@@ -1,5 +1,7 @@
 package dev.marcal.mediapulse.server.integration.hardcover
 
+import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverAuthorProfile
+import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverAuthorProfileData
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverGraphQLRequest
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverGraphQLResponse
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverSeriesData
@@ -18,6 +20,35 @@ class HardcoverApiClient(
     private val hardcoverWebClient: WebClient,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
+
+    suspend fun fetchAuthorProfile(
+        id: Long?,
+        slug: String?,
+    ): HardcoverAuthorProfile? {
+        val filter = if (id != null) "id: {_eq: ${'$'}id}" else "slug: {_eq: ${'$'}slug}"
+        val variable = if (id != null) "${'$'}id: Int!" else "${'$'}slug: String!"
+        val request =
+            HardcoverGraphQLRequest(
+                """
+                query AuthorProfile($variable) {
+                    authors(where: {$filter}, limit: 1) {
+                        id name slug bio born_date born_year death_date death_year location links image { url }
+                    }
+                }
+                """.trimIndent(),
+                if (id != null) mapOf("id" to id) else mapOf("slug" to slug),
+            )
+        val response =
+            hardcoverWebClient
+                .post()
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(
+                    object : ParameterizedTypeReference<HardcoverGraphQLResponse<HardcoverAuthorProfileData>>() {},
+                ).awaitSingle()
+        if (!response.errors.isNullOrEmpty() || response.data == null) error("Hardcover author query failed")
+        return response.data.authors.firstOrNull()
+    }
 
     suspend fun fetchSeries(bookId: Long): List<HardcoverSuggestedSeries> {
         val request =

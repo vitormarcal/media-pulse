@@ -66,6 +66,7 @@ export interface BookDetailsResponse {
 }
 
 export interface AuthorDetailsResponse {
+  profile?: AuthorEnrichmentProfile | null
   series: BookGroup[]
   authorId: number
   name: string
@@ -123,6 +124,7 @@ export interface BookPageData {
 }
 
 export interface AuthorPageData {
+  profile: AuthorEnrichmentProfile | null
   series: BookGroup[]
   id: string
   name: string
@@ -293,4 +295,25 @@ export interface BookLibraryPageData {
   }>
   libraryCursor: string | null
   mode: 'library' | 'search' | 'year'
+}
+
+export type AuthorEnrichmentField = 'PHOTO' | 'BIOGRAPHY' | 'DATES' | 'LOCATION' | 'LINKS'
+export interface AuthorEnrichmentProfile {
+  hardcoverId: number
+  externalName: string
+  sourceUrl: string
+  fetchedAt: string
+  biography: string | null
+  born: string | null
+  died: string | null
+  location: string | null
+  links: string[]
+  photoUrl: string | null
+  photoSourceUrl: string | null
+}
+export interface AuthorEnrichmentPreview {
+  token: string
+  current: AuthorEnrichmentProfile | null
+  proposed: AuthorEnrichmentProfile
+  expiresAt: string
 }

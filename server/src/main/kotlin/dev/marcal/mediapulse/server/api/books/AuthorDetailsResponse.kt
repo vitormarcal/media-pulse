@@ -13,4 +13,5 @@ data class AuthorDetailsResponse(
     val books: List<BookCardDto>,
     val recentReads: List<ReadCardDto>,
     val series: List<BookGroupDto> = emptyList(),
+    val profile: AuthorEnrichmentDto? = null,
 )

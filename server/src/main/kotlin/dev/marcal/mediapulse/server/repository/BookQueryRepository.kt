@@ -37,6 +37,7 @@ class BookQueryRepository(
     private val entityManager: EntityManager,
     private val mediaCommentQueryRepository: MediaCommentQueryRepository,
     private val bookSeriesRepository: BookSeriesRepository,
+    private val authorProfiles: BookAuthorProfileRepository,
 ) {
     fun library(
         limit: Int,
@@ -409,6 +410,7 @@ class BookQueryRepository(
             books = books,
             recentReads = recentReads,
             series = bookSeriesRepository.forAuthor(authorId),
+            profile = authorProfiles.find(authorId),
         )
     }
 

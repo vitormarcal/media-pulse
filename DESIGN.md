@@ -390,3 +390,10 @@ Ordem no acervo vem depois do cabeçalho: lista ordenada de todos os livros em u
 Sobre a série reúne universos e dados persistidos do Hardcover. Identificar contagens externas e situação editorial; não inferir progresso pessoal ou volumes ausentes. O autor principal externo não se repete quando tem o mesmo nome de um crédito local, mas permanece disponível na prévia de manutenção. Esse tratamento visual não cria nem unifica identidades.
 
 Edição abre junto do botão no cabeçalho; mover e remover aparecem junto do membro durante edição. Preservar inclusão ao final, associação de universo, exclusão confirmada e atualização de metadados com prévia e campos selecionados. Visitantes não recebem instruções para controles indisponíveis. Usar estilos opt-in nas páginas revisadas, preservando cartões e atribuição usados por autores e livros.
+
+
+## 24. Contexto enriquecido do autor de livros
+
+O vínculo Hardcover é revisado explicitamente por link ou ID, com prévia e seleção dos campos disponíveis. Atualizar dados fica em Sobre o autor, junto do painel que revela; entrada/seleção permanecem em erro. Troca de identidade exige confirmação e explicita a remoção do contexto anterior, preservando livros e leituras. Não inferir identidade por nome.
+
+Quando disponível, retrato integral e ampliável fica à direita da identificação/biografia no desktop, com até 280px de largura e 360px de altura, e fonte pública. No celular, identificação, retrato e biografia. Sem retrato ou em falha, não reservar coluna. Biografia preserva o texto do provedor, expande sob demanda e identifica a fonte. Datas distinguem nascimento/falecimento e preservam precisão; origem não é apresentada como nacionalidade. Links externos ficam em Sobre o autor. A grade de livros e seus créditos permanecem independentes desse contexto. Não exibir licença de imagem inventada ou usar capa como retrato.

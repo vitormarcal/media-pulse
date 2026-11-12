@@ -33,6 +33,21 @@ class LibraryImageStorageServiceTest {
         }
 
     @Test
+    fun `author portrait uses distinct library reference or validated local file`() {
+        val bytes = png()
+        every { remote.enabled } returns true
+        every { remote.upload(any(), any()) } returns "/api/image-assets/portrait/content"
+        assertEquals("/api/image-assets/portrait/content", service().saveBookAuthor(ImageContent(bytes, MediaType.IMAGE_PNG), 28, "Pessoa"))
+        verify { remote.upload(any(), match { it.sourceReference.entityType == "book_author" && it.sourceReference.entityId == "28" }) }
+        every { remote.enabled } returns false
+        val path = service().saveBookAuthor(ImageContent(bytes, MediaType.IMAGE_PNG), 28, "Pessoa")
+        assertContentEquals(bytes, Files.readAllBytes(root.resolve(path.removePrefix("/covers/"))))
+        assertFailsWith<ResponseStatusException> {
+            service().saveBookAuthor(ImageContent("invalid".toByteArray(), MediaType.IMAGE_PNG), 28, "Pessoa")
+        }
+    }
+
+    @Test
     fun `remote book edition and game store original bytes with separate references and no local copy`() {
         val service = service()
         every { remote.enabled } returns true

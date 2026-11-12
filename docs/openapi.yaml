@@ -3430,6 +3430,78 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthorDetailsResponse"
+  /api/books/authors/{authorId}/enrichment/preview:
+    post:
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      tags: [Books]
+      summary: Preview a Hardcover author profile without saving it
+      parameters:
+        - in: path
+          name: authorId
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference]
+              properties:
+                reference: { type: string, description: Positive ID or HTTPS Hardcover author profile URL }
+      responses:
+        "200":
+          description: Current and proposed snapshots; confirmation token valid for 15 minutes
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthorEnrichmentPreview" }
+        "400": { description: Invalid profile reference }
+        "401": { description: Owner session required }
+        "403": { description: CSRF token required }
+        "404": { description: Local author or provider profile not found }
+        "409": { description: External profile already linked to another local author }
+        "502": { description: Hardcover query failed; local data unchanged }
+  /api/books/authors/{authorId}/enrichment:
+    post:
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      tags: [Books]
+      summary: Apply selected fields from the exact reviewed author profile
+      parameters:
+        - in: path
+          name: authorId
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, fields]
+              properties:
+                token: { type: string }
+                confirmIdentityChange: { type: boolean, default: false }
+                fields:
+                  type: array
+                  minItems: 1
+                  uniqueItems: true
+                  items: { type: string, enum: [PHOTO, BIOGRAPHY, DATES, LOCATION, LINKS] }
+      responses:
+        "200":
+          description: Persisted profile; changing identity clears data belonging to the previous profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthorEnrichmentProfile" }
+        "400": { description: Empty selection or selected field missing in preview }
+        "401": { description: Owner session required }
+        "403": { description: CSRF token required }
+        "404": { description: Local author no longer exists }
+        "409": { description: Expired token, changed snapshot, conflicting identity or missing change confirmation }
+        "502": { description: Portrait could not be saved; no profile fields were applied; retry without PHOTO is allowed }
   /api/books/slug/{slug}:
     get:
       summary: Book details by slug
@@ -8407,6 +8479,10 @@ components:
     AuthorDetailsResponse:
       type: object
       properties:
+        profile:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/AuthorEnrichmentProfile"
         authorId:
           type: integer
           format: int64
@@ -13789,3 +13865,30 @@ components:
         name: { type: string }
         disambiguation: { type: string, nullable: true }
         country: { type: string, nullable: true }
+
+    AuthorEnrichmentProfile:
+      type: object
+      required: [hardcoverId, externalName, sourceUrl, fetchedAt, links]
+      properties:
+        hardcoverId: { type: integer, format: int64 }
+        externalName: { type: string }
+        sourceUrl: { type: string, format: uri }
+        fetchedAt: { type: string, format: date-time }
+        biography: { type: string, nullable: true }
+        born: { type: string, nullable: true, description: ISO date or four-digit year; precision preserved }
+        died: { type: string, nullable: true, description: ISO date or four-digit year; precision preserved }
+        location: { type: string, nullable: true }
+        links: { type: array, items: { type: string, format: uri } }
+        photoUrl: { type: string, nullable: true, description: Stored image path; provider URL only in proposed preview }
+        photoSourceUrl: { type: string, nullable: true, format: uri }
+    AuthorEnrichmentPreview:
+      type: object
+      required: [token, proposed, expiresAt]
+      properties:
+        token: { type: string }
+        current:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/AuthorEnrichmentProfile"
+        proposed: { $ref: "#/components/schemas/AuthorEnrichmentProfile" }
+        expiresAt: { type: string, format: date-time }

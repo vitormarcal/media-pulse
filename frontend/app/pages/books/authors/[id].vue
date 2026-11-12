@@ -7,7 +7,9 @@
       <NuxtLink to="/books">Voltar para livros</NuxtLink>
     </div>
     <template v-else-if="data">
-      <AuthorPageHero :title="data.name"><AuthorContextPanel :stats="data.stats" /></AuthorPageHero>
+      <AuthorPageHero :title="data.name" :profile="data.profile"
+        ><AuthorContextPanel :stats="data.stats"
+      /></AuthorPageHero>
       <section class="panel" aria-labelledby="author-books-heading">
         <div class="section-header">
           <h2 id="author-books-heading">Livros no acervo</h2>
@@ -81,21 +83,50 @@
           <div class="group-grid"><BookGroupCard v-for="series in data.series" :key="series.id" :group="series" /></div>
         </div>
       </section>
+      <section v-if="data.profile || isOwner" class="panel author-about">
+        <h2>Sobre o autor</h2>
+        <template v-if="data.profile">
+          <p class="muted">
+            Perfil vinculado:
+            <a :href="data.profile.sourceUrl" target="_blank" rel="noopener noreferrer"
+              >{{ data.profile.externalName }} no Hardcover ↗</a
+            >
+          </p>
+          <ul v-if="data.profile.links.length" class="author-links">
+            <li v-for="link in data.profile.links" :key="link">
+              <a :href="link" target="_blank" rel="noopener noreferrer">{{ link }}</a>
+            </li>
+          </ul>
+        </template>
+        <BookAuthorEnrichmentPanel
+          v-if="isOwner"
+          :key="data.id"
+          :author-id="data.id"
+          :profile="data.profile"
+          @saved="saveProfile"
+        />
+      </section>
     </template>
   </main>
 </template>
 
 <script setup lang="ts">
+import BookAuthorEnrichmentPanel from '~/components/books/BookAuthorEnrichmentPanel.vue'
 import BookGroupCard from '~/components/books/BookGroupCard.vue'
 import AuthorContextPanel from '~/components/books/AuthorContextPanel.vue'
 import AuthorPageHero from '~/components/books/AuthorPageHero.vue'
-import type { BookCardDto } from '~/types/books'
+import type { AuthorEnrichmentProfile, BookCardDto } from '~/types/books'
 import { useAuthorPageData } from '~/composables/useAuthorPageData'
 
+const ownerSession = useOwnerAuth()
+const isOwner = computed(() => ownerSession.value.authenticated)
 const route = useRoute()
 const id = computed(() => String(route.params.id))
 const { data, error, status, refresh } = await useAuthorPageData(id)
 const { resolveMediaUrl } = useMediaUrl()
+function saveProfile(profile: AuthorEnrichmentProfile) {
+  if (data.value) data.value = { ...data.value, profile }
+}
 const sort = ref('title')
 const showAllBooks = ref(false)
 watch(id, () => {
@@ -127,6 +158,13 @@ useHead(() => ({
 </script>
 
 <style scoped>
+.author-links {
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}
+.author-about > p {
+  line-height: 1.6;
+}
 .author-page {
   display: grid;
   gap: 32px;
