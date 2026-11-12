@@ -22,4 +22,6 @@ data class Author(
     val createdAt: Instant = Instant.now(),
     @Column(name = "updated_at")
     val updatedAt: Instant? = null,
+    @Column(name = "hardcover_import_id", unique = true)
+    val hardcoverImportId: Long? = null,
 )

@@ -4,6 +4,7 @@ import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverContribut
 import dev.marcal.mediapulse.server.integration.hardcover.dto.HardcoverUserBook
 import dev.marcal.mediapulse.server.model.book.BookReadSource
 import dev.marcal.mediapulse.server.model.book.BookReadStatus
+import dev.marcal.mediapulse.server.repository.hardcover.HardcoverAuthorIdentityRepository
 import dev.marcal.mediapulse.server.repository.hardcover.HardcoverNativeRepository
 import dev.marcal.mediapulse.server.util.FingerprintUtil
 import dev.marcal.mediapulse.server.util.TxUtil
@@ -19,6 +20,7 @@ class HardcoverUserBookProcessor(
     private val nativeRepo: HardcoverNativeRepository,
     private val txUtil: TxUtil,
     private val artworkService: HardcoverArtworkService,
+    private val authorIdentities: HardcoverAuthorIdentityRepository,
 ) {
     private data class CoverInfo(
         val bookId: Long,
@@ -75,7 +77,13 @@ class HardcoverUserBookProcessor(
         return role.ifBlank { "CONTRIBUTOR" }
     }
 
-    private fun contributionNameRolePairs(contribs: List<HardcoverContribution>?): List<Pair<String, String>> =
+    private data class Contribution(
+        val name: String,
+        val role: String,
+        val hardcoverId: Long?,
+    )
+
+    private fun contributions(contribs: List<HardcoverContribution>?): List<Contribution> =
         contribs
             .orEmpty()
             .asSequence()
@@ -86,7 +94,7 @@ class HardcoverUserBookProcessor(
                         ?.trim()
                         ?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
                 val role = if (c.contribution == null) "AUTHOR" else normalizeRole(c.contribution)
-                name to role
+                Contribution(name, role, c.author.id?.takeIf { it in 1..Int.MAX_VALUE.toLong() })
             }.distinct()
             .toList()
 
@@ -94,16 +102,14 @@ class HardcoverUserBookProcessor(
         val edition = item.edition
         val book = item.book
 
-        val contribPairs = contributionNameRolePairs(edition?.contributions)
-        val authorIdsByName: Map<String, Long> =
-            contribPairs
-                .asSequence()
-                .map { it.first }
-                .distinct()
-                .associateWith { name ->
-                    val fp = FingerprintUtil.authorFp(name)
-                    nativeRepo.ensureAuthorId(name, fp)
-                }
+        val contributions = contributions(edition?.contributions)
+        val resolvedContributions =
+            contributions.sortedWith(compareBy<Contribution> { it.hardcoverId ?: Long.MAX_VALUE }.thenBy { it.name }).map { contribution ->
+                val id =
+                    contribution.hardcoverId?.let { authorIdentities.resolve(contribution.name, it) }
+                        ?: nativeRepo.ensureAuthorId(contribution.name, FingerprintUtil.authorFp(contribution.name))
+                contribution to id
+            }
 
         val bookTitle = book?.title?.ifBlank { "Unknown" } ?: "Unknown"
         val bookFingerprint = FingerprintUtil.bookFp(bookTitle)
@@ -133,9 +139,8 @@ class HardcoverUserBookProcessor(
         book?.id?.let { nativeRepo.retainHardcoverBookId(bookId, it) }
 
         // relaciona contribuições (AUTHOR / TRANSLATOR / ILLUSTRATOR / etc)
-        for ((name, role) in contribPairs) {
-            val authorId = authorIdsByName[name] ?: continue
-            nativeRepo.linkBookAuthor(bookId = bookId, authorId = authorId, role = role)
+        for ((contribution, authorId) in resolvedContributions) {
+            nativeRepo.linkBookAuthor(bookId = bookId, authorId = authorId, role = contribution.role)
         }
 
         val reads = item.userBookReads.orEmpty()

@@ -42,3 +42,7 @@ Publicação solicitada na versão 1.27.0, tag v1.27.0 e imagens 1.27.0/latest, 
 Consulta de leitura ao banco e às contribuições do catálogo atual: 158 autores locais, 173 registros de livro no Hardcover, 154 autores observados com correspondência única, nenhum conflito e nenhum nome remoto sem correspondência local. Quatro autores não aparecem nas contribuições atuais e permanecem preservados sem vínculo automático. Eduardo Foresti (local 19) corresponde ao ID 605110; Akira Toriyama (local 28), ao ID 201201. Nenhum perfil estava enriquecido antes da implantação. Não foi necessário separar homônimos ou fundir cadastros.
 
 A identificação automática continua baseada em evidências persistidas, sem reescrever a deduplicação local por nome. Esta entrega não transforma o ID externo na chave primária dos autores nem resolve exceções por busca aproximada.
+
+## Evolução: identificação por ID no processamento
+
+A restrição anterior de manter a resolução exclusivamente por nome foi ampliada pela solicitação do owner. Ver [identidade de importação do autor](book-author-import-identity.md): V82 promove evidências únicas e resolve contribuições por ID, preservando cadastros existentes e distinguindo homônimos. O enriquecimento de contexto continua ao final da passagem completa.

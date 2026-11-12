@@ -12,21 +12,33 @@ class HardcoverAuthorCandidateRepository(
     // Zero records missing external identity: it must not become a positive match.
     fun observe(item: HardcoverUserBook): Set<Long> {
         val authors = linkedSetOf<Long>()
-        for (contribution in item.edition?.contributions.orEmpty()) {
+        for (contribution in item.edition?.contributions.orEmpty().sortedWith(
+            compareBy({
+                it.author?.id ?: Long.MAX_VALUE
+            }, { it.author?.name.orEmpty() }),
+        )) {
             val name =
                 contribution.author
                     ?.name
                     ?.trim()
                     ?.takeIf(String::isNotBlank) ?: continue
+            val externalId = contribution.author.id?.takeIf { it in 1..Int.MAX_VALUE.toLong() } ?: 0L
             val id =
-                jdbc
-                    .query(
-                        "SELECT id FROM authors WHERE fingerprint = ? FOR UPDATE",
-                        { rs, _ -> rs.getLong(1) },
-                        FingerprintUtil.authorFp(name),
-                    ).firstOrNull()
-                    ?: continue
-            val externalId = contribution.author?.id?.takeIf { it in 1..Int.MAX_VALUE.toLong() } ?: 0L
+                if (externalId > 0) {
+                    jdbc
+                        .query(
+                            "SELECT id FROM authors WHERE hardcover_import_id = ? FOR UPDATE",
+                            { rs, _ -> rs.getLong(1) },
+                            externalId,
+                        ).firstOrNull()
+                } else {
+                    jdbc
+                        .query(
+                            "SELECT id FROM authors WHERE fingerprint = ? AND hardcover_import_id IS NULL FOR UPDATE",
+                            { rs, _ -> rs.getLong(1) },
+                            FingerprintUtil.authorFp(name),
+                        ).firstOrNull()
+                } ?: continue
             jdbc.update(
                 "INSERT INTO hardcover_author_candidates(author_id, hardcover_id) VALUES (?, ?) ON CONFLICT DO NOTHING",
                 id,
