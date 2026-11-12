@@ -340,3 +340,14 @@ No álbum, o painel Atualizar dados aparece imediatamente após o cabeçalho Sob
 
 
 Faixas de álbum podem ter 🔥 discreto junto do título para destacar a maior contagem pessoal de reproduções nesse álbum. Exigir ao menos três reproduções e duas faixas; em empate, destacar até três líderes, sem marcar se todas tiverem a mesma contagem ou houver mais de três líderes. Preservar ordem original, contagens e notas. Explicar “Entre as mais ouvidas por você neste álbum” em tooltip por mouse e foco de teclado, com nome acessível. Não usar o termo popularidade, alterar o fundo das linhas ou acrescentar animação.
+
+
+## 20. Detalhe de artista musical
+
+Usar até 1120px e painéis brancos uniformes, bordas discretas, cantos de 28px e 32px entre seções. O cabeçalho mostra nome, origem e datas identificadas; pessoa usa nascimento/falecimento e grupos formação/encerramento, sem apresentar nascimento como atividade. Biografia expansível fica na identificação, com idioma, fonte/revisão e licença. Retrato integral e ampliável usa até 300px de largura e 360px de altura, sem arte de fundo ou capa de álbum como substituição. No celular, a ordem é identificação, retrato e biografia. Sem retrato, não reservar coluna vazia. Autoria, fonte e licença da imagem permanecem públicas.
+
+Álbuns no acervo vêm primeiro, em grid de capas quadradas por linhas, específico do detalhe para preservar a ordenação Mais ouvidos/Ano de lançamento. Mostrar a contagem uma vez, créditos com links e metadados compactos. Não apresentar o acervo como discografia externa completa. Explorar discografia e revisar duplicatas ficam nessa seção para o owner, sob demanda, sem expor manutenção ao visitante.
+
+Mais ouvidas por você usa linhas compactas, apenas com reproduções registradas, álbum de referência navegável e última escuta identificada. Não repetir 🔥 em um ranking que já indica os destaques. Histórico reúne total, primeira data registrada, última escuta e dias recentes sob demanda; não repetir contagens no cabeçalho nem calcular cobertura entre recortes distintos.
+
+Sobre o artista reúne gêneros ativos, links e outros nomes recolhidos. Origem e gêneros ocultos só aparecem durante gerenciamento pelo owner. Atualizar dados abre o painel junto do botão e preserva estado/feedback no refresh. Vínculo manual e busca permitem revisar a correspondência antes de confirmar; biografia tem consulta/prévia/confirmação próprias, sem alterar outros metadados. Reutilizar os componentes de visualização e atribuição dos álbuns, preservando as particularidades do artista.

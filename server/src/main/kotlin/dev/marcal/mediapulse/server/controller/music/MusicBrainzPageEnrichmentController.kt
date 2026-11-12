@@ -50,6 +50,12 @@ class MusicBrainzPageEnrichmentController(
         @PathVariable artistId: Long,
     ) = service.searchArtist(artistId)
 
+    @PostMapping("/artists/{artistId}/musicbrainz/preview")
+    suspend fun artistPreview(
+        @PathVariable artistId: Long,
+        @RequestParam artistMbid: String,
+    ) = service.previewArtistReference(artistId, artistMbid)
+
     @PostMapping("/artists/{artistId}/musicbrainz")
     suspend fun applyArtist(
         @PathVariable artistId: Long,

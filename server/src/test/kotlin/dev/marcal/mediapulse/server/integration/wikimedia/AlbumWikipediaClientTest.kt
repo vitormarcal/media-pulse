@@ -22,7 +22,7 @@ class AlbumWikipediaClientTest {
     private var missingPortuguese = false
     private var emptyEnglish = false
     private val client =
-        AlbumWikipediaClient(
+        WikipediaIntroductionClient(
             WebClient
                 .builder()
                 .exchangeFunction { request ->
@@ -93,7 +93,7 @@ class AlbumWikipediaClientTest {
     @Test
     fun `external links allow known album sources and reject other schemes and hosts`() {
         val links =
-            client.externalLinks(
+            AlbumWikipediaClient(client).externalLinks(
                 listOf(
                     relation("streaming", "https://open.spotify.com/album/123"),
                     relation("purchase", "https://artist.bandcamp.com/album/record"),

@@ -77,6 +77,25 @@ class MusicBrainzPageEnrichmentServiceTest {
         )
 
     @Test
+    fun `manual artist preview validates UUID and does not modify artist`() =
+        runBlocking {
+            val mbid = "12345678-1234-1234-1234-123456789abc"
+            every { artists.findById(20) } returns Optional.of(artist)
+            coEvery { client.getArtist(mbid) } returns MbArtistCandidate(mbid, "Artist", country = "BR")
+            assertEquals(mbid, service.previewArtistReference(20, mbid).artistMbid)
+            verify(exactly = 0) { artists.save(any()) }
+            assertEquals(
+                400,
+                kotlin.test
+                    .assertFailsWith<org.springframework.web.server.ResponseStatusException> {
+                        service.previewArtistReference(20, "https://example.org/artist")
+                    }.statusCode
+                    .value(),
+            )
+            io.mockk.coVerify(exactly = 1) { client.getArtist(any()) }
+        }
+
+    @Test
     fun `manual provider failure maps missing entity and unavailable provider separately`() =
         runBlocking {
             val mbid = "12345678-1234-1234-1234-123456789abc"

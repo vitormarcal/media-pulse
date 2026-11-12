@@ -36,6 +36,7 @@ import kotlin.math.min
 @RestController
 @RequestMapping("/api/music")
 class MusicSummaryController(
+    private val biographies: dev.marcal.mediapulse.server.repository.ArtistBiographyRepository,
     private val albumContext: dev.marcal.mediapulse.server.repository.AlbumContextRepository,
     private val repository: MusicQueryRepository,
     private val albumTermsService: AlbumTermsService,
@@ -175,7 +176,7 @@ class MusicSummaryController(
     @GetMapping("/artists/{artistId}")
     fun artistPage(
         @PathVariable artistId: Long,
-    ): ArtistPageResponse = repository.getArtistPage(artistId)
+    ): ArtistPageResponse = repository.getArtistPage(artistId).copy(biography = biographies.current(artistId))
 
     @PostMapping("/artists/{artistId}/genres")
     fun addArtistGenre(

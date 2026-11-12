@@ -70,8 +70,8 @@ function mapArtistTrack(track: ArtistPageResponse['topTracks'][number]): ArtistT
     title: track.title,
     albumTitle: track.albumTitle,
     albumHref: track.albumId != null ? `/music/albums/${track.albumId}` : null,
-    meta: `${formatShortNumber(track.playCount)} plays`,
-    lastPlayed: track.lastPlayed ? formatRelativeDate(track.lastPlayed) : 'Sem play recente',
+    meta: `${track.playCount.toLocaleString('pt-BR')} ${track.playCount === 1 ? 'reprodução' : 'reproduções'}`,
+    lastPlayed: track.lastPlayed ? formatAbsoluteDate(track.lastPlayed) : 'Sem registro',
   }
 }
 
@@ -789,34 +789,13 @@ export function buildAlbumTermPageData(term: AlbumTermDetailsResponse): AlbumTer
 }
 
 export function buildArtistPageData(artist: ArtistPageResponse): ArtistPageData {
-  const albums = artist.albums.map((album) =>
-    albumCard({
-      albumId: album.albumId,
-      albumTitle: album.albumTitle,
-      artistId: artist.artistId,
-      artistName: artist.artistName,
-      artists: album.artists,
-      coverUrl: album.coverUrl,
-      year: album.year,
-      totalTracks: album.totalTracks,
-      playedTracks: album.playedTracks,
-      playCount: album.playCount,
-      lastPlayed: album.lastPlayed,
-    }),
-  )
-  const heroCover = artist.albums.find((album) => album.coverUrl)?.coverUrl ?? null
-
   return {
     id: String(artist.artistId),
     title: artist.artistName,
-    coverUrl: artist.profile?.image?.localUrl ?? heroCover,
-    heroMeta: [
-      `${formatShortNumber(artist.libraryAlbumsCount)} álbuns na library`,
-      `${formatShortNumber(artist.libraryTracksCount)} faixas na library`,
-      `${formatShortNumber(artist.totalPlays)} plays`,
-      artist.lastPlayed ? `Último ${formatRelativeDate(artist.lastPlayed)}` : 'Sem play recente',
-    ],
+    coverUrl: artist.profile?.image?.localUrl ?? null,
+    biography: artist.biography ?? null,
     stats: {
+      firstPlay: artist.playsByDay.length ? formatAlbumDay(artist.playsByDay[0]!.day) : null,
       totalPlays: artist.totalPlays,
       libraryAlbumsCount: artist.libraryAlbumsCount,
       libraryTracksCount: artist.libraryTracksCount,
@@ -825,11 +804,11 @@ export function buildArtistPageData(artist: ArtistPageResponse): ArtistPageData 
       latestPlay: artist.lastPlayed ? formatRelativeDate(artist.lastPlayed) : 'Sem play recente',
       latestPlayAbsolute: artist.lastPlayed ? formatAbsoluteDate(artist.lastPlayed) : null,
     },
-    albums,
-    topTracks: artist.topTracks.map(mapArtistTrack),
+    albums: artist.albums,
+    topTracks: artist.topTracks.filter((track) => track.playCount > 0).map(mapArtistTrack),
     recentDays: artist.playsByDay.slice(-12).map((day) => ({
       id: day.day,
-      label: day.day,
+      label: formatAlbumDay(day.day),
       plays: day.plays,
     })),
     musicBrainz: artist.musicBrainz,

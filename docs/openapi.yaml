@@ -3016,6 +3016,83 @@ paths:
           schema: { type: integer, format: int64 }
       responses:
         "200": { description: Candidate list; no local data is changed }
+  /api/music/artists/{artistId}/musicbrainz/preview:
+    post:
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      tags: [Music]
+      summary: Validate a manually specified MusicBrainz artist without writing
+      parameters:
+        - in: path
+          name: artistId
+          required: true
+          schema: { type: integer, format: int64 }
+        - in: query
+          name: artistMbid
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Artist identity to review before linking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MusicBrainzArtistCandidate"
+        "400": { description: Invalid UUID }
+        "404": { description: Artist not found }
+        "502": { description: Provider unavailable }
+  /api/music/artists/{artistId}/biography/preview:
+    post:
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      tags: [Music]
+      summary: Preview an artist biography from linked Wikipedia articles
+      parameters:
+        - in: path
+          name: artistId
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: Biography snapshot or preview; no article yields a preview with null proposed and token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtistBiographyPreview"
+        "409": { description: Missing MusicBrainz association, expired preview or concurrent change }
+        "502": { description: Provider unavailable; saved biography preserved }
+  /api/music/artists/{artistId}/biography:
+    post:
+      security:
+        - OwnerSession: []
+          CsrfToken: []
+      tags: [Music]
+      summary: Save the exact artist biography snapshot reviewed by the owner
+      parameters:
+        - in: path
+          name: artistId
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        "200":
+          description: Biography snapshot or preview; no article yields a preview with null proposed and token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtistBiography"
+        "409": { description: Missing MusicBrainz association, expired preview or concurrent change }
+        "502": { description: Provider unavailable; saved biography preserved }
   /api/music/artists/{artistId}/musicbrainz:
     post:
       security:
@@ -9478,6 +9555,11 @@ components:
     ArtistPageResponse:
       type: object
       properties:
+        biography:
+          allOf:
+            - $ref: "#/components/schemas/ArtistBiography"
+          nullable: true
+
         artistId:
           type: integer
           format: int64
@@ -13670,3 +13752,40 @@ components:
         proposed:
           $ref: "#/components/schemas/AlbumContext"
         expiresAt: { type: string, format: date-time }
+
+    WikipediaIntroduction:
+      allOf:
+        - $ref: "#/components/schemas/AlbumIntroduction"
+    ArtistBiography:
+      type: object
+      required: [artistMbid, introduction, fetchedAt]
+      properties:
+        artistMbid: { type: string }
+        introduction:
+          $ref: "#/components/schemas/WikipediaIntroduction"
+        fetchedAt: { type: string, format: date-time }
+    ArtistBiographyPreview:
+      type: object
+      properties:
+        token:
+          type: string
+          nullable: true
+          description: Opaque confirmation token, expires after 15 minutes and application restart
+        current:
+          allOf:
+            - $ref: "#/components/schemas/ArtistBiography"
+          nullable: true
+        proposed:
+          allOf:
+            - $ref: "#/components/schemas/ArtistBiography"
+          nullable: true
+        expiresAt: { type: string, format: date-time, nullable: true }
+
+    MusicBrainzArtistCandidate:
+      type: object
+      required: [artistMbid, name]
+      properties:
+        artistMbid: { type: string }
+        name: { type: string }
+        disambiguation: { type: string, nullable: true }
+        country: { type: string, nullable: true }

@@ -23,3 +23,23 @@ export function parseMusicBrainzAlbumReference(value: string): MusicBrainzAlbumR
     return null
   }
 }
+
+export function parseMusicBrainzArtistReference(value: string): string | null {
+  const input = value.trim()
+  if (uuid.test(input)) return input.toLowerCase()
+  try {
+    const url = new URL(input)
+    if (
+      !['https:', 'http:'].includes(url.protocol) ||
+      !['musicbrainz.org', 'www.musicbrainz.org'].includes(url.hostname) ||
+      url.username ||
+      url.password ||
+      url.port
+    )
+      return null
+    const match = url.pathname.match(/^\/artist\/([^/]+)\/?$/)
+    return match && uuid.test(match[1]!) ? match[1]!.toLowerCase() : null
+  } catch {
+    return null
+  }
+}

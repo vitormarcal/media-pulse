@@ -169,6 +169,23 @@ class MusicBrainzPageEnrichmentService(
         return client.searchArtists(artist.name).map { it.toDto() }
     }
 
+    suspend fun previewArtistReference(
+        artistId: Long,
+        artistMbid: String,
+    ): MusicBrainzArtistCandidateDto {
+        if (!Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}").matches(artistMbid)) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Identificador de artista inválido.")
+        }
+        requireArtist(artistId)
+        return try {
+            client.getArtist(artistMbid).toDto()
+        } catch (ex: MusicBrainzClientException.NotFound) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Artista não encontrado no MusicBrainz.")
+        } catch (ex: MusicBrainzClientException) {
+            throw ResponseStatusException(HttpStatus.BAD_GATEWAY, "Não foi possível consultar o MusicBrainz agora.")
+        }
+    }
+
     suspend fun applyArtist(
         artistId: Long,
         artistMbid: String,

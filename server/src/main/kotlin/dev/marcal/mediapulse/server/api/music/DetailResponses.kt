@@ -18,6 +18,7 @@ data class ArtistPageResponse(
     val musicBrainz: MusicBrainzLinkDto? = null,
     val profile: ArtistMusicBrainzProfileDto? = null,
     val genres: List<AlbumTermDto> = emptyList(),
+    val biography: ArtistBiographyDto? = null,
 )
 
 data class ArtistMusicBrainzProfileDto(

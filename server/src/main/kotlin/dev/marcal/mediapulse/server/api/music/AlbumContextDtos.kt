@@ -12,14 +12,7 @@ data class AlbumContextDto(
     val fetchedAt: Instant,
 )
 
-data class AlbumIntroductionDto(
-    val text: String,
-    val language: String,
-    val sourceUrl: String,
-    val revisionId: Long? = null,
-    val license: String,
-    val licenseUrl: String,
-)
+typealias AlbumIntroductionDto = WikipediaIntroductionDto
 
 data class AlbumContextPreviewDto(
     val token: String,

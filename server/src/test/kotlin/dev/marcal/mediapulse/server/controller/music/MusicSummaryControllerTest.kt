@@ -19,6 +19,7 @@ class MusicSummaryControllerTest {
     private val albumListsService = mockk<AlbumListsService>(relaxed = true)
     private val controller =
         MusicSummaryController(
+            mockk<dev.marcal.mediapulse.server.repository.ArtistBiographyRepository>(relaxed = true),
             mockk<dev.marcal.mediapulse.server.repository.AlbumContextRepository>(relaxed = true),
             repository,
             albumTermsService,

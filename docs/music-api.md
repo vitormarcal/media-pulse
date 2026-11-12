@@ -278,7 +278,7 @@ Cada item retorna álbum, artista, capa, ano, contagens histórica/recente, últ
 - aliases e links são substituídos pelo snapshot mais recente; gêneros são cumulativos e preservam inclusões manuais e preferências de ocultação
 - links externos de artista são limitados a site oficial, Wikipedia, Discogs e Bandcamp, com preferência por Wikipedia em português e depois inglês
 - artistas sem foto tentam resolver automaticamente MusicBrainz → Wikidata → imagem principal `P18` → Wikimedia Commons durante vínculo ou atualização individual
-- a foto é validada, baixada sob `/covers/wikimedia/artists/{artistId}/...` e nunca substituída automaticamente; a capa de álbum permanece como fallback
+- a foto é validada, baixada sob `/covers/wikimedia/artists/{artistId}/...` e nunca substituída automaticamente; o detalhe não usa capa de álbum como retrato substituto (revisão do artista)
 - falhas da imagem são persistidas separadamente e não impedem a atualização dos demais dados MusicBrainz; autoria, licença e URLs disponíveis ficam no snapshot local
 
 ## Non-goals
@@ -315,3 +315,20 @@ Na interface, “Atualizar dados” oferece “Consultar contexto” separado da
 “Atualizar dados” abre o painel imediatamente abaixo do cabeçalho Sobre o álbum, antes de gêneros e listas, preservando o texto digitado ao recolher/reabrir. O owner pode usar a busca automática ou colar um link MusicBrainz de release group/edição, ou um UUID de release group. Entrada inválida não consulta a API; alteração do campo invalida a prévia. Consulta e confirmação são etapas separadas.
 
 `POST /api/music/albums/{albumId}/musicbrainz/preview` mantém `releaseGroupMbid` e acrescenta `entityType=release-group|release` opcional, com padrão `release-group`. Ambos exigem UUID; o modo `release` resolve o grupo pelo cliente existente antes de montar a prévia normal. Retornos: 400 para UUID/tipo inválido, 404 para entidade/grupo ausente, 502 para falha HTTP do provedor e 409 para créditos incompletos. Somente confirmar na operação existente de aplicação grava o vínculo, usando o release group resolvido na prévia. Não escolhe uma edição local nem substitui título, capa ou tracklist. URLs fornecidas não são buscadas diretamente; consultas usam tipo e UUID validados em endpoints fixos.
+
+
+## Revisão do detalhe de artista musical
+
+A página prioriza identidade, álbuns no acervo, mais ouvidas por você, histórico e Sobre o artista. O detalhe usa grid de capas por linhas com ordenação local Mais ouvidos/Ano de lançamento, preservando créditos colaborativos. A coleção não representa a discografia externa completa. O ranking mantém até 12 faixas da API e exclui entradas sem reproduções. As agregações de faixas e de álbuns creditados têm recortes distintos; a interface não calcula cobertura a partir delas.
+
+Apenas o retrato local real é exibido e ampliado; sem foto não há capa substituta ou coluna vazia. Autoria, fonte e licença da imagem são públicas. Datas de pessoa são nascimento/falecimento; grupos usam formação/encerramento, sem inferência de atividade atual. Gêneros ocultos e sua origem só aparecem durante edição do owner. Importação de discografia é revelada sob demanda apenas para o owner, junto dos álbuns. Erros e estados dos formulários sobrevivem à atualização da resposta.
+
+### Biografia
+
+Flyway V79 cria `artist_biographies` com snapshot opcional JSONB e referência ao artista. `GET /api/music/artists/{artistId}` acrescenta `biography` opcional, com `artistMbid`, `introduction` (texto, pt/en, fonte/revisão, licença/URL) e `fetchedAt`. O endpoint usa exclusivamente dados locais e oculta uma biografia cujo MBID não corresponda mais ao vínculo atual.
+
+- `POST /api/music/artists/{artistId}/biography/preview`: owner/CSRF, exige vínculo MusicBrainz, consulta relações do artista e resolve Wikipedia/Wikidata com o mesmo cliente compartilhado dos álbuns. Retorna `current`, `proposed`, `token`, `expiresAt`; ausência de introdução retorna proposta/token nulos e preserva o texto salvo. Falha externa retorna 502 sem escrever.
+- `POST /api/music/artists/{artistId}/biography`: owner/CSRF, body `{ "token": "..." }`; salva exatamente a prévia sem nova consulta remota. Tokens duram 15 minutos, até 100 na instância, e expiram em reinício. Mudança de vínculo ou conteúdo sob bloqueio do artista, token inválido ou expirado retorna 409. Sem sobrescrever identidade, gêneros, links ou foto.
+- `POST /api/music/artists/{artistId}/musicbrainz/preview?artistMbid={UUID}`: prévia sem escrita para vínculo manual. O frontend aceita URL /artist/{UUID} ou UUID; o servidor valida o formato e usa o cliente fixo. Retorna MusicBrainzArtistCandidate, 400 para UUID inválido, 404 para artista ausente, 502 para falha do provedor. Confirmar usa a operação existente de vínculo, separada da biografia.
+
+A biografia usa português prioritário, inglês identificado como alternativa, expansão e atribuição pública. Não há pesquisa livre por título nem tradução automática; desambiguação MusicBrainz não é tratada como texto biográfico. O cliente de introduções e o contrato de proveniência foram compartilhados com álbuns sem alteração no formato JSON já publicado de AlbumIntroduction.

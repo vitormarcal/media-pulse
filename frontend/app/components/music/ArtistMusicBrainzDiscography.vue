@@ -2,9 +2,8 @@
   <section v-if="linked" class="discography">
     <div class="heading">
       <div>
-        <p class="eyebrow">Discografia</p>
-        <h2>Importar discos</h2>
-        <p class="muted">Revise release groups antes de criar discos locais. Capas e faixas não serão importadas.</p>
+        <h3>Explorar no MusicBrainz</h3>
+        <p class="muted">Escolha os álbuns que deseja adicionar ao acervo. Capas e faixas não serão importadas.</p>
       </div>
       <button v-owner type="button" class="secondary" :disabled="loading" @click="load">Buscar discografia</button>
     </div>
@@ -23,7 +22,13 @@
           class="item"
           :class="item.status.toLowerCase()"
         >
-          <input v-if="item.status === 'MISSING'" v-model="selected" type="checkbox" :value="item.releaseGroupMbid" />
+          <input
+            v-if="item.status === 'MISSING'"
+            v-model="selected"
+            :disabled="loading"
+            type="checkbox"
+            :value="item.releaseGroupMbid"
+          />
           <span v-else class="status">{{ statusLabel(item.status) }}</span>
           <span>
             <strong>{{ item.title }}</strong>
@@ -78,7 +83,7 @@ async function load() {
         method: 'POST',
       },
     )
-    if (!preview.value.items.length) message.value = 'Nenhum release group encontrado.'
+    if (!preview.value.items.length) message.value = 'Nenhum álbum encontrado.'
   } catch {
     message.value = 'Não foi possível carregar a discografia.'
   } finally {
@@ -129,7 +134,7 @@ async function importSelected() {
   text-transform: uppercase;
   letter-spacing: 0.09em;
 }
-h2,
+h3,
 p {
   margin: 0;
 }
@@ -144,7 +149,7 @@ small {
 }
 .items {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
   gap: 10px;
 }
 .item {
@@ -190,5 +195,18 @@ button:disabled {
     align-items: stretch;
     flex-direction: column;
   }
+}
+
+.discography {
+  background: var(--base-color-surface-strong);
+  border-radius: 20px;
+}
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--base-color-focus, #435ee5);
+  outline-offset: 3px;
+}
+button {
+  min-height: 44px;
 }
 </style>

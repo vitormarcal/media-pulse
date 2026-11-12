@@ -1,37 +1,36 @@
 <template>
-  <section class="context-panel">
-    <SectionHeading eyebrow="Histórico" title="Atividade" />
-
-    <div class="panel-grid">
-      <article class="stats-card">
-        <p class="stats-label">Plays registrados</p>
-        <div class="stats-value">{{ stats.totalPlays }}</div>
-        <p class="stats-copy">
-          {{ stats.uniqueAlbumsPlayed }} álbuns tocados · {{ stats.uniqueTracksPlayed }} faixas tocadas
-        </p>
-        <div class="stats-meta">
-          <span>Library: {{ stats.libraryAlbumsCount }} álbuns · {{ stats.libraryTracksCount }} faixas</span>
-          <span v-if="stats.latestPlayAbsolute">Último play {{ stats.latestPlayAbsolute }}</span>
-          <span v-else>{{ stats.latestPlay }}</span>
+  <section class="context-panel" aria-labelledby="artist-listening">
+    <h2 id="artist-listening">Histórico de escuta</h2>
+    <p v-if="!stats.totalPlays" class="empty">Nenhuma reprodução registrada.</p>
+    <template v-else
+      ><dl class="stats">
+        <div>
+          <dt>Reproduções de faixas</dt>
+          <dd>{{ stats.totalPlays.toLocaleString('pt-BR') }}</dd>
         </div>
-      </article>
-
-      <article class="days-card">
-        <p class="days-label">Dias com play</p>
-        <div v-if="recentDays.length" class="days-list">
-          <div v-for="day in recentDays" :key="day.id" class="day-row">
-            <span>{{ day.label }}</span>
-            <strong>{{ day.plays }}</strong>
-          </div>
+        <div v-if="stats.firstPlay">
+          <dt>Primeiro registro</dt>
+          <dd>{{ stats.firstPlay }}</dd>
         </div>
-        <p v-else class="days-empty">Nenhum play registrado.</p>
-      </article>
-    </div>
+        <div v-if="stats.latestPlayAbsolute">
+          <dt>Última escuta</dt>
+          <dd>{{ stats.latestPlayAbsolute }}</dd>
+        </div>
+      </dl>
+      <details v-if="recentDays.length">
+        <summary>Ver dias recentes</summary>
+        <ul>
+          <li v-for="day in [...recentDays].reverse()" :key="day.id">
+            <time :datetime="day.id">{{ day.label }}</time
+            ><span>{{ day.plays }} {{ day.plays === 1 ? 'reprodução' : 'reproduções' }}</span>
+          </li>
+        </ul>
+        <p v-if="recentDays.length === 12" class="note">Até 12 dias com reproduções mais recentes.</p>
+      </details>
+    </template>
   </section>
 </template>
-
 <script setup lang="ts">
-import SectionHeading from '~/components/home/SectionHeading.vue'
 import type { ArtistPageData } from '~/types/music'
 
 defineProps<{
@@ -45,76 +44,60 @@ defineProps<{
   display: grid;
   gap: 24px;
 }
-
-.panel-grid {
-  display: grid;
-  grid-template-columns: minmax(18rem, 0.95fr) minmax(0, 1.15fr);
-  gap: 22px;
-}
-
-.stats-card,
-.days-card {
-  display: grid;
-  gap: 12px;
-  padding: 24px;
-  border-radius: 28px;
-  background: color-mix(in srgb, var(--base-color-surface-strong) 84%, var(--base-color-surface-soft));
-}
-
-.stats-label,
-.days-label {
+h2 {
   margin: 0;
-  color: var(--base-color-brand-red);
-  font-size: 0.76rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
 }
-
-.stats-value {
-  font-size: clamp(3rem, 7vw, 4.6rem);
-  line-height: 0.9;
-  letter-spacing: -0.07em;
-}
-
-.stats-copy,
-.stats-meta,
-.days-empty {
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
   margin: 0;
+}
+dt,
+.empty,
+.note {
   color: var(--base-color-text-secondary);
+  font-size: 0.85rem;
 }
-
-.stats-meta {
-  display: grid;
-  gap: 8px;
-  font-size: 0.88rem;
+dd {
+  margin: 8px 0 0;
 }
-
-.days-list {
-  display: grid;
-  gap: 10px;
+summary {
+  width: fit-content;
+  cursor: pointer;
+  padding: 10px 0;
+  font-size: 0.85rem;
 }
-
-.day-row {
+summary:focus-visible {
+  outline: 2px solid var(--base-color-focus, #435ee5);
+  outline-offset: 3px;
+}
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+li {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.72);
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--base-color-border);
+  font-size: 0.85rem;
 }
-
-.day-row span {
+li span {
   color: var(--base-color-text-secondary);
 }
-
-.day-row strong {
-  color: var(--base-color-text-primary);
+.empty {
+  margin: 0;
 }
-
-@media (max-width: 980px) {
-  .panel-grid {
+@media (max-width: 600px) {
+  .stats {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 }
 </style>

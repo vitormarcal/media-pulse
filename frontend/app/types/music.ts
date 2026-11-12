@@ -150,6 +150,7 @@ export interface AlbumTermDetailsResponse {
 }
 
 export interface ArtistPageResponse {
+  biography?: ArtistBiography | null
   artistId: number
   artistName: string
   totalPlays: number
@@ -649,11 +650,12 @@ export interface ArtistTrackModel {
 }
 
 export interface ArtistPageData {
+  biography: ArtistBiography | null
   id: string
   title: string
   coverUrl: string | null
-  heroMeta: string[]
   stats: {
+    firstPlay: string | null
     totalPlays: number
     libraryAlbumsCount: number
     libraryTracksCount: number
@@ -662,7 +664,7 @@ export interface ArtistPageData {
     latestPlay: string
     latestPlayAbsolute: string | null
   }
-  albums: MusicLibraryCardModel[]
+  albums: ArtistPageResponse['albums']
   topTracks: ArtistTrackModel[]
   recentDays: AlbumDayModel[]
   musicBrainz: MusicBrainzLink | null
@@ -779,7 +781,7 @@ export interface MusicLibraryPageData {
   mode: 'library' | 'search' | 'year'
 }
 
-export interface AlbumIntroduction {
+export interface WikipediaIntroduction {
   text: string
   language: string
   sourceUrl: string
@@ -801,4 +803,17 @@ export interface AlbumContextPreview {
   current: AlbumContext | null
   proposed: AlbumContext
   expiresAt: string
+}
+
+export type AlbumIntroduction = WikipediaIntroduction
+export interface ArtistBiography {
+  artistMbid: string
+  introduction: WikipediaIntroduction
+  fetchedAt: string
+}
+export interface ArtistBiographyPreview {
+  token: string | null
+  current: ArtistBiography | null
+  proposed: ArtistBiography | null
+  expiresAt: string | null
 }
