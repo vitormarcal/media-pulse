@@ -377,3 +377,16 @@ No autor, manter grade regular por linhas, sem masonry: a ordem de títulos e vo
 
 
 Com um único livro no autor, usar composição própria em toda a largura: capa integral à esquerda e informações à direita no desktop; capa seguida das informações em uma coluna no celular. Manter a grade regular para vários livros. Créditos adicionais preservam links e usam Outros créditos, pois o contrato não distingue funções como autoria, tradução e outras contribuições.
+
+
+## 23. Séries literárias e universos
+
+As listagens e detalhes usam até 1120px, 32px entre seções e painéis brancos com borda discreta, cantos de 28px e padding de 20–32px. Não usar gradientes, rótulos decorativos vermelhos ou títulos repetidos no cabeçalho. Listagens mantêm mosaicos em grade regular com largura limitada por cartão. Criação fica sob demanda junto da identificação, apenas para o owner, preservando nome e feedback em erro ou ao recolher/reabrir.
+
+No detalhe, nome, créditos locais navegáveis e quantidade local aparecem uma vez. A imagem é explicitamente do acervo, sem sugerir capa própria da série; à direita no desktop, integral e com até 320px de altura. No celular, identificação antes da imagem e descrição depois. Sem imagem ou em falha, remover a coluna. Descrição longa expande sob demanda, sem tradução automática.
+
+Ordem no acervo vem depois do cabeçalho: lista ordenada de todos os livros em um painel único, com linhas, capas integrais e títulos navegáveis. A posição representa a sequência salva, não o volume oficial nem uma cronologia inferida. Universo usa Séries neste universo, com links para os detalhes de série. Sem masonry, filtros ou reordenação por título.
+
+Sobre a série reúne universos e dados persistidos do Hardcover. Identificar contagens externas e situação editorial; não inferir progresso pessoal ou volumes ausentes. O autor principal externo não se repete quando tem o mesmo nome de um crédito local, mas permanece disponível na prévia de manutenção. Esse tratamento visual não cria nem unifica identidades.
+
+Edição abre junto do botão no cabeçalho; mover e remover aparecem junto do membro durante edição. Preservar inclusão ao final, associação de universo, exclusão confirmada e atualização de metadados com prévia e campos selecionados. Visitantes não recebem instruções para controles indisponíveis. Usar estilos opt-in nas páginas revisadas, preservando cartões e atribuição usados por autores e livros.

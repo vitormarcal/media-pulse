@@ -469,3 +469,166 @@
     border-radius: 0;
   }
 }
+
+/* Reviewed group pages: keep shared assignment panels and author cards unchanged. */
+.book-groups.group-review {
+  width: min(1120px, calc(100% - 32px));
+  gap: 32px;
+}
+.group-review .group-hero,
+.group-review .group-members-panel,
+.group-review .group-about,
+.group-review > .group-section,
+.group-review .group-edit-panel,
+.group-review .group-enrichment {
+  min-width: 0;
+  padding: clamp(20px, 4vw, 32px);
+  border: 1px solid var(--base-color-border);
+  border-radius: 28px;
+  background: var(--base-color-surface-strong);
+}
+.group-review .group-hero {
+  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) 220px;
+}
+.group-review .group-hero-no-cover,
+.group-review .group-index-hero {
+  grid-template-columns: minmax(0, 1fr);
+}
+.group-review .group-index-hero > button {
+  justify-self: start;
+}
+.group-review .group-hero-copy {
+  gap: 16px;
+}
+.group-review h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+.group-review h2 {
+  font-size: 1.3rem;
+}
+.group-review h3 {
+  font-size: 1rem;
+}
+.group-review .group-eyebrow {
+  color: var(--base-color-text-secondary);
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  font-size: 0.82rem;
+}
+.group-review .group-back {
+  padding: 0;
+  background: transparent;
+}
+.group-review .group-create-card {
+  padding: 0;
+  border-radius: 0;
+}
+.group-review .group-hero-cover {
+  width: 100%;
+  aspect-ratio: auto;
+  background: transparent;
+  border-radius: 0;
+  overflow: visible;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+.group-review .group-hero-cover > img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+.group-review .group-hero-cover > p {
+  width: auto;
+  height: auto;
+  font-size: 0.75rem;
+}
+.group-review .group-members {
+  gap: 0;
+}
+.group-review .group-member {
+  min-width: 0;
+  padding: 16px 0;
+  grid-template-columns: 24px 64px minmax(0, 1fr) auto;
+  border: 0;
+  border-top: 1px solid var(--base-color-border);
+  border-radius: 0;
+  gap: 16px;
+}
+.group-review .group-member-title {
+  min-width: 0;
+}
+.group-review .group-member-cover {
+  background: transparent;
+  border-radius: 4px;
+}
+.group-review .group-member-cover > img {
+  object-fit: contain;
+}
+.group-review .group-member h3 {
+  line-height: 1.45;
+}
+.group-review .group-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 320px));
+}
+.group-review .group-card {
+  min-width: 0;
+}
+.group-review .group-description p {
+  overflow-wrap: anywhere;
+}
+.group-review .group-check {
+  min-width: 0;
+}
+@media (max-width: 620px) {
+  .book-groups.group-review {
+    padding-top: 20px;
+  }
+  .group-review .group-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .group-review .group-hero-copy {
+    display: contents;
+  }
+  .group-review .group-hero-copy > * {
+    order: 1;
+  }
+  .group-review .group-hero-cover {
+    order: 2;
+    width: min(200px, 100%);
+    align-self: center;
+  }
+  .group-review .group-description {
+    order: 3;
+  }
+  .group-review .group-member {
+    grid-template-columns: 20px 48px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .group-review .group-member-actions {
+    grid-column: 2 / -1;
+  }
+  .group-review .group-edit-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 620px) {
+  .group-review .group-index-hero .group-hero-copy {
+    display: grid;
+    order: 0;
+  }
+  .group-review .group-index-hero > button {
+    align-self: start;
+    order: 1;
+  }
+  .group-review .group-index-hero > form {
+    order: 2;
+  }
+}

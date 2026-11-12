@@ -1,9 +1,8 @@
 <template>
-  <main class="book-groups">
+  <main class="book-groups group-review">
     <header class="group-hero group-index-hero">
       <div class="group-hero-copy">
         <NuxtLink class="group-back" to="/books">Voltar para livros</NuxtLink>
-        <p class="group-eyebrow">{{ kind === 'series' ? 'Séries' : 'Universos' }}</p>
         <h1>{{ title }}</h1>
         <nav class="group-actions" aria-label="Organização de livros">
           <NuxtLink :to="kind === 'series' ? '/books/universes' : '/books/series'">{{
@@ -11,10 +10,14 @@
           }}</NuxtLink>
         </nav>
       </div>
-      <form v-owner class="group-create-card" @submit.prevent="create">
+      <button v-owner type="button" :aria-expanded="creating" aria-controls="group-create-form" @click="toggleCreate">
+        {{ creating ? 'Fechar criação' : kind === 'series' ? 'Nova série' : 'Novo universo' }}
+      </button>
+      <form v-if="creating" id="group-create-form" v-owner class="group-create-card" @submit.prevent="create">
         <h2>{{ kind === 'series' ? 'Nova série' : 'Novo universo' }}</h2>
         <label
           >Nome<input
+            ref="createNameInput"
             v-model="name"
             required
             maxlength="300"
@@ -30,7 +33,18 @@
     <section class="group-section">
       <div class="group-section-heading">
         <h2>{{ kind === 'series' ? 'Suas séries' : 'Seus universos' }}</h2>
-        <span class="group-muted">{{ groups?.length || 0 }} {{ kind === 'series' ? 'séries' : 'universos' }}</span>
+        <span v-if="status === 'success' && groups?.length" class="group-muted"
+          >{{ groups.length }}
+          {{
+            kind === 'series'
+              ? groups.length === 1
+                ? 'série'
+                : 'séries'
+              : groups.length === 1
+                ? 'universo'
+                : 'universos'
+          }}</span
+        >
       </div>
       <p v-if="status === 'pending'" class="group-state">Carregando...</p>
       <div v-else-if="error" class="group-state group-error" role="alert">
@@ -59,6 +73,15 @@ const {
   status,
   refresh,
 } = await useAsyncData(`book-groups-${props.kind}`, () => api<BookGroup[]>(`/${props.kind}`))
+const creating = ref(false)
+const createNameInput = ref<HTMLInputElement | null>(null)
+async function toggleCreate() {
+  creating.value = !creating.value
+  if (creating.value) {
+    await nextTick()
+    createNameInput.value?.focus()
+  }
+}
 const name = ref('')
 const busy = ref(false)
 const message = ref('')

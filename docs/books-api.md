@@ -196,3 +196,8 @@ O frontend conserva ISBN-10/13 e edição por jornada já presentes em BookDetai
 ### Apresentação do autor
 
 O detalhe de autor reutiliza AuthorDetailsResponse sem alteração de API ou migração. Livros e créditos vêm do acervo local; a UI ordena por título ou ano disponível, sem interpretar reviewedAt como última leitura. finishedCount conta sessões concluídas, incluindo releituras, e não livros distintos. recentReads retorna até 20 registros; a UI identifica o recorte quando readsCount excede a lista. Retrato e biografia não fazem parte do contrato atual. Navegação entre autores acompanha o parâmetro da rota e recarrega os dados correspondentes.
+
+
+### Apresentação de séries e universos
+
+A revisão visual de listagem/detalhe usa os contratos e endpoints existentes, sem migração. A sequência de items é preservada, com posição visual ordinal; não é deduzida dos títulos. Universo contém séries, não uma agregação de leituras. Contagens e situação editorial do Hardcover ficam no contexto externo, separadas do acervo local. Inclusão, remoção, ordem, associação de universo e aplicação seletiva mantêm suas semânticas. Ausência de universo em produção é validada com fixtures, sem criação de registros reais.

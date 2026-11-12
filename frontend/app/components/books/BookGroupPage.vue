@@ -1,11 +1,11 @@
 <template>
-  <main class="book-groups">
+  <main class="book-groups group-review">
     <p v-if="status === 'pending'" class="group-state">Carregando...</p>
     <div v-else-if="error" class="group-state group-error" role="alert">
       Não foi possível carregar. <button @click="refresh()">Tentar novamente</button>
     </div>
     <template v-else-if="group">
-      <header class="group-hero">
+      <header class="group-hero" :class="{ 'group-hero-no-cover': !group.coverUrls[0] || coverFailed }">
         <div class="group-hero-copy">
           <div class="group-actions">
             <NuxtLink class="group-back" :to="`/books/${kind}`">{{
@@ -39,37 +39,26 @@
           </div>
           <div class="group-actions">
             <span class="group-badge"
-              >{{ group.items.length }} {{ kind === 'series' ? 'livros no acervo' : 'séries' }}</span
+              >{{ group.items.length }}
+              {{
+                kind === 'series'
+                  ? group.items.length === 1
+                    ? 'livro no acervo'
+                    : 'livros no acervo'
+                  : group.items.length === 1
+                    ? 'série'
+                    : 'séries'
+              }}</span
             >
-          </div>
-          <nav v-if="group.universes.length" class="group-actions" aria-label="Universos da série">
-            <NuxtLink v-for="universe in group.universes" :key="universe.id" :to="`/books/universes/${universe.id}`">{{
-              universe.name
-            }}</NuxtLink>
-          </nav>
-          <div v-if="kind === 'series' && group.hardcoverId" class="group-provider-context">
-            <p class="group-muted">
-              Vinculada ao Hardcover<template v-if="group.hardcover.primaryAuthor">
-                · Autor principal: {{ group.hardcover.primaryAuthor.name }}</template
-              >
-            </p>
-            <p v-if="group.hardcover.isCompleted != null" class="group-muted">
-              {{ group.hardcover.isCompleted ? 'Publicação concluída' : 'Publicação não concluída' }}
-            </p>
-            <p
-              v-if="group.hardcover.booksCount != null || group.hardcover.primaryBooksCount != null"
-              class="group-muted"
-            >
-              <template v-if="group.hardcover.booksCount != null"
-                >{{ group.hardcover.booksCount }} livros no Hardcover</template
-              ><template v-if="group.hardcover.primaryBooksCount != null">
-                · {{ group.hardcover.primaryBooksCount }} volumes principais</template
-              >
-            </p>
           </div>
         </div>
-        <div class="group-hero-cover">
-          <MediaImage :src="resolveMediaUrl(group.coverUrls[0])" :alt="group.name" :fallback="group.name.slice(0, 1)" />
+        <div v-if="group.coverUrls[0] && !coverFailed" class="group-hero-cover">
+          <img
+            :src="resolveMediaUrl(group.coverUrls[0]) || undefined"
+            alt="Capa de um livro do acervo"
+            @error="coverFailed = true"
+          />
+          <p class="group-muted">Imagem do acervo</p>
         </div>
       </header>
       <section v-if="editing" id="group-edit-panel" class="group-edit-panel">
@@ -144,17 +133,13 @@
         </form>
       </section>
       <p v-if="message" role="status" :class="{ 'group-error': failed }">{{ message }}</p>
-      <section class="group-section">
+      <section class="group-section group-members-panel">
         <div class="group-section-heading">
-          <h2>Ordem de leitura</h2>
-          <span class="group-muted">{{ group.items.length }} {{ kind === 'series' ? 'livros' : 'séries' }}</span>
+          <h2>{{ kind === 'series' ? 'Ordem no acervo' : 'Séries neste universo' }}</h2>
         </div>
+        <p v-if="kind === 'series' && group.items.length" class="group-muted">Sequência salva no seu acervo.</p>
         <p v-if="!group.items.length" class="group-state">
-          {{
-            kind === 'series'
-              ? 'Nenhum livro associado. Use “Editar série” para adicionar.'
-              : 'Nenhuma série associada. Use “Editar universo” para adicionar.'
-          }}
+          {{ kind === 'series' ? 'Nenhum livro associado a esta série.' : 'Nenhuma série associada a este universo.' }}
         </p>
         <ol v-else class="group-members">
           <li v-for="(item, index) in group.items" :key="item.id" class="group-member">
@@ -193,6 +178,35 @@
           </li>
         </ol>
       </section>
+      <section
+        v-if="kind === 'series' && (group.universes.length || group.hardcoverId)"
+        class="group-section group-about"
+      >
+        <h2>Sobre a série</h2>
+        <nav v-if="group.universes.length" class="group-actions" aria-label="Universos da série">
+          <NuxtLink v-for="universe in group.universes" :key="universe.id" :to="`/books/universes/${universe.id}`">{{
+            universe.name
+          }}</NuxtLink>
+        </nav>
+        <div v-if="kind === 'series' && group.hardcoverId" class="group-provider-context">
+          <p class="group-muted">
+            Dados do Hardcover<template v-if="showExternalAuthor">
+              · Autor principal:
+              {{ group.hardcover.primaryAuthor?.name }}</template
+            >
+          </p>
+          <p v-if="group.hardcover.isCompleted != null" class="group-muted">
+            {{ group.hardcover.isCompleted ? 'Publicação concluída' : 'Publicação não concluída' }}
+          </p>
+          <p v-if="group.hardcover.booksCount != null || group.hardcover.primaryBooksCount != null" class="group-muted">
+            <template v-if="group.hardcover.booksCount != null"
+              >{{ group.hardcover.booksCount }} livros no Hardcover</template
+            ><template v-if="group.hardcover.primaryBooksCount != null">
+              · {{ group.hardcover.primaryBooksCount }} volumes principais</template
+            >
+          </p>
+        </div>
+      </section>
     </template>
   </main>
 </template>
@@ -219,10 +233,18 @@ const {
 } = await useAsyncData(`book-group-${props.kind}-${props.id}`, () =>
   api<BookGroupDetails>(`/${props.kind}/${props.id}`),
 )
+const showExternalAuthor = computed(() => {
+  const value = group.value
+  return (
+    value?.hardcover.primaryAuthor &&
+    !value.authors.some((author) => author.name === value.hardcover.primaryAuthor?.name)
+  )
+})
 const name = ref(group.value?.name || '')
 const description = ref(group.value?.description || '')
 const editing = ref(false)
 const expanded = ref(false)
+const coverFailed = ref(false)
 const nameInput = ref<HTMLInputElement | null>(null)
 const busy = ref(false)
 const failed = ref(false)
