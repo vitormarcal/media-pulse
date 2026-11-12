@@ -46,3 +46,12 @@ Foto, biografia, datas de vida, vínculos externos e enriquecimento de autor fic
 Lint, formatação, tipos e build do frontend. Chromium em 1440px e 390px com APIs simuladas: ordenação, coautoria, contagens com releituras, recorte de 20 registros, capas ausentes/com falha, estados vazios, erro/recuperação e ausência de overflow. Componentes compartilhados de livro, revista e biblioteca mantêm seus contratos; a revisão usa composição específica do autor. Sem migração ou mudança de backend.
 
 Publicação: versão 1.24.0, tag v1.24.0 e imagens 1.24.0/latest; implantação pelo serviço Compose existente no Mordor.
+
+
+## Ajustes após conferência do acervo real
+
+Aprovado manter grade regular, sem masonry. A página de Akira Toriyama (autor 28, 54 livros) revelou que os cartões de séries estavam sem o contêiner necessário aos estilos compartilhados. Restaurado esse contexto somente no bloco de séries, com largura responsiva e mosaico de altura limitada. Mostrar inicialmente 12 livros e permitir expandir/recolher; ordenar o conjunto antes do recorte. Omitir o autor da página nos créditos dos cartões, mantendo coautores navegáveis. Não deduzir equivalência entre edições de nomes diferentes.
+
+Validação adicional: dados reais do endpoint do autor 28 reproduzidos localmente em desktop e celular, incluindo série com quatro capas, expansão dos 54 livros, recolhimento, ordenação e ausência de transbordamento.
+
+Correções publicadas na versão 1.24.1, tag v1.24.1 e imagens 1.24.1/latest, para implantação no Mordor.

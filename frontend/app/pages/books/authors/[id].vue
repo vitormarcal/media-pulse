@@ -20,8 +20,8 @@
           </label>
         </div>
         <p v-if="!data.books.length" class="muted">Nenhum livro deste autor no acervo.</p>
-        <div v-else class="author-books">
-          <article v-for="book in sortedBooks" :key="book.bookId" class="author-book">
+        <div v-else id="author-books-grid" class="author-books">
+          <article v-for="book in visibleBooks" :key="book.bookId" class="author-book">
             <NuxtLink class="book-cover" :to="`/books/${book.slug}`" :aria-label="`Ver ${book.title}`">
               <MediaImage
                 :src="resolveMediaUrl(book.coverUrl)"
@@ -33,8 +33,9 @@
             <NuxtLink :to="`/books/${book.slug}`"
               ><h3>{{ book.title }}</h3></NuxtLink
             >
-            <p class="book-authors">
-              <template v-for="(author, index) in book.authors" :key="author.id"
+            <p v-if="coauthors(book).length" class="book-authors">
+              <span>Com </span>
+              <template v-for="(author, index) in coauthors(book)" :key="author.id"
                 ><span v-if="index">, </span
                 ><NuxtLink :to="`/books/authors/${author.id}`">{{ author.name }}</NuxtLink></template
               >
@@ -42,6 +43,16 @@
             <p class="muted book-year">{{ book.releaseDate?.slice(0, 4) || 'Ano não informado' }}</p>
           </article>
         </div>
+        <button
+          v-if="data.books.length > 12"
+          class="show-books"
+          type="button"
+          :aria-expanded="showAllBooks"
+          aria-controls="author-books-grid"
+          @click="showAllBooks = !showAllBooks"
+        >
+          {{ showAllBooks ? 'Mostrar menos livros' : `Ver todos os ${data.books.length} livros` }}
+        </button>
       </section>
       <section v-if="data.recentReads.length" class="panel" aria-labelledby="author-reads-heading">
         <h2 id="author-reads-heading">Leituras recentes</h2>
@@ -64,7 +75,9 @@
       </section>
       <section v-if="data.series.length" class="panel" aria-labelledby="author-series-heading">
         <h2 id="author-series-heading">Séries no acervo</h2>
-        <div class="group-grid"><BookGroupCard v-for="series in data.series" :key="series.id" :group="series" /></div>
+        <div class="book-groups author-series">
+          <div class="group-grid"><BookGroupCard v-for="series in data.series" :key="series.id" :group="series" /></div>
+        </div>
       </section>
     </template>
   </main>
@@ -74,6 +87,7 @@
 import BookGroupCard from '~/components/books/BookGroupCard.vue'
 import AuthorContextPanel from '~/components/books/AuthorContextPanel.vue'
 import AuthorPageHero from '~/components/books/AuthorPageHero.vue'
+import type { BookCardDto } from '~/types/books'
 import { useAuthorPageData } from '~/composables/useAuthorPageData'
 
 const route = useRoute()
@@ -81,6 +95,11 @@ const id = computed(() => String(route.params.id))
 const { data, error, status, refresh } = await useAuthorPageData(id)
 const { resolveMediaUrl } = useMediaUrl()
 const sort = ref('title')
+const showAllBooks = ref(false)
+watch(id, () => {
+  showAllBooks.value = false
+})
+const coauthors = (book: BookCardDto) => book.authors.filter((author) => String(author.id) !== data.value?.id)
 const collator = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true })
 const sortedBooks = computed(() =>
   [...(data.value?.books ?? [])].sort((a, b) => {
@@ -93,6 +112,7 @@ const sortedBooks = computed(() =>
     return collator.compare(a.title, b.title) || a.bookId - b.bookId
   }),
 )
+const visibleBooks = computed(() => (showAllBooks.value ? sortedBooks.value : sortedBooks.value.slice(0, 12)))
 useHead(() => ({
   title: data.value ? `${data.value.name} · Media Pulse` : 'Autor · Media Pulse',
   meta: [
@@ -217,8 +237,30 @@ button {
 .read-period {
   text-align: right;
 }
-.group-grid {
-  margin-top: 24px;
+.author-series {
+  width: 100%;
+  min-width: 0;
+  margin: 24px 0 0;
+  padding: 0;
+  gap: 0;
+}
+.author-series :deep(.group-grid) {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 320px));
+}
+.author-series :deep(.group-card) {
+  min-width: 0;
+}
+.show-books {
+  display: block;
+  margin: 28px auto 0;
+  cursor: pointer;
+}
+.book-authors {
+  overflow-wrap: anywhere;
+}
+.author-page :focus-visible {
+  outline: 2px solid #435ee5;
+  outline-offset: 3px;
 }
 @media (max-width: 800px) {
   .author-books {
