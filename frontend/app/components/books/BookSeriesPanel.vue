@@ -1,7 +1,11 @@
 <template>
-  <section class="book-groups group-panel" aria-labelledby="book-series-heading">
+  <section
+    v-if="owner.authenticated || status === 'pending' || error || memberships?.length"
+    class="book-groups group-panel"
+    aria-labelledby="book-series-heading"
+  >
     <div class="group-section-heading">
-      <h2 id="book-series-heading">Séries</h2>
+      <h3 id="book-series-heading">Séries</h3>
       <button
         v-owner
         :aria-expanded="editing"
@@ -81,7 +85,8 @@ import BookGroupCard from '~/components/books/BookGroupCard.vue'
 import BookSeriesSuggestionCard from '~/components/books/BookSeriesSuggestionCard.vue'
 import '~/assets/css/book-groups.css'
 const props = defineProps<{ bookId: number }>()
-const emit = defineEmits<{ changed: [] }>()
+const emit = defineEmits<{ changed: []; visibilityChanged: [visible: boolean] }>()
+const owner = useOwnerAuth()
 const api = useBookGroupsApi()
 const {
   data: memberships,
@@ -89,6 +94,11 @@ const {
   error,
   refresh,
 } = await useAsyncData(`book-series-${props.bookId}`, () => api<BookGroup[]>(`/${props.bookId}/series`))
+watch(
+  [memberships, status, error],
+  () => emit('visibilityChanged', status.value === 'pending' || !!error.value || !!memberships.value?.length),
+  { immediate: true },
+)
 watch(memberships, () => emit('changed'))
 const editing = ref(false)
 const seriesSelect = ref<HTMLSelectElement | null>(null)
@@ -172,3 +182,14 @@ async function preview() {
   })
 }
 </script>
+
+<style scoped>
+.book-groups.group-panel {
+  padding-top: 24px;
+  border-top: 1px solid var(--base-color-border);
+  gap: 20px;
+}
+.group-section-heading > h3 {
+  font-size: 1rem;
+}
+</style>

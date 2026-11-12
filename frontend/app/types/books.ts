@@ -86,10 +86,13 @@ export interface BookReadEntryModel {
   meta: string
   relativeDate: string
   source: string
+  edition?: BookEditionModel | null
   period?: string
 }
 
 export interface BookEditionModel {
+  isbn10: string | null
+  isbn13: string | null
   id: string
   title: string
   meta: string[]

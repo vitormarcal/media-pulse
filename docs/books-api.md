@@ -184,3 +184,10 @@ A claim tem lease de cinco minutos e token exclusivo, renovado entre referência
 O detalhe do livro mostra pendência/erro abaixo das séries e oferece “Tentar atualizar tags das capas”. O estado é consultado novamente após mudanças de série ou upload; enquanto pendente, há polling a cada três segundos, ou trinta segundos quando existe mensagem, encerrado ao sair da página. Não altera os controles de atribuição nem bloqueia o histórico. A sincronização cobre as capas atualmente vinculadas; assets antigos retidos após substituir uma capa não recebem alterações por este fluxo.
 
 Validação: `BookSeriesTagSyncIntegrationTest` migra um arquivo na V73 e cobre backfill, referências compartilhadas de livro/edições, invalidação, rollback, leases/revisões concorrentes, falha parcial e retry; testes de serviço, cliente e controller cobrem normalização, limites UTF-16, contrato JSON e erros. Executar integrações com `JAVA_TOOL_OPTIONS=-Dapi.version=1.44` quando necessário para Docker 29.
+
+
+## Apresentação do detalhe de livro
+
+A revisão de UI preserva os contratos existentes e não requer migração. A capa canônica abre no visualizador compartilhado; o upload continua independente das capas das edições. A nota é exibida uma vez, com decimais, junto dos comentários. Leituras e resenhas importadas permanecem read-only; somente os comentários locais usam os controles existentes de criação/edição.
+
+O frontend conserva ISBN-10/13 e edição por jornada já presentes em BookDetailsResponse. A ficha destacada é a edição da leitura mais recente segundo a ordem recebida da API, sem inventar uma edição canônica ou alterar os vínculos. Jornadas com edições diferentes identificam seu próprio contexto. Ausência de data de resenha não descarta seu texto; a interface informa a ausência e não cria timestamps. Séries e edições ficam após a memória pessoal; séries/comentários vazios não geram seções públicas. Gerenciamento e retry de tags das capas ficam no contexto do owner. Nenhuma alteração é aplicada às páginas de revistas, autores ou à biblioteca geral.

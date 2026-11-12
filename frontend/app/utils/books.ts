@@ -57,7 +57,15 @@ function mapRead(read: ReadCardDto, index: number): BookReadEntryModel {
     id: `read-${read.readId}`,
     title: index === 0 ? 'Leitura mais recente' : `Registro ${index + 1}`,
     href: null,
-    context: read.status === 'READ' ? mapStatus(read.status) : buildReadContext(read),
+    context: (() => {
+      const parts = [mapStatus(read.status)]
+      if (read.status !== 'READ' && read.status !== 'WANT_TO_READ') {
+        if (read.progressPct != null && read.progressPct > 0) parts.push(`${Math.round(read.progressPct)}%`)
+        else if (read.progressPages != null && read.progressPages > 0) parts.push(`${read.progressPages} páginas`)
+      }
+      return parts.join(' · ')
+    })(),
+    edition: read.edition ? mapEdition(read.edition) : null,
     meta: anchorDate ? formatAbsoluteDate(anchorDate) : 'Sem data definida',
     relativeDate: anchorDate ? formatRelativeDate(anchorDate) : 'Sem atividade recente',
     source: read.source,
@@ -84,14 +92,25 @@ function mapAuthorRead(read: ReadCardDto): BookReadEntryModel {
   }
 }
 
+function editionLanguage(value: string | null): string | null {
+  if (!value) return null
+  try {
+    return new Intl.DisplayNames(['pt-BR'], { type: 'language' }).of(value) || value
+  } catch {
+    return value
+  }
+}
+
 function mapEdition(edition: BookDetailsResponse['editions'][number]): BookEditionModel {
   return {
     id: `edition-${edition.id}`,
-    title: edition.title || edition.publisher || 'Edição sem título',
+    isbn10: edition.isbn10,
+    isbn13: edition.isbn13,
+    title: edition.title || 'Edição sem título',
     meta: [
       edition.format,
       edition.publisher,
-      edition.language,
+      editionLanguage(edition.language),
       edition.pages ? `${edition.pages} páginas` : null,
     ].filter(Boolean) as string[],
   }
@@ -591,15 +610,12 @@ export function buildBookPageData(book: BookDetailsResponse): BookPageData {
       href: `/books/authors/${author.id}`,
     })),
     subtitle: book.releaseDate ? book.releaseDate.slice(0, 4) : null,
-    heroMeta: [
-      latestRead ? mapStatus(latestRead.status) : 'Sem leitura registrada',
-      book.rating != null ? `${book.rating.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}/5` : null,
-    ].filter(Boolean) as string[],
+    heroMeta: [],
     stats: {
       totalReads: book.reads.length,
       currentStatus: latestRead ? mapStatus(latestRead.status) : 'Sem leitura registrada',
       latestActivity,
-      ratingText: book.rating != null ? `${book.rating.toFixed(1)} / 5` : null,
+      ratingText: book.rating != null ? `${book.rating.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}/5` : null,
     },
     editions: book.editions.map(mapEdition),
     readingEdition: latestRead?.edition ? mapEdition(latestRead.edition) : null,

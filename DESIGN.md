@@ -351,3 +351,14 @@ Usar até 1120px e painéis brancos uniformes, bordas discretas, cantos de 28px 
 Mais ouvidas por você usa linhas compactas, apenas com reproduções registradas, álbum de referência navegável e última escuta identificada. Não repetir 🔥 em um ranking que já indica os destaques. Histórico reúne total, primeira data registrada, última escuta e dias recentes sob demanda; não repetir contagens no cabeçalho nem calcular cobertura entre recortes distintos.
 
 Sobre o artista reúne gêneros ativos, links e outros nomes recolhidos. Origem e gêneros ocultos só aparecem durante gerenciamento pelo owner. Atualizar dados abre o painel junto do botão e preserva estado/feedback no refresh. Vínculo manual e busca permitem revisar a correspondência antes de confirmar; biografia tem consulta/prévia/confirmação próprias, sem alterar outros metadados. Reutilizar os componentes de visualização e atribuição dos álbuns, preservando as particularidades do artista.
+
+
+## 21. Detalhe de livro
+
+Usar largura de até 1120px, painéis brancos uniformes com padding de 20–32px, cantos de 28px e 32px entre seções, preservando a apresentação editorial dos textos. No desktop, identificação/autores/ano e sinopse ficam à esquerda, capa integral à direita. No celular, identificação, capa e sinopse. A posição da capa foi alinhada aos demais domínios por decisão explícita do owner. Usar largura de até 260px e altura de até 400px (360px no celular), sem recorte ou arte de fundo. Ver capa e clique na imagem abrem o visualizador compartilhado, com Escape, foco e scroll preservados. Alterar capa fica junto da imagem e mantém upload, prévia e retry, alterando somente a capa canônica.
+
+Leituras vêm imediatamente após o cabeçalho, preservando jornadas, releituras, datas e status. Não repetir status no cabeçalho, 0% de Quero ler ou 100% de uma jornada concluída. Identificar a edição por jornada quando diferirem, sem inferir datas ou edição ausentes. Comentários e nota vêm em seguida, sem caixa interna por comentário, contagem ou resumo repetido. Preservar decimais da nota importada e resenhas Hardcover como conteúdo de origem externa, inclusive sem data disponível. Ocultar comentários vazios para visitantes, mantendo composição para o owner; indicar edição de comentário discretamente.
+
+Sobre o livro reúne séries e edições; séries vazias ficam ocultas para visitantes, e gestão permanece contextual para o owner. Pendências de tags de capas e retry aparecem apenas no contexto do owner. A edição da leitura mais recente é identificada, com outras edições recolhidas e ISBNs sob detalhes. Livro, edição e jornada continuam distintos. Não acrescentar edição local de leituras/nota ou novos provedores nesta revisão.
+
+O cabeçalho de livros usa composição opt-in; revistas mantêm sua apresentação e o uso não compacto da timeline por autores permanece inalterado. Reutilizar tokens e controles existentes, com foco visível e estados de erro legíveis.

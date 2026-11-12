@@ -1,7 +1,14 @@
 <template>
-  <section class="editorial-panel">
+  <section v-if="owner.authenticated || entries.length || ratingText" class="editorial-panel">
     <div class="section-header">
-      <h2>{{ entries.length > 1 ? 'Comentários' : 'Comentário' }}</h2>
+      <div class="editorial-heading">
+        <h2>
+          {{
+            entries.length || owner.authenticated ? (entries.length === 1 ? 'Comentário' : 'Comentários') : 'Avaliação'
+          }}
+        </h2>
+        <span v-if="ratingText" class="book-rating">Nota {{ ratingText }}</span>
+      </div>
       <button
         v-owner
         class="button button-secondary"
@@ -47,12 +54,18 @@
           <div class="entry-header">
             <div class="entry-meta-block">
               <div class="entry-kicker-row">
-                <p class="entry-kicker">{{ formatAbsoluteDate(entry.commentedAt) }}</p>
+                <time v-if="entry.commentedAt" class="entry-kicker" :datetime="entry.commentedAt">{{
+                  formatAbsoluteDate(entry.commentedAt)
+                }}</time
+                ><span v-else class="entry-kicker">Data não informada</span>
                 <span v-if="entry.kind === 'hardcover'" class="origin-badge">Importado do Hardcover</span>
               </div>
-              <p v-if="entry.kind === 'manual' && entry.edited" class="entry-edited">
-                Editado {{ formatRelativeDate(entry.updatedAt) }}
-              </p>
+              <span
+                v-if="entry.kind === 'manual' && entry.edited"
+                class="entry-edited"
+                :title="formatAbsoluteDate(entry.updatedAt)"
+                >Editado</span
+              >
             </div>
 
             <button
@@ -111,7 +124,7 @@
 
 <script setup lang="ts">
 import type { MediaCommentDto } from '~/types/comments'
-import { formatAbsoluteDate, formatRelativeDate } from '~/utils/formatting'
+import { formatAbsoluteDate } from '~/utils/formatting'
 
 type EditorialEntry =
   | {
@@ -127,13 +140,14 @@ type EditorialEntry =
       id: string
       kind: 'hardcover'
       body: string
-      commentedAt: string
-      createdAt: string
-      updatedAt: string
+      commentedAt: string | null
+      createdAt: string | null
+      updatedAt: string | null
       edited: false
     }
 
 const props = defineProps<{
+  ratingText?: string | null
   bookId: number
   reviewRaw: string | null
   reviewedAt: string | null
@@ -141,6 +155,7 @@ const props = defineProps<{
 }>()
 
 const config = useRuntimeConfig()
+const owner = useOwnerAuth()
 
 const localComments = ref([...props.comments])
 const composerOpen = ref(false)
@@ -173,23 +188,27 @@ const entries = computed(() => {
     edited: comment.edited,
   }))
 
-  const hardcoverEntry: EditorialEntry[] =
-    props.reviewRaw && props.reviewedAt
-      ? [
-          {
-            id: `hardcover-${props.reviewedAt}`,
-            kind: 'hardcover',
-            body: props.reviewRaw,
-            commentedAt: props.reviewedAt,
-            createdAt: props.reviewedAt,
-            updatedAt: props.reviewedAt,
-            edited: false,
-          },
-        ]
-      : []
+  const hardcoverEntry: EditorialEntry[] = props.reviewRaw?.trim()
+    ? [
+        {
+          id: 'hardcover-review',
+          kind: 'hardcover',
+          body: props.reviewRaw,
+          commentedAt: props.reviewedAt,
+          createdAt: props.reviewedAt,
+          updatedAt: props.reviewedAt,
+          edited: false,
+        },
+      ]
+    : []
 
   return [...manualEntries, ...hardcoverEntry].sort((left, right) => {
-    const byMoment = new Date(right.commentedAt).getTime() - new Date(left.commentedAt).getTime()
+    if (!left.commentedAt && right.commentedAt) return 1
+    if (left.commentedAt && !right.commentedAt) return -1
+    const byMoment =
+      left.commentedAt && right.commentedAt
+        ? new Date(right.commentedAt).getTime() - new Date(left.commentedAt).getTime()
+        : 0
     if (byMoment !== 0) return byMoment
     return String(right.id).localeCompare(String(left.id))
   })
@@ -240,8 +259,8 @@ async function submitNewComment() {
     draftBody.value = ''
     draftCommentedAt.value = toLocalDateTimeInput(new Date().toISOString())
     composerOpen.value = false
-  } catch (error) {
-    submitError.value = error instanceof Error ? error.message : 'Não foi possível salvar o comentário.'
+  } catch {
+    submitError.value = 'Não foi possível salvar o comentário. Tente novamente.'
   } finally {
     submitting.value = false
   }
@@ -272,8 +291,8 @@ async function saveEdit() {
       localComments.value.map((comment) => (comment.id === updated.id ? updated : comment)),
     )
     cancelEdit()
-  } catch (error) {
-    editError.value = error instanceof Error ? error.message : 'Não foi possível atualizar o comentário.'
+  } catch {
+    editError.value = 'Não foi possível atualizar o comentário. Tente novamente.'
   } finally {
     savingEdit.value = false
   }
@@ -478,5 +497,35 @@ summary:focus-visible {
   .composer-header {
     align-items: stretch;
   }
+}
+
+.editorial-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.book-rating {
+  font-size: 0.88rem;
+  color: var(--base-color-text-secondary);
+}
+.entry-card {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.entry-card + .entry-card {
+  border-top: 1px solid var(--base-color-border);
+  padding-top: 24px;
+}
+.composer-card {
+  padding: 20px;
+  background: var(--base-color-surface-soft);
+}
+.button {
+  min-height: 44px;
+}
+.button-primary {
+  color: white;
 }
 </style>

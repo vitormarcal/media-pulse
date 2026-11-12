@@ -4,6 +4,12 @@
     <div v-for="read in reads" :key="read.id" class="compact-read">
       <span>{{ read.context }}</span>
       <span v-if="read.period" class="period">{{ read.period }}</span>
+      <span v-if="showEditions" class="read-edition"
+        ><template v-if="read.edition"
+          >Edição: {{ read.edition.title
+          }}<span v-if="read.edition.meta.length"> · {{ read.edition.meta.join(' · ') }}</span></template
+        ><template v-else>Edição não informada</template></span
+      >
     </div>
   </section>
   <section v-else-if="!compact" class="read-timeline">
@@ -44,6 +50,7 @@ import type { BookReadEntryModel } from '~/types/books'
 defineProps<{
   reads: BookReadEntryModel[]
   compact?: boolean
+  showEditions?: boolean
 }>()
 </script>
 
@@ -152,5 +159,16 @@ h3 {
     justify-items: start;
     text-align: left;
   }
+}
+
+.compact-read {
+  padding-top: 16px;
+  border-top: 1px solid var(--base-color-border);
+  line-height: 1.6;
+}
+.read-edition {
+  width: 100%;
+  color: var(--base-color-text-secondary);
+  font-size: 0.82rem;
 }
 </style>
