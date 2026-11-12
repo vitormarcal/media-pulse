@@ -79,16 +79,11 @@ function mapRead(read: ReadCardDto, index: number): BookReadEntryModel {
 }
 
 function mapAuthorRead(read: ReadCardDto): BookReadEntryModel {
-  const anchorDate = read.finishedAt ?? read.startedAt
-
   return {
+    ...mapRead(read, 0),
     id: `author-read-${read.readId}`,
     title: read.book.title,
     href: `/books/${read.book.slug}`,
-    context: buildReadContext(read),
-    meta: anchorDate ? formatAbsoluteDate(anchorDate) : 'Sem data definida',
-    relativeDate: anchorDate ? formatRelativeDate(anchorDate) : 'Sem atividade recente',
-    source: read.source,
   }
 }
 
@@ -627,31 +622,17 @@ export function buildBookPageData(book: BookDetailsResponse): BookPageData {
 }
 
 export function buildAuthorPageData(author: AuthorDetailsResponse): AuthorPageData {
-  const books = author.books.map((book) => buildSearchCardModel(book))
-  const heroCover = author.books.find((book) => book.coverUrl)?.coverUrl ?? null
-
   return {
     id: String(author.authorId),
     series: author.series,
     name: author.name,
-    coverUrl: heroCover,
-    heroMeta: [
-      `${formatShortNumber(author.booksCount)} livros`,
-      `${formatShortNumber(author.readsCount)} registros`,
-      `${formatShortNumber(author.finishedCount)} concluídos`,
-      author.lastFinishedAt
-        ? `Último fechamento ${formatRelativeDate(author.lastFinishedAt)}`
-        : 'Sem conclusão recente',
-    ],
     stats: {
       booksCount: author.booksCount,
       readsCount: author.readsCount,
       finishedCount: author.finishedCount,
       currentlyReadingCount: author.currentlyReadingCount,
-      latestFinish: author.lastFinishedAt ? formatRelativeDate(author.lastFinishedAt) : 'Sem conclusão recente',
-      latestFinishAbsolute: author.lastFinishedAt ? formatAbsoluteDate(author.lastFinishedAt) : null,
     },
-    books,
-    recentReads: author.recentReads.slice(0, 24).map(mapAuthorRead),
+    books: author.books,
+    recentReads: author.recentReads.slice(0, 20).map(mapAuthorRead),
   }
 }

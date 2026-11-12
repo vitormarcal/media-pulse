@@ -1,34 +1,71 @@
 <template>
   <main class="author-page">
-    <div v-if="status === 'pending'" class="state-card">
-      <p>Carregando...</p>
-    </div>
-
-    <div v-else-if="error" class="state-card error">
+    <div v-if="status === 'pending'" class="panel" role="status"><p>Carregando autor…</p></div>
+    <div v-else-if="error" class="panel" role="alert">
       <p>Não foi possível carregar este autor.</p>
-      <pre>{{ error.message }}</pre>
+      <button type="button" @click="refresh()">Tentar novamente</button>
+      <NuxtLink to="/books">Voltar para livros</NuxtLink>
     </div>
-
     <template v-else-if="data">
-      <AuthorPageHero :title="data.name" :cover-url="data.coverUrl" :hero-meta="data.heroMeta" />
-
-      <AuthorContextPanel :stats="data.stats" />
-
-      <BooksLibraryGrid
-        eyebrow="Livros"
-        title="Livros"
-        :items="data.books"
-        description=""
-        summary=""
-        empty-message="Nenhum livro apareceu para esse autor."
-      />
-
-      <section v-if="data.series.length" class="book-groups group-panel">
-        <h2>Séries</h2>
+      <AuthorPageHero :title="data.name"><AuthorContextPanel :stats="data.stats" /></AuthorPageHero>
+      <section class="panel" aria-labelledby="author-books-heading">
+        <div class="section-header">
+          <h2 id="author-books-heading">Livros no acervo</h2>
+          <label v-if="data.books.length > 1" class="sort-label"
+            >Ordenar por
+            <select v-model="sort">
+              <option value="title">Título</option>
+              <option value="year">Ano de publicação</option>
+            </select>
+          </label>
+        </div>
+        <p v-if="!data.books.length" class="muted">Nenhum livro deste autor no acervo.</p>
+        <div v-else class="author-books">
+          <article v-for="book in sortedBooks" :key="book.bookId" class="author-book">
+            <NuxtLink class="book-cover" :to="`/books/${book.slug}`" :aria-label="`Ver ${book.title}`">
+              <MediaImage
+                :src="resolveMediaUrl(book.coverUrl)"
+                :alt="`Capa de ${book.title}`"
+                loading="lazy"
+                fallback="Capa indisponível"
+              />
+            </NuxtLink>
+            <NuxtLink :to="`/books/${book.slug}`"
+              ><h3>{{ book.title }}</h3></NuxtLink
+            >
+            <p class="book-authors">
+              <template v-for="(author, index) in book.authors" :key="author.id"
+                ><span v-if="index">, </span
+                ><NuxtLink :to="`/books/authors/${author.id}`">{{ author.name }}</NuxtLink></template
+              >
+            </p>
+            <p class="muted book-year">{{ book.releaseDate?.slice(0, 4) || 'Ano não informado' }}</p>
+          </article>
+        </div>
+      </section>
+      <section v-if="data.recentReads.length" class="panel" aria-labelledby="author-reads-heading">
+        <h2 id="author-reads-heading">Leituras recentes</h2>
+        <p class="muted history-note">
+          {{
+            data.stats.readsCount > data.recentReads.length
+              ? `Mostrando as ${data.recentReads.length} leituras mais recentes.`
+              : 'Seu histórico de leitura com este autor.'
+          }}
+        </p>
+        <article v-for="read in data.recentReads" :key="read.id" class="author-read">
+          <div>
+            <NuxtLink v-if="read.href" :to="read.href"
+              ><h3>{{ read.title }}</h3></NuxtLink
+            >
+            <p class="muted">{{ read.context }}</p>
+          </div>
+          <p class="muted read-period">{{ read.period || 'Datas não informadas' }}</p>
+        </article>
+      </section>
+      <section v-if="data.series.length" class="panel" aria-labelledby="author-series-heading">
+        <h2 id="author-series-heading">Séries no acervo</h2>
         <div class="group-grid"><BookGroupCard v-for="series in data.series" :key="series.id" :group="series" /></div>
       </section>
-
-      <BookReadTimeline :reads="data.recentReads" />
     </template>
   </main>
 </template>
@@ -37,23 +74,31 @@
 import BookGroupCard from '~/components/books/BookGroupCard.vue'
 import AuthorContextPanel from '~/components/books/AuthorContextPanel.vue'
 import AuthorPageHero from '~/components/books/AuthorPageHero.vue'
-import BookReadTimeline from '~/components/books/BookReadTimeline.vue'
-import BooksLibraryGrid from '~/components/books/BooksLibraryGrid.vue'
 import { useAuthorPageData } from '~/composables/useAuthorPageData'
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))
-
-const { data, error, status } = await useAuthorPageData(id.value)
-
+const { data, error, status, refresh } = await useAuthorPageData(id)
+const { resolveMediaUrl } = useMediaUrl()
+const sort = ref('title')
+const collator = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true })
+const sortedBooks = computed(() =>
+  [...(data.value?.books ?? [])].sort((a, b) => {
+    if (sort.value === 'year') {
+      const difference =
+        (b.releaseDate?.slice(0, 4) ? Number(b.releaseDate.slice(0, 4)) : -Infinity) -
+        (a.releaseDate?.slice(0, 4) ? Number(a.releaseDate.slice(0, 4)) : -Infinity)
+      if (difference && !Number.isNaN(difference)) return difference
+    }
+    return collator.compare(a.title, b.title) || a.bookId - b.bookId
+  }),
+)
 useHead(() => ({
   title: data.value ? `${data.value.name} · Media Pulse` : 'Autor · Media Pulse',
   meta: [
     {
       name: 'description',
-      content: data.value
-        ? `${data.value.name} dentro do seu arquivo de livros.`
-        : 'Página interna de autor no Media Pulse.',
+      content: data.value ? `Livros de ${data.value.name} no acervo e histórico de leitura.` : 'Autor no Media Pulse.',
     },
   ],
 }))
@@ -62,32 +107,144 @@ useHead(() => ({
 <style scoped>
 .author-page {
   display: grid;
-  gap: var(--sema-space-section);
-  width: min(1480px, calc(100vw - 32px));
+  gap: 32px;
+  width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
   padding: 28px 0 84px;
 }
-
-.state-card {
-  padding: 24px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.82);
+.panel {
+  min-width: 0;
+  padding: clamp(20px, 4vw, 32px);
+  border: 1px solid var(--base-color-border);
+  border-radius: 28px;
+  background: var(--base-color-surface-strong);
+}
+h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  letter-spacing: -0.025em;
+}
+h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.sort-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  color: var(--base-color-text-secondary);
+  font-size: 0.82rem;
+}
+select,
+button {
+  padding: 8px 12px;
+  border: 1px solid var(--base-color-border);
+  border-radius: 10px;
+  background: var(--base-color-surface-strong);
+  color: var(--base-color-text-primary);
+  font: inherit;
+}
+.author-books {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 32px 24px;
+}
+.author-book {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+.book-cover {
+  height: 240px;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.book-cover :deep(img) {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+}
+.book-cover :deep(.media-image-fallback) {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  font-size: 0.82rem;
+}
+.book-authors,
+.book-year {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
   color: var(--base-color-text-secondary);
 }
-
-.state-card.error {
-  color: #7a1414;
+.muted {
+  color: var(--base-color-text-secondary);
 }
-
-pre {
-  margin: 12px 0 0;
-  white-space: pre-wrap;
+.history-note {
+  margin: 12px 0 20px;
+  font-size: 0.85rem;
 }
-
-@media (max-width: 720px) {
+.author-read {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px 24px;
+  padding: 18px 0;
+  border-top: 1px solid var(--base-color-border);
+}
+.author-read p {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.read-period {
+  text-align: right;
+}
+.group-grid {
+  margin-top: 24px;
+}
+@media (max-width: 800px) {
+  .author-books {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .book-cover {
+    height: 200px;
+  }
+  .author-read {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .read-period {
+    text-align: left;
+  }
+}
+@media (max-width: 560px) {
+  .author-books {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 16px;
+  }
+  .book-cover {
+    height: 180px;
+  }
   .author-page {
-    width: min(100vw - 20px, 1480px);
-    padding: 20px 0 64px;
+    padding-top: 20px;
   }
 }
 </style>

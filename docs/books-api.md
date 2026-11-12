@@ -191,3 +191,8 @@ Validação: `BookSeriesTagSyncIntegrationTest` migra um arquivo na V73 e cobre 
 A revisão de UI preserva os contratos existentes e não requer migração. A capa canônica abre no visualizador compartilhado; o upload continua independente das capas das edições. A nota é exibida uma vez, com decimais, junto dos comentários. Leituras e resenhas importadas permanecem read-only; somente os comentários locais usam os controles existentes de criação/edição.
 
 O frontend conserva ISBN-10/13 e edição por jornada já presentes em BookDetailsResponse. A ficha destacada é a edição da leitura mais recente segundo a ordem recebida da API, sem inventar uma edição canônica ou alterar os vínculos. Jornadas com edições diferentes identificam seu próprio contexto. Ausência de data de resenha não descarta seu texto; a interface informa a ausência e não cria timestamps. Séries e edições ficam após a memória pessoal; séries/comentários vazios não geram seções públicas. Gerenciamento e retry de tags das capas ficam no contexto do owner. Nenhuma alteração é aplicada às páginas de revistas, autores ou à biblioteca geral.
+
+
+### Apresentação do autor
+
+O detalhe de autor reutiliza AuthorDetailsResponse sem alteração de API ou migração. Livros e créditos vêm do acervo local; a UI ordena por título ou ano disponível, sem interpretar reviewedAt como última leitura. finishedCount conta sessões concluídas, incluindo releituras, e não livros distintos. recentReads retorna até 20 registros; a UI identifica o recorte quando readsCount excede a lista. Retrato e biografia não fazem parte do contrato atual. Navegação entre autores acompanha o parâmetro da rota e recarrega os dados correspondentes.

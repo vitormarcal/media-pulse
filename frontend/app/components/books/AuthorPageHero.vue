@@ -1,139 +1,44 @@
 <template>
-  <section class="author-hero">
-    <NuxtLink class="back-link" to="/books"> Voltar para livros </NuxtLink>
-
-    <div class="hero-grid" :style="heroShellStyle">
-      <div class="copy">
-        <p class="eyebrow">Autor</p>
-        <h1>{{ title }}</h1>
-
-        <div class="meta-list">
-          <span v-for="item in heroMeta" :key="item" class="meta-pill">{{ item }}</span>
-        </div>
-      </div>
-
-      <div class="cover-frame">
-        <img v-if="resolvedCoverUrl" :src="resolvedCoverUrl" :alt="title" />
-        <div v-else class="cover-fallback">{{ title.slice(0, 1) }}</div>
-      </div>
+  <header class="author-hero">
+    <NuxtLink class="back-link" to="/books">← Voltar para livros</NuxtLink>
+    <div class="identity">
+      <p class="eyebrow">Autor</p>
+      <h1>{{ title }}</h1>
+      <slot />
     </div>
-  </section>
+  </header>
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
-  title: string
-  coverUrl: string | null
-  heroMeta: string[]
-}>()
-
-const { resolveMediaUrl } = useMediaUrl()
-const resolvedCoverUrl = computed(() => resolveMediaUrl(props.coverUrl))
-const heroShellStyle = computed(() =>
-  resolvedCoverUrl.value
-    ? {
-        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 243, 238, 0.97)), radial-gradient(circle at top right, rgba(230, 0, 35, 0.1), transparent 28%), url("${resolvedCoverUrl.value}")`,
-      }
-    : undefined,
-)
+defineProps<{ title: string }>()
 </script>
 
 <style scoped>
 .author-hero {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
-
 .back-link {
   width: fit-content;
-  padding: 8px 14px;
-  border-radius: 16px;
-  background: var(--base-color-surface-warm);
-  color: var(--base-color-text-primary);
-  font-size: 0.8rem;
+  color: var(--base-color-text-secondary);
+  font-size: 0.88rem;
 }
-
-.hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(16rem, 0.7fr);
-  gap: 28px;
-  padding: clamp(24px, 4vw, 42px);
-  border-radius: 40px;
-  background-image:
-    radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98));
-  background-size: cover;
-  background-position: center;
-  border: 1px solid color-mix(in srgb, var(--base-color-border) 55%, white);
+.identity {
+  padding: clamp(20px, 4vw, 32px);
+  border: 1px solid var(--base-color-border);
+  border-radius: 28px;
+  background: var(--base-color-surface-strong);
 }
-
-.copy {
-  display: grid;
-  align-content: end;
-  gap: 12px;
-}
-
 .eyebrow {
-  margin: 0;
-  color: var(--base-color-brand-red);
-  font-size: 0.74rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
+  margin: 0 0 12px;
+  color: var(--base-color-text-secondary);
+  font-size: 0.82rem;
 }
-
 h1 {
   margin: 0;
-  font-size: clamp(3rem, 7vw, 5.8rem);
-  line-height: 0.92;
-  letter-spacing: -0.07em;
-}
-
-.meta-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.meta-pill {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--base-color-surface-wash) 72%, white);
-  color: var(--base-color-text-primary);
-  font-size: 0.8rem;
-}
-
-.cover-frame {
-  min-height: 32rem;
-  overflow: hidden;
-  border-radius: 28px;
-  border: 8px solid #fff;
-  background: var(--base-color-surface-soft);
-}
-
-.cover-frame img,
-.cover-fallback {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.cover-fallback {
-  display: grid;
-  place-items: center;
-  font-size: 5rem;
-  color: var(--base-color-text-secondary);
-  font-weight: 700;
-}
-
-@media (max-width: 980px) {
-  .hero-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .cover-frame {
-    min-height: 22rem;
-  }
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
 }
 </style>

@@ -11,6 +11,9 @@ export async function fetchAuthorPageData(id: string): Promise<AuthorPageData> {
   return buildAuthorPageData(response)
 }
 
-export function useAuthorPageData(id: string) {
-  return useAsyncData(`author-page-${id}`, () => fetchAuthorPageData(id))
+export function useAuthorPageData(id: MaybeRefOrGetter<string>) {
+  return useAsyncData(
+    () => `author-page-${toValue(id)}`,
+    () => fetchAuthorPageData(toValue(id)),
+  )
 }

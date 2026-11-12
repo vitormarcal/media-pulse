@@ -126,17 +126,13 @@ export interface AuthorPageData {
   series: BookGroup[]
   id: string
   name: string
-  coverUrl: string | null
-  heroMeta: string[]
   stats: {
     booksCount: number
     readsCount: number
     finishedCount: number
     currentlyReadingCount: number
-    latestFinish: string
-    latestFinishAbsolute: string | null
   }
-  books: BookLibraryCardModel[]
+  books: BookCardDto[]
   recentReads: BookReadEntryModel[]
 }
 

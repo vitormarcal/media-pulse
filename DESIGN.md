@@ -362,3 +362,12 @@ Leituras vêm imediatamente após o cabeçalho, preservando jornadas, releituras
 Sobre o livro reúne séries e edições; séries vazias ficam ocultas para visitantes, e gestão permanece contextual para o owner. Pendências de tags de capas e retry aparecem apenas no contexto do owner. A edição da leitura mais recente é identificada, com outras edições recolhidas e ISBNs sob detalhes. Livro, edição e jornada continuam distintos. Não acrescentar edição local de leituras/nota ou novos provedores nesta revisão.
 
 O cabeçalho de livros usa composição opt-in; revistas mantêm sua apresentação e o uso não compacto da timeline por autores permanece inalterado. Reutilizar tokens e controles existentes, com foco visível e estados de erro legíveis.
+
+
+## 22. Detalhe de autor de livros
+
+Usar até 1120px, painéis brancos, cantos de 28px e 32px entre seções. Cabeçalho compacto com nome e contexto pessoal em uma linha: livros no acervo, leituras concluídas e em andamento, sem repetir contagens. Leituras concluídas são sessões e podem incluir releituras. Não usar capa de livro como retrato do autor nem reservar uma coluna para imagem ausente.
+
+Livros no acervo aparecem primeiro, com capas integrais em grade regular, créditos de coautoria navegáveis e ano disponível. Ordenar por título ou ano de publicação, do mais recente ao mais antigo, com anos ausentes ao final e desempate por título/id. Não apresentar o acervo como bibliografia completa, nem data de resenha como atividade de leitura. Preservar a biblioteca e seus cartões compartilhados.
+
+Leituras recentes vêm depois, em linhas com livro navegável, estado e datas identificadas de início/fim, sem repetição relativa/absoluta, origem técnica ou progresso redundante de conclusão. Informar o recorte quando houver mais registros que os até 20 retornados. Séries no acervo ficam ao final. Ocultar histórico e séries sem conteúdo; erro de carregamento oferece nova tentativa. Foto, biografia e enriquecimento de identidade exigem uma etapa própria.
