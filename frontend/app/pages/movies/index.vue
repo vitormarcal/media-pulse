@@ -500,7 +500,7 @@ button:disabled {
 }
 .recent-item {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-columns: 104px minmax(0, 1fr);
   align-items: center;
   gap: 16px;
   padding: 16px;
@@ -530,8 +530,12 @@ button:disabled {
   place-items: center;
   font-size: 0.75rem;
 }
+.recent-item > div:last-child {
+  min-width: 0;
+}
 .recent-item h3 {
   margin: 0;
+  white-space: normal;
   font-size: 1.125rem;
   line-height: 1.2;
   letter-spacing: -0.02em;
@@ -569,7 +573,7 @@ button:disabled {
   .recent-grid {
     grid-template-columns: none;
     grid-auto-flow: column;
-    grid-auto-columns: clamp(230px, 65vw, 300px);
+    grid-auto-columns: clamp(260px, 76vw, 340px);
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
@@ -609,7 +613,7 @@ button:disabled {
     padding-top: 20px;
   }
   .recent-item {
-    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-columns: 88px minmax(0, 1fr);
   }
   .browse-header {
     align-items: start;
