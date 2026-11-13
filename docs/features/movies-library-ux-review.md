@@ -79,3 +79,10 @@ Validação da composição integrada: prévia local com dados reais em 1440px, 
 Solicitado pelo owner: aumentar os pôsteres da coluna direita de 72px para 104px; no celular, de 64px para 88px. Permitir títulos completos em múltiplas linhas, com coluna de texto que pode encolher sem transbordar, e ampliar a largura dos cartões da faixa móvel. Alteração visual local em movies/index.vue, sem migração ou mudança de dados. Publicado na release v1.34.1.
 
 Conferência visual com dados reais em 1440px, 768px, 390px e 320px: pôsteres maiores, títulos completos em múltiplas linhas e faixa móvel sem transbordamento da página. Lint/formatação, tipos e build passaram; estilos limitados à página de filmes.
+
+
+## Equilíbrio do destaque e dos secundários
+
+Após avaliação publicada, owner concordou com o ajuste de proporções: as capas de 104px e a altura dos cartões esticaram o destaque, ampliando seu branco vazio. Usar tamanho intermediário de 88px no desktop/80px no celular, padding de 12px e intervalos de 12px nos secundários. Centralizar verticalmente texto e imagem do destaque e reduzir seu padding/gap para 20px, preservando capa integral, títulos completos e estrutura integrada. Alteração visual em movies/index.vue, sem mudança de dados ou migração. Implementação publicada na release v1.34.2.
+
+Validação do equilíbrio: lint/formatação, tipos e build passaram. Prévia com dados reais em 1440px, 768px, 390px e 320px, sem transbordamento; no desktop o conjunto ficou aproximadamente 104px mais baixo que a v1.34.1, com imagem/texto centralizados e títulos laterais completos. Nenhuma alteração de contrato ou comportamento de consulta.

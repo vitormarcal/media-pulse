@@ -421,8 +421,8 @@ button:disabled {
 }
 .latest-movie {
   display: grid;
-  gap: 24px;
-  padding: 24px;
+  gap: 20px;
+  padding: 20px;
   border-radius: 28px;
   background: rgba(255, 255, 255, 0.94);
   align-items: center;
@@ -438,7 +438,7 @@ button:disabled {
 .has-poster .latest-copy {
   grid-column: 2;
   grid-row: 1;
-  align-self: end;
+  align-self: center;
 }
 .latest-copy p {
   margin: 0;
@@ -483,7 +483,7 @@ button:disabled {
 }
 .recent-grid {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   align-content: start;
   list-style: none;
   padding: 4px;
@@ -500,10 +500,10 @@ button:disabled {
 }
 .recent-item {
   display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
+  grid-template-columns: 88px minmax(0, 1fr);
   align-items: center;
   gap: 16px;
-  padding: 16px;
+  padding: 12px;
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.94);
 }
@@ -613,7 +613,7 @@ button:disabled {
     padding-top: 20px;
   }
   .recent-item {
-    grid-template-columns: 88px minmax(0, 1fr);
+    grid-template-columns: 80px minmax(0, 1fr);
   }
   .browse-header {
     align-items: start;
