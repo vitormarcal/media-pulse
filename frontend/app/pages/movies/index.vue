@@ -454,7 +454,7 @@ button:disabled {
   min-width: 0;
 }
 .latest-movie.has-poster {
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
 }
 .latest-copy {
   min-width: 0;
@@ -496,10 +496,9 @@ button:disabled {
 }
 .latest-poster img {
   display: block;
-  width: auto;
+  width: 100%;
   max-width: 100%;
   height: auto;
-  max-height: 420px;
   border-radius: 20px;
 }
 .catalog-controls {
@@ -597,7 +596,7 @@ button:disabled {
   }
   .latest-poster img {
     width: auto;
-    max-height: 420px;
+    max-height: 520px;
   }
   .editorial-layout {
     grid-template-columns: minmax(0, 1fr);

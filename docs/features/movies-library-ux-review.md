@@ -108,3 +108,10 @@ Owner pediu voltar a filmes para aproximar o bloco principal da composição exi
 
 
 Conferência desta composição com dados reais em 1440px, 1024px, 768px, 390px e 320px, sem transbordamento: título editorial à esquerda, cartão à direita, quatro secundários abaixo e faixa móvel por teclado. Cartão principal medido com apenas 20px de padding acima/abaixo no desktop. Lint/formatação, tipos e build passaram; navegador owner/visitante validou busca/filtros, totais, carregamento automático, retry, resposta antiga, rascunho e estados vazio/um recente/imagem indisponível. Etapa publicada na release v1.36.0; próxima revisão de domínio continua sendo /shows.
+
+
+## Correção da hierarquia entre capas da abertura
+
+Owner mostrou que as capas secundárias ficaram maiores que a principal ao adotar a composição de séries. Causa: teto de 420px e coluna principal menor que os cartões inferiores. Aumentar a coluna da imagem do destaque para proporção 1,6:1 em relação ao texto, ocupar sua largura com proporção natural e remover o teto desktop. Em tablet, aumentar o limite para 520px; manter o ajuste móvel existente. Critério: principal maior em largura e altura que cada secundária, sem recorte e sem esticar o cartão com branco acima/abaixo. Sem alteração da composição aprovada, API ou migração. Arquivo: movies/index.vue, com registro no DESIGN.md. Implementação publicada na release v1.36.1.
+
+Validação da hierarquia: lint/formatação, tipos e build passaram. Prévia com dados reais em 1920px, 1697px, 1440px, 1120px, 1024px, 768px, 390px e 320px confirmou principal maior que cada secundária em largura e altura, proporção natural e ausência de transbordamento. Em 1920px: principal 431×646px, secundária aproximadamente 325×493px; em 1440px: principal 404×606px. Padding vertical do cartão principal permanece em 20px no desktop, sem branco adicional causado por esticamento. Etapa publicada na release v1.36.1.
