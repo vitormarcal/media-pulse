@@ -500,7 +500,7 @@ button:disabled {
 }
 .recent-item {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
+  grid-template-columns: 120px minmax(0, 1fr);
   align-items: center;
   gap: 16px;
   padding: 12px;
@@ -613,7 +613,7 @@ button:disabled {
     padding-top: 20px;
   }
   .recent-item {
-    grid-template-columns: 80px minmax(0, 1fr);
+    grid-template-columns: 96px minmax(0, 1fr);
   }
   .browse-header {
     align-items: start;

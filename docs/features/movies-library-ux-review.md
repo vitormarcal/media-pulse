@@ -86,3 +86,10 @@ Conferência visual com dados reais em 1440px, 768px, 390px e 320px: pôsteres m
 Após avaliação publicada, owner concordou com o ajuste de proporções: as capas de 104px e a altura dos cartões esticaram o destaque, ampliando seu branco vazio. Usar tamanho intermediário de 88px no desktop/80px no celular, padding de 12px e intervalos de 12px nos secundários. Centralizar verticalmente texto e imagem do destaque e reduzir seu padding/gap para 20px, preservando capa integral, títulos completos e estrutura integrada. Alteração visual em movies/index.vue, sem mudança de dados ou migração. Implementação publicada na release v1.34.2.
 
 Validação do equilíbrio: lint/formatação, tipos e build passaram. Prévia com dados reais em 1440px, 768px, 390px e 320px, sem transbordamento; no desktop o conjunto ficou aproximadamente 104px mais baixo que a v1.34.1, com imagem/texto centralizados e títulos laterais completos. Nenhuma alteração de contrato ou comportamento de consulta.
+
+
+## Ênfase maior nas capas secundárias
+
+Owner reiterou preferência por capas maiores. Aumentar de 88px para 120px no desktop e de 80px para 96px no celular, mantendo padding de 12px, títulos completos e alinhamento central do destaque. A altura da abertura acompanha as capas maiores; não reduzir as imagens para compensar o espaço. Ajuste visual local em movies/index.vue, sem alteração de dados. Publicado na release v1.34.3.
+
+Conferência com dados reais em 1440px, 768px, 390px e 320px, sem transbordamento e com títulos completos. Lint/formatação, tipos e build passaram. Ajuste publicado na release v1.34.3.
