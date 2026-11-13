@@ -1,5 +1,5 @@
 <template>
-  <main class="art-page">
+  <main class="art-page art-detail-review art-artist-review">
     <NuxtLink to="/artworks/artists">Voltar para artistas</NuxtLink>
     <p v-if="pending && !data" role="status">Carregando artista…</p>
     <p v-if="loadError && !data" class="art-error" role="alert">
@@ -8,14 +8,8 @@
     </p>
     <template v-if="data">
       <ArtworkNav />
-      <header class="art-artist-heading" :class="{ 'has-portrait': Boolean(data.portraitUrl) }">
-        <MediaImage
-          v-if="data.portraitUrl"
-          class="art-artist-portrait"
-          :src="resolveMediaUrl(data.portraitUrl) || undefined"
-          :alt="data.name"
-        />
-        <div>
+      <header class="art-artist-heading" :class="{ 'has-portrait': Boolean(portrait) }">
+        <div class="art-artist-identity">
           <h1>{{ data.name }}</h1>
           <p v-if="data.countryOfOrigin" class="art-muted">{{ data.countryOfOrigin }}</p>
           <dl v-if="data.bornAt || data.diedAt" class="art-life-dates">
@@ -28,37 +22,55 @@
               <dd>{{ formatDate(data.diedAt) }}</dd></template
             >
           </dl>
+        </div>
+        <figure v-if="portrait" class="art-artist-picture">
+          <button type="button" :aria-label="`Ampliar imagem de ${data.name}`" @click="portraitGallery?.open(0)">
+            <img
+              :src="resolveMediaUrl(portrait) || undefined"
+              :alt="data.name"
+              @error="failedPortrait = portrait"
+            /></button
+          ><button type="button" class="art-button" @click="portraitGallery?.open(0)">Ver imagem</button>
+        </figure>
+        <ArtworkLongText :preview-length="420" title="Biografia" :text="data.biography" />
+        <MediaImageGallery v-if="portrait" ref="portraitGallery" :title="data.name" :images="[portrait]" viewer-only />
+      </header>
+      <section class="art-local-works">
+        <h2>Obras no acervo</h2>
+        <ArtworkLibrary :artist-id="data.id" chronological compact-chronology />
+      </section>
+      <section v-if="owner.authenticated" class="art-panel art-artist-maintenance">
+        <div class="art-section-header">
+          <h2>Sobre o artista</h2>
           <div class="art-actions">
             <button v-owner class="art-button" :aria-expanded="editing" @click="edit">
               {{ editing ? 'Fechar edição' : 'Editar artista' }}
             </button>
             <button v-if="editing" v-owner class="art-button" :disabled="busy" @click="remove">Excluir artista</button>
           </div>
-          <ArtworkLongText title="Biografia" :text="data.biography" />
         </div>
-      </header>
-      <form v-if="editing" v-owner class="art-panel" @submit.prevent="save">
-        <fieldset :disabled="busy">
-          <ArtworkArtistFields v-model="form" />
-          <div class="art-actions">
-            <button class="art-button art-primary">Salvar artista</button
-            ><button v-owner type="button" class="art-button" @click="editing = false">Cancelar</button>
-          </div>
-        </fieldset>
-      </form>
-      <p v-if="error" class="art-error" role="alert">{{ error }}</p>
-      <ArtworkImageManager
-        v-if="owner.authenticated"
-        :artist-id="data.id"
-        :has-portrait="Boolean(data.portraitUrl)"
-        @changed="refresh()"
-      />
-      <h2>Obras cadastradas</h2>
-      <ArtworkLibrary :artist-id="data.id" chronological :born-at="data.bornAt" :died-at="data.diedAt" />
+        <form v-if="editing" v-owner class="art-panel" @submit.prevent="save">
+          <fieldset :disabled="busy">
+            <ArtworkArtistFields v-model="form" />
+            <div class="art-actions">
+              <button class="art-button art-primary">Salvar artista</button
+              ><button v-owner type="button" class="art-button" @click="editing = false">Cancelar</button>
+            </div>
+          </fieldset>
+        </form>
+        <p v-if="error" class="art-error" role="alert">{{ error }}</p>
+        <ArtworkImageManager
+          v-if="owner.authenticated"
+          :artist-id="data.id"
+          :has-portrait="Boolean(data.portraitUrl)"
+          @changed="refresh()"
+        />
+      </section>
     </template>
   </main>
 </template>
 <script setup lang="ts">
+import MediaImageGallery from '~/components/media/MediaImageGallery.vue'
 import ArtworkNav from '~/components/artworks/ArtworkNav.vue'
 import ArtworkLongText from '~/components/artworks/ArtworkLongText.vue'
 import ArtworkArtistFields from '~/components/artworks/ArtworkArtistFields.vue'
@@ -77,6 +89,12 @@ const {
   refresh,
 } = await useAsyncData(`artwork-artist-${route.params.id}`, () => request<ArtworkArtist>(`/artists/${route.params.id}`))
 const editing = ref(false)
+const editingInitialized = ref(false)
+const failedPortrait = ref<string | null>(null)
+const portrait = computed(() =>
+  data.value?.portraitUrl && data.value.portraitUrl !== failedPortrait.value ? data.value.portraitUrl : null,
+)
+const portraitGallery = ref<InstanceType<typeof MediaImageGallery> | null>(null)
 const form = ref({
   name: '',
   biography: null as string | null,
@@ -93,13 +111,15 @@ function edit() {
     return
   }
   if (!data.value) return
-  form.value = {
-    name: data.value.name,
-    biography: data.value.biography,
-    countryOfOrigin: data.value.countryOfOrigin,
-    bornAt: data.value.bornAt,
-    diedAt: data.value.diedAt,
-  }
+  if (!editingInitialized.value)
+    form.value = {
+      name: data.value.name,
+      biography: data.value.biography,
+      countryOfOrigin: data.value.countryOfOrigin,
+      bornAt: data.value.bornAt,
+      diedAt: data.value.diedAt,
+    }
+  editingInitialized.value = true
   editing.value = true
 }
 async function save() {
@@ -109,6 +129,7 @@ async function save() {
       body: { ...form.value, bornAt: form.value.bornAt || null, diedAt: form.value.diedAt || null },
     })
     editing.value = false
+    editingInitialized.value = false
     await refresh()
   })
 }

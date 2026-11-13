@@ -1,9 +1,7 @@
 <template>
   <section class="art-panel">
     <div class="art-section-header">
-      <h2>
-        Listas<span class="art-count" aria-hidden="true">{{ selected.length }}</span>
-      </h2>
+      <h2>Listas</h2>
       <button
         v-owner
         class="art-button"

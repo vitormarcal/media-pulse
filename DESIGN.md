@@ -413,3 +413,14 @@ Publicação tem cabeçalho compacto e contagem uma vez. A capa representativa, 
 Acervo, Em andamento, Últimas leituras e listagem de publicações usam grade regular por linhas, com capas integrais. Um único item ocupa uma composição adaptativa em toda a largura: capa/texto lado a lado no desktop e empilhados no celular. Dentro do arquivo de uma publicação, priorizar número e mês/ano no cartão, sem repetir a publicação. Preservar agrupamento anual, busca, filtro de leitura/Não lida, paginação e rotas legadas. Não apresentar um seletor com uma única ordenação disponível. Cada releitura no destaque recente representa sua jornada, sem confundir a leitura atual do número.
 
 Manter o fluxo de dados salvos com capa pendente: retry envia apenas a capa e não recria número ou jornada. Não acrescentar provedor, OCR, artigos, progresso agregado, imagens adicionais ou avaliação nesta revisão.
+
+
+## 26. Refinamento de obra e artista visual
+
+Esta revisão evolui as superfícies do detalhe previstas na seção 12. A obra preserva identificação compacta e galeria ampla com imagem integral, adequada a composições verticais e panorâmicas. Não mostrar contador com uma única imagem. Navegar não altera a principal salva; ampliação preserva teclado, Escape e foco, e falhas oferecem nova tentativa.
+
+Nota e experiências vêm imediatamente após a galeria. Ocultar blocos pessoais vazios para visitantes. Sobre a obra reúne ficha técnica, descrição, listas e manutenção contextual, sem contagens redundantes ou cartões aninhados. Origem do artista não é proveniência da obra; pendências de sincronização aparecem apenas para o owner.
+
+Artista usa painel branco com nome/contexto e biografia à esquerda, retrato integral ampliável à direita, até 280px por 360px. No celular: identificação, retrato e biografia. Sem imagem ou em falha, não reservar coluna. Obras no acervo mantêm grade cronológica regular e paginação global; mostrar ano no grupo e datas de vida na identificação, sem repetição nos cartões. A biblioteca geral continua masonry.
+
+Painéis de texto e memória usam até 1120px, padding de 20–32px, cantos de 28px e 32px entre seções, sobre o fundo quente. Descrição e biografia nestes detalhes têm prévia de 420 caracteres visíveis e expansão. Interpretar somente pares simples de negrito/itálico; preservar texto salvo, marcadores incompletos e HTML literal escapado, sem parser geral. Os estilos são específicos dos detalhes revisados.

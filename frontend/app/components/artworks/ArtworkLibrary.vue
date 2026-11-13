@@ -49,7 +49,7 @@
     <p v-if="busy" role="status">Carregando obras…</p>
     <p v-else-if="!cards.length && !error" class="art-muted">Nenhuma obra encontrada.</p>
     <div v-if="chronological" class="art-timeline">
-      <p v-if="bornAt" class="art-timeline-event">
+      <p v-if="bornAt && !compactChronology" class="art-timeline-event">
         <span>{{ yearOf(bornAt) }}</span> Nascimento
       </p>
       <section
@@ -60,16 +60,22 @@
       >
         <h3 class="art-timeline-year">{{ group.year }}</h3>
         <div class="art-timeline-works">
-          <ArtworkCard v-for="item in group.items" :key="item.id" :item="item" hide-artist />
+          <ArtworkCard
+            v-for="item in group.items"
+            :key="item.id"
+            :item="item"
+            hide-artist
+            :hide-year="compactChronology"
+          />
         </div>
       </section>
-      <p v-if="diedAt && nextPage === null && !busy && !error" class="art-timeline-event">
+      <p v-if="!compactChronology && diedAt && nextPage === null && !busy && !error" class="art-timeline-event">
         <span>{{ yearOf(diedAt) }}</span> Falecimento
       </p>
       <section v-if="undated.length" class="art-timeline-group art-timeline-undated" aria-label="Obras sem ano">
         <h3 class="art-timeline-year">Sem ano</h3>
         <div class="art-timeline-works">
-          <ArtworkCard v-for="item in undated" :key="item.id" :item="item" hide-artist />
+          <ArtworkCard v-for="item in undated" :key="item.id" :item="item" hide-artist :hide-year="compactChronology" />
         </div>
       </section>
     </div>
@@ -86,6 +92,7 @@ const props = defineProps<{
   artistId?: number
   listId?: number
   chronological?: boolean
+  compactChronology?: boolean
   bornAt?: string | null
   diedAt?: string | null
 }>()

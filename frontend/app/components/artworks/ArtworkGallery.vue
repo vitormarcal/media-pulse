@@ -2,8 +2,22 @@
   <section class="art-viewer" aria-label="Imagens da obra">
     <template v-if="current">
       <figure class="art-viewer-figure">
-        <button ref="enlargeButton" type="button" class="art-viewer-image" aria-label="Ampliar imagem" @click="enlarge">
-          <MediaImage :src="resolveMediaUrl(current.url) || undefined" :alt="current.caption || title" />
+        <button
+          ref="enlargeButton"
+          type="button"
+          class="art-viewer-image"
+          aria-label="Ampliar imagem"
+          :disabled="failed"
+          @click="enlarge"
+        >
+          <img
+            v-if="!failed"
+            :key="`${current.url}-${attempt}`"
+            :src="resolveMediaUrl(current.url) || undefined"
+            :alt="current.caption || title"
+            @error="failed = true"
+          />
+          <div v-else class="art-image-fallback" role="img" aria-label="Imagem indisponível">Imagem indisponível</div>
         </button>
         <figcaption v-if="current.caption" class="art-muted">{{ current.caption }}</figcaption>
       </figure>
@@ -18,7 +32,9 @@
           >
             ←
           </button>
-          <span role="status" aria-live="polite">{{ position + 1 }} / {{ images.length }}</span>
+          <span v-if="images.length > 1" role="status" aria-live="polite"
+            >{{ position + 1 }} / {{ images.length }}</span
+          >
           <button
             v-if="images.length > 1"
             type="button"
@@ -31,7 +47,8 @@
         </div>
         <div class="art-actions">
           <a v-if="current.sourceUrl" :href="current.sourceUrl" target="_blank" rel="noopener">Origem</a>
-          <button type="button" class="art-button" @click="enlarge">Ampliar</button>
+          <button v-if="!failed" type="button" class="art-button" @click="enlarge">Ampliar</button
+          ><button v-else type="button" class="art-button" @click="retryImage">Tentar carregar imagem</button>
         </div>
       </div>
       <div v-if="images.length > 1" class="art-viewer-thumbnails" aria-label="Escolher imagem">
@@ -57,9 +74,15 @@
         @keydown.tab="trapFocus"
       >
         <div class="art-lightbox-content">
-          <MediaImage :src="resolveMediaUrl(current.url) || undefined" :alt="current.caption || title" />
+          <MediaImage
+            :key="`${current.url}-${attempt}`"
+            :src="resolveMediaUrl(current.url) || undefined"
+            :alt="current.caption || title"
+          />
         </div>
-        <span class="art-lightbox-count" role="status">{{ position + 1 }} / {{ images.length }}</span>
+        <span v-if="images.length > 1" class="art-lightbox-count" role="status"
+          >{{ position + 1 }} / {{ images.length }}</span
+        >
         <button type="button" class="art-button art-lightbox-close" autofocus @click="dialog?.close()">Fechar</button>
         <button
           v-if="images.length > 1"
@@ -79,6 +102,9 @@
         >
           →
         </button>
+        <button v-if="failed" type="button" class="art-button art-lightbox-retry" @click="retryImage">
+          Tentar carregar imagem
+        </button>
         <p v-if="current.caption" class="art-lightbox-caption" :title="current.caption">{{ current.caption }}</p>
       </dialog>
     </template>
@@ -90,11 +116,24 @@ import type { ArtworkImage } from '~/types/artworks'
 const props = defineProps<{ images: ArtworkImage[]; title: string }>()
 const { resolveMediaUrl } = useMediaUrl()
 const selectedId = ref<number | null>(null)
+const failed = ref(false)
+const attempt = ref(0)
+function retryImage() {
+  failed.value = false
+  attempt.value++
+}
 const current = computed(
   () =>
     props.images.find((item) => item.id === selectedId.value) ||
     props.images.find((item) => item.primary) ||
     props.images[0],
+)
+watch(
+  () => current.value?.url,
+  () => {
+    failed.value = false
+    attempt.value = 0
+  },
 )
 const position = computed(() => props.images.findIndex((item) => item.id === current.value?.id))
 const dialog = ref<HTMLDialogElement>()
@@ -106,7 +145,7 @@ function move(direction: number) {
   selectedId.value = props.images[(position.value + direction + props.images.length) % props.images.length]!.id
 }
 function enlarge() {
-  if (!dialog.value || dialog.value.open) return
+  if (!dialog.value || dialog.value.open || failed.value) return
   opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
   previousOverflow = document.body.style.overflow
   document.body.style.overflow = 'hidden'

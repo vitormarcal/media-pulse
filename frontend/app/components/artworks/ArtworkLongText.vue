@@ -1,7 +1,13 @@
 <template>
   <section v-if="text" class="art-long-text" :aria-labelledby="headingId">
     <h2 :id="headingId">{{ title }}</h2>
-    <p :id="contentId" class="art-preserve">{{ expanded || !long ? text : excerpt }}</p>
+    <p :id="contentId" class="art-preserve">
+      <template v-for="(token, index) in visibleTokens" :key="index"
+        ><strong v-if="token.kind === 'strong'">{{ token.value }}</strong
+        ><em v-else-if="token.kind === 'em'">{{ token.value }}</em
+        ><template v-else>{{ token.value }}</template></template
+      >
+    </p>
     <button
       v-if="long"
       type="button"
@@ -15,17 +21,18 @@
   </section>
 </template>
 <script setup lang="ts">
-const props = defineProps<{ title: string; text: string | null | undefined }>()
-const previewLength = 700
+import { artworkTextTokens, artworkTextPreview } from '~/utils/artworkText'
+const props = withDefaults(defineProps<{ title: string; text: string | null | undefined; previewLength?: number }>(), {
+  previewLength: 700,
+})
 const headingId = useId()
 const contentId = useId()
 const expanded = ref(false)
-const long = computed(() => (props.text?.length || 0) > previewLength)
-const excerpt = computed(() => {
-  const preview = props.text?.slice(0, previewLength) || ''
-  const boundary = preview.lastIndexOf(' ')
-  return `${preview.slice(0, boundary > previewLength * 0.7 ? boundary : previewLength).trimEnd()}…`
-})
+const tokens = computed(() => artworkTextTokens(props.text || ''))
+const long = computed(() => tokens.value.reduce((total, token) => total + token.value.length, 0) > props.previewLength)
+const visibleTokens = computed(() =>
+  expanded.value || !long.value ? tokens.value : artworkTextPreview(tokens.value, props.previewLength),
+)
 watch(
   () => props.text,
   () => {

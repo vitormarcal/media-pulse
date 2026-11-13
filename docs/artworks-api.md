@@ -91,3 +91,10 @@ Movimentos vão em `managedTags.movements` no upload e em um grupo da referênci
 Tags antigas não possuem procedência. Ao adotar uma referência legada, classificações são registradas separadamente, mas as tags anteriores são preservadas e a UI informa isso. Não presumir que um termo antigo era automaticamente gerenciado. Nenhum backfill de imagens/remoção de tags legadas ocorre silenciosamente.
 
 Testes cobrem migration, listas, filtro sem duplicação, normalização, revisão e sincronização parcial com retry. Fluxo completo deve ser conferido com os dois serviços em acervos temporários, incluindo tags pessoais, referências compartilhadas, limite e indisponibilidade.
+
+
+## Refinamento dos detalhes de obra e artista
+
+A revisão incremental mantém os contratos existentes, sem migração. Galeria ampla precede nota e experiências; Sobre a obra reúne ficha, descrição, listas e manutenção. Estados pessoais vazios e pendências de sincronização não aparecem para visitantes. Contador é omitido com uma única imagem, e falha oferece retry sem modificar a principal.
+
+Artista tem retrato integral ampliável à direita no desktop, identificação antes da imagem no celular e cronologia local sem anos repetidos nos cartões. A biblioteca geral mantém masonry. Estes detalhes usam prévia de 420 caracteres visíveis para descrição/biografia, substituindo a apresentação de 700 descrita acima somente neste contexto. Pares simples de negrito/itálico são seguros; HTML permanece escapado. Ver DESIGN.md, seção 26, e a especificação `features/artworks-detail-ux-review.md`.
