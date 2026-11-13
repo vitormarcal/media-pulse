@@ -481,13 +481,16 @@ Filme ausente retorna 404; seleção inválida, 400; vínculo ausente no POST, 4
 
 A página principal usa os contratos existentes sem migração: library para acervo paginado (24 itens), search para título/nome original (até 40 correspondências) e year para filmes assistidos no ano da sessão (até 1.000). Se a busca atingir o limite, informar o recorte antes de aplicar Sem sessão registrada; o filtro não torna completo um resultado limitado. O recorte anual usa watched e seus stats; não apresentar unwatched como filmes ausentes daquele ano, pois essa coleção reúne filmes sem qualquer sessão registrada.
 
-Recentes e estatísticas são carregados independentemente e oferecem retry sem bloquear a consulta ao acervo. recent fornece a última sessão por filme, não cada sessão individual; a UI mostra até seis Últimos filmes vistos. O contexto junto ao título do acervo usa os totais de stats ou year.stats, nunca o tamanho da página de library/unwatched. Paginação preserva a ordem/cursor do backend, mantém itens em erro e ignora respostas de filtros anteriores. A revisão não altera os contratos de listas, coleções ou detalhes.
+Recentes e estatísticas são carregados independentemente e oferecem retry sem bloquear a consulta ao acervo. recent fornece a última sessão por filme, não cada sessão individual; a UI usa até quatro recentes: último filme em destaque e três secundários. O contexto junto ao título do acervo usa os totais de stats ou year.stats, nunca o tamanho da página de library/unwatched. Paginação preserva a ordem/cursor do backend, mantém itens em erro e ignora respostas de filtros anteriores. A revisão não altera os contratos de listas, coleções ou detalhes.
 
 
-Na /movies, a paginação por cursor é acionada automaticamente ao aproximar o fim da grade regular. Não há novo contrato de paginação; falha interrompe o automatismo e mantém retry explícito junto dos itens. O primeiro item de recent é o destaque Último filme visto, sem repetição nos outros até cinco recentes. A grade regular e o destaque não modificam as rotas de listas/coleções.
+Na /movies, a paginação por cursor é acionada automaticamente ao aproximar o fim da grade regular. Não há novo contrato de paginação; falha interrompe o automatismo e mantém retry explícito junto dos itens. O primeiro item de recent é o destaque Último filme visto, sem repetição nos outros até três recentes. A grade regular e o destaque não modificam as rotas de listas/coleções.
 
 
 O contexto da /movies fica junto do título do acervo: stats.total.uniqueMoviesCount no acervo, stats.unwatchedCount no filtro sem sessão e year.stats.uniqueMoviesCount/watchesCount no ano. Busca omite totais globais. O antigo resumo ao final foi removido, pois a grade carrega continuamente. Falhas de stats são recuperáveis junto dos filtros e não bloqueiam os filmes.
 
 
-A entrada padrão da /movies apresenta o primeiro recent em destaque editorial com busca integrada e os demais abaixo, enquanto os filtros ficam junto da grade. Em busca/filtro/cadastro ativo, a abertura editorial é omitida. Não há consulta adicional ao detalhe para compor o destaque; apenas os campos de recent são utilizados, e falha de imagem não bloqueia a busca.
+A entrada padrão da /movies apresenta o primeiro recent em destaque editorial com busca integrada e três secundários ao lado no desktop, enquanto os filtros ficam junto da grade. Em busca/filtro/cadastro ativo, a abertura editorial é omitida. Não há consulta adicional ao detalhe para compor o destaque; apenas os campos de recent são utilizados, e falha de imagem não bloqueia a busca.
+
+
+A abertura integrada inspirada na home consulta recent com limit=4. Fundo decorativo de baixa opacidade deriva da capa já disponível, sem novo provedor ou consulta de detalhe. Falha de imagem remove o fundo e a coluna do pôster, mantendo busca e conteúdo. No celular os secundários usam faixa horizontal; as demais consultas e os fluxos de catálogo permanecem iguais.

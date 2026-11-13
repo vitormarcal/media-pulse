@@ -21,34 +21,64 @@
     </section>
 
     <section v-if="showRecent" class="editorial-panel" aria-label="Último filme visto e busca">
+      <img
+        v-if="latestPoster && !recentError"
+        class="editorial-backdrop"
+        :src="resolveMediaUrl(latestPoster) || undefined"
+        alt=""
+        aria-hidden="true"
+        @error="latestImageFailed"
+      />
       <p v-if="recentStatus === 'pending'" role="status">Carregando filmes recentes…</p>
       <p v-else-if="recentError" role="alert">
         Não foi possível carregar os filmes recentes.
         <button type="button" @click="refreshRecent()">Tentar novamente</button>
       </p>
-      <component
-        :is="latestMovie.slug ? NuxtLink : 'article'"
+      <div
         v-else-if="latestMovie"
-        :to="latestMovie.slug ? `/movies/${latestMovie.slug}` : undefined"
-        class="latest-movie"
-        :class="{ 'has-poster': latestPoster }"
+        class="editorial-layout"
+        :class="{ 'editorial-layout--single': !otherRecent.length }"
       >
-        <div class="latest-copy">
-          <p class="latest-label">Último filme visto</p>
-          <h2>{{ latestMovie.title }}</h2>
-          <p v-if="latestMovie.year" class="latest-year">{{ latestMovie.year }}</p>
-          <p v-if="latestMovie.watchedAt" class="latest-date">
-            Última sessão {{ formatRelativeDate(latestMovie.watchedAt) }}
-          </p>
-        </div>
-        <div v-if="latestPoster" class="latest-poster">
-          <img
-            :src="resolveMediaUrl(latestPoster) || undefined"
-            :alt="latestMovie.title"
-            @error="failedLatestPoster = latestPoster"
-          />
-        </div>
-      </component>
+        <component
+          :is="latestMovie.slug ? NuxtLink : 'article'"
+          :to="latestMovie.slug ? `/movies/${latestMovie.slug}` : undefined"
+          class="latest-movie"
+          :class="{ 'has-poster': latestPoster }"
+        >
+          <div class="latest-copy">
+            <p class="latest-label">Último filme visto</p>
+            <h2>{{ latestMovie.title }}</h2>
+            <p v-if="latestMovie.year" class="latest-year">{{ latestMovie.year }}</p>
+            <p v-if="latestMovie.watchedAt" class="latest-date">
+              Última sessão {{ formatRelativeDate(latestMovie.watchedAt) }}
+            </p>
+          </div>
+          <div v-if="latestPoster" class="latest-poster">
+            <img
+              :src="resolveMediaUrl(latestPoster) || undefined"
+              :alt="latestMovie.title"
+              @error="latestImageFailed"
+            />
+          </div>
+        </component>
+        <ol v-if="otherRecent.length" class="recent-grid" tabindex="0" aria-label="Outros filmes recentes">
+          <li v-for="movie in otherRecent" :key="movie.movieId">
+            <component
+              :is="movie.slug ? NuxtLink : 'div'"
+              :to="movie.slug ? `/movies/${movie.slug}` : undefined"
+              class="recent-item"
+            >
+              <div class="recent-poster">
+                <MediaImage :src="resolveMediaUrl(movie.coverUrl)" :alt="movie.title" loading="lazy" />
+              </div>
+              <div>
+                <h3>{{ movie.title }}</h3>
+                <p v-if="movie.watchedAt">{{ formatRelativeDate(movie.watchedAt) }}</p>
+              </div>
+            </component>
+          </li>
+        </ol>
+      </div>
       <p v-else>Nenhuma sessão registrada.</p>
       <div class="editorial-search">
         <MoviesLibraryFilters
@@ -60,31 +90,6 @@
         />
       </div>
     </section>
-    <section
-      v-if="showRecent && !recentError && otherRecent.length"
-      class="browse-recent"
-      aria-labelledby="recent-heading"
-    >
-      <h2 id="recent-heading">Outros filmes vistos</h2>
-      <ol class="recent-grid" tabindex="0" aria-label="Outros filmes recentes">
-        <li v-for="movie in otherRecent" :key="movie.movieId">
-          <component
-            :is="movie.slug ? NuxtLink : 'div'"
-            :to="movie.slug ? `/movies/${movie.slug}` : undefined"
-            class="recent-item"
-          >
-            <div class="recent-poster">
-              <MediaImage :src="resolveMediaUrl(movie.coverUrl)" :alt="movie.title" loading="lazy" />
-            </div>
-            <div>
-              <h3>{{ movie.title }}</h3>
-              <p v-if="movie.watchedAt">{{ formatRelativeDate(movie.watchedAt) }}</p>
-            </div>
-          </component>
-        </li>
-      </ol>
-    </section>
-
     <section class="browse-catalog" :aria-busy="catalogStatus === 'pending' || loadingMore">
       <div class="catalog-controls">
         <MoviesLibraryFilters
@@ -198,7 +203,7 @@ const {
   error: recentError,
   refresh: refreshRecent,
 } = await useAsyncData('movies-browse-recent', () =>
-  $fetch<MoviesRecentResponse>('/api/movies/recent', { baseURL: config.public.apiBase, query: { limit: 6 } }),
+  $fetch<MoviesRecentResponse>('/api/movies/recent', { baseURL: config.public.apiBase, query: { limit: 4 } }),
 )
 const latestMovie = computed(() => recent.value?.items[0] ?? null)
 const failedLatestPoster = ref<string | null>(null)
@@ -206,7 +211,12 @@ const latestPoster = computed(() => {
   const url = latestMovie.value?.coverUrl
   return url && url !== failedLatestPoster.value ? url : null
 })
-const otherRecent = computed(() => recent.value?.items.slice(1) ?? [])
+function latestImageFailed(event: Event) {
+  const url = latestMovie.value?.coverUrl
+  const failedUrl = (event.target as HTMLImageElement).getAttribute('src')
+  if (url && failedUrl === resolveMediaUrl(url)) failedLatestPoster.value = url
+}
+const otherRecent = computed(() => recent.value?.items.slice(1, 4) ?? [])
 const pageSentinel = ref<HTMLElement | null>(null)
 let pageObserver: IntersectionObserver | null = null
 const extraItems = ref<MovieLibraryCardModel[]>([])
@@ -369,10 +379,6 @@ button:disabled {
   opacity: 0.65;
   cursor: default;
 }
-.browse-recent {
-  display: grid;
-  gap: 16px;
-}
 .section-note {
   margin: 0;
   color: var(--base-color-text-secondary);
@@ -381,6 +387,33 @@ button:disabled {
 .editorial-panel {
   display: grid;
   gap: 24px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(20px, 3vw, 36px);
+  border-radius: 40px;
+  background: var(--base-color-surface-soft);
+}
+.editorial-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.08;
+  pointer-events: none;
+}
+.editorial-panel > :not(.editorial-backdrop) {
+  position: relative;
+  z-index: 1;
+}
+.editorial-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.9fr);
+  gap: 24px;
+}
+.editorial-layout--single {
+  grid-template-columns: minmax(0, 1fr);
 }
 .editorial-search {
   padding-top: 24px;
@@ -388,29 +421,38 @@ button:disabled {
 }
 .latest-movie {
   display: grid;
-  gap: 32px;
+  gap: 24px;
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.94);
   align-items: center;
+  min-width: 0;
 }
 .latest-movie.has-poster {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr);
 }
 .latest-copy {
   min-width: 0;
-  max-width: 40rem;
+  max-width: 34rem;
+}
+.has-poster .latest-copy {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
 }
 .latest-copy p {
   margin: 0;
 }
 .latest-label {
   color: var(--base-color-text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 .latest-copy h2 {
   margin: 16px 0;
-  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-size: clamp(1.75rem, 2.5vw, 2.5rem);
   line-height: 1.08;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.04em;
   overflow-wrap: anywhere;
 }
 .latest-year,
@@ -424,6 +466,8 @@ button:disabled {
 .latest-poster {
   display: grid;
   justify-items: center;
+  grid-column: 1;
+  grid-row: 1;
 }
 .latest-poster img {
   display: block;
@@ -439,11 +483,11 @@ button:disabled {
 }
 .recent-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 190px));
-  gap: 20px;
+  gap: 16px;
+  align-content: start;
   list-style: none;
-  padding: 4px 4px 12px;
-  margin: -4px -4px -12px;
+  padding: 4px;
+  margin: -4px;
   min-width: 0;
 }
 .recent-grid:focus-visible {
@@ -456,14 +500,18 @@ button:disabled {
 }
 .recent-item {
   display: grid;
-  gap: 12px;
-  align-content: start;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
 }
 .recent-poster {
   aspect-ratio: 2 / 3;
   display: grid;
   place-items: center;
-  border-radius: 20px;
+  border-radius: 12px;
   overflow: hidden;
   background: var(--base-color-surface-soft);
 }
@@ -476,18 +524,21 @@ button:disabled {
 .recent-poster :deep(.media-image-fallback) {
   width: 100%;
   height: 100%;
+  padding: 4px;
   box-sizing: border-box;
   display: grid;
   place-items: center;
+  font-size: 0.75rem;
 }
 .recent-item h3 {
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.3;
+  font-size: 1.125rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
 .recent-item p {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   color: var(--base-color-text-secondary);
   font-size: 0.85rem;
 }
@@ -511,11 +562,14 @@ button:disabled {
   margin: 0;
   color: var(--base-color-text-secondary);
 }
-@media (max-width: 1100px) {
+@media (max-width: 900px) {
+  .editorial-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .recent-grid {
     grid-template-columns: none;
     grid-auto-flow: column;
-    grid-auto-columns: clamp(150px, 23vw, 200px);
+    grid-auto-columns: clamp(230px, 65vw, 300px);
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
@@ -534,12 +588,14 @@ button:disabled {
   .latest-movie.has-poster {
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;
+    padding: 16px;
   }
-  .latest-poster {
-    grid-row: 1;
+  .has-poster .latest-copy {
+    grid-column: 1;
+    grid-row: 2;
   }
   .latest-poster img {
-    max-height: 240px;
+    max-height: 280px;
   }
   .latest-copy h2 {
     font-size: 1.75rem;
@@ -547,13 +603,13 @@ button:disabled {
   }
   .editorial-panel {
     gap: 20px;
+    border-radius: 28px;
   }
   .editorial-search {
     padding-top: 20px;
   }
-  .recent-grid {
-    grid-auto-columns: clamp(140px, 42vw, 180px);
-    gap: 16px;
+  .recent-item {
+    grid-template-columns: 64px minmax(0, 1fr);
   }
   .browse-header {
     align-items: start;
