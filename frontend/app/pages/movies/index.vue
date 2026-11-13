@@ -409,7 +409,7 @@ button:disabled {
 }
 .editorial-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 0.9fr);
   gap: 24px;
 }
 .editorial-layout--single {
@@ -420,6 +420,7 @@ button:disabled {
   border-top: 1px solid var(--base-color-border);
 }
 .latest-movie {
+  align-self: start;
   display: grid;
   gap: 20px;
   padding: 20px;
@@ -429,7 +430,10 @@ button:disabled {
   min-width: 0;
 }
 .latest-movie.has-poster {
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+}
+.editorial-layout--single .latest-movie.has-poster {
+  grid-template-columns: minmax(0, 520px) minmax(0, 1fr);
 }
 .latest-copy {
   min-width: 0;
@@ -471,10 +475,9 @@ button:disabled {
 }
 .latest-poster img {
   display: block;
-  width: auto;
+  width: 100%;
   max-width: 100%;
   height: auto;
-  max-height: 420px;
   border-radius: 20px;
 }
 .catalog-controls {
@@ -500,7 +503,7 @@ button:disabled {
 }
 .recent-item {
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
+  grid-template-columns: 160px minmax(0, 1fr);
   align-items: center;
   gap: 16px;
   padding: 12px;
@@ -566,7 +569,18 @@ button:disabled {
   margin: 0;
   color: var(--base-color-text-secondary);
 }
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  .latest-movie.has-poster,
+  .editorial-layout--single .latest-movie.has-poster {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr);
+  }
+  .latest-poster img {
+    width: auto;
+    max-height: 520px;
+  }
+  .recent-item {
+    grid-template-columns: 128px minmax(0, 1fr);
+  }
   .editorial-layout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -589,7 +603,8 @@ button:disabled {
     padding-top: 20px;
   }
   .latest-movie,
-  .latest-movie.has-poster {
+  .latest-movie.has-poster,
+  .editorial-layout--single .latest-movie.has-poster {
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;
     padding: 16px;
@@ -599,7 +614,7 @@ button:disabled {
     grid-row: 2;
   }
   .latest-poster img {
-    max-height: 280px;
+    max-height: 360px;
   }
   .latest-copy h2 {
     font-size: 1.75rem;
@@ -613,7 +628,7 @@ button:disabled {
     padding-top: 20px;
   }
   .recent-item {
-    grid-template-columns: 96px minmax(0, 1fr);
+    grid-template-columns: 112px minmax(0, 1fr);
   }
   .browse-header {
     align-items: start;

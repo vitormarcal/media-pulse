@@ -93,3 +93,10 @@ Validação do equilíbrio: lint/formatação, tipos e build passaram. Prévia c
 Owner reiterou preferência por capas maiores. Aumentar de 88px para 120px no desktop e de 80px para 96px no celular, mantendo padding de 12px, títulos completos e alinhamento central do destaque. A altura da abertura acompanha as capas maiores; não reduzir as imagens para compensar o espaço. Ajuste visual local em movies/index.vue, sem alteração de dados. Publicado na release v1.34.3.
 
 Conferência com dados reais em 1440px, 768px, 390px e 320px, sem transbordamento e com títulos completos. Lint/formatação, tipos e build passaram. Ajuste publicado na release v1.34.3.
+
+
+## Capas grandes com destaque proporcional
+
+Aprovado pelo owner: secundários de 160×240px no desktop, aumentando também a capa principal para não manter a antiga imagem de 280×420px dentro de um cartão esticado. O destaque usa coluna de imagem mais larga e largura fluida, preservando proporção, e não estica verticalmente para acompanhar a coluna direita. Em 1440px, o objetivo é principal próxima de 500×750px, com apenas o padding normal acima/abaixo. Até 1100px, composição empilhada com principal de até 520px de altura e secundários de 128px; no celular, principal até 360px e secundários de 112px. Caso de único recente limita a coluna principal a 520px de largura. Sem recorte, nova API ou migração. Arquivo principal movies/index.vue e DESIGN.md. Implementação publicada na release v1.35.0.
+
+Validação: lint/formatação, tipos e build passaram. Prévia local com dados reais em 1440px, 1024px, 768px, 390px e 320px, sem transbordamento; em 1440px, principal medida em 503×755px, cartão com 20px de padding acima/abaixo, sem esticamento pela coluna lateral. Navegador owner/visitante em desktop/celular manteve busca/filtros, totais, carregamento automático, retry, descarte de resposta antiga, rascunho, estados vazios/um recente e recuperação de imagem. Alteração publicada na release v1.35.0.
