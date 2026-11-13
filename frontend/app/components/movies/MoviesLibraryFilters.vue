@@ -68,18 +68,22 @@ function selectYear(event: Event) {
 <style scoped>
 .library-filters {
   display: grid;
-  gap: 20px;
-  padding: clamp(20px, 3vw, 28px);
-  background: white;
-  border: 1px solid var(--base-color-border);
-  border-radius: 28px;
+  gap: 14px;
+  min-width: 0;
 }
 .search-form {
   display: grid;
   gap: 8px;
 }
 .search-form > label {
-  font-weight: 600;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .search-row {
   display: grid;

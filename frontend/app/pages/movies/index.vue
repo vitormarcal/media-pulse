@@ -1,47 +1,53 @@
 <template>
   <main class="movies-page movies-browse">
-    <header class="browse-header">
-      <h1>Filmes</h1>
-      <nav aria-label="Acervo de filmes">
-        <NuxtLink to="/movies/lists">Listas</NuxtLink>
-        <NuxtLink to="/movies/collections">Coleções</NuxtLink>
-        <button
-          v-if="owner.authenticated"
-          type="button"
-          :aria-expanded="adding"
-          aria-controls="movie-add"
-          @click="toggleAdd"
-        >
-          {{ adding ? 'Fechar cadastro' : 'Adicionar filme' }}
-        </button>
-      </nav>
-    </header>
+    <section class="browse-toolbar" aria-label="Navegar e buscar filmes">
+      <header class="browse-header">
+        <h1>Filmes</h1>
+        <nav aria-label="Acervo de filmes">
+          <NuxtLink to="/movies/lists">Listas</NuxtLink>
+          <NuxtLink to="/movies/collections">Coleções</NuxtLink>
+          <button
+            v-if="owner.authenticated"
+            type="button"
+            :aria-expanded="adding"
+            aria-controls="movie-add"
+            @click="toggleAdd"
+          >
+            {{ adding ? 'Fechar cadastro' : 'Adicionar filme' }}
+          </button>
+        </nav>
+      </header>
+      <MoviesLibraryFilters
+        :query="queryText"
+        :selected-year="selectedYear"
+        :selected-unwatched="selectedUnwatched"
+        :years="years"
+      />
+    </section>
     <section v-if="owner.authenticated && addOpened" v-show="adding" id="movie-add" class="browse-panel">
       <MovieManualAddCard :initial-title="queryText" />
     </section>
-    <MoviesLibraryFilters
-      :query="queryText"
-      :selected-year="selectedYear"
-      :selected-unwatched="selectedUnwatched"
-      :years="years"
-    />
 
     <section v-if="showRecent" class="browse-recent" aria-labelledby="recent-heading">
-      <h2 id="recent-heading">Últimos filmes vistos</h2>
-      <p class="section-note">Última sessão registrada de cada filme.</p>
+      <div class="recent-heading">
+        <h2 id="recent-heading">Últimos filmes vistos</h2>
+        <p class="section-note">Última sessão de cada filme.</p>
+      </div>
       <p v-if="recentStatus === 'pending'" role="status">Carregando filmes recentes…</p>
       <p v-else-if="recentError" role="alert">
         Não foi possível carregar os filmes recentes.
         <button type="button" @click="refreshRecent()">Tentar novamente</button>
       </p>
-      <ol v-else-if="recent?.items.length" class="recent-grid">
+      <ol v-else-if="recent?.items.length" class="recent-grid" tabindex="0" aria-label="Filmes recentes">
         <li v-for="movie in recent.items" :key="movie.movieId">
           <component
             :is="movie.slug ? NuxtLink : 'div'"
             :to="movie.slug ? `/movies/${movie.slug}` : undefined"
             class="recent-item"
           >
-            <MediaImage :src="resolveMediaUrl(movie.coverUrl)" :alt="movie.title" loading="lazy" />
+            <div class="recent-poster">
+              <MediaImage :src="resolveMediaUrl(movie.coverUrl)" :alt="movie.title" loading="lazy" />
+            </div>
             <div>
               <h3>{{ movie.title }}</h3>
               <p v-if="movie.watchedAt">{{ formatRelativeDate(movie.watchedAt) }}</p>
@@ -281,12 +287,17 @@ useHead({
   margin: 0 auto;
   padding: 28px 0 64px;
 }
-.browse-header,
+.browse-toolbar,
 .browse-panel {
-  padding: clamp(20px, 3vw, 32px);
+  padding: clamp(20px, 2vw, 28px);
   border-radius: 28px;
   border: 1px solid var(--base-color-border);
   background: white;
+}
+.browse-toolbar {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
 }
 .browse-header {
   display: flex;
@@ -339,30 +350,58 @@ button:disabled {
   color: var(--base-color-text-secondary);
   line-height: 1.5;
 }
+.recent-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.recent-heading .section-note {
+  font-size: 0.85rem;
+}
 .recent-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 20px;
   list-style: none;
-  padding: 0;
-  margin: 0;
+  padding: 4px 4px 12px;
+  margin: -4px -4px -12px;
+  min-width: 0;
+}
+.recent-grid:focus-visible {
+  outline: 2px solid var(--base-color-focus);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+.recent-grid li {
+  min-width: 0;
 }
 .recent-item {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
-  align-items: center;
   gap: 12px;
+  align-content: start;
 }
-.recent-item :deep(img) {
-  width: 64px;
-  height: 96px;
+.recent-poster {
+  aspect-ratio: 2 / 3;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--base-color-surface-soft);
+}
+.recent-poster :deep(img) {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  border-radius: 12px;
 }
-.recent-item :deep(.media-image-fallback) {
-  padding: 4px;
-  min-height: 80px;
-  font-size: 0.75rem;
+.recent-poster :deep(.media-image-fallback) {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
 }
 .recent-item h3 {
   margin: 0;
@@ -414,9 +453,18 @@ dd {
 .history-summary > .section-note {
   margin-top: 20px;
 }
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .recent-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(150px, 23vw, 200px);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 4px;
+  }
+  .recent-grid li {
+    scroll-snap-align: start;
   }
 }
 @media (max-width: 600px) {
@@ -424,7 +472,10 @@ dd {
     width: calc(100% - 24px);
     padding-top: 20px;
   }
-  .recent-grid,
+  .recent-grid {
+    grid-auto-columns: clamp(140px, 42vw, 180px);
+    gap: 16px;
+  }
   .summary-metrics {
     grid-template-columns: 1fr;
   }

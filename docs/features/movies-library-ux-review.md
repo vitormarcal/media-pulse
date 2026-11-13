@@ -34,3 +34,11 @@ Desktop/celular e owner/visitante; busca, ano da sessão, sem sessão, limpeza e
 ## Validação realizada
 
 Lint/formatação, tipos e build do frontend. Navegador com APIs simuladas em 1440px e 390px, owner e visitante: busca, ano, sem sessão, limpar/voltar/avançar, recortes, resumo, imagens integrais/ausentes/em falha, erros independentes e retry, paginação com deduplicação e descarte de resposta antiga, estados vazios, cadastro sob demanda e rascunho preservado após erro/reabertura. Conferência local com leitura dos dados reais: busca próxima de 300px do topo nas duas larguras, sem transbordamento; lista de filmes não recebe os estilos opt-in. Nenhuma mutação ou deploy em produção.
+
+
+## Refinamento visual após v1.31.0
+
+Aprovado pelo owner: a simplificação melhorou a navegação, mas perdeu presença visual ao usar dois painéis grandes antes das imagens e recentes com miniaturas. Compactar cabeçalho/busca/filtros em uma superfície e apresentar recentes como faixa de pôsteres integrais maiores: seis no desktop amplo, rolagem horizontal nativa em telas menores, títulos e datas abaixo. Preservar limite, semântica, estados, filtros, cadastro e paginação da revisão publicada. Arquivos: movies/index.vue e MoviesLibraryFilters.vue; sem migração ou alteração de API. Refinamento publicado na release v1.31.1.
+
+
+Validação do refinamento: lint/formatação, tipos e build; regressão em 1440px/390px, owner/visitante, incluindo filtros, paginação com falha e resposta antiga, cadastro/rascunho e estados vazios. Prévia local com dados reais somente por leitura: seis pôsteres lado a lado no desktop, faixa horizontal sem overflow da página no celular e rolagem por teclado. Busca próxima de 192px/221px do topo nas capturas desktop/celular. Revisão visual das duas larguras concluída; foco da faixa usa o token existente.
