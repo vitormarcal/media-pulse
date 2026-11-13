@@ -1,6 +1,11 @@
 <template>
-  <section class="library-filters" aria-label="Buscar e filtrar filmes">
-    <form class="search-form" @submit.prevent="submitSearch">
+  <section
+    class="library-filters"
+    :aria-label="
+      mode === 'search' ? 'Buscar filmes' : mode === 'filters' ? 'Filtrar filmes' : 'Buscar e filtrar filmes'
+    "
+  >
+    <form v-if="mode !== 'filters'" class="search-form" @submit.prevent="submitSearch">
       <label for="movies-library-query">Buscar no acervo</label>
       <div class="search-row">
         <input id="movies-library-query" v-model="localQuery" type="search" placeholder="Título ou nome original" />
@@ -10,7 +15,7 @@
         A busca por título considera todo o acervo e sai do ano selecionado.
       </p>
     </form>
-    <div class="filter-row">
+    <div v-if="mode !== 'search'" class="filter-row">
       <nav class="status-filters" aria-label="Sessões registradas">
         <NuxtLink
           :to="query ? { path: '/movies', query: { q: query } } : '/movies'"
@@ -38,12 +43,16 @@
 </template>
 <script setup lang="ts">
 import type { MovieLibraryYearChip } from '~/types/movies'
-const props = defineProps<{
-  query: string
-  selectedYear: number | null
-  selectedUnwatched: boolean
-  years: MovieLibraryYearChip[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    query: string
+    selectedYear: number | null
+    selectedUnwatched: boolean
+    years: MovieLibraryYearChip[]
+    mode?: 'all' | 'search' | 'filters'
+  }>(),
+  { mode: 'all' },
+)
 const localQuery = ref(props.query)
 watch(
   () => props.query,

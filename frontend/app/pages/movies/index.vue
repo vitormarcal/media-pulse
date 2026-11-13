@@ -1,87 +1,104 @@
 <template>
   <main class="movies-page movies-browse">
-    <section class="browse-toolbar" aria-label="Navegar e buscar filmes">
-      <header class="browse-header">
-        <h1>Filmes</h1>
-        <nav aria-label="Acervo de filmes">
-          <NuxtLink to="/movies/lists">Listas</NuxtLink>
-          <NuxtLink to="/movies/collections">Coleções</NuxtLink>
-          <button
-            v-if="owner.authenticated"
-            type="button"
-            :aria-expanded="adding"
-            aria-controls="movie-add"
-            @click="toggleAdd"
-          >
-            {{ adding ? 'Fechar cadastro' : 'Adicionar filme' }}
-          </button>
-        </nav>
-      </header>
-      <MoviesLibraryFilters
-        :query="queryText"
-        :selected-year="selectedYear"
-        :selected-unwatched="selectedUnwatched"
-        :years="years"
-      />
-      <p v-if="statsError" class="section-note" role="alert">
-        Os totais e os anos do histórico estão indisponíveis.
-        <button type="button" @click="refreshStats()">Tentar novamente</button>
-      </p>
-    </section>
+    <header class="browse-header">
+      <h1>Filmes</h1>
+      <nav aria-label="Acervo de filmes">
+        <NuxtLink to="/movies/lists">Listas</NuxtLink>
+        <NuxtLink to="/movies/collections">Coleções</NuxtLink>
+        <button
+          v-if="owner.authenticated"
+          type="button"
+          :aria-expanded="adding"
+          aria-controls="movie-add"
+          @click="toggleAdd"
+        >
+          {{ adding ? 'Fechar cadastro' : 'Adicionar filme' }}
+        </button>
+      </nav>
+    </header>
     <section v-if="owner.authenticated && addOpened" v-show="adding" id="movie-add" class="browse-panel">
       <MovieManualAddCard :initial-title="queryText" />
     </section>
 
-    <section v-if="showRecent" class="browse-recent" aria-labelledby="recent-heading">
-      <div class="recent-heading">
-        <h2 id="recent-heading">Últimos filmes vistos</h2>
-        <p class="section-note">Última sessão de cada filme.</p>
-      </div>
+    <section v-if="showRecent" class="editorial-panel" aria-label="Último filme visto e busca">
       <p v-if="recentStatus === 'pending'" role="status">Carregando filmes recentes…</p>
       <p v-else-if="recentError" role="alert">
         Não foi possível carregar os filmes recentes.
         <button type="button" @click="refreshRecent()">Tentar novamente</button>
       </p>
-      <div v-else-if="latestMovie" class="recent-layout" :class="{ 'recent-layout--single': !otherRecent.length }">
-        <component
-          :is="latestMovie.slug ? NuxtLink : 'article'"
-          :to="latestMovie.slug ? `/movies/${latestMovie.slug}` : undefined"
-          class="latest-movie"
-        >
-          <div class="latest-copy">
-            <p class="latest-label">Último filme visto</p>
-            <h3>{{ latestMovie.title }}</h3>
-            <p v-if="latestMovie.year" class="latest-year">{{ latestMovie.year }}</p>
-            <p v-if="latestMovie.watchedAt" class="latest-date">
-              Última sessão {{ formatRelativeDate(latestMovie.watchedAt) }}
-            </p>
-          </div>
-          <div class="latest-poster">
-            <MediaImage :src="resolveMediaUrl(latestMovie.coverUrl)" :alt="latestMovie.title" />
-          </div>
-        </component>
-        <ol v-if="otherRecent.length" class="recent-grid" tabindex="0" aria-label="Outros filmes recentes">
-          <li v-for="movie in otherRecent" :key="movie.movieId">
-            <component
-              :is="movie.slug ? NuxtLink : 'div'"
-              :to="movie.slug ? `/movies/${movie.slug}` : undefined"
-              class="recent-item"
-            >
-              <div class="recent-poster">
-                <MediaImage :src="resolveMediaUrl(movie.coverUrl)" :alt="movie.title" loading="lazy" />
-              </div>
-              <div>
-                <h3>{{ movie.title }}</h3>
-                <p v-if="movie.watchedAt">{{ formatRelativeDate(movie.watchedAt) }}</p>
-              </div>
-            </component>
-          </li>
-        </ol>
-      </div>
+      <component
+        :is="latestMovie.slug ? NuxtLink : 'article'"
+        v-else-if="latestMovie"
+        :to="latestMovie.slug ? `/movies/${latestMovie.slug}` : undefined"
+        class="latest-movie"
+        :class="{ 'has-poster': latestPoster }"
+      >
+        <div class="latest-copy">
+          <p class="latest-label">Último filme visto</p>
+          <h2>{{ latestMovie.title }}</h2>
+          <p v-if="latestMovie.year" class="latest-year">{{ latestMovie.year }}</p>
+          <p v-if="latestMovie.watchedAt" class="latest-date">
+            Última sessão {{ formatRelativeDate(latestMovie.watchedAt) }}
+          </p>
+        </div>
+        <div v-if="latestPoster" class="latest-poster">
+          <img
+            :src="resolveMediaUrl(latestPoster) || undefined"
+            :alt="latestMovie.title"
+            @error="failedLatestPoster = latestPoster"
+          />
+        </div>
+      </component>
       <p v-else>Nenhuma sessão registrada.</p>
+      <div class="editorial-search">
+        <MoviesLibraryFilters
+          mode="search"
+          :query="queryText"
+          :selected-year="selectedYear"
+          :selected-unwatched="selectedUnwatched"
+          :years="years"
+        />
+      </div>
+    </section>
+    <section
+      v-if="showRecent && !recentError && otherRecent.length"
+      class="browse-recent"
+      aria-labelledby="recent-heading"
+    >
+      <h2 id="recent-heading">Outros filmes vistos</h2>
+      <ol class="recent-grid" tabindex="0" aria-label="Outros filmes recentes">
+        <li v-for="movie in otherRecent" :key="movie.movieId">
+          <component
+            :is="movie.slug ? NuxtLink : 'div'"
+            :to="movie.slug ? `/movies/${movie.slug}` : undefined"
+            class="recent-item"
+          >
+            <div class="recent-poster">
+              <MediaImage :src="resolveMediaUrl(movie.coverUrl)" :alt="movie.title" loading="lazy" />
+            </div>
+            <div>
+              <h3>{{ movie.title }}</h3>
+              <p v-if="movie.watchedAt">{{ formatRelativeDate(movie.watchedAt) }}</p>
+            </div>
+          </component>
+        </li>
+      </ol>
     </section>
 
     <section class="browse-catalog" :aria-busy="catalogStatus === 'pending' || loadingMore">
+      <div class="catalog-controls">
+        <MoviesLibraryFilters
+          :mode="showRecent ? 'filters' : 'all'"
+          :query="queryText"
+          :selected-year="selectedYear"
+          :selected-unwatched="selectedUnwatched"
+          :years="years"
+        />
+        <p v-if="statsError" class="section-note" role="alert">
+          Os totais e os anos do histórico estão indisponíveis.
+          <button type="button" @click="refreshStats()">Tentar novamente</button>
+        </p>
+      </div>
       <p v-if="catalogStatus === 'pending'" role="status">Carregando filmes…</p>
       <p v-else-if="catalogError" class="browse-panel" role="alert">
         Não foi possível carregar o acervo. <button type="button" @click="refreshCatalog()">Tentar novamente</button>
@@ -184,6 +201,11 @@ const {
   $fetch<MoviesRecentResponse>('/api/movies/recent', { baseURL: config.public.apiBase, query: { limit: 6 } }),
 )
 const latestMovie = computed(() => recent.value?.items[0] ?? null)
+const failedLatestPoster = ref<string | null>(null)
+const latestPoster = computed(() => {
+  const url = latestMovie.value?.coverUrl
+  return url && url !== failedLatestPoster.value ? url : null
+})
 const otherRecent = computed(() => recent.value?.items.slice(1) ?? [])
 const pageSentinel = ref<HTMLElement | null>(null)
 let pageObserver: IntersectionObserver | null = null
@@ -298,17 +320,12 @@ useHead({
   margin: 0 auto;
   padding: 28px 0 64px;
 }
-.browse-toolbar,
+.editorial-panel,
 .browse-panel {
   padding: clamp(20px, 2vw, 28px);
   border-radius: 28px;
   border: 1px solid var(--base-color-border);
   background: white;
-}
-.browse-toolbar {
-  display: grid;
-  gap: 20px;
-  min-width: 0;
 }
 .browse-header {
   display: flex;
@@ -361,38 +378,39 @@ button:disabled {
   color: var(--base-color-text-secondary);
   line-height: 1.5;
 }
-.recent-layout {
+.editorial-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.9fr);
   gap: 24px;
-  align-items: start;
+}
+.editorial-search {
+  padding-top: 24px;
+  border-top: 1px solid var(--base-color-border);
 }
 .latest-movie {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(120px, 160px);
-  gap: 20px;
-  padding: 24px;
-  background: white;
-  border: 1px solid var(--base-color-border);
-  border-radius: 28px;
+  gap: 32px;
   align-items: center;
+}
+.latest-movie.has-poster {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
 }
 .latest-copy {
   min-width: 0;
+  max-width: 40rem;
 }
 .latest-copy p {
   margin: 0;
 }
 .latest-label {
   color: var(--base-color-text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
-.latest-copy h3 {
-  margin: 12px 0;
-  font-size: clamp(1.5rem, 2.2vw, 2rem);
-  line-height: 1.12;
-  letter-spacing: -0.04em;
+.latest-copy h2 {
+  margin: 16px 0;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.05em;
   overflow-wrap: anywhere;
 }
 .latest-year,
@@ -401,40 +419,27 @@ button:disabled {
 }
 .latest-copy .latest-date {
   margin-top: 12px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 .latest-poster {
   display: grid;
-  aspect-ratio: 2 / 3;
-  overflow: hidden;
+  justify-items: center;
+}
+.latest-poster img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 420px;
   border-radius: 20px;
-  background: var(--base-color-surface-soft);
 }
-.latest-poster :deep(img) {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-.latest-poster :deep(.media-image-fallback) {
+.catalog-controls {
   display: grid;
-  place-items: center;
-}
-.recent-layout--single {
-  grid-template-columns: minmax(0, 600px);
-}
-.recent-heading {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  align-items: baseline;
-  justify-content: space-between;
-}
-.recent-heading .section-note {
-  font-size: 0.85rem;
+  gap: 16px;
 }
 .recent-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 190px));
   gap: 20px;
   list-style: none;
   padding: 4px 4px 12px;
@@ -507,9 +512,6 @@ button:disabled {
   color: var(--base-color-text-secondary);
 }
 @media (max-width: 1100px) {
-  .recent-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .recent-grid {
     grid-template-columns: none;
     grid-auto-flow: column;
@@ -528,10 +530,26 @@ button:disabled {
     width: calc(100% - 24px);
     padding-top: 20px;
   }
-  .latest-movie {
-    grid-template-columns: minmax(0, 1fr) 120px;
-    padding: 20px;
-    gap: 16px;
+  .latest-movie,
+  .latest-movie.has-poster {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .latest-poster {
+    grid-row: 1;
+  }
+  .latest-poster img {
+    max-height: 240px;
+  }
+  .latest-copy h2 {
+    font-size: 1.75rem;
+    margin: 12px 0;
+  }
+  .editorial-panel {
+    gap: 20px;
+  }
+  .editorial-search {
+    padding-top: 20px;
   }
   .recent-grid {
     grid-auto-columns: clamp(140px, 42vw, 180px);

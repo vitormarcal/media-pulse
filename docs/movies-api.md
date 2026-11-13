@@ -488,3 +488,6 @@ Na /movies, a paginação por cursor é acionada automaticamente ao aproximar o 
 
 
 O contexto da /movies fica junto do título do acervo: stats.total.uniqueMoviesCount no acervo, stats.unwatchedCount no filtro sem sessão e year.stats.uniqueMoviesCount/watchesCount no ano. Busca omite totais globais. O antigo resumo ao final foi removido, pois a grade carrega continuamente. Falhas de stats são recuperáveis junto dos filtros e não bloqueiam os filmes.
+
+
+A entrada padrão da /movies apresenta o primeiro recent em destaque editorial com busca integrada e os demais abaixo, enquanto os filtros ficam junto da grade. Em busca/filtro/cadastro ativo, a abertura editorial é omitida. Não há consulta adicional ao detalhe para compor o destaque; apenas os campos de recent são utilizados, e falha de imagem não bloqueia a busca.
