@@ -1,13 +1,14 @@
 <template>
   <section class="library-section" :class="`library-section--${layout}`">
-    <SectionHeading :eyebrow="eyebrow" :title="title" :description="description" :summary="summary" />
+    <h2 v-if="refined">{{ title }}</h2>
+    <SectionHeading v-else :eyebrow="eyebrow" :title="title" :description="description" :summary="summary" />
 
     <p v-if="!items.length" class="empty-state">
       {{ emptyMessage || 'Nada para mostrar aqui ainda.' }}
     </p>
 
     <div v-else class="library-grid" :class="`library-grid--${layout}`">
-      <MovieLibraryCard v-for="item in items" :key="item.id" :item="item" />
+      <MovieLibraryCard v-for="item in items" :key="item.id" :item="item" :refined="refined" />
     </div>
   </section>
 </template>
@@ -24,6 +25,7 @@ withDefaults(
     description: string
     summary: string
     items: MovieLibraryCardModel[]
+    refined?: boolean
     layout?: 'masonry' | 'aligned'
     emptyMessage?: string
   }>(),
@@ -94,5 +96,10 @@ withDefaults(
   .library-grid--aligned {
     grid-template-columns: 1fr;
   }
+}
+h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  letter-spacing: -0.04em;
 }
 </style>

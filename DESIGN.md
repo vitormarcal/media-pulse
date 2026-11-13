@@ -424,3 +424,13 @@ Nota e experiências vêm imediatamente após a galeria. Ocultar blocos pessoais
 Artista usa painel branco com nome/contexto e biografia à esquerda, retrato integral ampliável à direita, até 280px por 360px. No celular: identificação, retrato e biografia. Sem imagem ou em falha, não reservar coluna. Obras no acervo mantêm grade cronológica regular e paginação global; mostrar ano no grupo e datas de vida na identificação, sem repetição nos cartões. A biblioteca geral continua masonry.
 
 Painéis de texto e memória usam até 1120px, padding de 20–32px, cantos de 28px e 32px entre seções, sobre o fundo quente. Descrição e biografia nestes detalhes têm prévia de 420 caracteres visíveis e expansão. Interpretar somente pares simples de negrito/itálico; preservar texto salvo, marcadores incompletos e HTML literal escapado, sem parser geral. Os estilos são específicos dos detalhes revisados.
+
+## 27. Página principal de filmes
+
+A página /movies prioriza o acervo: cabeçalho branco compacto com Filmes, Listas, Coleções e cadastro exclusivo do owner; busca e filtros imediatamente abaixo. Usar superfícies brancas sobre fundo quente, borda discreta, cantos de 28px, padding de 20–32px e 32px entre seções. A biblioteca pode manter largura de até 1480px e masonry denso; os pôsteres preservam sua proporção integral. A personalidade vem das imagens, sem fundos duplicados ou grandes cartões de navegação.
+
+Últimos filmes vistos é um único bloco compacto, até seis títulos e última sessão registrada de cada filme. O endpoint agrupa por filme, portanto não apresentar esse recorte como histórico completo de sessões ou releituras. Não repetir destaques e panoramas antes da busca. Cartões do acervo mostram título, ano disponível, última sessão e contagem somente quando há múltiplas sessões; ausência de sessão é informada uma vez e não prova que o owner nunca viu o filme.
+
+Ano da sessão distingue o histórico do ano de lançamento. Selecionar ano abre os filmes com sessão naquele ano; a busca por título sai do ano explicitamente e pode combinar com Sem sessão registrada. Limpar filtros retorna ao acervo. Não filtrar apenas uma página carregada como se fosse todo o catálogo. Informar limites de busca e recorte anual quando atingidos, sem usar o tamanho da resposta como total.
+
+Resumo do histórico fica recolhido, com totais globais ou anuais identificados. Estatísticas e recentes falham independentemente do acervo e oferecem retry. Paginação preserva itens/cursor em erro e descarta respostas de filtros anteriores. Cadastro abre junto da ação, mantém rascunho ao recolher e não aparece automaticamente após busca vazia. As opções visuais dos cartões e da grade são específicas desta página; outras rotas permanecem independentes.

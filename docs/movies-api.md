@@ -476,3 +476,9 @@ O owner abre “Escolher imagens” junto da galeria, inclusive em filmes sem im
 - `POST /api/movies/{movieId}/images/selection`: recebe `{ids}` (1–50 opções) e retorna `{savedIds, failedIds}`. Ambos os POSTs exigem owner e CSRF. IDs são revalidados contra os candidatos atuais; nenhuma URL de download é aceita no corpo. Cada sucesso cria um vínculo não primário no armazenamento existente e não altera capa nem imagem principal, mesmo se ausentes. Falhas individuais não desfazem sucessos; a interface mantém as escolhas que falharam para nova tentativa.
 
 Filme ausente retorna 404; seleção inválida, 400; vínculo ausente no POST, 409. Indisponibilidade do TMDb retorna 502 ou 503. O Visual Library, quando habilitado, continua responsável pela deduplicação por conteúdo.
+
+## Apresentação do acervo em /movies
+
+A página principal usa os contratos existentes sem migração: library para acervo paginado (24 itens), search para título/nome original (até 40 correspondências) e year para filmes assistidos no ano da sessão (até 1.000). Se a busca atingir o limite, informar o recorte antes de aplicar Sem sessão registrada; o filtro não torna completo um resultado limitado. O recorte anual usa watched e seus stats; não apresentar unwatched como filmes ausentes daquele ano, pois essa coleção reúne filmes sem qualquer sessão registrada.
+
+Recentes e estatísticas são carregados independentemente e oferecem retry sem bloquear a consulta ao acervo. recent fornece a última sessão por filme, não cada sessão individual; a UI mostra até seis Últimos filmes vistos. O resumo usa os totais de stats ou year.stats, nunca o tamanho da página de library/unwatched. Paginação preserva a ordem/cursor do backend, mantém itens em erro e ignora respostas de filtros anteriores. A revisão não altera os contratos de listas, coleções ou detalhes.

@@ -1,513 +1,435 @@
 <template>
-  <main class="movies-page">
-    <div v-if="editorialStatus === 'pending' || libraryStatus === 'pending'" class="state-card">
-      <p>Carregando...</p>
-    </div>
-
-    <div v-else-if="editorialError || libraryError" class="state-card error">
-      <p>Não foi possível carregar os filmes.</p>
-      <pre>{{ editorialError?.message || libraryError?.message }}</pre>
-    </div>
-
-    <template v-else-if="editorialData && libraryData">
-      <template v-if="showEditorialLayer">
-        <MoviesCollectionHero
-          accent-owner-only
-          :title="editorialData.hero.title"
-          :intro="editorialData.hero.intro"
-          :lead="editorialData.hero.lead"
-          :supporting="editorialData.hero.supporting"
-          accent-link="/movies?add=1"
-          accent-label="Adicionar filme"
-        />
-
-        <section class="movies-section">
-          <SectionHeading eyebrow="Em circulação" title="Filmes recentes" />
-
-          <div class="strip-grid">
-            <MediaStripCard
-              v-for="item in editorialData.featuredSessions"
-              :key="item.id"
-              :item="item"
-              variant="large"
-            />
-          </div>
-        </section>
-
-        <MoviesCollectionContext
-          :eyebrow="editorialData.context.eyebrow"
-          :title="editorialData.context.title"
-          :description="editorialData.context.description"
-          :summary="editorialData.context.summary"
-          :metrics="editorialData.context.metrics"
-        />
-
-        <section id="movies-recent" class="movies-section">
-          <SectionHeading eyebrow="Sessões" title="Tela recente" />
-
-          <div class="masonry-grid">
-            <MediaPosterCard
-              v-for="(item, index) in editorialData.recentMoments"
-              :key="item.id"
-              :item="item"
-              :variant="cardVariant(index)"
-            />
-          </div>
-        </section>
-      </template>
-
-      <MoviesLibraryHero
-        v-else
-        :title="libraryData.hero.title"
-        :intro="libraryData.hero.intro"
-        :back-link="libraryData.hero.backLink"
-        :back-label="libraryData.hero.backLabel"
-        :accent-link="libraryData.hero.accentLink"
-        :accent-label="libraryData.hero.accentLabel"
-        :utility-link="owner.authenticated ? libraryData.hero.utilityLink : null"
-        :utility-label="libraryData.hero.utilityLabel"
-        :spotlight="libraryData.hero.spotlight"
-      />
-
-      <MoviesLibraryFilters
-        :query="libraryData.filters.query"
-        :selected-year="libraryData.filters.selectedYear"
-        :selected-unwatched="libraryData.filters.selectedUnwatched"
-        :years="libraryData.filters.years"
-      />
-
-      <section v-if="libraryData.mode === 'library'" class="entry-rail">
-        <NuxtLink
-          v-for="entry in entryCards.filter((item) => owner.authenticated || item.id !== 'add')"
-          :key="entry.id"
-          class="entry-card"
-          :to="entry.href"
-          :style="
-            entry.imageUrl
-              ? {
-                  backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.84), rgba(246,243,238,0.96)), url('${entry.imageUrl}')`,
-                }
-              : undefined
-          "
+  <main class="movies-page movies-browse">
+    <header class="browse-header">
+      <h1>Filmes</h1>
+      <nav aria-label="Acervo de filmes">
+        <NuxtLink to="/movies/lists">Listas</NuxtLink>
+        <NuxtLink to="/movies/collections">Coleções</NuxtLink>
+        <button
+          v-if="owner.authenticated"
+          type="button"
+          :aria-expanded="adding"
+          aria-controls="movie-add"
+          @click="toggleAdd"
         >
-          <p class="entry-card__eyebrow">{{ entry.eyebrow }}</p>
-          <h2>{{ entry.title }}</h2>
-          <p class="entry-card__meta">{{ entry.meta }}</p>
-        </NuxtLink>
-      </section>
-
-      <MovieManualAddCard v-if="owner.authenticated && showManualAddCard" :initial-title="queryText" />
-
-      <section v-else-if="owner.authenticated && showManualEntryHint" class="entry-hint">
-        <div class="entry-hint__copy">
-          <p class="entry-hint__eyebrow">Entrada manual</p>
-          <h2>Não era o filme certo?</h2>
-        </div>
-
-        <NuxtLink class="entry-hint__action" :to="manualAddLink">Adicionar filme</NuxtLink>
-      </section>
-
-      <MoviesCollectionContext
-        :eyebrow="libraryData.context.eyebrow"
-        :title="libraryData.context.title"
-        :description="libraryData.context.description"
-        :summary="libraryData.context.summary"
-        :metrics="libraryData.context.metrics"
-      />
-
-      <MoviesLibraryGrid
-        v-for="section in displaySections"
-        :key="section.id"
-        :eyebrow="section.eyebrow"
-        :title="section.title"
-        :description="section.description"
-        :summary="section.summary"
-        :items="section.items"
-        :empty-message="section.emptyMessage"
-      />
-
-      <div v-if="canLoadMore" class="load-more-row">
-        <button type="button" class="load-more" :disabled="loadingMore" @click="handleLoadMore">
-          {{ loadingMore ? 'Buscando mais filmes...' : 'Carregar mais filmes' }}
+          {{ adding ? 'Fechar cadastro' : 'Adicionar filme' }}
         </button>
-      </div>
-    </template>
+      </nav>
+    </header>
+    <section v-if="owner.authenticated && addOpened" v-show="adding" id="movie-add" class="browse-panel">
+      <MovieManualAddCard :initial-title="queryText" />
+    </section>
+    <MoviesLibraryFilters
+      :query="queryText"
+      :selected-year="selectedYear"
+      :selected-unwatched="selectedUnwatched"
+      :years="years"
+    />
+
+    <section v-if="showRecent" class="browse-recent" aria-labelledby="recent-heading">
+      <h2 id="recent-heading">Últimos filmes vistos</h2>
+      <p class="section-note">Última sessão registrada de cada filme.</p>
+      <p v-if="recentStatus === 'pending'" role="status">Carregando filmes recentes…</p>
+      <p v-else-if="recentError" role="alert">
+        Não foi possível carregar os filmes recentes.
+        <button type="button" @click="refreshRecent()">Tentar novamente</button>
+      </p>
+      <ol v-else-if="recent?.items.length" class="recent-grid">
+        <li v-for="movie in recent.items" :key="movie.movieId">
+          <component
+            :is="movie.slug ? NuxtLink : 'div'"
+            :to="movie.slug ? `/movies/${movie.slug}` : undefined"
+            class="recent-item"
+          >
+            <MediaImage :src="resolveMediaUrl(movie.coverUrl)" :alt="movie.title" loading="lazy" />
+            <div>
+              <h3>{{ movie.title }}</h3>
+              <p v-if="movie.watchedAt">{{ formatRelativeDate(movie.watchedAt) }}</p>
+            </div>
+          </component>
+        </li>
+      </ol>
+      <p v-else>Nenhuma sessão registrada.</p>
+    </section>
+
+    <section class="browse-catalog" aria-live="polite" :aria-busy="catalogStatus === 'pending'">
+      <p v-if="catalogStatus === 'pending'" role="status">Carregando filmes…</p>
+      <p v-else-if="catalogError" class="browse-panel" role="alert">
+        Não foi possível carregar o acervo. <button type="button" @click="refreshCatalog()">Tentar novamente</button>
+      </p>
+      <template v-else-if="catalog">
+        <p v-if="catalog.truncated" class="section-note">
+          {{
+            queryText
+              ? 'A busca retorna até 40 correspondências do acervo. Refine o título para encontrar outros filmes.'
+              : `Exibindo ${catalog.items.length} de ${catalog.yearStats?.uniqueMoviesCount} filmes com sessão neste ano.`
+          }}
+        </p>
+        <MoviesLibraryGrid
+          refined
+          eyebrow=""
+          :title="catalogTitle"
+          description=""
+          summary=""
+          :items="catalogItems"
+          :empty-message="emptyMessage"
+        />
+        <p v-if="owner.authenticated && queryText" class="add-hint">
+          Não encontrou o filme? <button type="button" @click="openAdd">Adicionar ao acervo</button>
+        </p>
+        <div v-if="nextCursor" class="load-more-row">
+          <p v-if="moreError" role="alert">
+            Não foi possível carregar mais filmes. Os itens anteriores foram preservados.
+          </p>
+          <button type="button" :disabled="loadingMore" @click="loadMore">
+            {{ loadingMore ? 'Carregando…' : moreError ? 'Tentar carregar mais' : 'Carregar mais filmes' }}
+          </button>
+        </div>
+      </template>
+    </section>
+
+    <details class="browse-panel history-summary">
+      <summary>Resumo do histórico{{ selectedYear ? ` · ${selectedYear}` : '' }}</summary>
+      <template v-if="selectedYear && !queryText">
+        <dl v-if="catalog?.yearStats && !catalogError && catalogStatus !== 'pending'" class="summary-metrics">
+          <div>
+            <dt>Filmes vistos no ano</dt>
+            <dd>{{ catalog.yearStats.uniqueMoviesCount }}</dd>
+          </div>
+          <div>
+            <dt>Sessões no ano</dt>
+            <dd>{{ catalog.yearStats.watchesCount }}</dd>
+          </div>
+          <div>
+            <dt>Revisitas no ano</dt>
+            <dd>{{ catalog.yearStats.rewatchesCount }}</dd>
+          </div>
+        </dl>
+        <p v-else>O resumo anual estará disponível ao carregar os filmes do ano.</p>
+      </template>
+      <template v-else>
+        <p v-if="statsStatus === 'pending'" role="status">Carregando resumo…</p>
+        <p v-else-if="statsError" role="alert">
+          Não foi possível carregar o resumo. <button type="button" @click="refreshStats()">Tentar novamente</button>
+        </p>
+        <template v-else-if="stats">
+          <p class="section-note">Todo o acervo e histórico registrado, independentemente da busca.</p>
+          <dl class="summary-metrics">
+            <div>
+              <dt>Filmes no acervo</dt>
+              <dd>{{ stats.total.uniqueMoviesCount }}</dd>
+            </div>
+            <div>
+              <dt>Sessões registradas</dt>
+              <dd>{{ stats.total.watchesCount }}</dd>
+            </div>
+            <div>
+              <dt>Sem sessão registrada</dt>
+              <dd>{{ stats.unwatchedCount }}</dd>
+            </div>
+          </dl>
+          <p v-if="stats.firstWatchAt && stats.latestWatchAt" class="section-note">
+            De {{ formatAbsoluteDate(stats.firstWatchAt) }} a {{ formatAbsoluteDate(stats.latestWatchAt) }}.
+          </p>
+        </template>
+      </template>
+    </details>
+    <p v-if="statsError" class="section-note">
+      Os anos do histórico estão indisponíveis. <button type="button" @click="refreshStats()">Tentar novamente</button>
+    </p>
   </main>
 </template>
-
 <script setup lang="ts">
 import { NuxtLink } from '#components'
-import MediaPosterCard from '~/components/home/MediaPosterCard.vue'
-import MediaStripCard from '~/components/home/MediaStripCard.vue'
-import SectionHeading from '~/components/home/SectionHeading.vue'
-import MoviesCollectionContext from '~/components/movies/MoviesCollectionContext.vue'
-import MoviesCollectionHero from '~/components/movies/MoviesCollectionHero.vue'
 import MoviesLibraryFilters from '~/components/movies/MoviesLibraryFilters.vue'
 import MoviesLibraryGrid from '~/components/movies/MoviesLibraryGrid.vue'
-import MoviesLibraryHero from '~/components/movies/MoviesLibraryHero.vue'
 import MovieManualAddCard from '~/components/movies/MovieManualAddCard.vue'
-import { useMoviesCollectionData } from '~/composables/useMoviesCollectionData'
-import { fetchMoviesLibraryNextPage, fetchMoviesLibraryPageData } from '~/composables/useMoviesLibraryData'
-import type { MovieLibraryCardModel } from '~/types/movies'
-import { buildMovieLibraryCards } from '~/utils/movies'
-
+import { fetchMoviesBrowsePage, fetchMoviesLibraryNextPage } from '~/composables/useMoviesLibraryData'
+import { movieBrowseCards } from '~/utils/movieBrowse'
+import { formatAbsoluteDate, formatRelativeDate } from '~/utils/formatting'
+import type { MovieLibraryCardModel, MoviesStatsResponse } from '~/types/movies'
+import type { MoviesRecentResponse } from '~/types/home'
 const owner = useOwnerAuth()
-
 const route = useRoute()
+const config = useRuntimeConfig()
 const { resolveMediaUrl } = useMediaUrl()
-
-const queryText = computed(() => {
-  const value = route.query.q
-  return typeof value === 'string' ? value.trim() : ''
+const queryText = computed(() => (typeof route.query.q === 'string' ? route.query.q.trim() : ''))
+const selectedUnwatched = computed(() => ['1', 'true'].includes(String(route.query.unwatched)))
+const selectedYear = computed(() => {
+  if (queryText.value || selectedUnwatched.value) return null
+  const year = Number(route.query.year)
+  return Number.isInteger(year) && year >= 1900 && year <= new Date().getUTCFullYear() + 1 ? year : null
 })
-
-const selectedUnwatched = computed(() => {
-  const value = route.query.unwatched
-  return value === '1' || value === 'true'
+const filterKey = computed(() => JSON.stringify([queryText.value, selectedYear.value, selectedUnwatched.value]))
+const adding = computed(() => owner.value.authenticated && ['1', 'true'].includes(String(route.query.add)))
+const addOpened = ref(adding.value)
+watch(adding, (value) => {
+  if (value) addOpened.value = true
 })
-
-const selectedYear = computed<number | null>(() => {
-  if (selectedUnwatched.value) return null
-  const value = route.query.year
-  if (typeof value !== 'string' || !value.trim()) return null
-
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : null
-})
-
-const addMode = computed(() => {
-  const value = route.query.add
-  return value === '1' || value === 'true'
-})
-
-const { data: editorialData, error: editorialError, status: editorialStatus } = await useMoviesCollectionData()
+function toggleAdd() {
+  navigateTo({ path: '/movies', query: { ...route.query, add: adding.value ? undefined : '1' } })
+}
+async function openAdd() {
+  await navigateTo({ path: '/movies', query: { ...route.query, add: '1' } })
+  document.getElementById('movie-add')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 const {
-  data: libraryData,
-  error: libraryError,
-  status: libraryStatus,
-} = await useAsyncData(
-  'movies-main-library-page',
-  () =>
-    fetchMoviesLibraryPageData({ q: queryText.value, year: selectedYear.value, unwatched: selectedUnwatched.value }),
-  {
-    watch: [queryText, selectedYear, selectedUnwatched],
-  },
+  data: stats,
+  status: statsStatus,
+  error: statsError,
+  refresh: refreshStats,
+} = await useAsyncData('movies-browse-stats', () =>
+  $fetch<MoviesStatsResponse>('/api/movies/stats', { baseURL: config.public.apiBase }),
 )
-
+const years = computed(() => {
+  const values = new Set((stats.value?.years ?? []).map((item) => item.year))
+  if (selectedYear.value) values.add(selectedYear.value)
+  return [...values].sort((a, b) => b - a).map((year) => ({ year, label: String(year), watches: '' }))
+})
+const {
+  data: catalog,
+  status: catalogStatus,
+  error: catalogError,
+  refresh: refreshCatalog,
+} = await useAsyncData(
+  'movies-browse-catalog',
+  () => fetchMoviesBrowsePage({ q: queryText.value, year: selectedYear.value, unwatched: selectedUnwatched.value }),
+  { watch: [filterKey] },
+)
+const showRecent = computed(() => !queryText.value && !selectedYear.value && !selectedUnwatched.value && !adding.value)
+const {
+  data: recent,
+  status: recentStatus,
+  error: recentError,
+  refresh: refreshRecent,
+} = await useAsyncData('movies-browse-recent', () =>
+  $fetch<MoviesRecentResponse>('/api/movies/recent', { baseURL: config.public.apiBase, query: { limit: 6 } }),
+)
+const extraItems = ref<MovieLibraryCardModel[]>([])
 const nextCursor = ref<string | null>(null)
-const extraLibraryItems = ref<MovieLibraryCardModel[]>([])
 const loadingMore = ref(false)
-
+const moreError = ref(false)
+let generation = 0
 watch(
-  libraryData,
+  filterKey,
+  () => {
+    generation++
+    extraItems.value = []
+    nextCursor.value = null
+    loadingMore.value = false
+    moreError.value = false
+  },
+  { flush: 'sync' },
+)
+watch(
+  catalog,
   (value) => {
-    nextCursor.value = value?.libraryCursor ?? null
-    extraLibraryItems.value = []
+    generation++
+    extraItems.value = []
+    nextCursor.value = value?.nextCursor ?? null
+    loadingMore.value = false
+    moreError.value = false
   },
   { immediate: true },
 )
-
-const showEditorialLayer = computed(
-  () => !queryText.value && selectedYear.value == null && !selectedUnwatched.value && !addMode.value,
-)
-const canLoadMore = computed(() => libraryData.value?.mode === 'library' && !!nextCursor.value)
-
-const displaySections = computed(() => {
-  if (!libraryData.value) return []
-
-  if (libraryData.value.mode !== 'library') {
-    return libraryData.value.sections.map((section) => ({
-      ...section,
-      description: '',
-      summary: '',
-    }))
-  }
-
-  return libraryData.value.sections.map((section) => {
-    if (section.id === 'library-catalog') {
-      return {
-        ...section,
-        description: '',
-        summary: '',
-        items: [...section.items, ...extraLibraryItems.value],
-      }
-    }
-
-    return {
-      ...section,
-      description: '',
-      summary: '',
-    }
-  })
-})
-
-const entryCards = computed(() => {
-  const recentImage = resolveMediaUrl(editorialData.value?.recentMoments[0]?.imageUrl ?? null)
-  const collectionImage = resolveMediaUrl(
-    editorialData.value?.hero.lead?.imageUrl ?? editorialData.value?.hero.supporting[0]?.imageUrl ?? null,
-  )
-  const addImage = resolveMediaUrl(
-    libraryData.value?.hero.spotlight?.imageUrl ?? editorialData.value?.featuredSessions[0]?.imageUrl ?? null,
-  )
-
-  return [
-    {
-      id: 'lists',
-      href: '/movies/lists',
-      eyebrow: 'Listas',
-      title: 'Entrar por recortes manuais',
-      meta: 'Listas manuais',
-      imageUrl: recentImage,
-    },
-    {
-      id: 'collections',
-      href: '/movies/collections',
-      eyebrow: 'Coleções',
-      title: 'Abrir franquias e conjuntos',
-      meta: 'Sagas já consolidadas como portas de entrada próprias.',
-      imageUrl: collectionImage,
-    },
-    {
-      id: 'add',
-      href: selectedUnwatched.value ? '/movies?unwatched=1&add=1' : '/movies?add=1',
-      eyebrow: 'Adicionar',
-      title: 'Trazer um filme novo',
-      meta: 'Entrada manual sem sair da página principal.',
-      imageUrl: addImage,
-    },
-  ]
-})
-
-const showManualAddCard = computed(() => {
-  if (addMode.value) return true
-  if (!queryText.value || !libraryData.value || libraryData.value.mode !== 'search') return false
-
-  const resultsSection = libraryData.value.sections.find((section) => section.id === 'search-results')
-  return (resultsSection?.items.length ?? 0) === 0
-})
-
-const showManualEntryHint = computed(() => {
-  if (showManualAddCard.value || !queryText.value || !libraryData.value || libraryData.value.mode !== 'search') {
-    return false
-  }
-
-  const resultsSection = libraryData.value.sections.find((section) => section.id === 'search-results')
-  return (resultsSection?.items.length ?? 0) > 0
-})
-
-const manualAddLink = computed(() =>
+const catalogItems = computed(() => [...(catalog.value?.items ?? []), ...extraItems.value])
+const catalogTitle = computed(() =>
   queryText.value
-    ? `/movies?q=${encodeURIComponent(queryText.value)}${selectedUnwatched.value ? '&unwatched=1' : ''}&add=1`
-    : `/movies?${selectedUnwatched.value ? 'unwatched=1&' : ''}add=1`,
+    ? `Resultados para “${queryText.value}”`
+    : selectedYear.value
+      ? `Vistos em ${selectedYear.value}`
+      : selectedUnwatched.value
+        ? 'Sem sessão registrada'
+        : 'Acervo',
 )
-
-function cardVariant(index: number) {
-  const pattern = ['feature', 'compact', 'tall', 'standard', 'compact', 'tall'] as const
-  return pattern[index % pattern.length]
-}
-
-async function handleLoadMore() {
+const emptyMessage = computed(() =>
+  queryText.value
+    ? 'Nenhum filme encontrado nesta busca.'
+    : selectedYear.value
+      ? 'Nenhuma sessão registrada neste ano.'
+      : selectedUnwatched.value
+        ? 'Nenhum filme sem sessão registrada.'
+        : 'Ainda não há filmes no acervo.',
+)
+async function loadMore() {
   if (!nextCursor.value || loadingMore.value) return
-
+  const currentGeneration = generation
   loadingMore.value = true
+  moreError.value = false
   try {
-    await appendLibraryPage(nextCursor.value)
+    const page = await fetchMoviesLibraryNextPage(nextCursor.value, selectedUnwatched.value)
+    if (generation !== currentGeneration) return
+    const existing = new Set(catalogItems.value.map((item) => item.movieId))
+    extraItems.value.push(...movieBrowseCards(page.items).filter((item) => !existing.has(item.movieId)))
+    nextCursor.value = page.nextCursor
+  } catch {
+    if (generation === currentGeneration) moreError.value = true
   } finally {
-    loadingMore.value = false
+    if (generation === currentGeneration) loadingMore.value = false
   }
 }
-
-async function appendLibraryPage(cursor: string) {
-  const page = await fetchMoviesLibraryNextPage(cursor, selectedUnwatched.value)
-  const items = buildMovieLibraryCards(page.items)
-  extraLibraryItems.value.push(...items)
-  nextCursor.value = page.nextCursor
-}
-
-useHead(() => ({
+useHead({
   title: 'Filmes · Media Pulse',
-  meta: [
-    {
-      name: 'description',
-      content: 'Filmes recentes, busca e catálogo.',
-    },
-  ],
-}))
+  meta: [{ name: 'description', content: 'Acervo de filmes e histórico de sessões.' }],
+})
 </script>
-
 <style scoped>
 .movies-page {
   display: grid;
-  gap: var(--sema-space-section);
-  width: min(1480px, calc(100vw - 32px));
+  gap: 32px;
+  width: min(1480px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 28px 0 84px;
+  padding: 28px 0 64px;
 }
-
-.movies-section,
-.strip-grid {
-  display: grid;
-  gap: 24px;
-}
-
-.strip-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.masonry-grid {
-  column-count: 4;
-  column-gap: 20px;
-}
-
-.entry-rail {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.entry-card {
-  display: grid;
-  gap: 10px;
-  min-height: 16rem;
-  align-content: end;
-  padding: 24px;
+.browse-header,
+.browse-panel {
+  padding: clamp(20px, 3vw, 32px);
   border-radius: 28px;
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 243, 238, 0.98)),
-    radial-gradient(circle at top right, rgba(230, 0, 35, 0.08), transparent 28%);
-  background-size: cover;
-  background-position: center;
-  border: 1px solid color-mix(in srgb, var(--base-color-border) 48%, white);
+  border: 1px solid var(--base-color-border);
+  background: white;
 }
-
-.entry-card__eyebrow,
-.entry-hint__eyebrow {
-  margin: 0;
-  color: var(--base-color-brand-red);
-  font-size: 0.74rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-}
-
-.entry-card h2,
-.entry-card__meta {
-  margin: 0;
-}
-
-.entry-card h2 {
-  font-size: clamp(1.7rem, 3vw, 2.4rem);
-  line-height: 0.96;
-  letter-spacing: -0.05em;
-  color: var(--base-color-text-primary);
-}
-
-.entry-card__meta {
-  max-width: 22rem;
-  color: var(--base-color-text-secondary);
-  line-height: 1.5;
-}
-
-.entry-hint {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px;
-  align-items: center;
-  padding: 24px;
-  border-radius: 28px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 243, 238, 0.98));
-  border: 1px solid color-mix(in srgb, var(--base-color-border) 48%, white);
-}
-
-.entry-hint__copy {
-  display: grid;
-  gap: 8px;
-}
-
-.entry-hint__copy h2 {
-  margin: 0;
-}
-
-.entry-hint__copy h2 {
-  font-size: clamp(1.65rem, 3vw, 2.2rem);
-  line-height: 0.98;
-  letter-spacing: -0.045em;
-}
-
-.entry-hint__action {
-  padding: 10px 16px;
-  border-radius: 16px;
-  background: var(--base-color-surface-warm);
-  color: var(--base-color-text-primary);
-  white-space: nowrap;
-}
-
-.load-more-row {
+.browse-header {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
 }
-
-.load-more {
-  padding: 10px 18px;
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.05em;
+  line-height: 1.1;
+}
+h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  letter-spacing: -0.04em;
+}
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+nav a,
+button {
+  padding: 10px 16px;
   border: 0;
   border-radius: 16px;
   background: var(--base-color-surface-warm);
   color: var(--base-color-text-primary);
   cursor: pointer;
+  font: inherit;
 }
-
-.load-more:disabled {
-  opacity: 0.7;
+.browse-header button {
+  background: var(--base-color-brand-red);
+  color: black;
+}
+button:disabled {
+  opacity: 0.65;
   cursor: default;
 }
-
-.state-card {
-  padding: 24px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.82);
+.browse-recent {
+  display: grid;
+  gap: 16px;
+}
+.section-note {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  line-height: 1.5;
+}
+.recent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.recent-item {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+.recent-item :deep(img) {
+  width: 64px;
+  height: 96px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+.recent-item :deep(.media-image-fallback) {
+  padding: 4px;
+  min-height: 80px;
+  font-size: 0.75rem;
+}
+.recent-item h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.recent-item p {
+  margin: 6px 0 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.85rem;
+}
+.browse-catalog {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.add-hint {
+  margin: 0;
   color: var(--base-color-text-secondary);
 }
-
-.state-card.error {
-  color: #7a1414;
+.load-more-row {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
 }
-
-pre {
-  margin: 12px 0 0;
-  white-space: pre-wrap;
+.load-more-row p {
+  margin: 0;
+  color: var(--base-color-text-secondary);
 }
-
-@media (max-width: 1280px) {
-  .masonry-grid {
-    column-count: 3;
-  }
+summary {
+  cursor: pointer;
+  font-weight: 600;
 }
-
+.summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin: 24px 0;
+}
+dt {
+  color: var(--base-color-text-secondary);
+}
+dd {
+  margin: 8px 0 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+.history-summary > .section-note {
+  margin-top: 20px;
+}
 @media (max-width: 900px) {
-  .strip-grid,
-  .entry-rail {
-    grid-template-columns: 1fr;
-  }
-
-  .masonry-grid {
-    column-count: 2;
+  .recent-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-
-@media (max-width: 720px) {
+@media (max-width: 600px) {
   .movies-page {
-    width: min(100vw - 20px, 1480px);
-    padding: 20px 0 64px;
+    width: calc(100% - 24px);
+    padding-top: 20px;
   }
-
-  .entry-hint {
+  .recent-grid,
+  .summary-metrics {
     grid-template-columns: 1fr;
   }
-}
-
-@media (max-width: 520px) {
-  .masonry-grid {
-    column-count: 1;
+  .browse-header {
+    align-items: start;
   }
 }
 </style>

@@ -1,8 +1,9 @@
 <template>
   <component :is="wrapperTag" :to="item.href || undefined" class="library-link">
-    <article class="library-card" :class="{ dormant: item.isDormant }">
+    <article class="library-card" :class="{ dormant: item.isDormant, refined }">
       <div class="poster">
-        <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy" />
+        <MediaImage v-if="refined" :src="resolvedImageUrl" :alt="item.title" loading="lazy" fallback="Sem imagem" />
+        <img v-else-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy" />
         <div v-else class="poster-fallback">{{ item.title.slice(0, 1) }}</div>
       </div>
 
@@ -10,14 +11,14 @@
         <div class="title-row">
           <div>
             <h3>{{ item.title }}</h3>
-            <p class="subtitle">{{ item.subtitle }}</p>
+            <p v-if="item.subtitle" class="subtitle">{{ item.subtitle }}</p>
           </div>
-          <span class="aside">{{ item.aside }}</span>
+          <span v-if="item.aside" class="aside">{{ item.aside }}</span>
         </div>
 
-        <div class="meta-row">
-          <p class="sessions-label">{{ item.sessionsLabel }}</p>
-          <p class="activity">{{ item.activityLabel }}</p>
+        <div v-if="item.sessionsLabel || item.activityLabel" class="meta-row">
+          <p v-if="item.sessionsLabel" class="sessions-label">{{ item.sessionsLabel }}</p>
+          <p v-if="item.activityLabel" class="activity">{{ item.activityLabel }}</p>
         </div>
       </div>
     </article>
@@ -30,6 +31,7 @@ import type { MovieLibraryCardModel } from '~/types/movies'
 
 const props = defineProps<{
   item: MovieLibraryCardModel
+  refined?: boolean
 }>()
 
 const { resolveMediaUrl } = useMediaUrl()
@@ -136,5 +138,30 @@ h3 {
 
 .library-card.dormant .aside {
   background: color-mix(in srgb, var(--base-color-surface-warm) 88%, white);
+}
+.refined .poster {
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 20px;
+  background: var(--base-color-surface-soft);
+}
+.refined .poster :deep(img) {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.refined .poster :deep(.media-image-fallback) {
+  min-height: 200px;
+}
+.refined h3 {
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.refined .activity {
+  color: var(--base-color-text-secondary);
+}
+.refined .body {
+  gap: 6px;
 }
 </style>

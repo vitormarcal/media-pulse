@@ -1,158 +1,146 @@
 <template>
-  <section class="library-filters">
+  <section class="library-filters" aria-label="Buscar e filtrar filmes">
     <form class="search-form" @submit.prevent="submitSearch">
-      <label class="search-label" for="movies-library-query">Buscar filmes</label>
+      <label for="movies-library-query">Buscar no acervo</label>
       <div class="search-row">
-        <input
-          id="movies-library-query"
-          v-model="localQuery"
-          type="search"
-          class="search-input"
-          placeholder="Título, nome original..."
-        />
-        <button type="submit" class="search-button">Buscar</button>
+        <input id="movies-library-query" v-model="localQuery" type="search" placeholder="Título ou nome original" />
+        <button type="submit">Buscar</button>
       </div>
+      <p v-if="selectedYear" class="filter-note">
+        A busca por título considera todo o acervo e sai do ano selecionado.
+      </p>
     </form>
-
-    <div class="years">
-      <NuxtLink
-        class="year-chip"
-        :class="{ active: selectedYear == null && !query && !selectedUnwatched }"
-        to="/movies"
+    <div class="filter-row">
+      <nav class="status-filters" aria-label="Sessões registradas">
+        <NuxtLink
+          :to="query ? { path: '/movies', query: { q: query } } : '/movies'"
+          :aria-current="!selectedUnwatched && !selectedYear ? 'page' : undefined"
+          >Todos</NuxtLink
+        >
+        <NuxtLink
+          :to="{ path: '/movies', query: { ...(query ? { q: query } : {}), unwatched: '1' } }"
+          :aria-current="selectedUnwatched ? 'page' : undefined"
+          >Sem sessão registrada</NuxtLink
+        >
+      </nav>
+      <label class="year-filter"
+        >Ano da sessão
+        <select aria-label="Ano da sessão" :value="selectedYear ?? ''" @change="selectYear">
+          <option value="">Todos os anos</option>
+          <option v-for="year in years" :key="year.year" :value="year.year">{{ year.label }}</option>
+        </select>
+      </label>
+      <NuxtLink v-if="query || selectedYear || selectedUnwatched" class="clear-filter" to="/movies"
+        >Limpar filtros</NuxtLink
       >
-        Tudo
-      </NuxtLink>
-
-      <NuxtLink
-        class="year-chip"
-        :class="{ active: selectedUnwatched }"
-        :to="query ? `/movies?q=${encodeURIComponent(query)}&unwatched=1` : '/movies?unwatched=1'"
-      >
-        <span>Não vistos</span>
-        <strong>sem sessão</strong>
-      </NuxtLink>
-
-      <NuxtLink
-        v-for="year in years"
-        :key="year.year"
-        class="year-chip"
-        :class="{ active: selectedYear === year.year }"
-        :to="query ? `/movies?q=${encodeURIComponent(query)}&year=${year.year}` : `/movies?year=${year.year}`"
-      >
-        <span>{{ year.label }}</span>
-        <strong>{{ year.watches }}</strong>
-      </NuxtLink>
     </div>
   </section>
 </template>
-
 <script setup lang="ts">
 import type { MovieLibraryYearChip } from '~/types/movies'
-
 const props = defineProps<{
   query: string
   selectedYear: number | null
   selectedUnwatched: boolean
   years: MovieLibraryYearChip[]
 }>()
-
 const localQuery = ref(props.query)
-
 watch(
   () => props.query,
   (value) => {
     localQuery.value = value
   },
 )
-
 function submitSearch() {
-  const trimmed = localQuery.value.trim()
-  const suffix = props.selectedUnwatched ? '&unwatched=1' : ''
-
-  if (!trimmed) {
-    navigateTo(props.selectedUnwatched ? '/movies?unwatched=1' : '/movies')
-    return
-  }
-
-  navigateTo(`/movies?q=${encodeURIComponent(trimmed)}${suffix}`)
+  navigateTo({
+    path: '/movies',
+    query: {
+      ...(localQuery.value.trim() ? { q: localQuery.value.trim() } : {}),
+      ...(props.selectedUnwatched ? { unwatched: '1' } : {}),
+    },
+  })
+}
+function selectYear(event: Event) {
+  const year = (event.target as HTMLSelectElement).value
+  navigateTo({ path: '/movies', query: year ? { year } : {} })
 }
 </script>
-
 <style scoped>
 .library-filters {
   display: grid;
-  gap: 18px;
-  padding: 20px;
-  border-radius: 32px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 243, 238, 0.98));
-  border: 1px solid color-mix(in srgb, var(--base-color-border) 48%, white);
+  gap: 20px;
+  padding: clamp(20px, 3vw, 28px);
+  background: white;
+  border: 1px solid var(--base-color-border);
+  border-radius: 28px;
 }
-
 .search-form {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
-
-.search-label {
-  color: var(--base-color-text-secondary);
-  font-size: 0.82rem;
-  font-weight: 700;
+.search-form > label {
+  font-weight: 600;
 }
-
 .search-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
-  align-items: center;
 }
-
-.search-input {
-  width: 100%;
-  padding: 12px 16px;
+input,
+select {
+  min-width: 0;
+  padding: 11px 15px;
   border: 1px solid var(--base-color-text-muted);
   border-radius: 16px;
-  background: #fff;
+  background: white;
   color: var(--base-color-text-primary);
+  font: inherit;
 }
-
-.search-button {
-  padding: 8px 16px;
+button {
+  padding: 10px 20px;
   border: 0;
   border-radius: 16px;
   background: var(--base-color-brand-red);
-  color: #000;
+  color: black;
   cursor: pointer;
 }
-
-.years {
+.filter-row,
+.status-filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
+  align-items: center;
 }
-
-.year-chip {
-  display: grid;
-  gap: 2px;
+.status-filters a {
   padding: 10px 14px;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--base-color-surface-warm) 82%, white);
+  background: var(--base-color-surface-warm);
+}
+.status-filters a[aria-current] {
+  background: var(--base-color-text-primary);
+  color: white;
+}
+.year-filter {
+  display: flex;
+  gap: 10px;
+  align-items: center;
   color: var(--base-color-text-secondary);
-  font-size: 0.78rem;
 }
-
-.year-chip strong {
-  color: var(--base-color-text-primary);
-  font-size: 0.72rem;
+.filter-note {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.85rem;
 }
-
-.year-chip.active {
-  background: color-mix(in srgb, var(--base-color-brand-red) 16%, white);
-  color: var(--base-color-text-primary);
+.clear-filter {
+  font-size: 0.9rem;
+  text-decoration: underline;
 }
-
-@media (max-width: 720px) {
-  .search-row {
-    grid-template-columns: 1fr;
+@media (max-width: 600px) {
+  .year-filter {
+    flex-wrap: wrap;
+  }
+  .filter-row {
+    gap: 16px;
   }
 }
 </style>
