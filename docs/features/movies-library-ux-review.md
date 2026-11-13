@@ -51,3 +51,10 @@ Escopo solicitado pelo owner: usar grade regular apenas na /movies, com área 2:
 Arquivos principais: movies/index.vue, MoviesLibraryGrid.vue, MovieLibraryCard.vue e DESIGN.md. Nenhuma migração/API/dependência. Aceite: desktop/celular e teclado, zero/um/vários recentes, grade com títulos longos e imagens de proporções diferentes, carregamento sem clique, erro/retry, troca de filtro durante requisição e fim do cursor; lint/tipos/build e navegador.
 
 Validação desta etapa: lint/formatação, tipos e build; navegador owner/visitante em 1440px/390px com grade por linhas, carregamento automático, deduplicação, erro sem loop/retry e descarte de resposta antiga após filtro, além de busca/ano/cadastro/rascunho. Prévia com leitura dos dados reais em 1440px, 768px, 390px e 320px, sem transbordamento, com destaque e demais recentes separados; listas continuam sem os novos estilos. Etapa publicada na release v1.32.0.
+
+
+## Contexto junto ao acervo
+
+Aprovado pelo owner: remover Resumo do histórico do fim da grade com carregamento contínuo. Exibir junto do título apenas o total global de filmes, o total sem sessão no filtro correspondente, ou filmes/sessões do ano selecionado. Busca não mostra totais globais nem usa tamanho da página como total. Em falha de stats, omitir números indisponíveis e apresentar retry junto dos filtros. Remover estilos e formatação de datas sem uso. Sem nova página, migração ou alteração de API; alteração em movies/index.vue e apresentação refined de MoviesLibraryGrid. Implementação publicada na release v1.32.1.
+
+Validação do contexto: lint/formatação, tipos e build passaram. Navegador em 1440px/390px, owner/visitante, conferiu ausência do resumo, total do acervo independente da página carregada, contexto anual, ausência de totais globais na busca e ocultação/recuperação dos números quando stats falha. Regressão de filtros, carregamento automático, falha/retry, resposta antiga, cadastro/rascunho e estados vazios passou.

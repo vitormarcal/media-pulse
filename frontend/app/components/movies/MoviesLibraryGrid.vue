@@ -1,6 +1,9 @@
 <template>
   <section class="library-section" :class="`library-section--${layout}`">
-    <h2 v-if="refined">{{ title }}</h2>
+    <div v-if="refined" class="library-heading">
+      <h2>{{ title }}</h2>
+      <p v-if="summary" class="library-context">{{ summary }}</p>
+    </div>
     <SectionHeading v-else :eyebrow="eyebrow" :title="title" :description="description" :summary="summary" />
 
     <p v-if="!items.length" class="empty-state">
@@ -133,5 +136,14 @@ h2 {
   .library-grid--aligned.library-grid--refined {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+.library-heading {
+  display: grid;
+  gap: 8px;
+}
+.library-context {
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.9rem;
 }
 </style>

@@ -23,6 +23,10 @@
         :selected-unwatched="selectedUnwatched"
         :years="years"
       />
+      <p v-if="statsError" class="section-note" role="alert">
+        Os totais e os anos do histórico estão indisponíveis.
+        <button type="button" @click="refreshStats()">Tentar novamente</button>
+      </p>
     </section>
     <section v-if="owner.authenticated && addOpened" v-show="adding" id="movie-add" class="browse-panel">
       <MovieManualAddCard :initial-title="queryText" />
@@ -96,7 +100,7 @@
           eyebrow=""
           :title="catalogTitle"
           description=""
-          summary=""
+          :summary="catalogContext"
           :items="catalogItems"
           :empty-message="emptyMessage"
         />
@@ -112,56 +116,6 @@
         </div>
       </template>
     </section>
-
-    <details class="browse-panel history-summary">
-      <summary>Resumo do histórico{{ selectedYear ? ` · ${selectedYear}` : '' }}</summary>
-      <template v-if="selectedYear && !queryText">
-        <dl v-if="catalog?.yearStats && !catalogError && catalogStatus !== 'pending'" class="summary-metrics">
-          <div>
-            <dt>Filmes vistos no ano</dt>
-            <dd>{{ catalog.yearStats.uniqueMoviesCount }}</dd>
-          </div>
-          <div>
-            <dt>Sessões no ano</dt>
-            <dd>{{ catalog.yearStats.watchesCount }}</dd>
-          </div>
-          <div>
-            <dt>Revisitas no ano</dt>
-            <dd>{{ catalog.yearStats.rewatchesCount }}</dd>
-          </div>
-        </dl>
-        <p v-else>O resumo anual estará disponível ao carregar os filmes do ano.</p>
-      </template>
-      <template v-else>
-        <p v-if="statsStatus === 'pending'" role="status">Carregando resumo…</p>
-        <p v-else-if="statsError" role="alert">
-          Não foi possível carregar o resumo. <button type="button" @click="refreshStats()">Tentar novamente</button>
-        </p>
-        <template v-else-if="stats">
-          <p class="section-note">Todo o acervo e histórico registrado, independentemente da busca.</p>
-          <dl class="summary-metrics">
-            <div>
-              <dt>Filmes no acervo</dt>
-              <dd>{{ stats.total.uniqueMoviesCount }}</dd>
-            </div>
-            <div>
-              <dt>Sessões registradas</dt>
-              <dd>{{ stats.total.watchesCount }}</dd>
-            </div>
-            <div>
-              <dt>Sem sessão registrada</dt>
-              <dd>{{ stats.unwatchedCount }}</dd>
-            </div>
-          </dl>
-          <p v-if="stats.firstWatchAt && stats.latestWatchAt" class="section-note">
-            De {{ formatAbsoluteDate(stats.firstWatchAt) }} a {{ formatAbsoluteDate(stats.latestWatchAt) }}.
-          </p>
-        </template>
-      </template>
-    </details>
-    <p v-if="statsError" class="section-note">
-      Os anos do histórico estão indisponíveis. <button type="button" @click="refreshStats()">Tentar novamente</button>
-    </p>
   </main>
 </template>
 <script setup lang="ts">
@@ -171,7 +125,7 @@ import MoviesLibraryGrid from '~/components/movies/MoviesLibraryGrid.vue'
 import MovieManualAddCard from '~/components/movies/MovieManualAddCard.vue'
 import { fetchMoviesBrowsePage, fetchMoviesLibraryNextPage } from '~/composables/useMoviesLibraryData'
 import { movieBrowseCards } from '~/utils/movieBrowse'
-import { formatAbsoluteDate, formatRelativeDate } from '~/utils/formatting'
+import { formatRelativeDate } from '~/utils/formatting'
 import type { MovieLibraryCardModel, MoviesStatsResponse } from '~/types/movies'
 import type { MoviesRecentResponse } from '~/types/home'
 const owner = useOwnerAuth()
@@ -200,7 +154,6 @@ async function openAdd() {
 }
 const {
   data: stats,
-  status: statsStatus,
   error: statsError,
   refresh: refreshStats,
 } = await useAsyncData('movies-browse-stats', () =>
@@ -287,6 +240,24 @@ const catalogTitle = computed(() =>
         ? 'Sem sessão registrada'
         : 'Acervo',
 )
+function countLabel(count: number, singular: string, plural: string) {
+  return `${count} ${count === 1 ? singular : plural}`
+}
+const catalogContext = computed(() => {
+  if (queryText.value) return ''
+  if (selectedYear.value) {
+    const totals = catalog.value?.yearStats
+    return totals
+      ? `${countLabel(totals.uniqueMoviesCount, 'filme', 'filmes')} · ${countLabel(totals.watchesCount, 'sessão', 'sessões')}`
+      : ''
+  }
+  if (!stats.value || statsError.value) return ''
+  return countLabel(
+    selectedUnwatched.value ? stats.value.unwatchedCount : stats.value.total.uniqueMoviesCount,
+    'filme',
+    'filmes',
+  )
+})
 const emptyMessage = computed(() =>
   queryText.value
     ? 'Nenhum filme encontrado nesta busca.'
@@ -535,27 +506,6 @@ button:disabled {
   margin: 0;
   color: var(--base-color-text-secondary);
 }
-summary {
-  cursor: pointer;
-  font-weight: 600;
-}
-.summary-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
-  margin: 24px 0;
-}
-dt {
-  color: var(--base-color-text-secondary);
-}
-dd {
-  margin: 8px 0 0;
-  font-size: 2rem;
-  font-weight: 600;
-}
-.history-summary > .section-note {
-  margin-top: 20px;
-}
 @media (max-width: 1100px) {
   .recent-layout {
     grid-template-columns: minmax(0, 1fr);
@@ -586,9 +536,6 @@ dd {
   .recent-grid {
     grid-auto-columns: clamp(140px, 42vw, 180px);
     gap: 16px;
-  }
-  .summary-metrics {
-    grid-template-columns: 1fr;
   }
   .browse-header {
     align-items: start;
