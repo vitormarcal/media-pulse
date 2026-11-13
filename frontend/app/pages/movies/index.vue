@@ -38,27 +38,46 @@
         Não foi possível carregar os filmes recentes.
         <button type="button" @click="refreshRecent()">Tentar novamente</button>
       </p>
-      <ol v-else-if="recent?.items.length" class="recent-grid" tabindex="0" aria-label="Filmes recentes">
-        <li v-for="movie in recent.items" :key="movie.movieId">
-          <component
-            :is="movie.slug ? NuxtLink : 'div'"
-            :to="movie.slug ? `/movies/${movie.slug}` : undefined"
-            class="recent-item"
-          >
-            <div class="recent-poster">
-              <MediaImage :src="resolveMediaUrl(movie.coverUrl)" :alt="movie.title" loading="lazy" />
-            </div>
-            <div>
-              <h3>{{ movie.title }}</h3>
-              <p v-if="movie.watchedAt">{{ formatRelativeDate(movie.watchedAt) }}</p>
-            </div>
-          </component>
-        </li>
-      </ol>
+      <div v-else-if="latestMovie" class="recent-layout" :class="{ 'recent-layout--single': !otherRecent.length }">
+        <component
+          :is="latestMovie.slug ? NuxtLink : 'article'"
+          :to="latestMovie.slug ? `/movies/${latestMovie.slug}` : undefined"
+          class="latest-movie"
+        >
+          <div class="latest-copy">
+            <p class="latest-label">Último filme visto</p>
+            <h3>{{ latestMovie.title }}</h3>
+            <p v-if="latestMovie.year" class="latest-year">{{ latestMovie.year }}</p>
+            <p v-if="latestMovie.watchedAt" class="latest-date">
+              Última sessão {{ formatRelativeDate(latestMovie.watchedAt) }}
+            </p>
+          </div>
+          <div class="latest-poster">
+            <MediaImage :src="resolveMediaUrl(latestMovie.coverUrl)" :alt="latestMovie.title" />
+          </div>
+        </component>
+        <ol v-if="otherRecent.length" class="recent-grid" tabindex="0" aria-label="Outros filmes recentes">
+          <li v-for="movie in otherRecent" :key="movie.movieId">
+            <component
+              :is="movie.slug ? NuxtLink : 'div'"
+              :to="movie.slug ? `/movies/${movie.slug}` : undefined"
+              class="recent-item"
+            >
+              <div class="recent-poster">
+                <MediaImage :src="resolveMediaUrl(movie.coverUrl)" :alt="movie.title" loading="lazy" />
+              </div>
+              <div>
+                <h3>{{ movie.title }}</h3>
+                <p v-if="movie.watchedAt">{{ formatRelativeDate(movie.watchedAt) }}</p>
+              </div>
+            </component>
+          </li>
+        </ol>
+      </div>
       <p v-else>Nenhuma sessão registrada.</p>
     </section>
 
-    <section class="browse-catalog" aria-live="polite" :aria-busy="catalogStatus === 'pending'">
+    <section class="browse-catalog" :aria-busy="catalogStatus === 'pending' || loadingMore">
       <p v-if="catalogStatus === 'pending'" role="status">Carregando filmes…</p>
       <p v-else-if="catalogError" class="browse-panel" role="alert">
         Não foi possível carregar o acervo. <button type="button" @click="refreshCatalog()">Tentar novamente</button>
@@ -73,6 +92,7 @@
         </p>
         <MoviesLibraryGrid
           refined
+          layout="aligned"
           eyebrow=""
           :title="catalogTitle"
           description=""
@@ -83,13 +103,12 @@
         <p v-if="owner.authenticated && queryText" class="add-hint">
           Não encontrou o filme? <button type="button" @click="openAdd">Adicionar ao acervo</button>
         </p>
-        <div v-if="nextCursor" class="load-more-row">
-          <p v-if="moreError" role="alert">
-            Não foi possível carregar mais filmes. Os itens anteriores foram preservados.
-          </p>
-          <button type="button" :disabled="loadingMore" @click="loadMore">
-            {{ loadingMore ? 'Carregando…' : moreError ? 'Tentar carregar mais' : 'Carregar mais filmes' }}
-          </button>
+        <div v-if="nextCursor" ref="pageSentinel" class="load-more-row">
+          <p v-if="loadingMore" role="status">Carregando mais filmes…</p>
+          <template v-else-if="moreError">
+            <p role="alert">Não foi possível carregar mais filmes. Os itens anteriores foram preservados.</p>
+            <button type="button" @click="loadMore">Tentar novamente</button>
+          </template>
         </div>
       </template>
     </section>
@@ -211,6 +230,10 @@ const {
 } = await useAsyncData('movies-browse-recent', () =>
   $fetch<MoviesRecentResponse>('/api/movies/recent', { baseURL: config.public.apiBase, query: { limit: 6 } }),
 )
+const latestMovie = computed(() => recent.value?.items[0] ?? null)
+const otherRecent = computed(() => recent.value?.items.slice(1) ?? [])
+const pageSentinel = ref<HTMLElement | null>(null)
+let pageObserver: IntersectionObserver | null = null
 const extraItems = ref<MovieLibraryCardModel[]>([])
 const nextCursor = ref<string | null>(null)
 const loadingMore = ref(false)
@@ -238,6 +261,22 @@ watch(
   },
   { immediate: true },
 )
+watch(
+  [pageSentinel, nextCursor, loadingMore, moreError, catalogStatus],
+  ([element, cursor, busy, failed, status]) => {
+    pageObserver?.disconnect()
+    if (!element || !cursor || busy || failed || status !== 'success') return
+    pageObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting) && !moreError.value) void loadMore()
+      },
+      { rootMargin: '0px 0px 600px 0px' },
+    )
+    pageObserver.observe(element)
+  },
+  { flush: 'post' },
+)
+onBeforeUnmount(() => pageObserver?.disconnect())
 const catalogItems = computed(() => [...(catalog.value?.items ?? []), ...extraItems.value])
 const catalogTitle = computed(() =>
   queryText.value
@@ -258,16 +297,17 @@ const emptyMessage = computed(() =>
         : 'Ainda não há filmes no acervo.',
 )
 async function loadMore() {
-  if (!nextCursor.value || loadingMore.value) return
+  if (!nextCursor.value || loadingMore.value || catalogStatus.value !== 'success' || catalogError.value) return
   const currentGeneration = generation
+  const requestedCursor = nextCursor.value
   loadingMore.value = true
   moreError.value = false
   try {
-    const page = await fetchMoviesLibraryNextPage(nextCursor.value, selectedUnwatched.value)
+    const page = await fetchMoviesLibraryNextPage(requestedCursor, selectedUnwatched.value)
     if (generation !== currentGeneration) return
     const existing = new Set(catalogItems.value.map((item) => item.movieId))
     extraItems.value.push(...movieBrowseCards(page.items).filter((item) => !existing.has(item.movieId)))
-    nextCursor.value = page.nextCursor
+    nextCursor.value = page.nextCursor === requestedCursor ? null : page.nextCursor
   } catch {
     if (generation === currentGeneration) moreError.value = true
   } finally {
@@ -350,6 +390,67 @@ button:disabled {
   color: var(--base-color-text-secondary);
   line-height: 1.5;
 }
+.recent-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.9fr);
+  gap: 24px;
+  align-items: start;
+}
+.latest-movie {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 160px);
+  gap: 20px;
+  padding: 24px;
+  background: white;
+  border: 1px solid var(--base-color-border);
+  border-radius: 28px;
+  align-items: center;
+}
+.latest-copy {
+  min-width: 0;
+}
+.latest-copy p {
+  margin: 0;
+}
+.latest-label {
+  color: var(--base-color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.latest-copy h3 {
+  margin: 12px 0;
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+}
+.latest-year,
+.latest-date {
+  color: var(--base-color-text-secondary);
+}
+.latest-copy .latest-date {
+  margin-top: 12px;
+  font-size: 0.85rem;
+}
+.latest-poster {
+  display: grid;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--base-color-surface-soft);
+}
+.latest-poster :deep(img) {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.latest-poster :deep(.media-image-fallback) {
+  display: grid;
+  place-items: center;
+}
+.recent-layout--single {
+  grid-template-columns: minmax(0, 600px);
+}
 .recent-heading {
   display: flex;
   flex-wrap: wrap;
@@ -362,7 +463,7 @@ button:disabled {
 }
 .recent-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 20px;
   list-style: none;
   padding: 4px 4px 12px;
@@ -426,6 +527,8 @@ button:disabled {
 .load-more-row {
   display: grid;
   justify-items: center;
+  align-content: center;
+  min-height: 48px;
   gap: 12px;
 }
 .load-more-row p {
@@ -454,6 +557,9 @@ dd {
   margin-top: 20px;
 }
 @media (max-width: 1100px) {
+  .recent-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .recent-grid {
     grid-template-columns: none;
     grid-auto-flow: column;
@@ -471,6 +577,11 @@ dd {
   .movies-page {
     width: calc(100% - 24px);
     padding-top: 20px;
+  }
+  .latest-movie {
+    grid-template-columns: minmax(0, 1fr) 120px;
+    padding: 20px;
+    gap: 16px;
   }
   .recent-grid {
     grid-auto-columns: clamp(140px, 42vw, 180px);

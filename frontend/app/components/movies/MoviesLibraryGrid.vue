@@ -7,7 +7,7 @@
       {{ emptyMessage || 'Nada para mostrar aqui ainda.' }}
     </p>
 
-    <div v-else class="library-grid" :class="`library-grid--${layout}`">
+    <div v-else class="library-grid" :class="[`library-grid--${layout}`, { 'library-grid--refined': refined }]">
       <MovieLibraryCard v-for="item in items" :key="item.id" :item="item" :refined="refined" />
     </div>
   </section>
@@ -101,5 +101,37 @@ h2 {
   margin: 0;
   font-size: 1.75rem;
   letter-spacing: -0.04em;
+}
+.library-grid--aligned.library-grid--refined :deep(.library-card) {
+  align-content: start;
+  grid-template-rows: auto auto;
+}
+.library-grid--aligned.library-grid--refined :deep(.poster) {
+  aspect-ratio: 2 / 3;
+  display: grid;
+  place-items: center;
+}
+.library-grid--aligned.library-grid--refined :deep(.poster img) {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.library-grid--aligned.library-grid--refined :deep(.poster .media-image-fallback) {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+}
+@media (max-width: 520px) {
+  .library-grid--aligned.library-grid--refined {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 16px;
+  }
+}
+@media (max-width: 340px) {
+  .library-grid--aligned.library-grid--refined {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

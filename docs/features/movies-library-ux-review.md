@@ -42,3 +42,12 @@ Aprovado pelo owner: a simplificação melhorou a navegação, mas perdeu presen
 
 
 Validação do refinamento: lint/formatação, tipos e build; regressão em 1440px/390px, owner/visitante, incluindo filtros, paginação com falha e resposta antiga, cadastro/rascunho e estados vazios. Prévia local com dados reais somente por leitura: seis pôsteres lado a lado no desktop, faixa horizontal sem overflow da página no celular e rolagem por teclado. Busca próxima de 192px/221px do topo nas capturas desktop/celular. Revisão visual das duas larguras concluída; foco da faixa usa o token existente.
+
+
+## Grade regular, carregamento automático e último filme visto
+
+Escopo solicitado pelo owner: usar grade regular apenas na /movies, com área 2:3 e pôster integral; destacar o primeiro item de recent como Último filme visto, sem repeti-lo na faixa dos demais recentes; substituir o botão de próxima página por carregamento ao aproximar o fim dos itens. Manter cursor, ordem, deduplicação, descarte de respostas antigas, filtros e erros independentes. Interromper tentativas automáticas em falha e oferecer retry explícito, sem loop; desconectar o observador ao sair. Não inferir sinopse, nota ou dados ausentes no endpoint recente.
+
+Arquivos principais: movies/index.vue, MoviesLibraryGrid.vue, MovieLibraryCard.vue e DESIGN.md. Nenhuma migração/API/dependência. Aceite: desktop/celular e teclado, zero/um/vários recentes, grade com títulos longos e imagens de proporções diferentes, carregamento sem clique, erro/retry, troca de filtro durante requisição e fim do cursor; lint/tipos/build e navegador.
+
+Validação desta etapa: lint/formatação, tipos e build; navegador owner/visitante em 1440px/390px com grade por linhas, carregamento automático, deduplicação, erro sem loop/retry e descarte de resposta antiga após filtro, além de busca/ano/cadastro/rascunho. Prévia com leitura dos dados reais em 1440px, 768px, 390px e 320px, sem transbordamento, com destaque e demais recentes separados; listas continuam sem os novos estilos. Etapa publicada na release v1.32.0.
