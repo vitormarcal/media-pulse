@@ -58,6 +58,8 @@ Movie library import runs in the existing startup pipeline (`ApplicationReadyEve
 - It persists canonical movies, localized titles, and TMDB/IMDB external ids.
 - It does not create rows in `movie_watches` (watch history comes only from scrobble events).
 
+Operational logs report section discovery, page fetch/load and progress every 10 movies and at the end of each page, including elapsed milliseconds. Processing is sequential and includes image download/storage before counting each completed movie. Hardcover polling can run concurrently, so `Hardcover poll done` does not mean the Plex import has finished. Use the Plex import start/progress/finish messages to follow that work; a single slow movie or request can still leave a gap between progress messages.
+
 ## Automatic enrichment
 
 Movies imported from the Plex library or received through scrobble webhooks are enriched asynchronously from TMDb.

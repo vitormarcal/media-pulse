@@ -36,6 +36,7 @@ class PlexMovieImportService(
         pageSize: Int = 200,
     ): ImportStats {
         val stats = ImportStats()
+        val startedAt = System.nanoTime()
 
         logger.info(
             "Starting Plex movie library import. sectionKey={}, pageSize={}",
@@ -50,15 +51,25 @@ class PlexMovieImportService(
                 plexApiClient.listMovieSections()
             }
 
+        logger.info("Plex movie sections loaded | sections={}", sections.size)
+
         for (section in sections) {
             var start = 0
             var total = Int.MAX_VALUE
             while (start < total) {
+                logger.info("Plex movie page fetching | sectionKey={} start={} pageSize={}", section.key, start, pageSize)
                 val (movies, tot) = plexApiClient.listMoviesPaged(section.key, start, pageSize)
                 total = tot
+                logger.info(
+                    "Plex movie page loaded | sectionKey={} start={} movies={} total={}",
+                    section.key,
+                    start,
+                    movies.size,
+                    total,
+                )
                 if (movies.isEmpty()) break
 
-                for (m in movies) {
+                for ((index, m) in movies.withIndex()) {
                     stats.moviesSeen++
                     val movie =
                         upsertMovie(
@@ -81,6 +92,16 @@ class PlexMovieImportService(
                         fallbackThumbPath = m.thumb,
                     )
                     stats.moviesUpserted++
+                    if (stats.moviesUpserted % 10 == 0 || index == movies.lastIndex) {
+                        logger.info(
+                            "Plex movie import progress | sectionKey={} sectionProcessed={} sectionTotal={} moviesUpserted={} elapsedMs={}",
+                            section.key,
+                            start + index + 1,
+                            total,
+                            stats.moviesUpserted,
+                            (System.nanoTime() - startedAt) / 1_000_000,
+                        )
+                    }
                 }
 
                 start += movies.size
