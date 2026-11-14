@@ -1,13 +1,17 @@
 <template>
-  <section class="library-section">
-    <SectionHeading :eyebrow="eyebrow" :title="title" :description="description" :summary="summary" />
+  <section class="library-section" :class="{ refined }">
+    <header v-if="refined">
+      <h2>{{ title }}</h2>
+      <p v-if="summary">{{ summary }}</p>
+    </header>
+    <SectionHeading v-else :eyebrow="eyebrow" :title="title" :description="description" :summary="summary" />
 
     <p v-if="!items.length" class="empty-state">
       {{ emptyMessage || 'Nada para mostrar aqui ainda.' }}
     </p>
 
     <div v-else class="masonry-grid">
-      <ShowLibraryCard v-for="item in items" :key="item.id" :item="item" />
+      <ShowLibraryCard v-for="item in items" :key="item.id" :item="item" :refined="refined" />
     </div>
   </section>
 </template>
@@ -24,6 +28,7 @@ defineProps<{
   summary: string
   items: ShowLibraryCardModel[]
   emptyMessage?: string
+  refined?: boolean
 }>()
 </script>
 
@@ -58,6 +63,37 @@ defineProps<{
 @media (max-width: 520px) {
   .masonry-grid {
     column-count: 1;
+  }
+}
+
+.refined header h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: -0.04em;
+}
+.refined header p {
+  margin: 8px 0 0;
+  color: var(--base-color-text-secondary);
+  font-size: 0.9rem;
+}
+.refined .masonry-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px 20px;
+}
+@media (max-width: 1280px) {
+  .refined .masonry-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .refined .masonry-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 340px) {
+  .refined .masonry-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

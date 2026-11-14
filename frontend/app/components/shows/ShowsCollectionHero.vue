@@ -3,9 +3,11 @@
     <div class="top-actions">
       <NuxtLink class="back-link" :to="backLink"> {{ backLabel }} </NuxtLink>
 
-      <NuxtLink v-if="!accentOwnerOnly || owner.authenticated" class="library-link" :to="accentLink">
-        {{ accentLabel }}
-      </NuxtLink>
+      <slot name="actions">
+        <NuxtLink v-if="!accentOwnerOnly || owner.authenticated" class="library-link" :to="accentLink">
+          {{ accentLabel }}
+        </NuxtLink>
+      </slot>
     </div>
 
     <div class="hero-grid">
@@ -18,61 +20,57 @@
       <component :is="leadWrapper" :to="lead?.href || undefined" class="lead-link">
         <article class="lead-card">
           <div class="lead-poster">
-            <img v-if="leadImageUrl" :src="leadImageUrl" :alt="lead?.title || title" />
-            <div v-else class="lead-fallback">{{ (lead?.title || 'S').slice(0, 1) }}</div>
+            <MediaImage
+              :src="leadImageUrl"
+              :alt="lead?.title || title"
+              fallback-class="lead-fallback"
+              :fallback="(lead?.title || 'S').slice(0, 1)"
+            />
           </div>
 
           <div class="lead-body">
             <p class="lead-kicker">{{ lead?.eyebrow || 'Série' }}</p>
-            <h2>{{ lead?.title || 'Sem série em destaque agora' }}</h2>
-            <p v-if="lead" class="lead-subtitle">{{ lead.subtitle }}</p>
+            <h2>{{ lead?.title || leadPlaceholder || 'Sem série em destaque agora' }}</h2>
+            <p v-if="lead?.subtitle" class="lead-subtitle">{{ lead.subtitle }}</p>
             <p v-if="lead" class="lead-meta">{{ lead.meta }}</p>
           </div>
         </article>
       </component>
     </div>
 
-    <div v-if="supporting.length" class="supporting-list">
-      <template v-for="item in supporting" :key="item.id">
-        <NuxtLink v-if="item.href" :to="item.href" class="supporting-link">
-          <article class="supporting-card">
-            <div class="supporting-thumb">
-              <img
-                v-if="resolveMediaUrl(item.imageUrl)"
-                :src="resolveMediaUrl(item.imageUrl) ?? undefined"
-                :alt="item.title"
-              />
-              <div v-else class="supporting-fallback">{{ item.title.slice(0, 1) }}</div>
-            </div>
-
-            <div class="supporting-body">
-              <p class="supporting-kicker">{{ item.eyebrow }}</p>
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.meta }}</p>
-            </div>
-          </article>
-        </NuxtLink>
-
-        <div v-else class="supporting-link">
-          <article class="supporting-card">
-            <div class="supporting-thumb">
-              <img
-                v-if="resolveMediaUrl(item.imageUrl)"
-                :src="resolveMediaUrl(item.imageUrl) ?? undefined"
-                :alt="item.title"
-              />
-              <div v-else class="supporting-fallback">{{ item.title.slice(0, 1) }}</div>
-            </div>
-
-            <div class="supporting-body">
-              <p class="supporting-kicker">{{ item.eyebrow }}</p>
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.meta }}</p>
-            </div>
-          </article>
-        </div>
-      </template>
+    <div
+      v-if="supporting.length"
+      class="supporting-list"
+      :class="{ 'browse-rail': browse }"
+      :tabindex="browse ? 0 : undefined"
+      aria-label="Outras séries recentes"
+    >
+      <component
+        :is="item.href ? NuxtLink : 'div'"
+        v-for="item in supporting"
+        :key="item.id"
+        :to="item.href || undefined"
+        class="supporting-link"
+      >
+        <article class="supporting-card">
+          <div class="supporting-thumb">
+            <MediaImage
+              :src="resolveMediaUrl(item.imageUrl)"
+              :alt="item.title"
+              loading="lazy"
+              fallback-class="supporting-fallback"
+              :fallback="item.title.slice(0, 1)"
+            />
+          </div>
+          <div class="supporting-body">
+            <p class="supporting-kicker">{{ item.eyebrow }}</p>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.meta }}</p>
+          </div>
+        </article>
+      </component>
     </div>
+    <div v-if="$slots.search" class="hero-search"><slot name="search" /></div>
   </section>
 </template>
 
@@ -93,8 +91,11 @@ const props = withDefaults(
     accentLink?: string
     accentLabel?: string
     accentOwnerOnly?: boolean
+    leadPlaceholder?: string
+    browse?: boolean
   }>(),
   {
+    leadPlaceholder: '',
     backLink: '/',
     backLabel: 'Voltar para a capa',
     accentLink: '/shows?add=1',
@@ -215,9 +216,9 @@ h1 {
   background: var(--base-color-surface-soft);
 }
 
-.lead-poster img,
+.lead-poster :deep(img),
 .lead-fallback,
-.supporting-thumb img,
+.supporting-thumb :deep(img),
 .supporting-fallback {
   width: 100%;
   height: 100%;
@@ -306,7 +307,45 @@ h3 {
 
 @media (max-width: 720px) {
   h1 {
-    font-size: clamp(2.8rem, 17vw, 4.2rem);
+    font-size: clamp(2.4rem, 14vw, 4.2rem);
+  }
+}
+.hero-search {
+  display: grid;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--base-color-border);
+}
+.lead-poster :deep(.lead-fallback),
+.supporting-thumb :deep(.supporting-fallback) {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--base-color-text-secondary);
+  font-weight: 700;
+}
+.supporting-list:focus-visible {
+  outline: 2px solid var(--base-color-focus);
+  outline-offset: 4px;
+}
+.supporting-body,
+.lead-body,
+.copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 980px) {
+  .supporting-list.browse-rail {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(170px, 42vw, 250px);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+  }
+  .browse-rail .supporting-link {
+    scroll-snap-align: start;
   }
 }
 </style>

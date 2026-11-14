@@ -1,8 +1,9 @@
 <template>
   <component :is="wrapperTag" :to="item.href || undefined" class="library-link">
-    <article class="library-card" :class="{ dormant: item.isDormant }">
+    <article class="library-card" :class="{ dormant: item.isDormant, refined }">
       <div class="poster">
-        <img v-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy" />
+        <MediaImage v-if="refined" :src="resolvedImageUrl" :alt="item.title" loading="lazy" />
+        <img v-else-if="resolvedImageUrl" :src="resolvedImageUrl" :alt="item.title" loading="lazy" />
         <div v-else class="poster-fallback">{{ item.title.slice(0, 1) }}</div>
       </div>
 
@@ -10,14 +11,14 @@
         <div class="title-row">
           <div>
             <h3>{{ item.title }}</h3>
-            <p class="subtitle">{{ item.subtitle }}</p>
+            <p v-if="item.subtitle" class="subtitle">{{ item.subtitle }}</p>
           </div>
-          <span class="aside">{{ item.aside }}</span>
+          <span v-if="item.aside" class="aside">{{ item.aside }}</span>
         </div>
 
         <div class="meta-row">
-          <p class="progress-label">{{ item.progressLabel }}</p>
-          <p class="activity">{{ item.activityLabel }}</p>
+          <p v-if="item.progressLabel" class="progress-label">{{ item.progressLabel }}</p>
+          <p v-if="item.activityLabel" class="activity">{{ item.activityLabel }}</p>
         </div>
       </div>
     </article>
@@ -30,6 +31,7 @@ import type { ShowLibraryCardModel } from '~/types/shows'
 
 const props = defineProps<{
   item: ShowLibraryCardModel
+  refined?: boolean
 }>()
 
 const { resolveMediaUrl } = useMediaUrl()
@@ -136,5 +138,38 @@ h3 {
 
 .library-card.dormant .aside {
   background: color-mix(in srgb, var(--base-color-surface-warm) 88%, white);
+}
+
+.refined {
+  margin-bottom: 0;
+}
+.refined .poster {
+  aspect-ratio: 2/3;
+  border: 0;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+}
+.refined .poster :deep(img) {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.refined .poster :deep(.media-image-fallback) {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  font-size: 0.85rem;
+}
+.refined h3 {
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+.refined .title-row > div {
+  min-width: 0;
 }
 </style>

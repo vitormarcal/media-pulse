@@ -1,3 +1,4 @@
+import { showBrowseCards, showBrowseSearchCards, showBrowseYearCards } from '~/utils/showBrowse'
 import type {
   ShowsByYearResponse,
   ShowsLibraryResponse,
@@ -57,4 +58,36 @@ export async function fetchShowsLibraryNextPage(cursor: string, unwatched = fals
 export function useShowsLibraryData(query: ShowsLibraryQuery = {}) {
   const key = `shows-library-${query.q ?? ''}-${query.year ?? 'all'}-${query.unwatched ? 'unwatched' : 'all-status'}`
   return useAsyncData(key, () => fetchShowsLibraryPageData(query))
+}
+
+// This view requests only the catalog branch being displayed; optional history loads independently.
+export async function fetchShowsBrowsePage(query: ShowsLibraryQuery = {}) {
+  const baseURL = useRuntimeConfig().public.apiBase
+  const q = query.q?.trim() || ''
+  if (q) {
+    const response = await $fetch<ShowsSearchResponse>('/api/shows/search', { baseURL, query: { q, limit: 40 } })
+    return {
+      items: showBrowseSearchCards(response.shows.filter((show) => !query.unwatched || !show.watchedAt)),
+      nextCursor: null,
+      truncated: response.shows.length >= 40,
+      yearStats: null,
+    }
+  }
+  if (query.year) {
+    const response = await $fetch<ShowsByYearResponse>(`/api/shows/year/${query.year}`, {
+      baseURL,
+      query: { limitWatched: 1000, limitUnwatched: 1 },
+    })
+    return {
+      items: showBrowseYearCards(response.watched),
+      nextCursor: null,
+      truncated: response.watched.length < response.stats.uniqueShowsCount,
+      yearStats: response.stats,
+    }
+  }
+  const response = await $fetch<ShowsLibraryResponse>('/api/shows/library', {
+    baseURL,
+    query: { limit: 24, unwatched: query.unwatched ?? false },
+  })
+  return { items: showBrowseCards(response.items), nextCursor: response.nextCursor, truncated: false, yearStats: null }
 }

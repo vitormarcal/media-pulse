@@ -299,3 +299,14 @@ A consulta de candidatos exige sessão do owner. Os POSTs exigem sessão e CSRF.
 - `DELETE /api/shows/{showId}/images` remove o vínculo. Ao remover a capa ou principal, usa a próxima imagem da galeria, ou deixa a série sem capa quando a galeria fica vazia. O arquivo ou asset permanece no armazenamento.
 
 As operações recebem `{url}`, retornam `{coverUrl}` e exigem owner e CSRF. Capas legadas sem uma linha na galeria também são válidas. A atualização da capa e da imagem principal ocorre na mesma transação.
+
+
+## Consumo na página principal `/shows`
+
+A revisão da biblioteca mantém os contratos existentes e separa as falhas de andamento, recentes, estatísticas e catálogo. O destaque combina `currently-watching` (`limit=12`, `activeWithinDays=120`) e `recent` (`limit=18`), deduplicando por `showId` e priorizando progresso disponível. Recentes são séries agregadas pela última atividade, não episódios individuais. Sem progresso parcial no recorte, a abertura usa Séries recentes.
+
+O catálogo solicita somente o ramo exibido: `library` com 24 itens e cursor, `search` com até 40 correspondências ou `year/{year}` com até 1.000 séries vistas. A busca pode filtrar ausência de registro por `watchedAt` e informa o limite antes desse filtro; não há busca individual de detalhes. A seleção anual não exibe `unwatched`, pois esse grupo é global. As URLs preservam busca, ausência de registros e ano, com busca saindo explicitamente do ano selecionado.
+
+`stats.total.uniqueShowsCount` conta séries com algum registro; o total do acervo é sua soma com `unwatchedCount`. No ano, `watchesCount` conta registros de visualização, incluindo repetições de episódios. `rewatchesCount` é registros menos séries distintas e não mede episódios reassistidos: a página não o apresenta como Revisitas. `watchedEpisodesCount` no catálogo e no andamento conta episódios distintos, permitindo informar progresso sobre os episódios cadastrados, sem inferir término da produção. Busca e ano não fornecem esse progresso global.
+
+A paginação automática mantém itens/cursor em erro, pausa até retry explícito, deduplica IDs e descarta respostas anteriores à troca de filtro. Não há botão normal de próxima página. Ver [escopo e validação da revisão](features/shows-library-ux-review.md).
