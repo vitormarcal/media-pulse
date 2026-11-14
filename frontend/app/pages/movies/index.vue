@@ -1,12 +1,13 @@
 <template>
   <main class="movies-page movies-browse">
-    <header class="browse-header">
-      <h1 v-if="!showRecent">Filmes</h1>
+    <header v-if="!showRecent" class="browse-header">
+      <h1>Filmes</h1>
       <nav aria-label="Acervo de filmes">
         <NuxtLink to="/movies/lists">Listas</NuxtLink>
         <NuxtLink to="/movies/collections">Coleções</NuxtLink>
         <button
           v-if="owner.authenticated"
+          id="movies-add-toggle"
           type="button"
           :aria-expanded="adding"
           aria-controls="movie-add"
@@ -29,6 +30,21 @@
         aria-hidden="true"
         @error="latestImageFailed"
       />
+      <nav class="editorial-actions" aria-label="Acervo de filmes">
+        <NuxtLink class="back-link" to="/">Voltar para a capa</NuxtLink>
+        <NuxtLink to="/movies/lists">Listas</NuxtLink>
+        <NuxtLink to="/movies/collections">Coleções</NuxtLink>
+        <button
+          v-if="owner.authenticated"
+          id="movies-add-toggle"
+          type="button"
+          :aria-expanded="adding"
+          aria-controls="movie-add"
+          @click="toggleAdd"
+        >
+          Adicionar filme
+        </button>
+      </nav>
       <div class="editorial-layout">
         <div class="editorial-intro">
           <p>Filmes</p>
@@ -173,8 +189,10 @@ const addOpened = ref(adding.value)
 watch(adding, (value) => {
   if (value) addOpened.value = true
 })
-function toggleAdd() {
-  navigateTo({ path: '/movies', query: { ...route.query, add: adding.value ? undefined : '1' } })
+async function toggleAdd() {
+  await navigateTo({ path: '/movies', query: { ...route.query, add: adding.value ? undefined : '1' } })
+  await nextTick()
+  document.getElementById('movies-add-toggle')?.focus({ preventScroll: true })
 }
 async function openAdd() {
   await navigateTo({ path: '/movies', query: { ...route.query, add: '1' } })
@@ -379,7 +397,7 @@ button {
   cursor: pointer;
   font: inherit;
 }
-.browse-header button {
+nav button {
   background: var(--base-color-brand-red);
   color: black;
 }
@@ -414,6 +432,17 @@ button:disabled {
 .editorial-panel > :not(.editorial-backdrop) {
   position: relative;
   z-index: 1;
+}
+.editorial-actions {
+  margin-left: 0;
+  gap: 10px;
+}
+.editorial-actions a,
+.editorial-actions button {
+  padding: 8px 14px;
+}
+.editorial-actions .back-link {
+  font-size: 0.8rem;
 }
 .editorial-layout {
   display: grid;
