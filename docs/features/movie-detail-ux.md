@@ -5,7 +5,7 @@ Escopo aprovado: reorganizar o detalhe com a simplicidade editorial de livros, p
 ## Experiência final
 
 - Abertura editorial seguindo séries e filmes: navegação dentro do bloco, título e sinopse alinhados ao topo à esquerda, capa integral à direita limitada a 560px e fundo difuso da própria capa (6%), com camada clara atrás do texto. Títulos longos recebem escala menor.
-- Até quatro imagens adicionais da própria obra abaixo, sem repetir a capa; altura comum de 180px no desktop e 140px em telas menores, com larguras proporcionais e rolagem horizontal quando necessário. Preservar imagens inteiras, inclusive horizontais. Com duas imagens, a complementar já fica visível.
+- Todas as imagens adicionais disponíveis da própria obra abaixo, sem repetir a capa ou limitar a quatro prévias; altura comum de 180px no desktop (220px com até três complementares) e 140px em telas menores, com larguras proporcionais e rolagem horizontal quando necessário. Preservar imagens inteiras, inclusive horizontais. Com duas imagens, a complementar já fica visível.
 - Sem capa ou em falha, remover coluna e fundo derivado. Ausência de imagens não bloqueia leitura ou seleção de imagens pelo owner.
 - No celular: identificação, capa, sinopse, faixa horizontal de complementares e memória pessoal. Capa limitada a 440px no tablet e 380px no celular.
 - Nota, marcações e comentários na base do bloco, separados por linha discreta. Comentários longos não alteram a altura da abertura.

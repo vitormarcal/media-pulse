@@ -40,7 +40,13 @@
       </div>
     </div>
 
-    <ul v-if="supportingImages.length" class="supporting-images" aria-label="Outras imagens do filme" tabindex="0">
+    <ul
+      v-if="supportingImages.length"
+      class="supporting-images"
+      :class="{ 'few-images': supportingImages.length <= 3 }"
+      aria-label="Outras imagens do filme"
+      tabindex="0"
+    >
       <li v-for="(image, index) in supportingImages" :key="`${image}-${index}`">
         <button
           type="button"
@@ -84,7 +90,7 @@ const { resolveMediaUrl } = useMediaUrl()
 const descriptionExpanded = ref(false)
 const leadFailed = ref(false)
 const leadImage = computed(() => props.gallery[0])
-const supportingImages = computed(() => props.gallery.slice(1, 5))
+const supportingImages = computed(() => props.gallery.slice(1))
 watch(leadImage, () => {
   leadFailed.value = false
 })
@@ -243,6 +249,7 @@ h1.long-title {
   border-radius: 28px;
 }
 .supporting-images {
+  --supporting-height: 180px;
   display: flex;
   align-items: start;
   overflow-x: auto;
@@ -251,6 +258,9 @@ h1.long-title {
   margin: 0;
   padding: 4px 4px 12px;
   scroll-snap-type: x proximity;
+}
+.supporting-images.few-images {
+  --supporting-height: 220px;
 }
 .supporting-images li {
   flex: 0 0 auto;
@@ -263,12 +273,12 @@ h1.long-title {
 .supporting-image :deep(img) {
   display: block;
   width: auto;
-  height: 180px;
+  height: var(--supporting-height);
   border-radius: 20px;
 }
 .supporting-image :deep(.media-image-fallback) {
   width: 120px;
-  height: 180px;
+  height: var(--supporting-height);
 }
 .personal-slot {
   min-width: 0;
@@ -304,6 +314,10 @@ a:focus-visible,
     max-width: 100%;
     max-height: 440px;
   }
+  .supporting-images,
+  .supporting-images.few-images {
+    --supporting-height: 140px;
+  }
   .supporting-images {
     display: flex;
     overflow-x: auto;
@@ -311,11 +325,11 @@ a:focus-visible,
     scroll-snap-type: x proximity;
   }
   .supporting-image :deep(img) {
-    height: 140px;
+    height: var(--supporting-height);
   }
   .supporting-image :deep(.media-image-fallback) {
     width: 94px;
-    height: 140px;
+    height: var(--supporting-height);
   }
 }
 @media (max-width: 576px) {
