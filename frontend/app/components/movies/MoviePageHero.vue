@@ -14,20 +14,8 @@
 
     <div class="hero-grid" :class="{ 'without-images': !leadImage || leadFailed }">
       <div class="copy">
-        <h1 ref="heading" tabindex="-1">{{ title }}</h1>
+        <h1 ref="heading" :class="{ 'long-title': title.length > 35 }" tabindex="-1">{{ title }}</h1>
         <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
-        <div v-if="description" class="synopsis">
-          <p class="description">{{ descriptionExpanded ? description : descriptionPreview }}</p>
-          <button
-            v-if="description.length > 320"
-            type="button"
-            class="synopsis-toggle"
-            :aria-expanded="descriptionExpanded"
-            @click="descriptionExpanded = !descriptionExpanded"
-          >
-            {{ descriptionExpanded ? 'Ler menos' : 'Ler mais' }}
-          </button>
-        </div>
       </div>
       <button
         v-if="leadImage && !leadFailed"
@@ -38,6 +26,18 @@
       >
         <img :src="resolveMediaUrl(leadImage) || undefined" :alt="`Capa de ${title}`" @error="leadFailed = true" />
       </button>
+      <div v-if="description" class="synopsis">
+        <p class="description">{{ descriptionExpanded ? description : descriptionPreview }}</p>
+        <button
+          v-if="description.length > 320"
+          type="button"
+          class="synopsis-toggle"
+          :aria-expanded="descriptionExpanded"
+          @click="descriptionExpanded = !descriptionExpanded"
+        >
+          {{ descriptionExpanded ? 'Ler menos' : 'Ler mais' }}
+        </button>
+      </div>
     </div>
 
     <ul v-if="supportingImages.length" class="supporting-images" aria-label="Outras imagens do filme" tabindex="0">
@@ -117,7 +117,16 @@ const descriptionPreview = computed(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.08;
+  opacity: 0.06;
+  filter: blur(18px);
+  transform: scale(1.06);
+  pointer-events: none;
+}
+.movie-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(250, 249, 246, 0.72), rgba(250, 249, 246, 0.12));
   pointer-events: none;
 }
 .movie-hero > :not(.hero-backdrop) {
@@ -154,13 +163,17 @@ const descriptionPreview = computed(() => {
 .hero-grid {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  align-items: center;
-  gap: 32px;
+  grid-template-areas: 'copy lead' 'synopsis lead';
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  gap: 20px 32px;
 }
 .hero-grid.without-images {
   grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'copy' 'synopsis';
 }
 .copy {
+  grid-area: copy;
   min-width: 0;
   display: grid;
   gap: 16px;
@@ -172,12 +185,19 @@ h1 {
   line-height: 0.98;
   letter-spacing: -0.06em;
 }
+h1.long-title {
+  font-size: clamp(2.4rem, 4vw, 3.6rem);
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+}
 .subtitle {
   margin: 0;
   color: var(--base-color-text-secondary);
   font-size: 1.02rem;
 }
 .synopsis {
+  grid-area: synopsis;
+  min-width: 0;
   display: grid;
   gap: 8px;
 }
@@ -210,35 +230,45 @@ h1 {
   cursor: zoom-in;
 }
 .lead-image {
-  width: 100%;
+  grid-area: lead;
+  width: fit-content;
+  justify-self: center;
 }
 .lead-image img {
   display: block;
-  width: 100%;
+  width: auto;
   height: auto;
+  max-width: 100%;
+  max-height: 560px;
   border-radius: 28px;
 }
 .supporting-images {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
   align-items: start;
+  overflow-x: auto;
   gap: 20px;
   list-style: none;
   margin: 0;
-  padding: 4px;
+  padding: 4px 4px 12px;
+  scroll-snap-type: x proximity;
 }
 .supporting-images li {
+  flex: 0 0 auto;
   min-width: 0;
+  scroll-snap-align: start;
 }
 .supporting-image {
-  width: 100%;
   border-radius: 20px;
 }
 .supporting-image :deep(img) {
   display: block;
-  width: 100%;
-  height: auto;
+  width: auto;
+  height: 180px;
   border-radius: 20px;
+}
+.supporting-image :deep(.media-image-fallback) {
+  width: 120px;
+  height: 180px;
 }
 .personal-slot {
   min-width: 0;
@@ -254,9 +284,15 @@ a:focus-visible,
 @media (max-width: 760px) {
   .hero-grid {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'copy' 'lead' 'synopsis';
+    grid-template-rows: auto;
     gap: 24px;
   }
-  h1 {
+  .hero-grid.without-images {
+    grid-template-areas: 'copy' 'synopsis';
+  }
+  h1,
+  h1.long-title {
     font-size: clamp(2.2rem, 8vw, 3.6rem);
   }
   .lead-image {
@@ -274,9 +310,12 @@ a:focus-visible,
     gap: 16px;
     scroll-snap-type: x proximity;
   }
-  .supporting-images li {
-    flex: 0 0 38%;
-    scroll-snap-align: start;
+  .supporting-image :deep(img) {
+    height: 140px;
+  }
+  .supporting-image :deep(.media-image-fallback) {
+    width: 94px;
+    height: 140px;
   }
 }
 @media (max-width: 576px) {
@@ -285,9 +324,6 @@ a:focus-visible,
   }
   .lead-image img {
     max-height: 380px;
-  }
-  .supporting-images li {
-    flex-basis: 34%;
   }
 }
 </style>
