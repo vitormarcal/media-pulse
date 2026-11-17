@@ -1,17 +1,18 @@
 <template>
   <section class="movie-hero">
-    <div class="hero-topbar">
-      <NuxtLink class="back-link" :to="backTo"> {{ backLabel }} </NuxtLink>
-    </div>
+    <img
+      v-if="leadImage && !leadFailed"
+      class="hero-backdrop"
+      :src="resolveMediaUrl(leadImage) || undefined"
+      alt=""
+      aria-hidden="true"
+      @error="leadFailed = true"
+    />
+    <nav class="hero-topbar" aria-label="Navegação do filme">
+      <NuxtLink class="back-link" :to="backTo">{{ backLabel }}</NuxtLink>
+    </nav>
 
-    <div
-      class="hero-grid"
-      :class="{
-        'without-images': !gallery.length,
-        'with-personal': !!$slots.personal,
-        'with-image-actions': !!$slots['image-actions'],
-      }"
-    >
+    <div class="hero-grid" :class="{ 'without-images': !leadImage || leadFailed }">
       <div class="copy">
         <h1 ref="heading" tabindex="-1">{{ title }}</h1>
         <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
@@ -28,37 +29,36 @@
           </button>
         </div>
       </div>
-
-      <div v-if="$slots.personal" class="personal-slot"><slot name="personal" /></div>
-
-      <div v-if="gallery.length || $slots['image-actions']" class="gallery-preview">
-        <div v-if="gallery.length" class="gallery" :class="`images-${previewImages.length}`">
-          <button
-            v-for="(image, index) in previewImages"
-            :key="`${image}-${index}`"
-            type="button"
-            class="gallery-item"
-            :class="`slot-${index}`"
-            :aria-label="`Ampliar imagem ${index + 1} de ${title}`"
-            @click="$emit('viewImage', index)"
-          >
-            <MediaImage :src="resolveMediaUrl(image)" :alt="`${index === 0 ? 'Capa' : 'Imagem'} de ${title}`" />
-          </button>
-        </div>
-        <div class="gallery-actions">
-          <button
-            v-if="gallery.length"
-            ref="viewAllButton"
-            type="button"
-            class="view-all"
-            @click="$emit('viewImage', 0)"
-          >
-            {{ imageCount === 1 ? 'Ver imagem' : `Ver todas as ${imageCount} imagens` }}
-          </button>
-          <slot name="image-actions" />
-        </div>
-      </div>
+      <button
+        v-if="leadImage && !leadFailed"
+        type="button"
+        class="lead-image image-button"
+        :aria-label="`Ampliar capa de ${title}`"
+        @click="$emit('viewImage', 0)"
+      >
+        <img :src="resolveMediaUrl(leadImage) || undefined" :alt="`Capa de ${title}`" @error="leadFailed = true" />
+      </button>
     </div>
+
+    <ul v-if="supportingImages.length" class="supporting-images" aria-label="Outras imagens do filme" tabindex="0">
+      <li v-for="(image, index) in supportingImages" :key="`${image}-${index}`">
+        <button
+          type="button"
+          class="supporting-image image-button"
+          :aria-label="`Ampliar imagem ${index + 2} de ${title}`"
+          @click="$emit('viewImage', index + 1)"
+        >
+          <MediaImage :src="resolveMediaUrl(image)" :alt="`Imagem ${index + 2} de ${title}`" loading="lazy" />
+        </button>
+      </li>
+    </ul>
+    <div v-if="gallery.length || $slots['image-actions']" class="gallery-actions">
+      <button v-if="gallery.length" ref="viewAllButton" type="button" class="view-all" @click="$emit('viewImage', 0)">
+        {{ imageCount === 1 ? 'Ver imagem' : `Ver todas as ${imageCount} imagens` }}
+      </button>
+      <slot name="image-actions" />
+    </div>
+    <div v-if="$slots.personal" class="personal-slot"><slot name="personal" /></div>
   </section>
 </template>
 
@@ -82,78 +82,115 @@ const heading = ref<HTMLHeadingElement>()
 defineExpose({ focusGallery: () => (viewAllButton.value || heading.value)?.focus() })
 const { resolveMediaUrl } = useMediaUrl()
 const descriptionExpanded = ref(false)
+const leadFailed = ref(false)
+const leadImage = computed(() => props.gallery[0])
+const supportingImages = computed(() => props.gallery.slice(1, 5))
+watch(leadImage, () => {
+  leadFailed.value = false
+})
+watch(
+  () => props.title,
+  () => {
+    descriptionExpanded.value = false
+  },
+)
 const descriptionPreview = computed(() => {
   const description = props.description || ''
   return description.length > 320 ? `${description.slice(0, 320).replace(/\s+\S*$/, '')}…` : description
 })
-const previewImages = computed(() => (props.gallery.length <= 2 ? props.gallery.slice(0, 1) : props.gallery))
 </script>
 
 <style scoped>
 .movie-hero {
   display: grid;
-  gap: 18px;
+  gap: 24px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(20px, 3vw, 36px);
+  border-radius: 40px;
+  background: var(--base-color-surface-soft);
 }
-
-.hero-topbar {
+.hero-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.08;
+  pointer-events: none;
+}
+.movie-hero > :not(.hero-backdrop) {
+  position: relative;
+  z-index: 1;
+}
+.hero-topbar,
+.gallery-actions {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 10px;
 }
-
-.back-link {
+.back-link,
+.view-all {
   width: fit-content;
-  padding: 8px 14px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 0;
   border-radius: 16px;
   background: var(--base-color-surface-warm);
   color: var(--base-color-text-primary);
-  font-size: 0.8rem;
+  font: inherit;
+  font-size: 0.88rem;
 }
-
+.back-link {
+  display: inline-flex;
+  align-items: center;
+}
+.view-all {
+  cursor: pointer;
+  font-weight: 700;
+}
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.75fr);
-  grid-template-areas: 'copy gallery' 'personal gallery';
-  grid-template-rows: auto 1fr;
-  align-items: start;
-  gap: 24px 40px;
-  padding: clamp(20px, 3vw, 32px);
-  border-radius: 40px;
-  background: var(--base-color-surface-strong);
-  border: 1px solid color-mix(in srgb, var(--base-color-border) 35%, white);
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 32px;
 }
-
+.hero-grid.without-images {
+  grid-template-columns: minmax(0, 1fr);
+}
 .copy {
-  grid-area: copy;
   min-width: 0;
   display: grid;
-  align-content: start;
-  gap: 12px;
+  gap: 16px;
 }
-
 h1 {
   margin: 0;
-  font-size: clamp(2rem, 3.8vw, 3rem);
+  font-size: clamp(2.6rem, 5.8vw, 5.4rem);
   overflow-wrap: anywhere;
-  line-height: 1.06;
-  letter-spacing: -0.04em;
+  line-height: 0.98;
+  letter-spacing: -0.06em;
 }
-
 .subtitle {
   margin: 0;
   color: var(--base-color-text-secondary);
   font-size: 1.02rem;
 }
-
 .synopsis {
   display: grid;
   gap: 8px;
 }
+.description {
+  max-width: 42rem;
+  margin: 0;
+  color: var(--base-color-text-secondary);
+  line-height: 1.6;
+}
 .synopsis-toggle {
   justify-self: start;
   border: 0;
-  padding: 8px 0;
+  padding: 10px 0;
   background: transparent;
   color: var(--base-color-text-primary);
   font: inherit;
@@ -162,147 +199,95 @@ h1 {
   text-decoration: underline;
   cursor: pointer;
 }
-.synopsis-toggle:focus-visible {
-  outline: 3px solid var(--base-color-focus);
-  outline-offset: 3px;
-}
-.description {
-  max-width: 42rem;
-  margin: 0;
-  color: var(--base-color-text-secondary);
-  line-height: 1.6;
-}
-
-.personal-slot {
-  grid-area: personal;
+.image-button {
+  display: block;
   min-width: 0;
-}
-.gallery-preview {
-  grid-area: gallery;
-  align-self: start;
-  display: grid;
-  align-content: center;
-  gap: 12px;
-  min-width: 0;
-}
-.gallery {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-  grid-template-rows: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  height: clamp(240px, 26vw, 340px);
-}
-.gallery.images-1 {
-  display: flex;
-  justify-content: center;
-  height: auto;
-}
-.gallery.images-1 .gallery-item {
-  display: flex;
   max-width: 100%;
-  background: transparent;
-}
-.gallery.images-1 :deep(img) {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 440px;
-  border-radius: 28px;
-}
-.gallery.images-2 {
-  grid-template-rows: minmax(0, 1fr);
-}
-.gallery.images-3 {
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-}
-.gallery-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: start;
-  justify-content: flex-end;
-  gap: 8px;
-}
-.view-all {
-  justify-self: end;
-  min-height: 44px;
-  border: 0;
-  border-radius: 16px;
-  padding: 10px 16px;
-  background: var(--base-color-surface-warm);
-  color: var(--base-color-text-primary);
-  font: inherit;
-  font-size: 0.88rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-.view-all:focus-visible {
-  outline: 3px solid var(--base-color-focus);
-  outline-offset: 4px;
-}
-
-.gallery-item {
-  border: 0;
   padding: 0;
-  cursor: zoom-in;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
+  border: 0;
   border-radius: 28px;
-  background: var(--base-color-surface-warm);
+  background: transparent;
+  cursor: zoom-in;
 }
-
-.gallery-item:focus-visible {
+.lead-image {
+  width: 100%;
+}
+.lead-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 28px;
+}
+.supporting-images {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  gap: 20px;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+}
+.supporting-images li {
+  min-width: 0;
+}
+.supporting-image {
+  width: 100%;
+  border-radius: 20px;
+}
+.supporting-image :deep(img) {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 20px;
+}
+.personal-slot {
+  min-width: 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--base-color-border);
+}
+button:focus-visible,
+a:focus-visible,
+.supporting-images:focus-visible {
   outline: 3px solid var(--base-color-focus);
   outline-offset: 4px;
 }
-
-.gallery-item :deep(img) {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.slot-0 {
-  grid-row: 1 / -1;
-}
-
 @media (max-width: 760px) {
-  .hero-topbar {
-    align-items: flex-start;
-    flex-direction: column;
-  }
   .hero-grid {
-    grid-template-columns: 1fr;
-    grid-template-areas: 'copy' 'gallery' 'personal';
+    grid-template-columns: minmax(0, 1fr);
     gap: 24px;
   }
-  .gallery {
-    height: clamp(240px, 50vw, 320px);
+  h1 {
+    font-size: clamp(2.2rem, 8vw, 3.6rem);
+  }
+  .lead-image {
+    width: fit-content;
+    justify-self: center;
+  }
+  .lead-image img {
+    width: auto;
+    max-width: 100%;
+    max-height: 440px;
+  }
+  .supporting-images {
+    display: flex;
+    overflow-x: auto;
+    gap: 16px;
+    scroll-snap-type: x proximity;
+  }
+  .supporting-images li {
+    flex: 0 0 38%;
+    scroll-snap-align: start;
   }
 }
 @media (max-width: 576px) {
-  .gallery.images-1 :deep(img) {
+  .movie-hero {
+    border-radius: 28px;
+  }
+  .lead-image img {
     max-height: 380px;
   }
-}
-.hero-grid.without-images {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: 'copy' 'personal';
-}
-.hero-grid:not(.with-personal) {
-  grid-template-rows: auto;
-}
-.hero-grid.without-images:not(.with-personal) {
-  grid-template-areas: 'copy';
-}
-.hero-grid.without-images.with-image-actions {
-  grid-template-areas: 'copy' 'gallery' 'personal';
-  grid-template-rows: auto;
-}
-.hero-grid.without-images.with-image-actions:not(.with-personal) {
-  grid-template-areas: 'copy' 'gallery';
-}
-.without-images .gallery-actions {
-  justify-content: flex-start;
+  .supporting-images li {
+    flex-basis: 34%;
+  }
 }
 </style>

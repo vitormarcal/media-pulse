@@ -33,7 +33,7 @@
           :title="data.title"
           :subtitle="heroSubtitle"
           :description="data.description"
-          :gallery="data.gallery.slice(0, 4)"
+          :gallery="data.gallery"
           :image-count="data.gallery.length"
           @view-image="galleryViewer?.open($event)"
         >
