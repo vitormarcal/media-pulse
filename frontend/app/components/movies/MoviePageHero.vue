@@ -8,7 +8,7 @@
       aria-hidden="true"
       @error="leadFailed = true"
     />
-    <nav class="hero-topbar" aria-label="Navegação do filme">
+    <nav class="hero-topbar" :aria-label="mediaType === 'shows' ? 'Navegação da série' : 'Navegação do filme'">
       <NuxtLink class="back-link" :to="backTo">{{ backLabel }}</NuxtLink>
     </nav>
 
@@ -44,7 +44,7 @@
       v-if="supportingImages.length"
       class="supporting-images"
       :class="{ 'few-images': supportingImages.length <= 3 }"
-      aria-label="Outras imagens do filme"
+      :aria-label="mediaType === 'shows' ? 'Outras imagens da série' : 'Outras imagens do filme'"
       tabindex="0"
     >
       <li v-for="(image, index) in supportingImages" :key="`${image}-${index}`">
@@ -76,10 +76,11 @@ const props = withDefaults(
     description: string | null
     gallery: string[]
     imageCount: number
+    mediaType?: 'movies' | 'shows'
     backTo?: string
     backLabel?: string
   }>(),
-  { backTo: '/movies', backLabel: 'Voltar para filmes' },
+  { backTo: '/movies', backLabel: 'Voltar para filmes', mediaType: 'movies' },
 )
 
 defineEmits<{ viewImage: [index: number] }>()

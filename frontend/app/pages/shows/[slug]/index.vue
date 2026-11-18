@@ -5,12 +5,13 @@
     <template v-else-if="data">
       <MoviePageHero
         ref="showHero"
+        media-type="shows"
         back-to="/shows"
         back-label="Voltar para séries"
         :title="data.title"
         :subtitle="heroSubtitle"
         :description="data.description"
-        :gallery="data.gallery.slice(0, 4)"
+        :gallery="data.gallery"
         :image-count="data.gallery.length"
         @view-image="galleryViewer?.open($event)"
       >
@@ -300,7 +301,7 @@ async function refreshEpisodes() {
 .show-page {
   display: grid;
   gap: 32px;
-  width: min(1120px, calc(100% - 32px));
+  width: min(1120px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 28px 0 64px;
 }
@@ -347,5 +348,11 @@ h2 {
 .action:focus-visible {
   outline: 3px solid var(--base-color-focus);
   outline-offset: 3px;
+}
+@media (max-width: 720px) {
+  .show-page {
+    width: calc(100vw - 20px);
+    padding-top: 20px;
+  }
 }
 </style>
