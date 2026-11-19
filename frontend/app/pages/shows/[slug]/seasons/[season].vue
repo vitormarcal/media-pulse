@@ -3,46 +3,53 @@
     <p v-if="status === 'pending' && !data" role="status">Carregando temporada…</p>
     <p v-else-if="error" role="alert">Não foi possível carregar esta temporada.</p>
     <template v-else-if="data">
-      <NuxtLink class="action back-link" :to="data.showSlug ? `/shows/${data.showSlug}` : '/shows'">
-        {{ data.showSlug ? `Voltar para ${data.showTitle}` : 'Voltar para séries' }}
-      </NuxtLink>
-
-      <header
-        class="surface season-header"
-        :class="{
-          'has-cover':
-            data.seasonNumber != null &&
-            (owner.authenticated || (data.coverUrl && failedSeasonCover !== data.coverUrl)),
-        }"
+      <MoviePageHero
+        ref="seasonHero"
+        media-type="seasons"
+        :back-to="data.showSlug ? `/shows/${data.showSlug}` : '/shows'"
+        :back-label="data.showSlug ? `Voltar para ${data.showTitle}` : 'Voltar para séries'"
+        :title="data.seasonTitle"
+        :subtitle="data.showTitle"
+        :description="null"
+        :gallery="data.gallery"
+        :image-count="data.gallery.length"
+        @view-image="galleryViewer?.open($event)"
       >
-        <div class="season-identification">
-          <p class="muted">
-            {{ data.showTitle }}<span v-if="data.showYear"> · {{ data.showYear }}</span>
-          </p>
-          <h1>{{ data.seasonTitle }}</h1>
-        </div>
-        <ShowSeasonCover
-          v-if="
-            data.seasonNumber != null && (owner.authenticated || (data.coverUrl && failedSeasonCover !== data.coverUrl))
-          "
-          :key="`${data.showId}-${data.seasonNumber}`"
-          class="season-cover-area"
-          :show-id="data.showId"
-          :season-number="data.seasonNumber"
-          :title="`${data.showTitle} — ${data.seasonTitle}`"
-          :cover-url="data.coverUrl"
-          @changed="refresh()"
-          @unavailable="failedSeasonCover = data.coverUrl || ''"
-        />
-        <div v-if="data.progress.totalEpisodes" class="progress-summary">
-          <p>{{ data.progress.watchedEpisodes }} de {{ data.progress.totalEpisodes }} episódios assistidos</p>
-          <progress
-            :value="data.progress.watchedEpisodes"
-            :max="data.progress.totalEpisodes"
-            aria-label="Progresso da temporada"
+        <template #context>
+          <div v-if="data.progress.totalEpisodes" class="progress-summary">
+            <p>{{ data.progress.watchedEpisodes }} de {{ data.progress.totalEpisodes }} episódios assistidos</p>
+            <progress
+              :value="data.progress.watchedEpisodes"
+              :max="data.progress.totalEpisodes"
+              aria-label="Progresso da temporada"
+            />
+          </div>
+        </template>
+        <template v-if="owner.authenticated && data.seasonNumber != null" #image-actions>
+          <MediaImageSelector
+            :key="`${data.showId}-${data.seasonNumber}`"
+            media-type="shows"
+            :entity-id="data.showId"
+            :season-number="data.seasonNumber"
+            :title="`${data.showTitle} — ${data.seasonTitle}`"
+            compact
+            @imported="refresh()"
           />
-        </div>
-      </header>
+        </template>
+      </MoviePageHero>
+      <ManagedMediaImageGallery
+        v-if="data.seasonNumber != null"
+        :key="`${data.showId}-${data.seasonNumber}`"
+        ref="galleryViewer"
+        v-model:images="data.gallery"
+        v-model:cover-url="data.coverUrl"
+        media-type="shows"
+        :entity-id="data.showId"
+        :season-number="data.seasonNumber"
+        :title="`${data.showTitle} — ${data.seasonTitle}`"
+        :refresh="refresh"
+        @closed="restoreGalleryFocus"
+      />
 
       <section class="surface" aria-labelledby="episodes-title">
         <div class="section-head">
@@ -144,7 +151,9 @@
 </template>
 
 <script setup lang="ts">
-import ShowSeasonCover from '~/components/shows/ShowSeasonCover.vue'
+import MoviePageHero from '~/components/movies/MoviePageHero.vue'
+import ManagedMediaImageGallery from '~/components/media/ManagedMediaImageGallery.vue'
+import MediaImageSelector from '~/components/media/MediaImageSelector.vue'
 import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import ShowSeasonEnrichmentPanel from '~/components/shows/ShowSeasonEnrichmentPanel.vue'
 import { useShowSeasonPageData } from '~/composables/useShowSeasonPageData'
@@ -157,7 +166,11 @@ const { data, error, status, refresh } = await useShowSeasonPageData(
   String(route.params.slug),
   Number(route.params.season),
 )
-const failedSeasonCover = ref('')
+const seasonHero = ref<InstanceType<typeof MoviePageHero>>()
+const galleryViewer = ref<InstanceType<typeof ManagedMediaImageGallery>>()
+function restoreGalleryFocus(needsFallback: boolean) {
+  if (needsFallback) seasonHero.value?.focusGallery()
+}
 const enrichmentOpen = ref(false)
 const editingEpisodeId = ref<number | null>(null)
 const pendingEpisodeId = ref<number | null>(null)
@@ -234,7 +247,7 @@ async function registerWatch(episode: ShowSeasonEpisodeModel, mode: 'now' | 'dat
 .season-page {
   display: grid;
   gap: 24px;
-  width: min(1120px, calc(100% - 32px));
+  width: min(1120px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 28px 0 64px;
 }
@@ -245,26 +258,6 @@ async function registerWatch(episode: ShowSeasonEpisodeModel, mode: 'now' | 'dat
   border-radius: 28px;
   border: 1px solid color-mix(in srgb, var(--base-color-border) 35%, white);
   background: var(--base-color-surface-strong);
-}
-.season-header {
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-}
-.season-header.has-cover {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 280px);
-  grid-template-areas: 'identity cover' 'progress cover';
-}
-.has-cover .season-identification {
-  grid-area: identity;
-  min-width: 0;
-}
-.has-cover .season-cover-area {
-  grid-area: cover;
-  min-width: 0;
-}
-.has-cover .progress-summary {
-  grid-area: progress;
-  min-width: 0;
 }
 .section-head,
 .episode-heading {
@@ -378,11 +371,10 @@ input {
 .back-link {
   justify-self: start;
 }
-@media (max-width: 680px) {
-  .season-header,
-  .season-header.has-cover {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'identity' 'cover' 'progress';
+@media (max-width: 720px) {
+  .season-page {
+    width: calc(100vw - 20px);
+    padding-top: 20px;
   }
 }
 </style>

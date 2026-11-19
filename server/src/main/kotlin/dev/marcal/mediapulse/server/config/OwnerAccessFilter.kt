@@ -60,7 +60,7 @@ class OwnerAccessFilter(
     }
 
     companion object {
-        private val IMAGE_CANDIDATES = Regex("/api/(movies|shows)/[^/]+/(?:seasons/[^/]+/cover/|images/)candidates/?")
+        private val IMAGE_CANDIDATES = Regex("/api/(movies|shows)/[^/]+/(?:seasons/[^/]+/(?:cover|images)/|images/)candidates/?")
         private val MATRIX_PARAMETERS = Regex(";[^/]*")
     }
 }

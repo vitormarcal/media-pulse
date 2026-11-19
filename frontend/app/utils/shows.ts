@@ -474,6 +474,9 @@ export function buildShowSeasonPageData(season: ShowSeasonDetailsResponse): Show
     showYear: season.showYear,
     showCoverUrl: season.showCoverUrl,
     coverUrl: season.coverUrl ?? null,
+    gallery: [...(season.coverUrl ? [season.coverUrl] : []), ...(season.images ?? []).map((image) => image.url)].filter(
+      (url, index, all) => all.indexOf(url) === index,
+    ),
     showTmdbId: season.showTmdbId,
     seasonTitle,
     seasonNumber: season.seasonNumber,

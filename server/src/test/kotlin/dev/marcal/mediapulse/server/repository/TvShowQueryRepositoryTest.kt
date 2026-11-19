@@ -263,6 +263,7 @@ class TvShowQueryRepositoryTest {
                     ),
                 ),
                 listOf("/season-cover.jpg"),
+                listOf(arrayOf(1L, "/season-cover.jpg")),
             )
         every { query.singleResult } returns "Temporada 1"
 
@@ -272,6 +273,8 @@ class TvShowQueryRepositoryTest {
         assertEquals("1418", response.showTmdbId)
         assertEquals("Temporada 1", response.seasonTitle)
         assertEquals("/season-cover.jpg", response.coverUrl)
+        assertEquals("/season-cover.jpg", response.images.single().url)
+        assertEquals(true, response.images.single().isPrimary)
         assertEquals(2L, response.episodesCount)
         assertEquals(1L, response.watchedEpisodesCount)
         assertEquals(false, response.completed)
@@ -280,8 +283,8 @@ class TvShowQueryRepositoryTest {
         assertEquals(java.time.LocalDate.parse("2007-09-24"), response.episodes.first().originallyAvailableAt)
         assertEquals(Instant.parse("2024-01-03T14:35:00Z"), response.lastWatchedAt)
         verify(exactly = 1) { query.setParameter("slug", "the-big-bang-theory") }
-        verify(exactly = 4) { query.setParameter("showId", 10L) }
-        verify(exactly = 4) { query.setParameter("seasonNumber", 1) }
+        verify(exactly = 5) { query.setParameter("showId", 10L) }
+        verify(exactly = 5) { query.setParameter("seasonNumber", 1) }
     }
 
     @Test

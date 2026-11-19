@@ -8,14 +8,24 @@
       aria-hidden="true"
       @error="leadFailed = true"
     />
-    <nav class="hero-topbar" :aria-label="mediaType === 'shows' ? 'Navegação da série' : 'Navegação do filme'">
+    <nav
+      class="hero-topbar"
+      :aria-label="
+        mediaType === 'seasons'
+          ? 'Navegação da temporada'
+          : mediaType === 'shows'
+            ? 'Navegação da série'
+            : 'Navegação do filme'
+      "
+    >
       <NuxtLink class="back-link" :to="backTo">{{ backLabel }}</NuxtLink>
     </nav>
 
     <div class="hero-grid" :class="{ 'without-images': !leadImage || leadFailed }">
       <div class="copy">
-        <h1 ref="heading" :class="{ 'long-title': title.length > 35 }" tabindex="-1">{{ title }}</h1>
+        <h1 ref="heading" :class="{ 'long-title': compactTitle }" tabindex="-1">{{ title }}</h1>
         <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
+        <slot name="context" />
       </div>
       <button
         v-if="leadImage && !leadFailed"
@@ -44,7 +54,13 @@
       v-if="supportingImages.length"
       class="supporting-images"
       :class="{ 'few-images': supportingImages.length <= 3 }"
-      :aria-label="mediaType === 'shows' ? 'Outras imagens da série' : 'Outras imagens do filme'"
+      :aria-label="
+        mediaType === 'seasons'
+          ? 'Outras imagens da temporada'
+          : mediaType === 'shows'
+            ? 'Outras imagens da série'
+            : 'Outras imagens do filme'
+      "
       tabindex="0"
     >
       <li v-for="(image, index) in supportingImages" :key="`${image}-${index}`">
@@ -76,7 +92,7 @@ const props = withDefaults(
     description: string | null
     gallery: string[]
     imageCount: number
-    mediaType?: 'movies' | 'shows'
+    mediaType?: 'movies' | 'shows' | 'seasons'
     backTo?: string
     backLabel?: string
   }>(),
@@ -88,6 +104,11 @@ const viewAllButton = ref<HTMLButtonElement>()
 const heading = ref<HTMLHeadingElement>()
 defineExpose({ focusGallery: () => (viewAllButton.value || heading.value)?.focus() })
 const { resolveMediaUrl } = useMediaUrl()
+const compactTitle = computed(
+  () =>
+    props.title.length > 35 ||
+    (props.mediaType === 'seasons' && props.title.split(/\s+/).some((word) => word.length > 12)),
+)
 const descriptionExpanded = ref(false)
 const leadFailed = ref(false)
 const leadImage = computed(() => props.gallery[0])

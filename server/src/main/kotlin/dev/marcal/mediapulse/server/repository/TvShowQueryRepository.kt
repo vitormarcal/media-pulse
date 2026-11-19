@@ -886,7 +886,20 @@ class TvShowQueryRepository(
                 .resultList
                 .firstOrNull() as String?
 
+        val seasonImages =
+            entityManager
+                .createNativeQuery(
+                    "SELECT id, url FROM tv_season_images WHERE show_id = :showId AND season_number = :seasonNumber ORDER BY id DESC",
+                ).setParameter("showId", showId)
+                .setParameter("seasonNumber", seasonNumber)
+                .resultList
+                .map { row ->
+                    val fields = row as Array<*>
+                    ShowImageDto((fields[0] as Number).toLong(), fields[1] as String, fields[1] == seasonCover)
+                }
+
         return ShowSeasonDetailsResponse(
+            images = seasonImages,
             coverUrl = seasonCover,
             showId = showId,
             showSlug = base[1] as String?,

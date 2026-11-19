@@ -96,7 +96,11 @@
                     }}<span v-if="image.width && image.height"> · {{ image.width }} × {{ image.height }}</span>
                   </p>
                   <div class="candidate-state">
-                    <MediaImageStateBadge :media-type="mediaType" :state="badgeState(image.id)" />
+                    <MediaImageStateBadge
+                      :media-type="mediaType"
+                      :season-number="seasonNumber"
+                      :state="badgeState(image.id)"
+                    />
                   </div>
                 </div>
               </article>
@@ -163,7 +167,12 @@
       >
         <template #selection="{ index }">
           <div v-if="candidates[index]" class="preview-lookup">
-            <MediaImageStateBadge :media-type="mediaType" :state="badgeState(candidates[index]!.id)" dark />
+            <MediaImageStateBadge
+              :media-type="mediaType"
+              :season-number="seasonNumber"
+              :state="badgeState(candidates[index]!.id)"
+              dark
+            />
             <label class="preview-selection" :class="{ chosen: selected.includes(candidates[index]!.id) }">
               <input
                 v-model="selected"
@@ -194,20 +203,25 @@ interface Candidate {
 }
 const props = defineProps<{
   mediaType: 'games' | 'movies' | 'shows'
+  seasonNumber?: number
   entityId: number
   title?: string
   compact?: boolean
 }>()
-const labels = computed(
-  () =>
-    ({
-      games: { images: 'Imagens do jogo', back: 'Voltar ao jogo' },
-      movies: { images: 'Imagens do filme', back: 'Voltar ao filme' },
-      shows: { images: 'Imagens da série', back: 'Voltar à série' },
-    })[props.mediaType],
+const labels = computed(() =>
+  props.seasonNumber != null
+    ? { images: 'Imagens da temporada', back: 'Voltar à temporada' }
+    : {
+        games: { images: 'Imagens do jogo', back: 'Voltar ao jogo' },
+        movies: { images: 'Imagens do filme', back: 'Voltar ao filme' },
+        shows: { images: 'Imagens da série', back: 'Voltar à série' },
+      }[props.mediaType],
 )
 const selectorTitleId = useId()
-const endpoint = computed(() => `/api/${props.mediaType}/${props.entityId}/images`)
+const endpoint = computed(
+  () =>
+    `/api/${props.mediaType}/${props.entityId}${props.seasonNumber != null ? `/seasons/${props.seasonNumber}` : ''}/images`,
+)
 const emit = defineEmits<{ imported: [] }>()
 const candidateViewer = ref<InstanceType<typeof MediaImageGallery> | null>(null)
 const config = useRuntimeConfig()

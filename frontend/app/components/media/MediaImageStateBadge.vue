@@ -54,9 +54,18 @@ const props = defineProps<{
   state?: 'CHECKING' | 'IN_GALLERY' | 'IN_LIBRARY' | 'NOT_FOUND' | 'UNAVAILABLE'
   dark?: boolean
   mediaType: 'games' | 'movies' | 'shows'
+  seasonNumber?: number
 }>()
-const entity = computed(() => ({ games: 'no jogo', movies: 'no filme', shows: 'na série' })[props.mediaType])
-const association = computed(() => ({ games: 'ao jogo', movies: 'ao filme', shows: 'à série' })[props.mediaType])
+const entity = computed(() =>
+  props.seasonNumber != null
+    ? 'na temporada'
+    : { games: 'no jogo', movies: 'no filme', shows: 'na série' }[props.mediaType],
+)
+const association = computed(() =>
+  props.seasonNumber != null
+    ? 'à temporada'
+    : { games: 'ao jogo', movies: 'ao filme', shows: 'à série' }[props.mediaType],
+)
 const label = computed(
   () =>
     ({

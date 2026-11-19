@@ -30,6 +30,29 @@ class ShowSeasonCoverService(
         return selection.save(subject(showId, seasonNumber), request) { url -> covers.save(showId, seasonNumber, url) }
     }
 
+    fun saveImages(
+        showId: Long,
+        seasonNumber: Int,
+        request: TmdbImageSelectionRequest,
+    ) = selection.save(subject(showId, seasonNumber), request) { url -> covers.append(showId, seasonNumber, url) }
+
+    fun lookup(
+        showId: Long,
+        seasonNumber: Int,
+        request: TmdbImageSelectionRequest,
+    ) = selection.lookup(subject(showId, seasonNumber), request) { covers.images(showId, seasonNumber).map { it.url } }
+
+    fun manage(
+        showId: Long,
+        seasonNumber: Int,
+        url: String,
+        remove: Boolean,
+    ): dev.marcal.mediapulse.server.api.shows.ShowImageManagementResponse {
+        subject(showId, seasonNumber)
+        return dev.marcal.mediapulse.server.api.shows
+            .ShowImageManagementResponse(covers.manage(showId, seasonNumber, url, remove))
+    }
+
     fun remove(
         showId: Long,
         seasonNumber: Int,

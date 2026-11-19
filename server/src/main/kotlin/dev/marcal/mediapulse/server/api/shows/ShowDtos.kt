@@ -166,6 +166,7 @@ data class ShowSeasonEpisodeDto(
 )
 
 data class ShowSeasonDetailsResponse(
+    val images: List<ShowImageDto> = emptyList(),
     val coverUrl: String? = null,
     val showId: Long,
     val showSlug: String?,

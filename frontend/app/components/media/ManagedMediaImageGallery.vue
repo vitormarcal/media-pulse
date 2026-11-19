@@ -15,7 +15,8 @@
         <button type="button" :disabled="imageBusy" @click="confirmRemoval = image">Remover imagem</button>
         <div v-if="confirmRemoval === image" class="remove-confirmation">
           <p>
-            Remover esta imagem {{ mediaType === 'movies' ? 'do filme' : 'da série' }}?{{
+            Remover esta imagem
+            {{ seasonNumber != null ? 'da temporada' : mediaType === 'movies' ? 'do filme' : 'da série' }}?{{
               image === coverUrl ? ' Outra imagem será usada como capa, se disponível.' : ''
             }}
           </p>
@@ -36,6 +37,7 @@ import MediaImageGallery from '~/components/media/MediaImageGallery.vue'
 
 const props = defineProps<{
   mediaType: 'movies' | 'shows'
+  seasonNumber?: number
   entityId: number
   title: string
   refresh: () => Promise<unknown>
@@ -72,7 +74,7 @@ async function manageImage(url: string, remove: boolean) {
   imageMessage.value = ''
   try {
     const result = await $fetch<{ coverUrl: string | null }>(
-      `/api/${props.mediaType}/${props.entityId}/images${remove ? '' : '/primary'}`,
+      `/api/${props.mediaType}/${props.entityId}${props.seasonNumber != null ? `/seasons/${props.seasonNumber}` : ''}/images${remove ? '' : '/primary'}`,
       { baseURL: config.public.apiBase, method: remove ? 'DELETE' : 'POST', body: { url } },
     )
     coverUrl.value = result.coverUrl

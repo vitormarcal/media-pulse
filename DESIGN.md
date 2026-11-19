@@ -322,9 +322,11 @@ Nota, comentários e sessões ficam em Atividade, com registro sob demanda. Sobr
 O detalhe de temporada usa cabeçalho compacto com retorno à série e uma contagem de progresso. Os episódios aparecem em ordem, separados por linhas. Marcar como assistido registra a hora atual. Opções de registro oferecem data personalizada e marcação em lote até o episódio escolhido. Se houver falha parcial, recarregar os episódios e mostrar quantos foram registrados. A atualização de dados da temporada é aberta pelo owner junto da lista.
 
 
-### Capa própria da temporada
+### Galeria própria da temporada
 
-Temporadas com número podem ter uma capa única escolhida pelo owner entre os pôsteres do TMDb. No cabeçalho compacto, identificação e progresso ficam à esquerda e capa integral à direita, com altura máxima de 280px e cantos de 20px; no celular, empilhar identificação, capa e progresso. Os episódios continuam logo abaixo. Na lista de temporadas da série, usar miniatura integral de 48px de largura junto do título e progresso, dentro do mesmo link. Sem capa ou em falha, manter apresentação textual sem simular uma capa da temporada usando a imagem geral da série. Escolher/Trocar capa abre seleção única com ampliação antes de salvar; falha preserva seleção e capa anterior. Remoção pede confirmação e não apaga o asset no armazenamento. Foco visível e retorno de foco preservados, sem galeria de múltiplas imagens por temporada.
+O detalhe de temporada segue a abertura editorial de séries e filmes: navegação dentro do bloco, título expressivo, capa integral dominante e fundo suave derivado da própria capa. Progresso fica junto da identificação, antes das imagens complementares; episódios aparecem logo após a abertura. Não usar a sinopse ou imagens gerais da série como se fossem da temporada. Sem imagens, eliminar a coluna vazia e manter identificação, progresso e seleção para o owner.
+
+Todas as imagens complementares salvas aparecem na faixa horizontal compartilhada, com proporções integrais e navegação por teclado. Escolher imagens aceita múltiplos pôsteres específicos da temporada no TMDb e preserva a capa escolhida. Cada prévia abre seu índice na galeria completa; owner define a capa e remove imagens com confirmação no visualizador. Remover a principal escolhe outra disponível, sem apagar assets. As capas anteriores são preservadas na migração. Na lista de temporadas da série, manter miniatura integral de 48px junto do título e progresso, dentro do mesmo link.
 
 
 ## 19. Detalhe de álbum

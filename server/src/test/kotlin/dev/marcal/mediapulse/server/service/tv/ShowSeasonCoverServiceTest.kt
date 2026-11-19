@@ -44,6 +44,22 @@ class ShowSeasonCoverServiceTest {
     }
 
     @Test
+    fun `multiple image selection appends successful images without replacing season cover`() {
+        every { tmdb.fetchShowSeasonImages("42", 1) } returns
+            TmdbMovieImagesResponse(listOf(TmdbMovieImageResponse("/one.jpg"), TmdbMovieImageResponse("/two.jpg")))
+        val options = service.candidates(7, 1).images
+        val content = ImageContent(byteArrayOf(1), null)
+        every { storage.downloadProviderImage(options[0].url) } returns content
+        every { storage.saveSeason(content, 7, 1, "Series", any()) } returns "saved"
+        every { storage.downloadProviderImage(options[1].url) } throws IllegalStateException("offline")
+        val response = service.saveImages(7, 1, TmdbImageSelectionRequest(options.map { it.id }))
+        assertEquals(listOf(options[0].id), response.savedIds)
+        assertEquals(listOf(options[1].id), response.failedIds)
+        verify(exactly = 1) { covers.append(7, 1, "saved") }
+        verify(exactly = 0) { covers.save(any(), any(), any()) }
+    }
+
+    @Test
     fun `candidates contain season posters only with distinct identities per season including specials`() {
         val first = service.candidates(7, 0).images.single()
         val second = service.candidates(7, 1).images.single()

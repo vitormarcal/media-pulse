@@ -6702,6 +6702,182 @@ paths:
               schema:
                 $ref: "#/components/schemas/ShowDetailsResponse"
 
+  /api/shows/{showId}/seasons/{seasonNumber}/images/candidates:
+    get:
+      tags: [Shows]
+      summary: Pôsteres da temporada (owner)
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema: {type: integer, format: int64}
+        - name: seasonNumber
+          in: path
+          required: true
+          schema: {type: integer, minimum: 0}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TmdbImageCandidatesResponse"
+        "401":
+          description: Sessão do owner necessária
+  /api/shows/{showId}/seasons/{seasonNumber}/images/selection:
+    post:
+      tags: [Shows]
+      summary: Adicionar imagens sem trocar a capa (owner e CSRF)
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema: {type: integer, format: int64}
+        - name: seasonNumber
+          in: path
+          required: true
+          schema: {type: integer, minimum: 0}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  items: {type: string}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TmdbImageSelectionResponse"
+        "401":
+          description: Sessão do owner necessária
+        "403":
+          description: CSRF inválido ou ausente
+  /api/shows/{showId}/seasons/{seasonNumber}/images/lookup:
+    post:
+      tags: [Shows]
+      summary: Conferir presença das imagens da temporada (owner e CSRF)
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema: {type: integer, format: int64}
+        - name: seasonNumber
+          in: path
+          required: true
+          schema: {type: integer, minimum: 0}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  minItems: 1
+                  maxItems: 8
+                  items: {type: string}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available: {type: boolean}
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: {type: string}
+                        state: {type: string}
+        "401":
+          description: Sessão do owner necessária
+        "403":
+          description: CSRF inválido ou ausente
+  /api/shows/{showId}/seasons/{seasonNumber}/images/primary:
+    post:
+      tags: [Shows]
+      summary: Definir capa da galeria da temporada (owner e CSRF)
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema: {type: integer, format: int64}
+        - name: seasonNumber
+          in: path
+          required: true
+          schema: {type: integer, minimum: 0}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url: {type: string}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  coverUrl: {type: string, nullable: true}
+        "401":
+          description: Sessão do owner necessária
+        "403":
+          description: CSRF inválido ou ausente
+  /api/shows/{showId}/seasons/{seasonNumber}/images:
+    delete:
+      tags: [Shows]
+      summary: Remover vínculo de imagem da temporada (owner e CSRF)
+      parameters:
+        - name: showId
+          in: path
+          required: true
+          schema: {type: integer, format: int64}
+        - name: seasonNumber
+          in: path
+          required: true
+          schema: {type: integer, minimum: 0}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url: {type: string}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  coverUrl: {type: string, nullable: true}
+        "401":
+          description: Sessão do owner necessária
+        "403":
+          description: CSRF inválido ou ausente
+
   /api/shows/{showId}/seasons/{seasonNumber}/cover/candidates:
     get:
       tags: [Shows]
@@ -12383,6 +12559,10 @@ components:
     ShowSeasonDetailsResponse:
       type: object
       properties:
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShowImageDto"
         coverUrl:
           type: string
           nullable: true

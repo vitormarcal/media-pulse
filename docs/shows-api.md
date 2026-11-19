@@ -320,3 +320,16 @@ A paginação automática mantém itens/cursor em erro, pausa até retry explíc
 `ShowSeasonDto` e `ShowSeasonDetailsResponse` incluem `coverUrl` nullable da própria temporada. Temporadas são identificadas pelo show e número, inclusive zero (especiais); os endpoints recusam temporadas sem episódios cadastrados e números negativos. Sem número, não há seleção. Leituras das páginas usam a referência persistida, sem consultar TMDb.
 
 A V83 cria `tv_season_covers`, com chave composta `(show_id, season_number)` e remoção em cascata com a série. Arquivos passam pelo armazenamento existente. No Visual Library, a referência usa `entityType=tv_season` e `entityId=<showId>:<seasonNumber>`, com sugestões de tags da série e temporada; em modo local, arquivos usam nomes exclusivos e não se misturam aos vínculos da galeria da série. Troca e remoção não apagam assets compartilhados.
+
+
+## Galeria da temporada
+
+A V84 cria `tv_season_images` com unicidade `(show_id, season_number, url)` e incorpora todas as capas da V83 como imagens da própria temporada, preservando a capa principal. `ShowSeasonDetailsResponse.images` retorna `{id,url,isPrimary}`; `coverUrl` continua como referência canônica da capa usada também no resumo de temporadas. Leituras usam apenas o acervo persistido.
+
+- `GET /api/shows/{showId}/seasons/{seasonNumber}/images/candidates`: owner; pôsteres do TMDb, mesmos candidatos da seleção de capa.
+- `POST .../images/lookup`: owner e CSRF; mesmo contrato de consulta de presença dos originais, com até oito IDs.
+- `POST .../images/selection`: owner e CSRF; recebe `{ids}` (1–50), revalida candidatos e retorna `{savedIds,failedIds}`. Adiciona sem substituir a capa atual; sem capa, o primeiro sucesso vira a principal. Falha parcial preserva os sucessos e a seleção das falhas para retry.
+- `POST .../images/primary`: owner e CSRF; recebe `{url}` vinculada à temporada e retorna `{coverUrl}`.
+- `DELETE .../images`: owner e CSRF; recebe `{url}`, remove só o vínculo e retorna `{coverUrl}`. Ao remover a principal, escolhe outra imagem restante; sem imagens, retorna null.
+
+Curadoria usa bloqueio transacional da série para serializar alterações de imagem/capa. Não altera a galeria geral, outras temporadas, episódios ou watches e não apaga assets. Os endpoints de capa única continuam disponíveis por compatibilidade; a interface atual usa a galeria. Temporadas sem número não oferecem seleção; especiais com número zero são aceitos. TMDb continua sendo a única fonte de candidatos e não fornece cenas de episódios neste fluxo.

@@ -42,6 +42,7 @@ export interface ShowSeasonEpisodeDto {
 }
 
 export interface ShowSeasonDetailsResponse {
+  images: ShowImageDto[]
   coverUrl: string | null
   showId: number
   showSlug: string | null
@@ -502,6 +503,7 @@ export interface ShowSeasonEpisodeModel {
 }
 
 export interface ShowSeasonPageData {
+  gallery: string[]
   coverUrl: string | null
   showId: number
   showSlug: string | null

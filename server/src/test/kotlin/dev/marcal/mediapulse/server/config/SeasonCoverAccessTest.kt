@@ -41,12 +41,24 @@ class SeasonCoverAccessTest {
             "/api/shows/7/seasons/0/cover/candidates",
             "/api/shows/7/seasons/-1/cover/candidates",
             "/api/shows/7/seasons/1/cover/candidates/",
+            "/api/shows/7/seasons/1/images/candidates",
+            "/api/shows/7/seasons/0/images/candidates",
         )) {
             assertEquals(401, status(path, "GET"))
             assertEquals(401, status(path, "HEAD"))
             assertEquals(204, status(path, "GET", owner))
         }
         for (method in listOf("POST", "DELETE")) {
+            for (path in listOf(
+                "/api/shows/7/seasons/1/images/selection",
+                "/api/shows/7/seasons/1/images/lookup",
+                "/api/shows/7/seasons/1/images/primary",
+                "/api/shows/7/seasons/1/images",
+            )) {
+                assertEquals(401, status(path, method))
+                assertEquals(403, status(path, method, owner))
+                assertEquals(204, status(path, method, owner, "test-token"))
+            }
             assertEquals(401, status("/api/shows/7/seasons/1/cover", method))
             assertEquals(403, status("/api/shows/7/seasons/1/cover", method, owner))
             assertEquals(403, status("/api/shows/7/seasons/1/cover", method, owner, "wrong"))
