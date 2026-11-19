@@ -632,7 +632,9 @@ class TvShowQueryRepository(
                       MAX(te.season_title) AS season_title,
                       COUNT(DISTINCT te.id) AS episodes_count,
                       COUNT(DISTINCT CASE WHEN tew.id IS NOT NULL THEN te.id END) AS watched_episodes_count,
-                      MAX(tew.watched_at) AS last_watched_at
+                      MAX(tew.watched_at) AS last_watched_at,
+                      (SELECT sc.cover_url FROM tv_season_covers sc
+                       WHERE sc.show_id = :showId AND sc.season_number = te.season_number) AS cover_url
                     FROM tv_episodes te
                     LEFT JOIN tv_episode_watches tew ON tew.episode_id = te.id
                     WHERE te.show_id = :showId
@@ -646,6 +648,7 @@ class TvShowQueryRepository(
                     val episodesCount = (fields[2] as Number).toLong()
                     val watchedEpisodesCount = (fields[3] as Number).toLong()
                     ShowSeasonDto(
+                        coverUrl = fields[5] as String?,
                         seasonNumber = (fields[0] as Number?)?.toInt(),
                         seasonTitle = fields[1] as String?,
                         episodesCount = episodesCount,
@@ -874,7 +877,17 @@ class TvShowQueryRepository(
                 .setParameter("seasonNumber", seasonNumber)
                 .singleResult as String?
 
+        val seasonCover =
+            entityManager
+                .createNativeQuery(
+                    "SELECT cover_url FROM tv_season_covers WHERE show_id = :showId AND season_number = :seasonNumber",
+                ).setParameter("showId", showId)
+                .setParameter("seasonNumber", seasonNumber)
+                .resultList
+                .firstOrNull() as String?
+
         return ShowSeasonDetailsResponse(
+            coverUrl = seasonCover,
             showId = showId,
             showSlug = base[1] as String?,
             showTitle = base[2] as String,

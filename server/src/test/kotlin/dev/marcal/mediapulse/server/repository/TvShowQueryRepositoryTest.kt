@@ -262,6 +262,7 @@ class TvShowQueryRepositoryTest {
                         null,
                     ),
                 ),
+                listOf("/season-cover.jpg"),
             )
         every { query.singleResult } returns "Temporada 1"
 
@@ -270,6 +271,7 @@ class TvShowQueryRepositoryTest {
         assertEquals(10L, response.showId)
         assertEquals("1418", response.showTmdbId)
         assertEquals("Temporada 1", response.seasonTitle)
+        assertEquals("/season-cover.jpg", response.coverUrl)
         assertEquals(2L, response.episodesCount)
         assertEquals(1L, response.watchedEpisodesCount)
         assertEquals(false, response.completed)
@@ -278,8 +280,8 @@ class TvShowQueryRepositoryTest {
         assertEquals(java.time.LocalDate.parse("2007-09-24"), response.episodes.first().originallyAvailableAt)
         assertEquals(Instant.parse("2024-01-03T14:35:00Z"), response.lastWatchedAt)
         verify(exactly = 1) { query.setParameter("slug", "the-big-bang-theory") }
-        verify(exactly = 3) { query.setParameter("showId", 10L) }
-        verify(exactly = 3) { query.setParameter("seasonNumber", 1) }
+        verify(exactly = 4) { query.setParameter("showId", 10L) }
+        verify(exactly = 4) { query.setParameter("seasonNumber", 1) }
     }
 
     @Test
@@ -303,7 +305,7 @@ class TvShowQueryRepositoryTest {
                 emptyList<Any>(),
                 emptyList<Any>(),
                 listOf(
-                    arrayOf(1, "Temporada 1", 6L, 6L, Timestamp.from(Instant.parse("2026-04-03T23:14:52Z"))),
+                    arrayOf(1, "Temporada 1", 6L, 6L, Timestamp.from(Instant.parse("2026-04-03T23:14:52Z")), "/season-cover.jpg"),
                 ),
                 emptyList<Any>(),
             )
@@ -314,6 +316,7 @@ class TvShowQueryRepositoryTest {
         assertEquals(6L, response.progress?.watchedEpisodesCount)
         assertEquals(true, response.progress?.completed)
         assertEquals(1, response.seasons.size)
+        assertEquals("/season-cover.jpg", response.seasons.first().coverUrl)
         assertEquals(6L, response.seasons.first().episodesCount)
         assertEquals(6L, response.seasons.first().watchedEpisodesCount)
     }

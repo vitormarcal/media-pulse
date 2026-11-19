@@ -14,6 +14,14 @@
     <ul v-if="seasons.length" class="seasons">
       <li v-for="season in seasons" :key="season.id">
         <component :is="season.href ? NuxtLink : 'div'" :to="season.href || undefined" class="season-row">
+          <img
+            v-if="season.coverUrl && !failedCovers.includes(season.coverUrl)"
+            class="season-cover"
+            :src="resolveMediaUrl(season.coverUrl) || undefined"
+            alt=""
+            loading="lazy"
+            @error="failedCovers.push(season.coverUrl)"
+          />
           <strong>{{ season.title }}</strong>
           <span>{{ season.progressLabel }}</span>
           <span v-if="season.href" aria-hidden="true">›</span>
@@ -27,6 +35,8 @@
 <script setup lang="ts">
 import { NuxtLink } from '#components'
 import type { ShowPageData } from '~/types/shows'
+const { resolveMediaUrl } = useMediaUrl()
+const failedCovers = ref<string[]>([])
 
 defineProps<{
   progress: ShowPageData['progress']
@@ -35,6 +45,14 @@ defineProps<{
 </script>
 
 <style scoped>
+.season-cover {
+  width: 48px;
+  height: auto;
+  max-height: 80px;
+  object-fit: contain;
+  border-radius: 8px;
+  flex: 0 0 auto;
+}
 .progress-head,
 .season-row {
   display: flex;

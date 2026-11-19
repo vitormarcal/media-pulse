@@ -2,6 +2,7 @@ package dev.marcal.mediapulse.server.service.image
 
 import dev.marcal.mediapulse.server.integration.visuallibrary.VisualLibraryClient
 import dev.marcal.mediapulse.server.model.image.ImageContent
+import dev.marcal.mediapulse.server.model.visuallibrary.VisualLibrarySourceReference
 import dev.marcal.mediapulse.server.model.visuallibrary.VisualLibraryUploadMetadata
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
@@ -114,6 +115,27 @@ class LibraryImageStorageService(
         } else {
             val localHint = if (visualLibrary.migrationEnabled) "${fileHint}_${UUID.randomUUID()}" else fileHint
             storage.saveImageForTvShow(validated, provider, showId, localHint)
+        }
+    }
+
+    fun saveSeason(
+        image: ImageContent,
+        showId: Long,
+        seasonNumber: Int,
+        title: String,
+        fileHint: String,
+    ): String {
+        val validated = LibraryImageValidator.validate(image.bytes)
+        return if (visualLibrary.enabled) {
+            visualLibrary.upload(
+                validated,
+                VisualLibraryUploadMetadata(
+                    VisualLibrarySourceReference("tv_season", "$showId:$seasonNumber"),
+                    listOf("série", title, "Temporada $seasonNumber"),
+                ),
+            )
+        } else {
+            storage.saveImageForTvShow(validated, "TMDB", showId, "season_${seasonNumber}_${fileHint}_${UUID.randomUUID()}")
         }
     }
 

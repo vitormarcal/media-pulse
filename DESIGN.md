@@ -322,6 +322,11 @@ Nota, comentários e sessões ficam em Atividade, com registro sob demanda. Sobr
 O detalhe de temporada usa cabeçalho compacto com retorno à série e uma contagem de progresso. Os episódios aparecem em ordem, separados por linhas. Marcar como assistido registra a hora atual. Opções de registro oferecem data personalizada e marcação em lote até o episódio escolhido. Se houver falha parcial, recarregar os episódios e mostrar quantos foram registrados. A atualização de dados da temporada é aberta pelo owner junto da lista.
 
 
+### Capa própria da temporada
+
+Temporadas com número podem ter uma capa única escolhida pelo owner entre os pôsteres do TMDb. No cabeçalho compacto, identificação e progresso ficam à esquerda e capa integral à direita, com altura máxima de 280px e cantos de 20px; no celular, empilhar identificação, capa e progresso. Os episódios continuam logo abaixo. Na lista de temporadas da série, usar miniatura integral de 48px de largura junto do título e progresso, dentro do mesmo link. Sem capa ou em falha, manter apresentação textual sem simular uma capa da temporada usando a imagem geral da série. Escolher/Trocar capa abre seleção única com ampliação antes de salvar; falha preserva seleção e capa anterior. Remoção pede confirmação e não apaga o asset no armazenamento. Foco visível e retorno de foco preservados, sem galeria de múltiplas imagens por temporada.
+
+
 ## 19. Detalhe de álbum
 
 Usar largura de até 1120px e painéis brancos uniformes sobre o fundo quente, com cantos de 28px e espaçamento de 32px. Identificação e comentários ficam à esquerda da capa no desktop; no celular, a ordem é identificação, capa e memória pessoal. A capa mantém a proporção original, sem recorte, arte de fundo ou faixas acrescentadas; a composição favorece as capas quadradas de música. Créditos preservam nomes, ordem, conectivos e links individuais dos artistas. Mostrar o ano uma vez.

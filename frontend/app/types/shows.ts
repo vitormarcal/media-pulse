@@ -20,6 +20,7 @@ export interface ShowWatchDto {
 }
 
 export interface ShowSeasonDto {
+  coverUrl: string | null
   seasonNumber: number | null
   seasonTitle: string | null
   episodesCount: number
@@ -41,6 +42,7 @@ export interface ShowSeasonEpisodeDto {
 }
 
 export interface ShowSeasonDetailsResponse {
+  coverUrl: string | null
   showId: number
   showSlug: string | null
   showTitle: string
@@ -400,6 +402,7 @@ export interface ShowSeasonEnrichmentApplyResponse {
 }
 
 export interface ShowSeasonCardModel {
+  coverUrl: string | null
   id: string
   title: string
   progressLabel: string
@@ -499,6 +502,7 @@ export interface ShowSeasonEpisodeModel {
 }
 
 export interface ShowSeasonPageData {
+  coverUrl: string | null
   showId: number
   showSlug: string | null
   showTitle: string

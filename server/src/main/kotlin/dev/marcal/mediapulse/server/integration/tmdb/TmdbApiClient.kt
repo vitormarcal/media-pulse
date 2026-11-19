@@ -600,6 +600,11 @@ class TmdbApiClient(
 
     fun fetchShowImages(tmdbId: String) = fetchImages("/tv/{id}/images", tmdbId)
 
+    fun fetchShowSeasonImages(
+        tmdbId: String,
+        seasonNumber: Int,
+    ) = fetchImages("/tv/{id}/season/$seasonNumber/images", tmdbId)
+
     private fun fetchImages(
         path: String,
         tmdbId: String,

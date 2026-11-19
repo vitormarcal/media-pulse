@@ -58,6 +58,7 @@ function mapSeason(season: ShowDetailsResponse['seasons'][number], showSlug: str
 
   return {
     id: `${season.seasonNumber ?? 'special'}-${season.seasonTitle ?? 'season'}`,
+    coverUrl: season.coverUrl ?? null,
     title: season.seasonTitle || label,
     progressLabel: `${season.watchedEpisodesCount}/${season.episodesCount} episódios`,
     progressValue,
@@ -472,6 +473,7 @@ export function buildShowSeasonPageData(season: ShowSeasonDetailsResponse): Show
     showOriginalTitle: season.showOriginalTitle,
     showYear: season.showYear,
     showCoverUrl: season.showCoverUrl,
+    coverUrl: season.coverUrl ?? null,
     showTmdbId: season.showTmdbId,
     seasonTitle,
     seasonNumber: season.seasonNumber,

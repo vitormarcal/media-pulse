@@ -33,6 +33,37 @@ class LibraryImageStorageServiceTest {
         }
 
     @Test
+    fun `season cover has independent composite reference and validated local fallback`() {
+        val bytes = png()
+        val image = ImageContent(bytes, null)
+        every { remote.enabled } returns true
+        every { remote.upload(any(), any()) } returns "stored-season"
+        assertEquals("stored-season", service().saveSeason(image, 7, 0, "Series", "poster"))
+        verify {
+            remote.upload(
+                any(),
+                match {
+                    it.sourceReference.entityType == "tv_season" &&
+                        it.sourceReference.entityId == "7:0" &&
+                        "Temporada 0" in it.tags
+                },
+            )
+        }
+        every { remote.enabled } returns false
+        val path = service().saveSeason(image, 7, 1, "Series", "poster")
+        assertContentEquals(bytes, Files.readAllBytes(root.resolve(path.removePrefix("/covers/"))))
+        assertFailsWith<ResponseStatusException> {
+            service().saveSeason(
+                ImageContent("invalid".toByteArray(), null),
+                7,
+                1,
+                "Series",
+                "poster",
+            )
+        }
+    }
+
+    @Test
     fun `author portrait uses distinct library reference or validated local file`() {
         val bytes = png()
         every { remote.enabled } returns true

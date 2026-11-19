@@ -310,3 +310,13 @@ O catálogo solicita somente o ramo exibido: `library` com 24 itens e cursor, `s
 `stats.total.uniqueShowsCount` conta séries com algum registro; o total do acervo é sua soma com `unwatchedCount`. No ano, `watchesCount` conta registros de visualização, incluindo repetições de episódios. `rewatchesCount` é registros menos séries distintas e não mede episódios reassistidos: a página não o apresenta como Revisitas. `watchedEpisodesCount` no catálogo e no andamento conta episódios distintos, permitindo informar progresso sobre os episódios cadastrados, sem inferir término da produção. Busca e ano não fornecem esse progresso global.
 
 A paginação automática mantém itens/cursor em erro, pausa até retry explícito, deduplica IDs e descarta respostas anteriores à troca de filtro. Não há botão normal de próxima página. Ver [escopo e validação da revisão](features/shows-library-ux-review.md).
+
+## Capa própria da temporada
+
+- `GET /api/shows/{showId}/seasons/{seasonNumber}/cover/candidates`: owner; retorna `TmdbImageCandidatesResponse` com apenas pôsteres da temporada no TMDb e avisos quando não há vínculo.
+- `POST /api/shows/{showId}/seasons/{seasonNumber}/cover`: owner e CSRF; recebe `TmdbImageSelectionRequest` com exatamente um ID de candidato. Retorna `{savedIds, failedIds}`. Candidato é revalidado no backend; imagem de outra temporada não é aceita. Em falha de armazenamento, a capa anterior permanece.
+- `DELETE /api/shows/{showId}/seasons/{seasonNumber}/cover`: owner e CSRF; resposta 204. Remove apenas o vínculo da capa da temporada, sem apagar o asset ou alterar imagens da série.
+
+`ShowSeasonDto` e `ShowSeasonDetailsResponse` incluem `coverUrl` nullable da própria temporada. Temporadas são identificadas pelo show e número, inclusive zero (especiais); os endpoints recusam temporadas sem episódios cadastrados e números negativos. Sem número, não há seleção. Leituras das páginas usam a referência persistida, sem consultar TMDb.
+
+A V83 cria `tv_season_covers`, com chave composta `(show_id, season_number)` e remoção em cascata com a série. Arquivos passam pelo armazenamento existente. No Visual Library, a referência usa `entityType=tv_season` e `entityId=<showId>:<seasonNumber>`, com sugestões de tags da série e temporada; em modo local, arquivos usam nomes exclusivos e não se misturam aos vínculos da galeria da série. Troca e remoção não apagam assets compartilhados.

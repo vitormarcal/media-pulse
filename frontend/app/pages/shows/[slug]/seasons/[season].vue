@@ -7,13 +7,33 @@
         {{ data.showSlug ? `Voltar para ${data.showTitle}` : 'Voltar para séries' }}
       </NuxtLink>
 
-      <header class="surface season-header">
-        <div>
+      <header
+        class="surface season-header"
+        :class="{
+          'has-cover':
+            data.seasonNumber != null &&
+            (owner.authenticated || (data.coverUrl && failedSeasonCover !== data.coverUrl)),
+        }"
+      >
+        <div class="season-identification">
           <p class="muted">
             {{ data.showTitle }}<span v-if="data.showYear"> · {{ data.showYear }}</span>
           </p>
           <h1>{{ data.seasonTitle }}</h1>
         </div>
+        <ShowSeasonCover
+          v-if="
+            data.seasonNumber != null && (owner.authenticated || (data.coverUrl && failedSeasonCover !== data.coverUrl))
+          "
+          :key="`${data.showId}-${data.seasonNumber}`"
+          class="season-cover-area"
+          :show-id="data.showId"
+          :season-number="data.seasonNumber"
+          :title="`${data.showTitle} — ${data.seasonTitle}`"
+          :cover-url="data.coverUrl"
+          @changed="refresh()"
+          @unavailable="failedSeasonCover = data.coverUrl || ''"
+        />
         <div v-if="data.progress.totalEpisodes" class="progress-summary">
           <p>{{ data.progress.watchedEpisodes }} de {{ data.progress.totalEpisodes }} episódios assistidos</p>
           <progress
@@ -124,6 +144,7 @@
 </template>
 
 <script setup lang="ts">
+import ShowSeasonCover from '~/components/shows/ShowSeasonCover.vue'
 import MediaRatingPanel from '~/components/media/MediaRatingPanel.vue'
 import ShowSeasonEnrichmentPanel from '~/components/shows/ShowSeasonEnrichmentPanel.vue'
 import { useShowSeasonPageData } from '~/composables/useShowSeasonPageData'
@@ -136,6 +157,7 @@ const { data, error, status, refresh } = await useShowSeasonPageData(
   String(route.params.slug),
   Number(route.params.season),
 )
+const failedSeasonCover = ref('')
 const enrichmentOpen = ref(false)
 const editingEpisodeId = ref<number | null>(null)
 const pendingEpisodeId = ref<number | null>(null)
@@ -225,8 +247,24 @@ async function registerWatch(episode: ShowSeasonEpisodeModel, mode: 'now' | 'dat
   background: var(--base-color-surface-strong);
 }
 .season-header {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.65fr);
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+.season-header.has-cover {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 280px);
+  grid-template-areas: 'identity cover' 'progress cover';
+}
+.has-cover .season-identification {
+  grid-area: identity;
+  min-width: 0;
+}
+.has-cover .season-cover-area {
+  grid-area: cover;
+  min-width: 0;
+}
+.has-cover .progress-summary {
+  grid-area: progress;
+  min-width: 0;
 }
 .section-head,
 .episode-heading {
@@ -341,8 +379,10 @@ input {
   justify-self: start;
 }
 @media (max-width: 680px) {
-  .season-header {
-    grid-template-columns: 1fr;
+  .season-header,
+  .season-header.has-cover {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'identity' 'cover' 'progress';
   }
 }
 </style>

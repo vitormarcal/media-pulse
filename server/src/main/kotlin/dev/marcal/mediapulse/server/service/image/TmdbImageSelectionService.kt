@@ -28,6 +28,7 @@ class TmdbImageSelectionService(
         val linkGuidance: String,
     ) {
         MOVIE("Vincule o filme ao TMDb em Atualizar dados."),
+        SEASON("Vincule a série ao TMDb em Atualizar dados."),
         SHOW("Vincule a série ao TMDb em Atualizar dados."),
     }
 
@@ -36,6 +37,7 @@ class TmdbImageSelectionService(
         val id: Long,
         val title: String,
         val tmdbId: String?,
+        val seasonNumber: Int? = null,
     )
 
     fun candidates(subject: Subject): TmdbImageCandidatesResponse {
@@ -66,6 +68,7 @@ class TmdbImageSelectionService(
                 val url =
                     when (subject.kind) {
                         Kind.MOVIE -> storage.saveMovie(content, subject.id, subject.title, "TMDB", fileHint)
+                        Kind.SEASON -> storage.saveSeason(content, subject.id, checkNotNull(subject.seasonNumber), subject.title, fileHint)
                         Kind.SHOW -> storage.saveShow(content, subject.id, subject.title, "TMDB", fileHint)
                     }
                 append(url)
@@ -133,13 +136,25 @@ class TmdbImageSelectionService(
                 when (subject.kind) {
                     Kind.MOVIE -> tmdb.fetchMovieImages(tmdbId)
                     Kind.SHOW -> tmdb.fetchShowImages(tmdbId)
+                    Kind.SEASON -> tmdb.fetchShowSeasonImages(tmdbId, checkNotNull(subject.seasonNumber))
                 }
             } catch (_: Exception) {
                 throw ResponseStatusException(HttpStatus.BAD_GATEWAY, "Não foi possível buscar imagens no TMDb.")
             }
-        val scope = if (subject.kind == Kind.MOVIE) subject.id.toString() else "show:${subject.id}"
+        val scope =
+            when (subject.kind) {
+                Kind.MOVIE -> subject.id.toString()
+                Kind.SHOW -> "show:${subject.id}"
+                Kind.SEASON -> "season:${subject.id}:${subject.seasonNumber}"
+            }
         val root = properties.imageBaseUrl.trimEnd('/') + "/t/p"
-        return listOf("POSTER" to result.posters, "BACKDROP" to result.backdrops)
+        val groups =
+            if (subject.kind == Kind.SEASON) {
+                listOf("POSTER" to result.posters)
+            } else {
+                listOf("POSTER" to result.posters, "BACKDROP" to result.backdrops)
+            }
+        return groups
             .flatMap { (kind, entries) ->
                 entries.mapNotNull { image ->
                     val path = image.filePath?.takeIf { it.matches(imagePath) } ?: return@mapNotNull null

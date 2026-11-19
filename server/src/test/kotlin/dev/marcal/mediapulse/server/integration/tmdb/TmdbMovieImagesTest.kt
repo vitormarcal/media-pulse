@@ -11,11 +11,12 @@ import java.util.concurrent.atomic.AtomicReference
 
 class TmdbMovieImagesTest {
     @ParameterizedTest
-    @ValueSource(strings = ["movie", "tv"])
+    @ValueSource(strings = ["movie", "tv", "tv-season"])
     fun `fetches alternative posters and backdrops without a language filter`(kind: String) {
+        val route = if (kind == "tv-season") "tv/42/season/0" else "$kind/42"
         val request = AtomicReference<String>()
         val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
-        server.createContext("/3/$kind/42/images") { exchange ->
+        server.createContext("/3/$route/images") { exchange ->
             request.set("${exchange.requestMethod} ${exchange.requestURI}")
             val body =
                 """
@@ -34,8 +35,13 @@ class TmdbMovieImagesTest {
         try {
             val properties = TmdbProperties(apiBaseUrl = "http://127.0.0.1:${server.address.port}/3", apiKey = "fixture")
             val client = TmdbApiClient(TmdbClientConfig(properties).tmdbWebClient(WebClient.builder()), properties, TmdbRateLimiter())
-            val result = if (kind == "tv") client.fetchShowImages("42") else client.fetchMovieImages("42")
-            assertEquals("GET /3/$kind/42/images?api_key=fixture", request.get())
+            val result =
+                when (kind) {
+                    "tv" -> client.fetchShowImages("42")
+                    "tv-season" -> client.fetchShowSeasonImages("42", 0)
+                    else -> client.fetchMovieImages("42")
+                }
+            assertEquals("GET /3/$route/images?api_key=fixture", request.get())
             assertEquals(listOf("/one.jpg", "/two.jpg"), result.posters.map { it.filePath })
             assertEquals(780, result.posters.first().width)
             assertEquals("/background.jpg", result.backdrops.single().filePath)

@@ -144,6 +144,7 @@ data class ShowWatchDto(
 )
 
 data class ShowSeasonDto(
+    val coverUrl: String? = null,
     val seasonNumber: Int?,
     val seasonTitle: String? = null,
     val episodesCount: Long,
@@ -165,6 +166,7 @@ data class ShowSeasonEpisodeDto(
 )
 
 data class ShowSeasonDetailsResponse(
+    val coverUrl: String? = null,
     val showId: Long,
     val showSlug: String?,
     val showTitle: String,
