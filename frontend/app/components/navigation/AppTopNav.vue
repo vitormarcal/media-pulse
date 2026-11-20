@@ -1,12 +1,12 @@
 <template>
-  <header class="top-nav">
+  <header class="top-nav" @keydown.esc="closeMenuWithFocus">
     <div class="nav-inner">
       <NuxtLink class="brand" to="/">
         <span class="brand-dot" />
         <span>Media Pulse</span>
       </NuxtLink>
 
-      <nav class="links" aria-label="Seções">
+      <nav id="primary-navigation" class="links" :class="{ expanded: menuOpen }" aria-label="Seções">
         <NuxtLink
           v-for="item in items"
           :key="item.href"
@@ -14,17 +14,30 @@
           class="nav-link"
           :class="{ active: isActive(item.href) }"
           :aria-current="isActive(item.href) ? 'page' : undefined"
+          @click="menuOpen = false"
         >
           {{ item.label }}
         </NuxtLink>
-      </nav>
-
-      <div class="nav-actions">
-        <NuxtLink v-if="!owner.authenticated" class="nav-action" to="/login">Entrar</NuxtLink>
+        <NuxtLink v-if="!owner.authenticated" class="nav-action account-action" to="/login" @click="menuOpen = false"
+          >Entrar</NuxtLink
+        >
         <button v-else type="button" class="nav-action" :disabled="loggingOut" :aria-busy="loggingOut" @click="logout">
           {{ loggingOut ? 'Saindo…' : 'Sair' }}
         </button>
-        <button type="button" class="nav-action" @click="$emit('openSearch')">Buscar</button>
+      </nav>
+
+      <div class="nav-actions">
+        <button type="button" class="nav-action" @click="openSearch">Buscar</button>
+        <button
+          ref="menuButton"
+          type="button"
+          class="nav-action menu-toggle"
+          aria-controls="primary-navigation"
+          :aria-expanded="menuOpen"
+          @click="menuOpen = !menuOpen"
+        >
+          {{ menuOpen ? 'Fechar' : 'Menu' }}
+        </button>
       </div>
     </div>
     <p v-if="logoutError" class="logout-error" role="alert">{{ logoutError }}</p>
@@ -36,12 +49,33 @@ const owner = useOwnerAuth()
 const route = useRoute()
 const loggingOut = ref(false)
 const logoutError = ref('')
+const menuOpen = ref(false)
+const menuButton = ref<HTMLButtonElement | null>(null)
+
+function closeMenuWithFocus() {
+  if (!menuOpen.value) return
+  menuOpen.value = false
+  menuButton.value?.focus()
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    menuOpen.value = false
+  },
+)
+
 function isActive(href: string) {
   return href === '/' ? route.path === '/' : route.path === href || route.path.startsWith(href + '/')
 }
-defineEmits<{
+const emit = defineEmits<{
   openSearch: []
 }>()
+
+function openSearch() {
+  menuOpen.value = false
+  emit('openSearch')
+}
 
 const config = useRuntimeConfig()
 async function logout() {
@@ -116,18 +150,22 @@ const items = [
   display: flex;
   flex-wrap: wrap;
   min-width: 0;
-  gap: 8px;
+  gap: 6px;
+}
+
+.menu-toggle {
+  display: none;
 }
 
 .nav-link,
 .nav-action {
-  padding: 8px 14px;
+  padding: 10px 12px;
   border: 0;
   border-radius: 16px;
   background: color-mix(in srgb, var(--base-color-surface-warm) 86%, white);
   color: var(--base-color-text-primary);
   white-space: nowrap;
-  font-size: 1rem;
+  font-size: 0.875rem;
   cursor: pointer;
 }
 
@@ -171,16 +209,29 @@ const items = [
 
   .links {
     order: 3;
-    flex-wrap: nowrap;
+    display: none;
     width: 100%;
-    overflow-x: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--base-color-border) transparent;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: calc(100dvh - 100px);
+    overflow-y: auto;
     padding: 4px;
   }
 
-  .nav-link {
-    flex-shrink: 0;
+  .links.expanded {
+    display: grid;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .nav-link,
+  .links .nav-action {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    text-align: left;
   }
 }
 
@@ -196,7 +247,8 @@ const items = [
   }
 
   .nav-action {
-    padding: 8px 12px;
+    min-height: 44px;
+    padding: 10px 12px;
   }
 }
 </style>

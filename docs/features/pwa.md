@@ -4,7 +4,7 @@
 Acessar o Media Pulse pela tela inicial do Android, em janela própria, reutilizando o frontend e backend existentes.
 
 ## Escopo aprovado
-Manifesto com identidade, ícones PNG de 192 e 512 pixels com área segura para máscaras do Android, abertura standalone e página independente de falta de conexão com tentativa de recarregar a URL original.
+Manifesto com identidade usando o brand-dot da página inicial (círculo vermelho e halo suave sobre fundo quente), ícones PNG de 192 e 512 pixels com área segura para máscaras do Android, abertura standalone e página independente de falta de conexão com tentativa de recarregar a URL original.
 
 Sem APIs novas, migração, notificações, acervo offline ou sincronização. Consultas e alterações continuam dependendo do servidor.
 

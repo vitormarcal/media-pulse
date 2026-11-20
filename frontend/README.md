@@ -151,3 +151,5 @@ O build de produção oferece instalação pelo menu do Chrome, ícone na tela i
 Após uma primeira visita online e ativação do worker, abrir/recarregar sem rede mostra uma página com “Tentar novamente”, que preserva a URL. O acervo e os registros continuam dependendo do servidor. Navegações internas usam os estados de erro existentes. O único conteúdo guardado pelo worker é essa página, sem cache de APIs ou autenticação.
 
 Instalação, atualização e validação no dispositivo: [PWA](../docs/features/pwa.md).
+
+Até 1200px, a navegação usa Menu expansível, mantendo marca e Buscar na primeira linha. As seções e Entrar/Sair aparecem sob demanda; Escape fecha e devolve o foco. O ícone do PWA usa o mesmo brand-dot da página inicial. Instalações existentes podem demorar a atualizar o ícone conforme o navegador; reinstalar permite conferir a nova identidade após publicação.
