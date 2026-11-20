@@ -43,6 +43,44 @@ class ShowCreditsServiceTest {
         )
 
     @Test
+    fun `both explicit linking and provider selection protect the individual credit`() {
+        every { showRepository.findById(7) } returns Optional.of(TvShow(id = 7, originalTitle = "Show", fingerprint = "fp", tmdbId = "707"))
+        val person = Person(id = 70, tmdbId = "700", name = "Chosen", normalizedName = "chosen", slug = "chosen")
+        every { personRepository.findById(70) } returns Optional.of(person)
+        every { personRepository.findByTmdbId("700") } returns person
+        every { personRepository.save(any()) } answers { firstArg() }
+        val credit =
+            dev.marcal.mediapulse.server.api.shows.ShowPersonCreditDto(
+                70,
+                "700",
+                "Chosen",
+                "chosen",
+                null,
+                dev.marcal.mediapulse.server.api.shows.ShowCreditTypeDto.CAST,
+                null,
+                null,
+                "My role",
+                0,
+            )
+        every { queryRepository.getShowPeople(7) } returns listOf(credit)
+        every { assignments.upsert(any()) } returns Unit
+        every { tmdb.fetchShowCredits("707") } returns
+            TmdbApiClient.TmdbShowCredits(
+                listOf(TmdbApiClient.TmdbShowCastCredit("700", "Chosen", "My role", 0, null, 1)),
+                emptyList(),
+            )
+        service.linkExistingPerson(7, 70, "CAST", "My role")
+        service.importTmdbCredit(
+            7,
+            dev.marcal.mediapulse.server.api.shows.ShowTmdbCreditImportRequest(
+                personTmdbId = "700",
+                creditType = dev.marcal.mediapulse.server.api.shows.ShowCreditTypeDto.CAST,
+            ),
+        )
+        verify(exactly = 2) { assignments.upsert(match { it.manuallySelected && it.personId == 70L }) }
+    }
+
+    @Test
     fun `removing a category should curate show and clean orphan person`() {
         every { showRepository.findById(8) } returns Optional.of(TvShow(id = 8, originalTitle = "Show 8", fingerprint = "show-8"))
         every { assignments.deleteCategory(8, 80, "WRITING") } returns 1
@@ -54,7 +92,7 @@ class ShowCreditsServiceTest {
     }
 
     @Test
-    fun `automatic sync should preserve curated show credits`() {
+    fun `automatic sync should update automatic credits even for curated show credits`() {
         every { showRepository.findById(6) } returns
             Optional.of(
                 TvShow(
@@ -66,10 +104,14 @@ class ShowCreditsServiceTest {
                 ),
             )
 
+        every { queryRepository.getShowPeople(6) } returns emptyList()
+        every { tmdb.fetchShowCredits("606") } returns TmdbApiClient.TmdbShowCredits(emptyList(), emptyList())
+        every { assignments.replaceForShow(6, emptyList()) } returns Unit
+
         service.syncFromTmdbIfLinked(6)
 
-        verify(exactly = 0) { tmdb.fetchShowCredits(any()) }
-        verify(exactly = 0) { assignments.replaceForShow(any(), any()) }
+        verify(exactly = 1) { tmdb.fetchShowCredits("606") }
+        verify(exactly = 1) { assignments.replaceForShow(6, emptyList()) }
     }
 
     @Test

@@ -133,16 +133,18 @@ A UI está disponível em `/shows/lists`, `/shows/lists/{slug}` e no bloco `Orga
 - a página da série passa a navegar para `/people/{slug}`
 - a página da pessoa agrega esses créditos de série ao lado dos créditos de filme
 - funciona como reparo explícito pela ação `Gerenciar pessoas` da página da série
-- restaura o recorte do TMDb e limpa a curadoria manual anterior
+- atualiza o recorte automático do TMDb sem apagar os créditos escolhidos pelo owner
 
 Na mesma ação, `POST /api/shows/{showId}/credits/tmdb-candidates` consulta outras pessoas sem persistir nada. `POST /api/shows/{showId}/credits/from-tmdb` grava somente a escolha explícita e `POST /api/shows/{showId}/credits/from-tmdb/batch` grava uma seleção com resultado independente por item. A UI ordena alfabeticamente dentro de elenco, direção e roteiro, pesquisa por nome ou função, abre o perfil da pessoa no TMDb e mostra 12 opções por grupo antes de carregar mais. Adições individuais ou em lote mantêm o painel aberto; numa falha parcial, somente as opções com erro continuam selecionadas.
 
-`DELETE /api/shows/{showId}/people/{personId}?category=CAST|DIRECTING|WRITING` remove fisicamente os vínculos da categoria. Adições e remoções marcam a série como curada; o worker não substitui esses créditos. Uma pessoa sem qualquer crédito audiovisual é apagada com seus dados dependentes, exceto quando favorita.
+`DELETE /api/shows/{showId}/people/{personId}?category=CAST|DIRECTING|WRITING` remove fisicamente os vínculos da categoria. Adições protegem individualmente os créditos escolhidos (`manually_selected`), sem bloquear o worker. Remoções não registram exclusão permanente: o crédito pode reaparecer numa atualização pelo TMDb. Uma pessoa sem qualquer crédito audiovisual é apagada com seus dados dependentes, exceto quando favorita.
+
+A proteção individual e a preservação conservadora dos dados antigos são introduzidas pela migração V85, compartilhada com filmes; consulte [migração e validação](movies-api.md#pessoas-e-créditos).
 
 Um worker executa esse sync automaticamente para séries pendentes. `POST /api/admin/shows/credits/sync-tmdb?limit=100` mantém o mesmo processamento disponível para reparo em lote.
 
 - considera apenas séries com vínculo `TMDB`
-- considera apenas pendentes sem curadoria manual (`tv_shows.credits_synced_at IS NULL` e `credits_curated_at IS NULL`)
+- considera apenas pendentes (`tv_shows.credits_synced_at IS NULL`), incluindo obras com curadoria manual
 - falhas registram `credits_sync_attempted_at` e `credits_sync_error`, preservam os créditos locais e são repetidas após um dia
 - processa no máximo `limit`, truncado em `1000`
 - executa cada série em transação isolada, contabilizando `synced` e `failed`

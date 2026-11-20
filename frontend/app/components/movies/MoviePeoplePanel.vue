@@ -69,7 +69,7 @@
       <div v-if="editingEnabled" class="editor-shell">
         <div class="editor-actions">
           <button v-owner type="button" class="secondary-button" :disabled="syncing" @click="syncFromTmdb">
-            {{ syncing ? 'Sincronizando...' : 'Sincronizar base TMDb' }}
+            {{ syncing ? 'Sincronizando...' : 'Atualizar créditos do TMDb' }}
           </button>
 
           <button
@@ -301,7 +301,6 @@ const assignedPeople = computed(() => {
 })
 
 async function syncFromTmdb() {
-  if (props.people.curated && !window.confirm('Restaurar o recorte do TMDb e substituir sua curadoria manual?')) return
   syncing.value = true
   feedback.value = null
 
@@ -310,7 +309,7 @@ async function syncFromTmdb() {
       baseURL: config.public.apiBase,
       method: 'POST',
     })
-    feedback.value = `${response.syncedCount} créditos locais atualizados a partir do TMDb.`
+    feedback.value = `${response.syncedCount} créditos consultados no TMDb. Vínculos escolhidos por você foram preservados.`
     emit('changed')
   } catch {
     feedback.value = 'Não foi possível sincronizar os créditos do TMDb.'

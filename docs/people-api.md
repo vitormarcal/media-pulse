@@ -55,7 +55,7 @@ As filmografias de filmes e séries possuem snapshots e estados de sincronizaç�
 - adicionar ou vincular uma obra mantém o owner na página da pessoa, sem abrir automaticamente o filme ou a série; a atualização após adicionar preserva a filmografia aberta e o recorte selecionado
 - cada obra local informa as categorias já vinculadas e as categorias de elenco, direção ou roteiro ainda disponíveis no snapshot
 - quando uma categoria está ausente, a página permite vinculá-la sem sair da filmografia; uma opção é aplicada diretamente e várias opções usam um seletor compacto
-- o vínculo usa somente o snapshot local, marca a obra como curada manualmente e não consulta o TMDb durante a leitura ou a ação
+- o vínculo usa somente o snapshot local, protege individualmente o crédito escolhido contra atualizações futuras e não consulta o TMDb durante a leitura ou a ação
 - `compacted=true` indica que o recorte contém somente obras locais com vínculos ainda incompletos; obras já completamente vinculadas continuam disponíveis nos créditos canônicos da página
 - atualizar manualmente substitui o recorte pelo snapshot completo do TMDb, limpa o estado compactado e inicia um novo prazo de retenção
 

@@ -19,7 +19,6 @@ class ShowCreditsCrudRepository(
                 SELECT s.id, s.tmdb_id
                 FROM tv_shows s
                 WHERE s.credits_synced_at IS NULL
-                  AND s.credits_curated_at IS NULL
                   AND s.tmdb_id IS NOT NULL
                   AND (
                     s.credits_sync_attempted_at IS NULL
@@ -46,7 +45,6 @@ class ShowCreditsCrudRepository(
                     SELECT COUNT(*)
                     FROM tv_shows s
                     WHERE s.credits_synced_at IS NULL
-                      AND s.credits_curated_at IS NULL
                       AND s.tmdb_id IS NOT NULL
                       AND (
                         s.credits_sync_attempted_at IS NULL
@@ -91,13 +89,6 @@ class ShowCreditsCrudRepository(
         entityManager
             .createNativeQuery(
                 "UPDATE tv_shows SET credits_curated_at = NOW(), updated_at = NOW() WHERE id = :showId",
-            ).setParameter("showId", showId)
-            .executeUpdate()
-
-    fun clearCurated(showId: Long): Int =
-        entityManager
-            .createNativeQuery(
-                "UPDATE tv_shows SET credits_curated_at = NULL, updated_at = NOW() WHERE id = :showId",
             ).setParameter("showId", showId)
             .executeUpdate()
 }

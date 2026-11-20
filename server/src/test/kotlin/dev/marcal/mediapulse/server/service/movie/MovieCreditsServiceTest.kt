@@ -47,6 +47,50 @@ class MovieCreditsServiceTest {
         )
 
     @Test
+    fun `both explicit linking and provider selection protect the individual credit`() {
+        every { movieRepository.findById(7) } returns Optional.of(Movie(id = 7, originalTitle = "Movie", fingerprint = "fp"))
+        val person = Person(id = 70, tmdbId = "700", name = "Chosen", normalizedName = "chosen", slug = "chosen")
+        every { personRepository.findById(70) } returns Optional.of(person)
+        every { personRepository.findByTmdbId("700") } returns person
+        every { personRepository.save(any()) } answers { firstArg() }
+        val credit =
+            dev.marcal.mediapulse.server.api.movies.PersonCreditDto(
+                70,
+                "700",
+                "Chosen",
+                "chosen",
+                null,
+                dev.marcal.mediapulse.server.api.movies.MovieCreditTypeDto.CAST,
+                null,
+                null,
+                "My role",
+                0,
+            )
+        every { movieQueryRepository.getMoviePeople(7) } returns listOf(credit)
+        every { movieQueryRepository.getMovieDetails(7) } returns movieDetails(7, "707")
+        every { tmdbApiClient.fetchMovieCredits("707") } returns
+            TmdbApiClient.TmdbMovieCredits(
+                listOf(TmdbApiClient.TmdbMovieCastCredit("700", "Chosen", "My role", 0, null)),
+                emptyList(),
+            )
+        service.linkExistingPerson(
+            7,
+            dev.marcal.mediapulse.server.api.movies
+                .PersonLinkRequest(70, "CAST", "My role"),
+        )
+        service.importTmdbCredit(
+            7,
+            dev.marcal.mediapulse.server.api.movies.MovieTmdbCreditImportRequest(
+                personTmdbId = "700",
+                creditType = MovieCreditTypeDto.CAST,
+                characterName = "My role",
+                billingOrder = 0,
+            ),
+        )
+        verify(exactly = 2) { movieCreditAssignmentRepository.upsert(match { it.manuallySelected && it.personId == 70L }) }
+    }
+
+    @Test
     fun `removing a category should curate movie and clean orphan person`() {
         every { movieRepository.findById(7) } returns Optional.of(Movie(id = 7, originalTitle = "Movie 7", fingerprint = "fp7"))
         every { movieCreditAssignmentRepository.deleteCategory(7, 70, "CAST") } returns 2
@@ -58,7 +102,7 @@ class MovieCreditsServiceTest {
     }
 
     @Test
-    fun `automatic sync should preserve curated movie credits`() {
+    fun `automatic sync should update automatic credits even for curated movie credits`() {
         every { movieRepository.findById(6) } returns
             Optional.of(
                 Movie(
@@ -70,10 +114,14 @@ class MovieCreditsServiceTest {
                 ),
             )
 
+        every { movieQueryRepository.getMovieDetails(6) } returns movieDetails(6, "606")
+        every { movieQueryRepository.getMoviePeople(6) } returns emptyList()
+        every { tmdbApiClient.fetchMovieCredits("606") } returns TmdbApiClient.TmdbMovieCredits(emptyList(), emptyList())
+
         service.syncFromTmdbIfLinked(6)
 
-        verify(exactly = 0) { tmdbApiClient.fetchMovieCredits(any()) }
-        verify(exactly = 0) { movieCreditAssignmentRepository.replaceForMovie(any(), any()) }
+        verify(exactly = 1) { tmdbApiClient.fetchMovieCredits("606") }
+        verify(exactly = 1) { movieCreditAssignmentRepository.replaceForMovie(6, emptyList()) }
     }
 
     @Test

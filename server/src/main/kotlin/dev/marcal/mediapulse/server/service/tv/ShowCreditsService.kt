@@ -56,8 +56,7 @@ class ShowCreditsService(
     private val writerJobs = setOf("Writer", "Screenplay", "Story Editor")
 
     @Transactional
-    fun syncFromTmdb(showId: Long): ShowCreditsSyncResponse =
-        syncFromTmdbInternal(showId).also { showCreditsCrudRepository.clearCurated(showId) }
+    fun syncFromTmdb(showId: Long): ShowCreditsSyncResponse = syncFromTmdbInternal(showId)
 
     @Transactional(readOnly = true)
     fun fetchTmdbCandidates(showId: Long): ShowTmdbCreditCandidatesResponse {
@@ -126,7 +125,7 @@ class ShowCreditsService(
                 }
                 else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "creditType inválido")
             }
-        showCreditAssignmentRepository.upsert(assignment)
+        showCreditAssignmentRepository.upsert(assignment.copy(manuallySelected = true))
         showCreditsCrudRepository.markCurated(show.id)
         return tvShowQueryRepository.getShowPeople(show.id).first {
             it.personId == assignment.personId &&
@@ -185,7 +184,7 @@ class ShowCreditsService(
                         characterName = roleLabel ?: "Elenco",
                     )
             }
-        showCreditAssignmentRepository.upsert(assignment)
+        showCreditAssignmentRepository.upsert(assignment.copy(manuallySelected = true))
         showCreditsCrudRepository.markCurated(show.id)
         return tvShowQueryRepository.getShowPeople(show.id).first {
             it.personId == person.id &&
@@ -212,7 +211,6 @@ class ShowCreditsService(
     @Transactional
     fun syncFromTmdbIfLinked(showId: Long) {
         val show = requireShow(showId)
-        if (show.creditsCuratedAt != null) return
         val hasTmdbLink = show.tmdbId != null
 
         if (hasTmdbLink) {
@@ -353,7 +351,7 @@ class ShowCreditsService(
             showId = show.id,
             syncedCount = resolvedCredits.size,
             visibleCount = tvShowQueryRepository.getShowPeople(show.id).size,
-            curated = false,
+            curated = show.creditsCuratedAt != null,
         ).also {
             showCreditsCrudRepository.markCreditsSynced(show.id)
         }

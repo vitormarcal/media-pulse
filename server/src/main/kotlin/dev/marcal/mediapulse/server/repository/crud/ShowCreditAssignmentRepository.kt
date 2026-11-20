@@ -17,6 +17,7 @@ class ShowCreditAssignmentRepository(
         val job: String? = null,
         val characterName: String? = null,
         val billingOrder: Int? = null,
+        val manuallySelected: Boolean = false,
     )
 
     @Transactional
@@ -24,11 +25,12 @@ class ShowCreditAssignmentRepository(
         showId: Long,
         credits: List<UpsertShowCreditRequest>,
     ) {
+        lockShow(showId)
         entityManager
             .createNativeQuery(
                 """
                 DELETE FROM show_credits
-                WHERE show_id = :showId
+                WHERE show_id = :showId AND NOT manually_selected
                 """.trimIndent(),
             ).setParameter("showId", showId)
             .executeUpdate()
@@ -38,6 +40,7 @@ class ShowCreditAssignmentRepository(
 
     @Transactional
     fun upsert(credit: UpsertShowCreditRequest) {
+        lockShow(credit.showId)
         entityManager
             .createNativeQuery(
                 """
@@ -48,20 +51,28 @@ class ShowCreditAssignmentRepository(
                     department,
                     job,
                     character_name,
-                    billing_order
-                ) VALUES (
+                    billing_order,
+                    manually_selected
+                ) SELECT
                     :showId,
                     :personId,
                     :creditType,
                     :department,
                     :job,
                     :characterName,
-                    :billingOrder
+                    :billingOrder,
+                    :manuallySelected
+                WHERE :manuallySelected OR NOT EXISTS (
+                    SELECT 1 FROM show_credits protected
+                    WHERE protected.show_id = :showId AND protected.person_id = :personId AND protected.manually_selected
+                      AND CASE WHEN protected.credit_type = 'CAST' THEN 'CAST'
+                               WHEN protected.job = 'Director' THEN 'DIRECTING' ELSE 'WRITING' END = :category
                 )
                 ON CONFLICT (show_id, person_id, credit_type, COALESCE(job, ''), COALESCE(character_name, ''))
                 DO UPDATE SET
                     department = EXCLUDED.department,
-                    billing_order = EXCLUDED.billing_order
+                    billing_order = EXCLUDED.billing_order,
+                    manually_selected = show_credits.manually_selected OR EXCLUDED.manually_selected
                 """.trimIndent(),
             ).setParameter("showId", credit.showId)
             .setParameter("personId", credit.personId)
@@ -70,7 +81,15 @@ class ShowCreditAssignmentRepository(
             .setParameter("job", credit.job)
             .setParameter("characterName", credit.characterName)
             .setParameter("billingOrder", credit.billingOrder)
-            .executeUpdate()
+            .setParameter("manuallySelected", credit.manuallySelected)
+            .setParameter(
+                "category",
+                when {
+                    credit.creditType == MovieCreditType.CAST -> "CAST"
+                    credit.job == "Director" -> "DIRECTING"
+                    else -> "WRITING"
+                },
+            ).executeUpdate()
     }
 
     @Transactional
@@ -79,6 +98,7 @@ class ShowCreditAssignmentRepository(
         personId: Long,
         category: String,
     ): Int {
+        lockShow(showId)
         val predicate =
             when (category) {
                 "CAST" -> "credit_type = 'CAST'"
@@ -92,5 +112,12 @@ class ShowCreditAssignmentRepository(
             ).setParameter("showId", showId)
             .setParameter("personId", personId)
             .executeUpdate()
+    }
+
+    private fun lockShow(showId: Long) {
+        entityManager
+            .createNativeQuery("SELECT id FROM tv_shows WHERE id = :id FOR UPDATE")
+            .setParameter("id", showId)
+            .singleResult
     }
 }

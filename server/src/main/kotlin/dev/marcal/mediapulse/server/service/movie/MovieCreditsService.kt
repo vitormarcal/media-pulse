@@ -57,8 +57,7 @@ class MovieCreditsService(
     private val crewLimit = 6
 
     @Transactional
-    fun syncFromTmdb(movieId: Long): MovieCreditsSyncResponse =
-        syncFromTmdbInternal(movieId).also { movieCreditsCrudRepository.clearCurated(movieId) }
+    fun syncFromTmdb(movieId: Long): MovieCreditsSyncResponse = syncFromTmdbInternal(movieId)
 
     @Transactional(readOnly = true)
     fun searchPeople(
@@ -136,7 +135,7 @@ class MovieCreditsService(
                 else -> throw ResponseStatusException(HttpStatus.BAD_REQUEST, "group inválido")
             }
 
-        movieCreditAssignmentRepository.upsert(credit)
+        movieCreditAssignmentRepository.upsert(credit.copy(manuallySelected = true))
         movieCreditsCrudRepository.markCurated(movie.id)
         return findPersistedCredit(movieId, person.id, credit)
     }
@@ -188,7 +187,7 @@ class MovieCreditsService(
                 }
             }
 
-        movieCreditAssignmentRepository.upsert(credit)
+        movieCreditAssignmentRepository.upsert(credit.copy(manuallySelected = true))
         movieCreditsCrudRepository.markCurated(movieId)
         return findPersistedCredit(movieId, credit.personId, credit)
     }
@@ -222,7 +221,6 @@ class MovieCreditsService(
 
     @Transactional
     fun syncFromTmdbIfLinked(movieId: Long) {
-        if (requireMovie(movieId).creditsCuratedAt != null) return
         val hasTmdbLink =
             movieQueryRepository
                 .getMovieDetails(movieId)
@@ -350,7 +348,7 @@ class MovieCreditsService(
             movieId = movieId,
             syncedCount = resolvedCredits.size,
             visibleCount = movieQueryRepository.getMoviePeople(movieId).size,
-            curated = false,
+            curated = movie.creditsCuratedAt != null,
         ).also {
             movieCreditsCrudRepository.markCreditsSynced(movieId)
         }

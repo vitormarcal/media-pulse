@@ -321,14 +321,14 @@ Persistência:
 `POST /api/admin/movies/{movieId}/credits/sync-tmdb` sincroniza créditos de um filme.
 
 - exige vínculo `TMDB` no filme
-- substitui o recorte local de créditos pelo snapshot atual do TMDb
-- funciona como restauração explícita: limpa a curadoria manual anterior
+- atualiza o recorte automático de créditos, preservando os vínculos escolhidos pelo owner
+- mantém a curadoria manual e não duplica uma pessoa/categoria já protegida, mesmo quando o papel informado pelo TMDb difere
 - marca `movies.credits_synced_at` ao concluir com sucesso
 
 `POST /api/admin/movies/credits/sync-tmdb` sincroniza créditos em lote.
 
 - processa apenas filmes com vínculo `TMDB`
-- considera apenas pendentes sem curadoria manual (`movies.credits_synced_at IS NULL` e `credits_curated_at IS NULL`)
+- considera apenas pendentes (`movies.credits_synced_at IS NULL`), incluindo obras com curadoria manual
 - `limit` é normalizado entre `1` e `1000`
 - falhas individuais não interrompem o lote
 
@@ -345,11 +345,15 @@ Persistência:
 - cria a pessoa se ela ainda não estiver persistida
 - salva o vínculo filme-pessoa sem precisar rerodar o sync completo
 - rejeita créditos de equipe fora de direção e roteiro
-- marca o filme como curado manualmente, impedindo substituição pelo worker
+- protege individualmente o crédito escolhido (`manually_selected`), sem impedir a atualização dos demais pelo worker
 
 `POST /api/movies/{movieId}/credits/from-tmdb/batch` incorpora vários candidatos selecionados sem fechar o painel. Cada item roda isoladamente: sucessos permanecem salvos e a resposta identifica falhas para que continuem selecionadas na UI.
 
-`DELETE /api/movies/{movieId}/people/{personId}?category=CAST|DIRECTING|WRITING` remove fisicamente os vínculos da categoria. Se a pessoa ficar sem créditos audiovisuais e não for favorita, sua identidade e dados dependentes também são removidos. A remoção congela o conjunto do filme até a restauração explícita pelo TMDb.
+`DELETE /api/movies/{movieId}/people/{personId}?category=CAST|DIRECTING|WRITING` remove fisicamente os vínculos da categoria. Se a pessoa ficar sem créditos audiovisuais e não for favorita, sua identidade e dados dependentes também são removidos. A remoção não congela os demais créditos nem registra exclusão permanente: o crédito pode reaparecer numa atualização pelo TMDb.
+
+A migração `V85__preserve_manually_selected_audiovisual_credits.sql` adiciona `manually_selected` aos créditos de filmes e séries. Nas obras já marcadas com `credits_curated_at`, todos os créditos existentes são protegidos, pois a origem individual não era registrada. As demais obras mantêm créditos automáticos. O timestamp de curadoria continua informativo; não bloqueia sincronizações. A proteção tem prioridade por pessoa/categoria (elenco, direção ou roteiro), preservando também o papel escolhido quando o TMDb retorna outro texto ou job na mesma categoria. Escritas de créditos são serializadas por obra para preservar escolhas durante atualizações concorrentes.
+
+Validação: `JAVA_TOOL_OPTIONS=-Dapi.version=1.44 ./server/gradlew -p server test --tests '*AudiovisualCreditPreservationIntegrationTest' --tests '*MovieCreditsServiceTest' --tests '*ShowCreditsServiceTest'`. Os testes de PostgreSQL cobrem migração, promoção de crédito automático para escolhido, recorte vazio, atualizações repetidas, ausência de duplicatas e remoção sem exclusão permanente. Não voltar apenas ao binário anterior: ele ignora a proteção e pode apagar vínculos ao sincronizar. Preservar a migração e usar uma versão compatível com a proteção.
 
 Perfil, busca, favoritos e filmografias audiovisuais estão documentados em [`people-api.md`](people-api.md).
 
