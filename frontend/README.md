@@ -143,3 +143,11 @@ No detalhe de jogos, a prévia do cabeçalho reúne capa em destaque e até trê
 No detalhe de filmes, o cabeçalho mostra capa maior e até três prévias. “Ver todas as N imagens” abre a galeria completa no mesmo visualizador compartilhado por jogos, com escolha de capa e remoção para o owner. Pendências de tags de coleção aparecem junto da coleção com retry. “Escolher imagens” abre o seletor compartilhado com jogos para importar pôsteres e fundos alternativos do TMDb, preservando a capa. “Atualizar dados” mantém o fluxo separado de enriquecimento. Consulte [imagens de filmes](../docs/movies-api.md#imagens-no-visual-library-e-galeria).
 
 O detalhe de filme reúne identificação, imagens e memória pessoal em um cabeçalho branco uniforme. Nota aparece junto dos comentários, sem resumo/contagem; sessões e “Sobre o filme” usam superfícies consistentes, sem cards internos. Registro e edição são revelados sob demanda; sinopse e elenco têm expansão. Coleção e listas permanecem navegáveis. Consulte [revisão do detalhe](../docs/features/movie-detail-ux.md).
+
+## PWA no Android
+
+O build de produção oferece instalação pelo menu do Chrome, ícone na tela inicial e abertura em janela própria. Acesse por HTTPS; HTTP por IP da rede local não habilita o service worker. O registro fica desligado em `npm run dev`; valide com `npm run build` e `npm run preview` (localhost no computador).
+
+Após uma primeira visita online e ativação do worker, abrir/recarregar sem rede mostra uma página com “Tentar novamente”, que preserva a URL. O acervo e os registros continuam dependendo do servidor. Navegações internas usam os estados de erro existentes. O único conteúdo guardado pelo worker é essa página, sem cache de APIs ou autenticação.
+
+Instalação, atualização e validação no dispositivo: [PWA](../docs/features/pwa.md).

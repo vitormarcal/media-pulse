@@ -97,3 +97,5 @@ No detalhe de jogos, “Escolher imagens” abre um seletor em tela cheia com ca
 Com Visual Library 0.27.0 ou posterior, a seleção de jogos verifica progressivamente os bytes originais e mostra “Já no jogo” ou “No Visual Library”, sem bloquear escolhas nem persistir hashes/URLs de origem. Falhas mantêm a seleção disponível. Consulte [consulta de existência](docs/games-api.md#existência-de-imagens-na-seleção).
 
 Filmes também centralizam imagens do Plex/TMDb e o acervo local no Visual Library, com sugestões de `filme` e título e tags gerenciadas de coleção. A galeria abre pelo cabeçalho com escolha de capa e remoção no visualizador. A V77 adiciona a fila durável de classificação; consulte [escopo e operação](docs/features/movie-visual-library.md).
+
+O frontend também oferece [PWA instalável no Android](docs/features/pwa.md), com abertura em janela própria e página de falta de conexão. Exige HTTPS e mantém consultas e registros dependentes do servidor.

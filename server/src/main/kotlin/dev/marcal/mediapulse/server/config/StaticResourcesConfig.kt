@@ -47,8 +47,12 @@ class StaticResourcesConfig(
             .setCacheControl(CacheControl.noCache().mustRevalidate().cachePrivate())
 
         registry
-            .addResourceHandler("/favicon.ico", "/robots.txt")
+            .addResourceHandler("/favicon.ico", "/robots.txt", "/manifest.webmanifest", "/sw.js")
             .addResourceLocations(*frontendStaticRootLocations)
+            .setCacheControl(CacheControl.noCache().mustRevalidate().cachePrivate())
+        registry
+            .addResourceHandler("/pwa/**")
+            .addResourceLocations(*frontendStaticRootLocations.map { "${it}pwa/" }.toTypedArray())
             .setCacheControl(CacheControl.noCache().mustRevalidate().cachePrivate())
     }
 

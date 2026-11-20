@@ -13,6 +13,8 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      link: [{ rel: 'manifest', href: '/manifest.webmanifest' }],
+      meta: [{ name: 'theme-color', content: '#fffdf8' }],
       htmlAttrs: {
         lang: 'pt-BR',
       },
