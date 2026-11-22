@@ -33,6 +33,8 @@ class PlexMovieImportServiceTest {
         MockKAnnotations.init(this)
         plexApiClient = mockk()
         movieRepository = mockk(relaxed = true)
+        every { movieRepository.findByTmdbId(any()) } returns null
+        every { movieRepository.findByImdbId(any()) } returns null
         movieTitleCrudRepository = mockk(relaxed = true)
         plexMovieArtworkService = mockk(relaxed = true)
 
@@ -133,4 +135,71 @@ class PlexMovieImportServiceTest {
             coVerify(exactly = 1) { plexMovieArtworkService.ensureMovieImagesFromPlex(any(), any(), any()) }
             verify(exactly = 1) { movieRepository.save(match { it.description == "updated" && it.slug == "eyes-wide-shut" }) }
         }
+
+    @Test
+    fun `should reuse external identity even when fingerprint belongs to a duplicate`() {
+        val canonical =
+            Movie(
+                id = 406,
+                originalTitle = "Canonical title",
+                year = 1993,
+                fingerprint = "canonical",
+                tmdbId = "9479",
+                imdbId = "tt0107688",
+            )
+        every { movieRepository.findByTmdbId("9479") } returns canonical
+        every { movieRepository.findByImdbId("tt0107688") } returns canonical
+        every { movieRepository.findById(406) } returns java.util.Optional.of(canonical)
+
+        val result =
+            service.upsertMovie(
+                "Localized title",
+                null,
+                1993,
+                null,
+                null,
+                listOf(PlexGuid("TMDB://9479"), PlexGuid("imdb://tt0107688")),
+            )
+
+        assertEquals(406L, result.id)
+        verify(exactly = 0) { movieRepository.findByFingerprint(any()) }
+        verify(exactly = 0) { movieRepository.save(any()) }
+        verify { movieTitleCrudRepository.insertIgnore(406, "Localized title", null, "PLEX", false) }
+    }
+
+    @Test
+    fun `should reuse movie by imdb when tmdb is absent`() {
+        val canonical = Movie(id = 406, originalTitle = "Canonical title", fingerprint = "canonical", imdbId = "tt0107688")
+        every { movieRepository.findByImdbId("tt0107688") } returns canonical
+        every { movieRepository.findById(406) } returns java.util.Optional.of(canonical)
+
+        val result = service.upsertMovie("Other title", null, null, null, null, listOf(PlexGuid("imdb://tt0107688")))
+
+        assertEquals(406L, result.id)
+        verify(exactly = 0) { movieRepository.save(any()) }
+    }
+
+    @Test
+    fun `should preserve fingerprint movie and identifiers when external identities disagree`() {
+        val existing = Movie(id = 486, originalTitle = "Other title", fingerprint = "fp")
+        val tmdbMovie = existing.copy(id = 406, tmdbId = "9479")
+        val imdbMovie = existing.copy(id = 407, imdbId = "tt0107688")
+        every { movieRepository.findByTmdbId("9479") } returns tmdbMovie
+        every { movieRepository.findByImdbId("tt0107688") } returns imdbMovie
+        every { movieRepository.findByFingerprint(any()) } returns existing
+        every { movieRepository.findById(486) } returns java.util.Optional.of(existing)
+
+        val result =
+            service.upsertMovie(
+                "Other title",
+                null,
+                null,
+                null,
+                null,
+                listOf(PlexGuid("tmdb://9479"), PlexGuid("imdb://tt0107688")),
+            )
+
+        assertEquals(486L, result.id)
+        verify(exactly = 0) { movieRepository.save(any()) }
+    }
 }

@@ -26,7 +26,9 @@ Plex payload -> Media Pulse domain:
 
 ## Canonical identity
 
-Movie identity uses fingerprint by `original_title + year`.
+Library import first resolves known TMDb/IMDb IDs. When they identify a single canonical movie, it reuses that movie even if Plex supplies a different title/year fingerprint; alternate titles are stored without changing its canonical title or fingerprint. Without a known ID, it falls back to `original_title + year`. If IDs resolve to different movies, it logs a warning and falls back to the fingerprint; existing IDs are never reassigned. Scrobble ingestion currently uses the fingerprint first.
+
+An `Ignoring Plex movie identifier linked to another movie` warning means the selected record and the external ID owner differ. Imports can complete despite this warning. Previously the library import resolved only by fingerprint, so title/year differences could create a duplicate before discovering an existing ID. The ID-first lookup prevents that case on subsequent imports, but does not merge or delete historical duplicates. To validate, import the same external IDs with an alternate title and confirm the canonical movie is reused without creating another row. Existing duplicates require review of metadata, watches and personal curation before repair.
 
 - Plex `ratingKey` and `plex://...` GUIDs are never persisted or used for reconciliation.
 - `ratingKey` is used only in memory while navigating the current Plex API import.
@@ -81,3 +83,24 @@ Read-only movie endpoints:
 - `GET /api/movies/summary?range=month|year|custom&start=...&end=...`
 
 Imagens de filmes do Plex agora passam pelo armazenamento compartilhado com Visual Library, quando habilitado, com sugestões `filme` e título original e referência `movie`/ID real. Novos arquivos preservam a capa atual; somente uma escolha explícita de curadoria a substitui. A indisponibilidade de upload mantém o restante da ingestão utilizável. Consulte [armazenamento e migração](visual-library-images.md#filmes-armazenamento-migração-e-tags-de-coleção).
+
+## Reparo pontual dos registros 406/486
+
+Na inspeção de 22/11/2026, `406` (`Tim Burton's the Nightmare Before Christmas`, 1993) possui TMDb `9479`, IMDb `tt0107688`, uma visualização e créditos. `486` (`The Nightmare Before Christmas`, 1993) possui apenas títulos e imagens, sem marcas pessoais. O [script específico](sql/merge-movie-486-into-406.sql) mantém `406`, copia títulos e imagens exclusivos e remove `486`. Preserva a capa canônica e não exclui arquivos/assets. Não é migration nem uma ferramenta genérica de mesclagem.
+
+Depois de publicar a correção da importação, faça backup e execute a simulação a partir da raiz do repositório:
+
+```bash
+umask 077
+ssh kamisama@mordor 'sudo -n -u postgres pg_dump -Fc mediapulse' > ~/mediapulse-before-merge.dump
+ssh kamisama@mordor 'sudo -n -u postgres pg_restore --list' < ~/mediapulse-before-merge.dump > /dev/null
+ssh kamisama@mordor 'sudo -n -u postgres psql -X -d mediapulse' < docs/sql/merge-movie-486-into-406.sql
+```
+
+Verifique o sucesso do dump e seu tamanho antes de continuar; o arquivo contém dados pessoais e deve ficar fora do Git. A simulação termina com `ROLLBACK`. Para aplicar:
+
+```bash
+ssh kamisama@mordor 'sudo -n -u postgres psql -X -v apply=true -d mediapulse' < docs/sql/merge-movie-486-into-406.sql
+```
+
+O script usa uma transação, bloqueia alterações concorrentes nas tabelas envolvidas e interrompe se as identidades, a curadoria ou os vínculos do duplicado mudaram. Depois, abra `/movies/406`, confira histórico/capa/galeria e rode novamente a importação para confirmar que `486` não é recriado. O webhook ainda usa fingerprint primeiro: essa limitação não é corrigida por esta mudança da importação de biblioteca e deve ser considerada ao validar eventos futuros.

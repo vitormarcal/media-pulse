@@ -132,7 +132,7 @@ class PlexMovieImportService(
         val normalizedSlug = slug?.trim()?.ifBlank { null }
 
         val fingerprint = FingerprintUtil.movieFp(normalizedOriginal, year)
-        val existing = movieRepository.findByFingerprint(fingerprint)
+        val existing = resolveByExternalIds(guids) ?: movieRepository.findByFingerprint(fingerprint)
 
         val movie =
             if (existing == null) {
@@ -178,6 +178,35 @@ class PlexMovieImportService(
         return movie
     }
 
+    private fun resolveByExternalIds(guids: List<PlexGuid>): Movie? {
+        val candidates =
+            externalIds(guids)
+                .mapNotNull { (provider, externalId) ->
+                    when (provider) {
+                        Provider.TMDB -> movieRepository.findByTmdbId(externalId)
+                        Provider.IMDB -> movieRepository.findByImdbId(externalId)
+                        else -> null
+                    }
+                }.distinctBy { it.id }
+        if (candidates.size > 1) {
+            logger.warn("Conflicting Plex movie identities; falling back to fingerprint. movieIds={}", candidates.map { it.id })
+            return null
+        }
+        return candidates.singleOrNull()
+    }
+
+    private fun externalIds(guids: List<PlexGuid>): List<Pair<Provider, String>> =
+        guids
+            .mapNotNull { guid ->
+                val raw = guid.id.trim()
+                when {
+                    raw.startsWith("tmdb://", ignoreCase = true) -> Provider.TMDB to raw.substring(7).trim()
+                    raw.startsWith("imdb://", ignoreCase = true) -> Provider.IMDB to raw.substring(7).trim()
+                    else -> null
+                }
+            }.filter { (_, externalId) -> externalId.isNotBlank() }
+            .distinct()
+
     private fun mergeMovie(
         existing: Movie,
         incomingYear: Int?,
@@ -208,21 +237,9 @@ class PlexMovieImportService(
         movieId: Long,
         guids: List<PlexGuid>,
     ) {
-        guids
-            .asSequence()
-            .mapNotNull { guid ->
-                val raw = guid.id.trim()
-                when {
-                    raw.startsWith("tmdb://", ignoreCase = true) -> Provider.TMDB to raw.substringAfter("tmdb://")
-                    raw.startsWith("imdb://", ignoreCase = true) -> Provider.IMDB to raw.substringAfter("imdb://")
-                    else -> null
-                }
-            }.map { (provider, externalId) -> provider to externalId.trim() }
-            .filter { (_, externalId) -> externalId.isNotBlank() }
-            .distinct()
-            .forEach { (provider, externalId) ->
-                safeLink(movieId, provider, externalId)
-            }
+        externalIds(guids).forEach { (provider, externalId) ->
+            safeLink(movieId, provider, externalId)
+        }
     }
 
     private fun safeLink(
