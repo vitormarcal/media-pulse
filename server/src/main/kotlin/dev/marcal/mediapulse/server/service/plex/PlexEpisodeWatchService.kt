@@ -53,6 +53,7 @@ class PlexEpisodeWatchService(
             episodeByExternalIds?.let { tvShowRepository.findById(it.showId).orElse(null) }
                 ?: tvShowRepository.findByFingerprint(showFingerprint)
                 ?: findUniqueShowBySlugAndYear(showSlug, showYear)
+                ?: findUniqueShowWithoutYear(showOriginalTitle, meta.grandparentSlug, showYear)
                 ?: findUniqueUnmatchedShowByTitle(showOriginalTitle, hasUnmatchedPlexMetadata)
                 ?: tvShowRepository.save(
                     TvShow(
@@ -153,6 +154,16 @@ class PlexEpisodeWatchService(
     ): TvShow? {
         if (slug == null || year == null) return null
         return tvShowRepository.findAllBySlugAndYear(slug, year).singleOrNull()
+    }
+
+    private fun findUniqueShowWithoutYear(
+        title: String,
+        suppliedSlug: String?,
+        year: Int?,
+    ): TvShow? {
+        if (year != null) return null
+        val slug = suppliedSlug?.trim()?.ifBlank { null } ?: return null
+        return tvShowRepository.findAllByExactTitle(title).filter { it.slug == slug }.singleOrNull()
     }
 
     private fun findUniqueUnmatchedShowByTitle(

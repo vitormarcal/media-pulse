@@ -153,6 +153,7 @@ class PlexShowImportService(
             existingByTmdb
                 ?: existingByTvdb
                 ?: tvShowRepository.findByFingerprint(fingerprint)
+                ?: findUniqueShowWithoutMetadata(show, showExternalIds)
 
         val persistedShow =
             if (existing == null) {
@@ -198,6 +199,23 @@ class PlexShowImportService(
         persistShowExternalIds(persistedShow.id, showExternalIds)
 
         return persistedShow
+    }
+
+    private fun findUniqueShowWithoutMetadata(
+        show: PlexShow,
+        externalIds: List<Pair<Provider, String>>,
+    ): TvShow? {
+        val slug = show.slug?.trim()?.ifBlank { null } ?: return null
+        val candidates =
+            listOfNotNull(show.title.trim(), show.originalTitle?.trim()?.ifBlank { null })
+                .distinct()
+                .flatMap { tvShowRepository.findAllByExactTitle(it) }
+                .distinctBy { it.id }
+                .filter { it.slug == slug }
+        // Only adopt an unambiguous shell created before the library import.
+        return candidates.singleOrNull()?.takeIf {
+            it.year == null && it.tmdbId == null && it.tvdbId == null && it.imdbId == null && externalIds.isNotEmpty()
+        }
     }
 
     @Transactional

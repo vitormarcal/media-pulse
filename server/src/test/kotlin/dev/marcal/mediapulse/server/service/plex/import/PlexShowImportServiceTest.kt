@@ -361,4 +361,58 @@ class PlexShowImportServiceTest {
         verify(exactly = 0) { tvEpisodeRepository.findByTvdbId("222") }
         verify(exactly = 0) { tvEpisodeRepository.save(any()) }
     }
+
+    @Test
+    fun `should adopt unambiguous webhook shell by known title and supplied slug`() {
+        val shell = TvShow(id = 129, originalTitle = "O Show do Pica-Pau", slug = "woody-woodpecker-and-friends", fingerprint = "shell")
+        val incoming =
+            PlexShow(
+                ratingKey = "show",
+                title = "O Show do Pica-Pau",
+                originalTitle = "Woody Woodpecker and Friends",
+                year = 1929,
+                slug = "woody-woodpecker-and-friends",
+                guids = listOf(PlexGuid("tvdb://236591")),
+            )
+        every { tvShowRepository.findByTmdbId(any()) } returns null
+        every { tvShowRepository.findByTvdbId(any()) } returns null
+        every { tvShowRepository.findByFingerprint(any()) } returns null
+        every { tvShowRepository.findAllByExactTitle("O Show do Pica-Pau") } returns listOf(shell)
+        every { tvShowRepository.findAllByExactTitle("Woody Woodpecker and Friends") } returns emptyList()
+        every { tvShowRepository.save(any()) } answers { firstArg() }
+        every { tvShowRepository.findById(129) } returns java.util.Optional.of(shell)
+
+        val result = service.upsertShow(incoming)
+
+        assertEquals(129L, result.id)
+        assertEquals(1929, result.year)
+        verify(exactly = 0) { tvShowRepository.save(match { it.id == 0L }) }
+        verify { tvShowRepository.save(match { it.id == 129L && it.tvdbId == "236591" }) }
+    }
+
+    @Test
+    fun `should not adopt a show with known year or external identity by title and slug`() {
+        val base = TvShow(id = 129, originalTitle = "O Show do Pica-Pau", slug = "woody-woodpecker-and-friends", fingerprint = "existing")
+        for (candidate in listOf(base.copy(year = 1940), base.copy(tvdbId = "other"))) {
+            setUp()
+            val incoming =
+                PlexShow(
+                    ratingKey = "show",
+                    title = "O Show do Pica-Pau",
+                    year = 1929,
+                    slug = "woody-woodpecker-and-friends",
+                    guids = listOf(PlexGuid("tvdb://236591")),
+                )
+            every { tvShowRepository.findByTvdbId(any()) } returns null
+            every { tvShowRepository.findByFingerprint(any()) } returns null
+            every { tvShowRepository.findAllByExactTitle(any()) } returns listOf(candidate)
+            every { tvShowRepository.save(any()) } answers { firstArg<dev.marcal.mediapulse.server.model.tv.TvShow>().copy(id = 140) }
+            every { tvShowRepository.findById(140) } returns java.util.Optional.of(base.copy(id = 140, tvdbId = "236591"))
+
+            val result = service.upsertShow(incoming)
+
+            assertEquals(140L, result.id)
+            verify(exactly = 1) { tvShowRepository.save(match { it.id == 0L }) }
+        }
+    }
 }

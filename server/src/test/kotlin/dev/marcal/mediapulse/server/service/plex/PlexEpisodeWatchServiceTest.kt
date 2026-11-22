@@ -429,6 +429,70 @@ class PlexEpisodeWatchServiceTest {
             }
         }
 
+    @Test
+    fun `should reuse exact known title and supplied slug when matched Plex metadata has no year`() =
+        runBlocking {
+            val payload =
+                episodePayload(grandparentTitle = "O Show do Pica-Pau", year = null, grandparentSlug = "woody-woodpecker-and-friends")
+            val canonical =
+                TvShow(
+                    id = 130,
+                    originalTitle = "Woody Woodpecker and Friends",
+                    year = 1929,
+                    slug = "woody-woodpecker-and-friends",
+                    fingerprint = "canonical",
+                    tvdbId = "236591",
+                )
+            val episode =
+                TvEpisode(
+                    id = 6130,
+                    showId = 130,
+                    title = payload.metadata.title,
+                    seasonNumber = 2,
+                    episodeNumber = 23,
+                    fingerprint = "episode",
+                )
+            every { tvShowRepository.findByFingerprint(any()) } returns null
+            every { tvShowRepository.findAllByExactTitle("O Show do Pica-Pau") } returns listOf(canonical)
+            every { tvEpisodeRepository.findByFingerprint(any()) } returns episode
+            every { tvEpisodeRepository.save(any()) } answers { firstArg() }
+
+            val watch = service.processScrobble(payload)
+
+            assertEquals(6130L, watch?.episodeId)
+            verify(exactly = 0) { tvShowRepository.save(any()) }
+            verify { tvEpisodeWatchCrudRepository.insertIgnore(6130, "PLEX", any()) }
+        }
+
+    @Test
+    fun `should reject ambiguous or different slugs when matching a show without year`() =
+        runBlocking {
+            val canonical =
+                TvShow(
+                    id = 130,
+                    originalTitle = "Woody Woodpecker and Friends",
+                    year = 1929,
+                    slug = "woody-woodpecker-and-friends",
+                    fingerprint = "canonical",
+                )
+            for (candidates in listOf(listOf(canonical, canonical.copy(id = 131)), listOf(canonical.copy(slug = "other-show")))) {
+                setUp()
+                val payload =
+                    episodePayload(grandparentTitle = "O Show do Pica-Pau", year = null, grandparentSlug = "woody-woodpecker-and-friends")
+                val created = canonical.copy(id = 132, originalTitle = "O Show do Pica-Pau", year = null)
+                every { tvShowRepository.findByFingerprint(any()) } returns null
+                every { tvShowRepository.findAllByExactTitle("O Show do Pica-Pau") } returns candidates
+                every { tvShowRepository.save(any()) } returns created
+                every { tvEpisodeRepository.save(any()) } answers { firstArg() }
+                every { tvEpisodeRepository.findByFingerprint(any()) } returns
+                    TvEpisode(id = 7000, showId = 132, title = payload.metadata.title, fingerprint = "episode")
+
+                service.processScrobble(payload)
+
+                verify(exactly = 1) { tvShowRepository.save(match { it.id == 0L }) }
+            }
+        }
+
     private fun episodePayload(
         event: String = "media.scrobble",
         type: String = "episode",

@@ -37,7 +37,7 @@ Show identity prefers canonical third-party ids when available.
   3. show fingerprint by `original_title + year`
 - Plex `ratingKey` and `plex://...` GUIDs are never persisted or used for reconciliation.
 - `ratingKey` is used only in memory while navigating the current Plex API import.
-- Plex episode scrobbles first reuse the canonical show of an episode identified by unambiguous third-party IDs. When no episode ID resolves, they try the show fingerprint and then an exact `slug + year` match accepted only when it returns one candidate. They do not resolve the show by Plex GUID, slug alone, or title-only matching.
+- Plex episode scrobbles first reuse the canonical show of an episode identified by unambiguous third-party IDs. When no episode ID resolves, they try the show fingerprint and then an exact `slug + year` match accepted only when it returns one candidate. When the show year is absent, they may reuse a unique exact known title (including localized titles) with the same nonblank slug supplied by Plex. Generated fallback slugs do not qualify. They do not resolve the show by Plex GUID or slug alone; known years still require an exact year match.
 - For unmatched `tv.plex.agents.none` libraries without canonical IDs, a scrobble may reuse an exact title match only when it resolves to one local show. Ambiguous title matches are ignored and a separate show is created.
 - Show third-party IDs (TMDB/TVDB/IMDB) are stored directly in `tv_shows` when available.
 - Episode third-party IDs (TMDB/TVDB/IMDB) are stored directly in `tv_episodes` when available.
@@ -69,7 +69,7 @@ Show library import runs in the startup pipeline when enabled.
 - It imports from Plex `show` sections using paginated reads.
 - It persists canonical shows, episodes, localized titles, show IDs in `tv_shows`, and episode IDs in `tv_episodes` when available.
 - It generates a local show slug from the Plex title when the provider does not supply one, keeping imported shows navigable.
-- Show reconciliation during import prefers TMDB/TVDB identifiers over fingerprint fallback.
+- Show reconciliation during import prefers TMDB/TVDB identifiers over fingerprint fallback. If neither resolves, an import with third-party IDs may adopt a single shell with an exact known title and the same supplied slug, only if that shell has no year or external IDs. This preserves watches received before the first library import. Ambiguous matches or shells with known years/IDs are not adopted.
 - It does not create rows in `tv_episode_watches`.
 
 ## Manual watch ingestion
@@ -92,3 +92,11 @@ Manual sources:
 
 - `tv_show_titles.source` supports `MANUAL`.
 - `tv_episode_watches.source` supports `MANUAL`.
+
+## Woody Woodpecker: cadastro duplicado antes da importação
+
+Em 22/11/2026, eventos Plex de `O Show do Pica-Pau` chegaram sem ano e sem IDs externos dos episódios, mas com slug `woody-woodpecker-and-friends`. O webhook criou a série `129`; a biblioteca criou depois `130`, com título original `Woody Woodpecker and Friends`, ano 1929 e TVDB `236591`. Os quatro episódios assistidos de `129` também existiam em `130`, por temporada, número e título. O mesmo slug abria um registro enquanto `unwatched=true` listava o outro; o filtro estava correto por ID local.
+
+A versão 1.43.2 cobre ambas as ordens de chegada: webhook sem ano reconhece título conhecido + slug fornecido, desde que únicos; importação pode adotar o cadastro incompleto anterior ao catálogo. IDs continuam tendo prioridade e não se faz reconciliação por slug isolado. Testes cobrem reconhecimento, ambiguidade, slugs diferentes e preservação de identidades/anos conhecidos.
+
+O [reparo específico 129 → 130](sql/merge-show-129-into-130.sql) preserva os IDs/fontes/datas das quatro visualizações, apontando-as aos episódios do catálogo, e mantém os 25 episódios e a capa de `130`. Exige backup, valida as identidades e interrompe diante de novos vínculos, comentários/avaliações ou alterações no histórico. Não é migration. Execute com `psql -X -d mediapulse` para simular com rollback e `-v apply=true` para aplicar; valide o detalhe por slug com 4/25 episódios vistos e a ausência na biblioteca `unwatched=true`.
