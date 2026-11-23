@@ -5,7 +5,7 @@
       :class="{ 'publication-filters': publicationId }"
       @submit.prevent="applyFilters"
     >
-      <label
+      <label v-if="!hideSearch"
         ><span>{{ publicationId ? 'Buscar neste arquivo' : 'Buscar revista ou número' }}</span>
         <input
           v-model="draftQuery"
@@ -66,7 +66,7 @@
 import MagazineGrid from '~/components/magazines/MagazineGrid.vue'
 import type { MagazineIssue, MagazineLibrary, MagazinePublication } from '~/types/magazines'
 import { magazineCard, magazineError, magazineNumber, magazineStates } from '~/utils/magazines'
-const props = defineProps<{ publicationId?: number; publications?: MagazinePublication[] }>()
+const props = defineProps<{ publicationId?: number; publications?: MagazinePublication[]; hideSearch?: boolean }>()
 const route = useRoute()
 const config = useRuntimeConfig()
 const query = computed(() => String(route.query.q || ''))

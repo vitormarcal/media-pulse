@@ -462,3 +462,12 @@ Carregar o catálogo automaticamente por cursor, preservando ordem e itens, dedu
 ## 29. Navegação compacta e identidade PWA
 
 O ícone instalado usa o brand-dot da página inicial: círculo vermelho com halo suave sobre fundo quente, sem outro símbolo. Em larguras até 1200px, o cabeçalho mantém marca, Buscar e Menu na primeira linha. Menu revela as seções e Entrar/Sair em duas colunas, com área de toque mínima de 44px e rolagem própria se faltar altura. Preservar seção ativa, foco visível, aria-expanded e Escape com retorno ao botão. Navegar ou abrir busca recolhe o menu; não desmontar páginas nem perder rascunhos. No desktop amplo, manter links diretamente disponíveis.
+
+
+## 30. Página principal de revistas
+
+A abertura padrão de `/magazines` segue a composição editorial de séries e filmes: título amplo à esquerda, número em destaque à direita e até quatro secundários abaixo, sem repetir números. Priorizar o primeiro andamento retornado por atividade; sem andamento, usar a última jornada concluída. Identificar conclusão pela data da jornada, sem confundi-la com o estado atual do número. Este recorte não representa o histórico completo nem totais do acervo.
+
+Usar componente próprio de revistas, capas integrais, painéis brancos com cantos de 28px e fundo decorativo suave derivado da capa, com aproximadamente 8% de opacidade. Sem capa ou em falha, remover a coluna da imagem principal e seu fundo. Manter largura de até 1120px; esta abertura substitui as grades separadas de Em andamento e Últimas leituras. No celular, empilhar título, capa e identificação; secundários usam faixa horizontal com acesso por teclado.
+
+Voltar para a capa, Publicações, Todos os números e Adicionar número (owner) ficam no topo do bloco. Busca fica na base; filtros de publicação/leitura junto do acervo. Busca, filtro ou cadastro ativo priorizam cabeçalho compacto e resultados. Preservar rascunho, retorno do foco, rotas legadas e paginação existentes. Falha das leituras oferece retry e preserva busca/acervo. Sem leituras, manter título, estado vazio e busca disponíveis. Não alterar arquivos de publicação, detalhes ou componentes de outros domínios.

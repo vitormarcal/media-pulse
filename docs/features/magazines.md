@@ -76,3 +76,13 @@ O arquivo da publicação mantém o contexto ao buscar, limpar filtros e adicion
 ## Armazenamento opcional de imagens
 
 A centralização de novas imagens no Visual Library estende o armazenamento local descrito neste MVP. Consulte o [escopo aprovado](visual-library-images.md) e a [operação](../visual-library-images.md). Os dados do domínio permanecem no Media Pulse; imagens locais existentes continuam disponíveis.
+
+
+### Revisão da abertura editorial
+
+A página inicial usa destaque de leitura em andamento por atividade, com última jornada concluída como alternativa, e até quatro números secundários sem repetição. A data de conclusão vem da jornada apresentada, inclusive quando o número tem outra leitura atual. Busca integra o bloco editorial; filtros permanecem junto do acervo. Recortes filtrados e cadastro usam cabeçalho compacto. O resumo de leituras pode falhar sem bloquear o acervo. Esta composição substitui os blocos iniciais separados de andamento/recentes, mantendo contratos, detalhes, arquivos de publicação e paginação. Direção visual registrada na seção 30 do DESIGN.md.
+
+
+Validação local desta revisão: lint, Prettier, tipos e build passaram (lint mantém aviso preexistente em ArtistPageHero.vue). Chromium com APIs simuladas em 1440px e 390px validou hierarquia da capa, ausência de transbordamento, deduplicação, busca, alternativa de última jornada concluída, estados vazio/erro com acervo disponível, falha de capa removendo coluna/fundo, retorno do foco ao fechar cadastro e ausência de manutenção para visitante, inclusive com add=1. Sem mutações em produção.
+
+Publicação desta revisão: versão 1.44.0, imagens 1.44.0/latest, com implantação pelo serviço Compose existente no Mordor. Sem migração ou alteração dos contratos.
