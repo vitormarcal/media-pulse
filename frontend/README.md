@@ -153,3 +153,5 @@ Após uma primeira visita online e ativação do worker, abrir/recarregar sem re
 Instalação, atualização e validação no dispositivo: [PWA](../docs/features/pwa.md).
 
 Até 1200px, a navegação usa Menu expansível, mantendo marca e Buscar na primeira linha. As seções e Entrar/Sair aparecem sob demanda; Escape fecha e devolve o foco. O ícone do PWA usa o mesmo brand-dot da página inicial. Instalações existentes podem demorar a atualizar o ícone conforme o navegador; reinstalar permite conferir a nova identidade após publicação.
+
+A rota `/timeline` reúne o histórico local dos oito domínios, com filtros na URL, paginação por cursor e régua lateral também no celular. Consulte [contrato e regras de datas](../docs/timeline-api.md).

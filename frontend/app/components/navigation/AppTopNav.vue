@@ -96,6 +96,7 @@ async function logout() {
 
 const items = [
   { label: 'Início', href: '/' },
+  { label: 'Linha do tempo', href: '/timeline' },
   { label: 'Música', href: '/music' },
   { label: 'Séries', href: '/shows' },
   { label: 'Filmes', href: '/movies' },

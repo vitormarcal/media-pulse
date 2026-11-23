@@ -243,7 +243,7 @@ Future direction:
 
 - connect domains through mentions and relationships
 - add cross-domain lists
-- add a global timeline across music, books, movies, shows, games, and workouts
+- evolve the global timeline across all eight domains, preserving historical activity, local additions, daily music summaries, and date provenance
 - improve global search and navigation across related media
 - support authentication and authorization for protecting the personal archive
 - make import, enrichment, correction, and image workflows feel consistent across domains

@@ -6,6 +6,8 @@ info:
 servers:
   - url: http://localhost:8080
 tags:
+  - name: Timeline
+    description: Cross-domain personal history and local archive additions.
   - name: Artworks
     description: Locally owned visual artworks, artists, contemplation experiences, galleries and lists.
   - name: Workouts
@@ -41,6 +43,52 @@ tags:
   - name: Magazines
     description: Local publications, numbers, reading journeys and rereads.
 paths:
+  /api/timeline:
+    get:
+      tags: [Timeline]
+      summary: Browse personal activity and local archive additions
+      description: Descending local history. Month positions at its end and continues into earlier months. See docs/timeline-api.md for date provenance and pagination semantics.
+      parameters:
+        - $ref: '#/components/parameters/TimelineDomain'
+        - $ref: '#/components/parameters/TimelineKind'
+        - name: month
+          in: query
+          schema:
+            type: string
+            pattern: '^[0-9]{4}-(0[1-9]|1[0-2])$'
+          description: Start at the end of this month, then continue toward the past.
+        - name: cursor
+          in: query
+          schema: {type: string}
+          description: Opaque cursor; preserve domain, kind and month from the previous request.
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 40}
+      responses:
+        "200":
+          description: Timeline page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimelinePage'
+        "400":
+          description: Invalid filter, month, cursor or limit
+  /api/timeline/periods:
+    get:
+      tags: [Timeline]
+      summary: List months containing events for the active filters
+      parameters:
+        - $ref: '#/components/parameters/TimelineDomain'
+        - $ref: '#/components/parameters/TimelineKind'
+      responses:
+        "200":
+          description: Nonempty months, newest first; counts refer to timeline events, including daily music summaries.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimelinePeriods'
+        "400":
+          description: Invalid domain or kind
   /api/auth/session:
     get:
       summary: Get owner session and CSRF token
@@ -7903,6 +7951,16 @@ components:
       name: secret
       description: Independent PLEX_WEBHOOK_SECRET configured in the backend. Missing or invalid secret returns 401.
   parameters:
+    TimelineDomain:
+      name: domain
+      in: query
+      schema:
+        $ref: '#/components/schemas/TimelineDomain'
+    TimelineKind:
+      name: kind
+      in: query
+      schema:
+        $ref: '#/components/schemas/TimelineKind'
     AlbumListId:
       name: listId
       in: path
@@ -7924,6 +7982,64 @@ components:
         type: integer
         format: int64
   schemas:
+    TimelineDomain:
+      type: string
+      enum: [MUSIC, BOOKS, MAGAZINES, MOVIES, SHOWS, GAMES, ARTWORKS, WORKOUTS]
+    TimelineKind:
+      type: string
+      enum: [ACTIVITY, ADDITION]
+    TimelineLink:
+      type: object
+      required: [title, href]
+      properties:
+        title: {type: string}
+        href: {type: string}
+        imageUrl: {type: string, nullable: true}
+        subtitle: {type: string, nullable: true}
+    TimelineEvent:
+      type: object
+      required: [id, domain, kind, date, occurredAt, precision, action, title, subtitle, href, imageUrl, relatedItems]
+      properties:
+        id: {type: string}
+        domain:
+          $ref: '#/components/schemas/TimelineDomain'
+        kind:
+          $ref: '#/components/schemas/TimelineKind'
+        date: {type: string, format: date}
+        occurredAt: {type: string, format: date-time, nullable: true}
+        precision: {type: string, enum: [DAY, INSTANT]}
+        action: {type: string}
+        title: {type: string}
+        subtitle: {type: string, nullable: true}
+        href: {type: string}
+        imageUrl: {type: string, nullable: true}
+        relatedItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineLink'
+    TimelinePage:
+      type: object
+      required: [items, nextCursor, timeZone]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineEvent'
+        nextCursor: {type: string, nullable: true}
+        timeZone: {type: string, example: America/Sao_Paulo}
+    TimelinePeriods:
+      type: object
+      required: [months, timeZone]
+      properties:
+        timeZone: {type: string, example: America/Sao_Paulo}
+        months:
+          type: array
+          items:
+            type: object
+            required: [month, count]
+            properties:
+              month: {type: string, example: '2026-05'}
+              count: {type: integer, format: int64}
     TmdbImageCandidatesResponse:
       type: object
       properties:

@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.GetMapping
 class SpaForwardController {
     @GetMapping(
         "/",
+        "/timeline",
+        "/timeline/",
         "/login",
         "/auth/reset",
         "/music",

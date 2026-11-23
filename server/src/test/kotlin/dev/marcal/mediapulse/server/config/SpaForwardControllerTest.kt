@@ -13,6 +13,7 @@ class SpaForwardControllerTest {
                 .standaloneSetup(SpaForwardController())
                 .build()
         for (path in listOf(
+            "/timeline",
             "/books/series",
             "/books/series/42",
             "/books/universes",

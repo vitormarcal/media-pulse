@@ -63,6 +63,10 @@ Imagens novas de revistas, artes visuais, livros, jogos, filmes e séries podem 
 
 Séries de livros e universos oferecem organização local em `/books/series` e `/books/universes`, com vínculos múltiplos e ordem de leitura editável. Séries mostram autores derivados dos livros, inclusive em suas páginas, e metadados opcionais do Hardcover com revisão seletiva. Sugestões do Hardcover são buscadas e aplicadas explicitamente; livros antigos precisam de uma sincronização para preencher o ID do provedor. Consulte [contratos e regras](docs/books-api.md#séries-e-universos).
 
+## Linha do tempo
+
+`/timeline` reúne atividades dos oito domínios e inclusões locais com datas disponíveis, do mais recente ao mais antigo. Música tem resumo diário; a régua lateral permite saltar por mês/ano no desktop e no celular. Filtros por domínio e tipo também atualizam os períodos. Consulte [contrato e limites das datas](docs/timeline-api.md).
+
 ## Frontend
 
 O frontend em `frontend/` pode ser servido separadamente para desenvolvimento ou via imagem combinada.

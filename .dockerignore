@@ -15,3 +15,6 @@ compose*.yml
 .github
 docker
 Makefile
+
+# Owner-local configuration must never enter release images.
+**/application-local.yml
