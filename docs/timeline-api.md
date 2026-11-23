@@ -2,6 +2,8 @@
 
 Consulta pública do histórico local, como as demais consultas do arquivo. Sem novos dados persistidos, migrations ou configuração. Escopo e fontes em [Linha do tempo pessoal](features/personal-timeline.md).
 
+A página `/timeline` consulta ambos os endpoints com `kind=ACTIVITY` fixo. Inclusões locais não aparecem na UI; o suporte a `ADDITION` permanece na API por compatibilidade.
+
 ## Endpoints
 
 ### `GET /api/timeline`
@@ -16,7 +18,7 @@ Parâmetros opcionais:
 | `limit` | Inteiro entre 1 e 100, default 40 |
 | `cursor` | Opaco, retornado na página anterior; reenviar os mesmos filtros e mês |
 
-Resposta: `{items, nextCursor, timeZone}`. `nextCursor: null` indica fim. Cada item tem `id` estável por marco, `domain`, `kind`, `date` (data civil ISO), `occurredAt` (instante ISO ou null), `precision` (`DAY` ou `INSTANT`), `action`, `title`, `subtitle`, `href`, `imageUrl` e `relatedItems`. Links relacionados de música contêm `title`, `href`, `imageUrl?` e `subtitle?`; não há limite de álbuns/artistas no resumo, mas a UI começa com seis links e permite expandir.
+Resposta: `{items, nextCursor, timeZone}`. `nextCursor: null` indica fim. Cada item tem `id` estável por marco, `domain`, `kind`, `date` (data civil ISO), `occurredAt` (instante ISO ou null), `precision` (`DAY` ou `INSTANT`), `action`, `title`, `subtitle`, `href`, `imageUrl` e `relatedItems`. Links relacionados de música contêm `title`, `href`, `imageUrl?` e `subtitle?`; não há limite de álbuns/artistas no resumo, mas a UI prioriza três álbuns com créditos e permite expandir os demais álbuns e links separados de artistas.
 
 `timeZone` é `America/Sao_Paulo`. A UI deve usar `date` diretamente para agrupar, sem converter datas civis pelo fuso do navegador. Mostrar horário apenas quando `occurredAt` não for null. O cursor usa o instante de ordenação interno e o identificador do marco com collation C; marcos de precisão diária podem ter instante interno, que não é exposto como horário real.
 

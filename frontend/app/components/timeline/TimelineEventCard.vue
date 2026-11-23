@@ -1,35 +1,38 @@
 <template>
-  <article class="event-card" :class="{ addition: event.kind === 'ADDITION' }">
+  <article class="event-card">
     <NuxtLink v-if="image && !failed" :to="event.href" class="cover-link" tabindex="-1" aria-hidden="true">
       <img :src="image" alt="" loading="lazy" @error="failed = true" />
     </NuxtLink>
     <div class="event-body">
       <div class="event-meta">
-        <span>{{ timelineDomains[event.domain] }}</span>
-        <span class="event-kind">{{ event.kind === 'ADDITION' ? 'Adição ao acervo' : 'Atividade' }}</span>
-        <time v-if="event.occurredAt" :datetime="event.occurredAt">{{ time }}</time>
+        <span>{{ timelineDomains[event.domain] }}</span
+        ><time v-if="event.occurredAt" :datetime="event.occurredAt">{{ time }}</time>
       </div>
-      <p class="action">{{ event.action }}</p>
+      <p v-if="!isMusic" class="action">{{ event.action }}</p>
       <h3>
         <NuxtLink :to="event.href">{{ event.title }}</NuxtLink>
       </h3>
       <p v-if="event.subtitle" class="subtitle">{{ event.subtitle }}</p>
-      <template v-if="event.relatedItems.length">
-        <ul class="music-links" aria-label="Álbuns e artistas ouvidos">
-          <li v-for="item in visibleLinks" :key="item.href">
-            <NuxtLink :to="item.href">
-              <span>{{ item.title }}</span
-              ><small v-if="item.subtitle">{{ item.subtitle }}</small>
-            </NuxtLink>
+      <template v-if="isMusic && event.relatedItems.length">
+        <ul v-if="albums.length" class="music-links" aria-label="Álbuns ouvidos">
+          <li v-for="item in visibleAlbums" :key="item.href">
+            <NuxtLink :to="item.href"
+              ><span>{{ item.title }}</span
+              ><small v-if="item.subtitle">{{ item.subtitle }}</small></NuxtLink
+            >
           </li>
         </ul>
+        <div v-if="expanded || !albums.length" class="artist-links">
+          <span v-if="artists.length">Artistas</span>
+          <NuxtLink v-for="artist in artists" :key="artist.href" :to="artist.href">{{ artist.title }}</NuxtLink>
+        </div>
         <button
-          v-if="event.relatedItems.length > 6"
+          v-if="albums.length > 3 || (artists.length && albums.length)"
           type="button"
           :aria-expanded="expanded"
           @click="expanded = !expanded"
         >
-          {{ expanded ? 'Recolher' : `Ver todos os álbuns e artistas (${event.relatedItems.length})` }}
+          {{ expanded ? 'Recolher' : albums.length > 3 ? `Ver os ${albums.length} álbuns e artistas` : 'Ver artistas' }}
         </button>
       </template>
     </div>
@@ -44,7 +47,10 @@ const failed = ref(false)
 const expanded = ref(false)
 const image = computed(() => resolveMediaUrl(props.event.imageUrl))
 watch(image, () => (failed.value = false))
-const visibleLinks = computed(() => (expanded.value ? props.event.relatedItems : props.event.relatedItems.slice(0, 6)))
+const isMusic = computed(() => props.event.domain === 'MUSIC')
+const albums = computed(() => props.event.relatedItems.filter((item) => item.href.startsWith('/music/albums/')))
+const artists = computed(() => props.event.relatedItems.filter((item) => item.href.startsWith('/music/artists/')))
+const visibleAlbums = computed(() => (expanded.value ? albums.value : albums.value.slice(0, 3)))
 const time = computed(() =>
   props.event.occurredAt
     ? new Intl.DateTimeFormat('pt-BR', { timeZone: props.timeZone, hour: '2-digit', minute: '2-digit' }).format(
@@ -58,20 +64,20 @@ const time = computed(() =>
 .event-card {
   display: flex;
   align-items: flex-start;
-  gap: 24px;
-  padding: 24px;
-  background: var(--base-color-surface-strong, white);
+  gap: 20px;
+  padding: 20px;
+  background: var(--base-color-surface-strong);
   border: 1px solid var(--base-color-surface-warm);
   border-radius: 28px;
 }
 .cover-link {
-  flex: 0 0 100px;
+  flex: 0 0 80px;
 }
 .cover-link img {
   width: 100%;
-  max-height: 150px;
+  max-height: 120px;
   object-fit: contain;
-  border-radius: 16px;
+  border-radius: 12px;
 }
 .event-body {
   flex: 1;
@@ -85,21 +91,13 @@ const time = computed(() =>
   font-size: 0.75rem;
   color: var(--base-color-text-secondary);
 }
-.event-kind {
-  padding: 4px 8px;
-  border-radius: 12px;
-  background: var(--base-color-surface-warm);
-}
-.addition .event-kind {
-  background: var(--base-color-surface-soft);
-}
 .action {
-  margin: 14px 0 4px;
+  margin: 8px 0 4px;
   color: var(--base-color-text-secondary);
   font-size: 0.875rem;
 }
 h3 {
-  margin: 0;
+  margin: 4px 0 0;
   font-size: 1.25rem;
   overflow-wrap: anywhere;
 }
@@ -114,7 +112,7 @@ h3 {
   gap: 8px;
   list-style: none;
   padding: 0;
-  margin: 16px 0 0;
+  margin: 12px 0 0;
 }
 .music-links a {
   display: grid;
@@ -123,45 +121,82 @@ h3 {
   border-radius: 16px;
   background: var(--base-color-surface-soft);
   font-size: 0.875rem;
+  min-height: 44px;
+  align-content: center;
 }
 small {
   color: var(--base-color-text-secondary);
 }
 button {
-  margin-top: 12px;
+  min-height: 44px;
+  margin-top: 8px;
   padding: 10px 12px;
   border: 0;
   border-radius: 16px;
   background: var(--base-color-surface-warm);
   cursor: pointer;
   text-align: left;
+  font-size: 0.875rem;
+}
+.artist-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 12px;
+  font-size: 0.875rem;
+}
+.artist-links > span {
+  width: 100%;
+  color: var(--base-color-text-secondary);
+}
+.artist-links a {
+  padding: 10px 0;
+  text-decoration: underline;
 }
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid #435ee5;
+  outline: 2px solid var(--base-color-focus);
   outline-offset: 4px;
 }
 @media (max-width: 575px) {
   .event-card {
-    padding: 16px;
+    padding: 14px;
     gap: 12px;
-    flex-direction: column;
     border-radius: 20px;
   }
   .cover-link {
-    flex: none;
-    width: 100%;
+    flex: 0 0 56px;
   }
   .cover-link img {
-    max-height: 230px;
-    width: auto;
-    max-width: 100%;
-  }
-  .event-body {
-    width: 100%;
+    max-height: 84px;
+    width: 56px;
+    border-radius: 10px;
   }
   h3 {
-    font-size: 1.125rem;
+    font-size: 1rem;
+  }
+  .event-meta {
+    gap: 4px 8px;
+    font-size: 0.6875rem;
+  }
+  .music-links {
+    display: grid;
+    gap: 8px;
+  }
+  .music-links a {
+    padding: 0;
+    background: none;
+    font-size: 0.8125rem;
+  }
+  button {
+    padding: 10px 0;
+    background: transparent;
+    text-decoration: underline;
+    font-size: 0.8125rem;
+  }
+  .artist-links {
+    font-size: 0.8125rem;
   }
 }
 </style>

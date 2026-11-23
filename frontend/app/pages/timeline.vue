@@ -2,9 +2,7 @@
   <main class="timeline-page">
     <header class="timeline-heading">
       <NuxtLink to="/" class="back-link">Voltar para a capa</NuxtLink>
-      <p class="eyebrow">Seu arquivo pessoal</p>
       <h1>Linha do tempo</h1>
-      <p class="intro">Atividades e descobertas, ao longo dos anos.</p>
     </header>
 
     <section class="filters" aria-label="Filtros da linha do tempo">
@@ -15,17 +13,8 @@
           <option v-for="(label, value) in timelineDomains" :key="value" :value="value">{{ label }}</option>
         </select>
       </label>
-      <label
-        >Eventos
-        <select :value="kind" @change="setFilter('kind', ($event.target as HTMLSelectElement).value)">
-          <option value="">Todos</option>
-          <option value="ACTIVITY">Atividades</option>
-          <option value="ADDITION">Adições ao acervo</option>
-        </select>
-      </label>
       <button v-if="month" type="button" @click="jump('')">Voltar aos mais recentes</button>
     </section>
-    <p class="archive-note">Adições indicam a entrada no arquivo local. Datas de lançamento não são atividades.</p>
     <p v-if="periodsError" class="feedback" role="alert">
       Não foi possível carregar os períodos.
       <button type="button" @click="loadPeriods">Tentar novamente</button>
@@ -80,7 +69,6 @@ const route = useRoute()
 const router = useRouter()
 const config = useRuntimeConfig()
 const domain = computed(() => (typeof route.query.domain === 'string' ? route.query.domain : ''))
-const kind = computed(() => (typeof route.query.kind === 'string' ? route.query.kind : ''))
 const month = computed(() => (typeof route.query.month === 'string' ? route.query.month : ''))
 const items = ref<TimelineEvent[]>([])
 const periods = ref<TimelineMonth[]>([])
@@ -107,9 +95,9 @@ const days = computed(() => {
   return groups
 })
 function queryFilters() {
-  return { ...(domain.value ? { domain: domain.value } : {}), ...(kind.value ? { kind: kind.value } : {}) }
+  return { ...(domain.value ? { domain: domain.value } : {}) }
 }
-function setFilter(key: 'domain' | 'kind', value: string) {
+function setFilter(key: 'domain', value: string) {
   const query = { ...queryFilters(), [key]: value || undefined }
   void router.push({ path: '/timeline', query })
 }
@@ -128,7 +116,7 @@ async function loadPeriods() {
   try {
     const result = await $fetch<TimelinePeriods>('/api/timeline/periods', {
       baseURL: config.public.apiBase,
-      query: queryFilters(),
+      query: { ...queryFilters(), kind: 'ACTIVITY' },
     })
     if (disposed || generation !== periodsGeneration) return
     periods.value = result.months
@@ -151,6 +139,7 @@ async function loadPage(reset: boolean) {
       baseURL: config.public.apiBase,
       query: {
         ...queryFilters(),
+        kind: 'ACTIVITY',
         ...(month.value ? { month: month.value } : {}),
         ...(reset ? {} : { cursor: nextCursor.value }),
         limit: 40,
@@ -205,9 +194,9 @@ function formatMonth(value: string) {
     new Date(`${value}-01T12:00:00Z`),
   )
 }
-watch([domain, kind], () => void loadPeriods(), { immediate: true })
+watch([domain], () => void loadPeriods(), { immediate: true })
 watch(
-  [domain, kind, month],
+  [domain, month],
   () => {
     void loadPage(true)
     window.scrollTo({ top: 0 })
@@ -236,40 +225,29 @@ onBeforeUnmount(() => {
 .timeline-page {
   width: min(1120px, calc(100vw - 32px));
   margin: 0 auto;
-  padding: 32px 100px 80px 0;
+  padding: 24px 100px 80px 0;
 }
 .timeline-heading {
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 .back-link {
   display: inline-block;
-  margin-bottom: 28px;
+  margin-bottom: 16px;
   font-size: 0.875rem;
-  color: var(--base-color-text-secondary);
-}
-.eyebrow {
-  margin: 0 0 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.75rem;
-  font-weight: 700;
   color: var(--base-color-text-secondary);
 }
 h1 {
   margin: 0;
-  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-size: clamp(2rem, 4vw, 3.5rem);
   line-height: 1.05;
   letter-spacing: -0.05em;
-}
-.intro {
-  margin: 16px 0 0;
-  color: var(--base-color-text-secondary);
 }
 .filters {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 16px;
+  gap: 12px;
+  margin-bottom: 28px;
 }
 label {
   display: grid;
@@ -299,11 +277,6 @@ button:focus-visible,
 a:focus-visible {
   outline: 2px solid #435ee5;
   outline-offset: 4px;
-}
-.archive-note {
-  margin: 16px 0 32px;
-  font-size: 0.75rem;
-  color: var(--base-color-text-secondary);
 }
 .event-stream,
 .day-events {
@@ -336,10 +309,11 @@ h2 {
 @media (max-width: 575px) {
   .timeline-page {
     width: calc(100vw - 20px);
-    padding: 24px 60px 64px 0;
+    padding: 16px 62px 64px 0;
   }
   .filters {
     gap: 12px;
+    margin-bottom: 24px;
   }
   label {
     width: 100%;
@@ -349,7 +323,7 @@ h2 {
     min-width: 0;
   }
   h1 {
-    font-size: clamp(2rem, 9vw, 3rem);
+    font-size: clamp(1.7rem, 7vw, 2.5rem);
   }
 }
 </style>

@@ -65,7 +65,7 @@ Séries de livros e universos oferecem organização local em `/books/series` e 
 
 ## Linha do tempo
 
-`/timeline` reúne atividades dos oito domínios e inclusões locais com datas disponíveis, do mais recente ao mais antigo. Música tem resumo diário; a régua lateral permite saltar por mês/ano no desktop e no celular. Filtros por domínio e tipo também atualizam os períodos. Consulte [contrato e limites das datas](docs/timeline-api.md).
+`/timeline` reúne atividades dos oito domínios com datas disponíveis, do mais recente ao mais antigo. Música tem resumo diário; a régua lateral permite saltar por mês/ano no desktop e no celular. O filtro por domínio também atualiza os períodos; inclusões técnicas no arquivo ficam fora da página. Consulte [contrato e limites das datas](docs/timeline-api.md).
 
 ## Frontend
 
