@@ -82,3 +82,13 @@ A centralização de novas imagens no Visual Library estende o armazenamento loc
 ## Movimentos e estilos múltiplos
 
 [Spec aprovada](artwork-movements.md): lista com autocomplete aberto, sugestões iniciais + termos do acervo, filtro por pertencimento e correção automática das imagens remotas após salvar. A migration V67 preserva o texto legado como um item; listas pessoais permanecem independentes. Falhas de sincronização preservam dados locais e permitem retry.
+
+
+## Abertura editorial da biblioteca
+
+Revisão aprovada: a página `/artworks` apresenta a última obra adicionada e até quatro secundárias por `GET /api/artworks?sort=recent&limit=5`. É uma ordem técnica de inclusão no acervo, sem inferir quando a obra foi contemplada. Imagens integrais acomodam formatos verticais e panorâmicos; a busca fica no bloco editorial, com filtros junto do masonry existente. Cadastro e recortes ativos usam cabeçalho compacto; recolher/reabrir preserva o formulário. Destaques têm carregamento, erro e retry independentes da biblioteca. Sem mudança de API, schema, provedor ou dependência; páginas de detalhe, artista e lista permanecem com suas composições atuais. Direção registrada na seção 31 do DESIGN.md.
+
+
+Validação local: lint, Prettier, tipos e build do frontend passaram; lint mantém apenas o aviso preexistente em ArtistPageHero.vue. Chromium com APIs simuladas em 1440px, 390px e 320px validou imagens verticais/panorâmicas integrais, ausência de transbordamento, seleção sem repetição, busca, filtros combinados, favoritos, limpar/retorno de foco, paginação sem duplicação, rascunho ao recolher/reabrir, falha/ausência de imagem, vazio, erro/retry dos recentes e controles de visitante. Regressão das bibliotecas de artista (cronológica) e lista (masonry), com recortes próprios, passou. Sem mutações em produção.
+
+Publicação da abertura editorial: versão 1.45.0, tag v1.45.0 e imagens 1.45.0/latest, para implantação pelo serviço Compose existente no Mordor. Sem migração.

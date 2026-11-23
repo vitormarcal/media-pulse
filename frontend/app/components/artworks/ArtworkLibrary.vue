@@ -1,5 +1,6 @@
 <template>
   <section class="art-section">
+    <h2 v-if="browse">Acervo</h2>
     <details
       :open="!chronological"
       class="art-library-filters"
@@ -7,7 +8,9 @@
     >
       <summary>Filtrar obras</summary>
       <form class="art-filters" @submit.prevent="load(false)">
-        <label>Buscar <input v-model="filters.q" type="search" placeholder="Título, artista, técnica…" /></label>
+        <label v-if="!hideSearch"
+          >Buscar <input v-model="filters.q" type="search" placeholder="Título, artista, técnica…"
+        /></label>
         <label v-if="!artistId"
           >Artista
           <select v-model="filters.artistId" aria-label="Artista">
@@ -44,7 +47,8 @@
       </form>
     </details>
     <p v-if="error" class="art-error" role="alert">
-      {{ error }} <button class="art-button" :disabled="busy" @click="load(false)">Tentar novamente</button>
+      Não foi possível carregar as obras.
+      <button class="art-button" :disabled="busy" @click="load(false)">Tentar novamente</button>
     </p>
     <p v-if="busy" role="status">Carregando obras…</p>
     <p v-else-if="!cards.length && !error" class="art-muted">Nenhuma obra encontrada.</p>
@@ -89,6 +93,8 @@
 import ArtworkCard from './ArtworkCard.vue'
 import type { ArtworkArtist, ArtworkCard as ArtworkCardData, ArtworkLibrary, ArtworkList } from '~/types/artworks'
 const props = defineProps<{
+  browse?: boolean
+  hideSearch?: boolean
   artistId?: number
   listId?: number
   chronological?: boolean
@@ -96,7 +102,9 @@ const props = defineProps<{
   bornAt?: string | null
   diedAt?: string | null
 }>()
+const emit = defineEmits<{ 'filter-change': [active: boolean] }>()
 const { request, run, busy, error } = useArtworkApi()
+defineExpose({ search, clear, busy })
 const filters = reactive({
   q: '',
   artistId: '' as number | string,
@@ -130,6 +138,11 @@ const { data: options } = await useAsyncData('artwork-library-filters', () =>
 async function load(more: boolean) {
   await run(async () => {
     const active = more ? applied : { ...filters }
+    if (!more && props.browse)
+      emit(
+        'filter-change',
+        Boolean(active.q || active.artistId || active.type || active.movement || active.favorite || active.listId),
+      )
     const result = await request<ArtworkLibrary>('', {
       query: {
         q: active.q || undefined,
@@ -151,6 +164,11 @@ async function load(more: boolean) {
 }
 async function clear() {
   Object.assign(filters, { q: '', artistId: '', type: '', movement: '', favorite: false, listId: '' })
+  await load(false)
+}
+async function search(query: string) {
+  if (busy.value) return
+  filters.q = query.trim()
   await load(false)
 }
 await load(false)
